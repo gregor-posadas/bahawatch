@@ -163,9 +163,109 @@ pre#api-json{
   .map-attr{display:none}
 }
 @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
+
+/* ================= PUBLIC VIEW (default) — NYC-subway-signage register ================= */
+[data-view="public"] header, [data-view="public"] main, [data-view="public"] #timeline{display:none}
+[data-view="details"] #public{display:none}
+#public{max-width:720px; margin:0 auto; padding:0 16px 40px; display:flex; flex-direction:column; min-height:100vh}
+.p-head{display:flex; align-items:center; gap:12px; padding:14px 0 10px; border-bottom:3px solid var(--ink)}
+.p-head img{width:34px; height:34px; display:block}
+.p-head .p-name{font-size:18px; font-weight:700; letter-spacing:-.01em; line-height:1.1}
+.p-head .p-place{font-size:12px; color:var(--ink-2); margin-top:1px}
+.p-tools{margin-left:auto; display:flex; align-items:center; gap:8px}
+.p-tools select{font:inherit; font-size:12.5px; font-weight:600; color:var(--ink); background:var(--panel); border:1px solid var(--ink); border-radius:4px; padding:6px 8px; min-height:32px; max-width:130px}
+.p-link{font-size:12.5px; font-weight:600; color:var(--ink); border:1px solid var(--ink); border-radius:4px; padding:6px 10px; min-height:32px; background:var(--panel)}
+.p-link:hover,.p-tools select:hover{background:var(--panel-2)}
+#p-theme{width:32px; height:32px; border-radius:4px; border:1px solid var(--ink); background:var(--panel); font-size:14px; display:flex; align-items:center; justify-content:center}
+
+.p-status{padding:22px 0 18px; border-bottom:1px solid var(--line)}
+.p-status .p-head-line{font-size:28px; font-weight:700; letter-spacing:-.02em; line-height:1.15}
+.p-status .p-sub{font-size:15px; color:var(--ink); margin-top:8px; line-height:1.4}
+.p-status .p-upd{font-size:12.5px; color:var(--ink-2); margin-top:10px; font-variant-numeric:tabular-nums}
+.p-status.tier-warn .p-head-line{color:var(--warn-ink)}
+.p-status.tier-alert .p-head-line{color:var(--alert)}
+
+.p-sec{padding:14px 0 4px}
+.p-sec-h{font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2); display:flex; align-items:center; gap:8px; min-height:28px}
+.p-sec-h .p-link{margin-left:auto; font-size:11.5px; padding:4px 9px; min-height:28px}
+.p-rows{list-style:none; padding:0; margin:6px 0 0}
+.p-row{display:grid; grid-template-columns:22px 1fr auto; column-gap:12px; align-items:center; padding:12px 0; border-top:1px solid var(--line); cursor:pointer; text-align:left; width:100%; min-height:56px}
+.p-row:first-child{border-top:none}
+.p-row:hover{background:var(--panel-2)}
+.p-row.selected{box-shadow:inset 4px 0 0 var(--brand)}
+.p-row .shape{width:14px; height:14px; justify-self:center}
+.p-row .shape.ok{border-width:3px}
+.p-row .r-name{font-size:16px; font-weight:700; line-height:1.2}
+.p-row .r-name small{font-weight:400; color:var(--ink-2); font-size:12.5px; margin-left:6px}
+.p-row .r-tier{font-size:13.5px; color:var(--ink); margin-top:2px}
+.p-row.warn .r-tier{color:var(--warn-ink); font-weight:600}
+.p-row.alert .r-tier{color:var(--alert); font-weight:600}
+.p-row .r-pass{font-size:12.5px; color:var(--ink-2); margin-top:1px}
+.p-row .r-cm{font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink-2); white-space:nowrap}
+.p-row.warn .r-cm,.p-row.alert .r-cm{color:var(--ink)}
+.p-empty{padding:14px 0; font-size:14px; color:var(--ink-2); border-top:1px solid var(--line)}
+.p-pick{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px}
+.p-pick button{font-size:13.5px; font-weight:600; border:1px solid var(--ink); border-radius:4px; padding:10px 8px; min-height:44px; background:var(--panel); text-align:left}
+.p-pick button:hover{background:var(--panel-2)}
+
+#public-map{margin-top:10px}
+[data-view="public"] #map-wrap{margin:0; height:min(62vw,460px); min-height:300px; border-radius:6px; border:1px solid var(--ink)}
+[data-view="public"] #legend, [data-view="public"] .zoom-ctl, [data-view="public"] .map-note, [data-view="public"] .map-attr{display:none}
+.p-maplegend{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:var(--ink-2); padding:8px 2px 0}
+.p-maplegend span{display:inline-flex; align-items:center; gap:6px}
+.p-maplegend i{width:20px; height:8px; border-radius:2px; display:inline-block}
+.p-foot{margin-top:auto; padding-top:22px; font-size:11.5px; color:var(--ink-2); line-height:1.5}
+.p-foot b{color:var(--ink); font-weight:600}
+
+:root{--warn-ink:#8a5800}
+:root[data-theme="dark"]{--warn-ink:#f2b035}
+@media (max-width:480px){
+  .p-status .p-head-line{font-size:24px}
+  .p-head .p-place{display:none}
+  .p-tools select{max-width:104px}
+}
 </style>
 </head>
-<body>
+<body data-view="public">
+
+<section id="public" aria-label="Flood status">
+  <div class="p-head">
+    <img src="data:image/png;base64,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" alt="BahaWatch logo">
+    <div><div class="p-name">BahaWatch</div><div class="p-place">Teachers Village, Quezon City</div></div>
+    <div class="p-tools">
+      <label class="sr-only" for="p-lang">Language</label>
+      <select id="p-lang"></select>
+      <button id="p-theme" aria-label="Switch theme">☾</button>
+      <button class="p-link" id="p-details">Details</button>
+    </div>
+  </div>
+  <div class="p-status" id="p-status" role="status" aria-live="polite">
+    <div class="p-head-line" id="p-headline">—</div>
+    <div class="p-sub" id="p-subline"></div>
+    <div class="p-upd" id="p-updated"></div>
+  </div>
+  <div class="p-sec">
+    <div class="p-sec-h"><span id="p-my-h">My street</span><button class="p-link" id="p-my-btn">Choose my street</button></div>
+    <div id="p-my"></div>
+    <div class="p-pick" id="p-pick" style="display:none"></div>
+  </div>
+  <div class="p-sec">
+    <div class="p-sec-h"><span id="p-all-h">Monitored streets</span></div>
+    <div class="p-rows" id="p-all"></div>
+  </div>
+  <div class="p-sec">
+    <div id="public-map"></div>
+    <div class="p-maplegend" aria-hidden="true">
+      <span><i style="background:#2f86c2"></i><span id="p-lg1"></span></span>
+      <span><i style="background:#0030a0"></i><span id="p-lg2"></span></span>
+      <span><span class="shape ok"></span><span id="p-lg3"></span></span>
+      <span><span class="shape warn"></span><span id="p-lg4"></span></span>
+      <span><span class="shape alert"></span><span id="p-lg5"></span></span>
+    </div>
+    <p class="p-foot" style="margin-top:8px; padding-top:0" id="p-maphint"></p>
+  </div>
+  <p class="p-foot"><b id="p-demo"></b> <span id="p-emerg"></span><br>Map data © OpenStreetMap contributors · Terrain: Copernicus GLO-30 © ESA · Hazard reference: UP Project NOAH</p>
+</section>
 
 <header>
   <div class="brand">
@@ -183,6 +283,7 @@ pre#api-json{
       <button data-sc="typhoon" aria-pressed="false">Typhoon</button>
     </div>
     <button id="theme-toggle" aria-label="Switch to dark theme" aria-pressed="false">☾</button>
+    <button class="p-link" id="d-simple">Simple view</button>
   </div>
 </header>
 
@@ -197,7 +298,7 @@ pre#api-json{
       <div class="bands-lab"><span>ankle</span><span>knee</span><span>waist+</span></div>
       <div class="row"><span class="shape ok"></span>Sensor · normal</div>
       <div class="row"><span class="shape warn"></span>Water on street</div>
-      <div class="row"><span class="shape alert"></span>Flooded</div>
+      <div class="row"><span class="shape alert"></span>Flooded (knee-deep, ≥45 cm)</div>
       <div class="noah-h">NOAH hazard reference</div>
       <div class="noah-chips" role="group" aria-label="NOAH hazard layer">
         <button data-noah="off" class="active" aria-pressed="true">Off</button>
@@ -285,6 +386,7 @@ pre#api-json{
    from sensor observations, spread across the DEM with distance decay.
    ========================================================================= */
 const DATA=__DATA_JSON__;
+let VIEW="public";
 
 const W=DATA.W,H=DATA.H,GW=DATA.GW,GH=DATA.GH,N=GW*GH;
 function b64bytes(s){const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
@@ -314,7 +416,7 @@ const HOUSEHOLD=DATA.sensors.map((s,k)=>{
   const sus=Math.min(2.6,Math.max(0.15,0.35+0.5*lowness+0.45*wNoah));
   const r=mulberry32(500+k)();
   return {id:s.id,idx:k,name:"Household unit · "+s.street,street:s.street,
-    x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,noahCls:Math.max(h5,h25,h100),sus,
+    x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,labelLeft:["BW-H06","BW-H01"].includes(s.id),noahCls:Math.max(h5,h25,h100),sus,
     expos:0.92+r*0.2,readings:[],depth:0,rate:0,status:"ok"};
 });
 
@@ -423,6 +525,7 @@ for(let i=0;i<N;i++){if(elev[i]<eMinD)eMinD=elev[i];if(elev[i]>eMaxD)eMaxD=elev[
 function renderBase(){
   const P=mapPal(),ctx=baseCv.getContext("2d");
   ctx.setTransform(RES,0,0,RES,0,0);
+  if(VIEW==="public"){renderBaseSimple(ctx,P);return;}
   // hypsometric paper: subtle elevation tint so terrain is legible
   const img=ctx.createImageData(GW,GH),px=img.data;
   for(let i=0;i<N;i++){
@@ -451,6 +554,19 @@ function renderBase(){
   // buildings
   ctx.fillStyle=P.house;
   for(const b of BLDS)ctx.fillRect(b[0]-1.4,b[1]-1.4,2.8,2.8);
+}
+
+// Public map: a diagram, not a picture. Flat paper, named streets only, no buildings,
+// no terrain tint, no alleys — water is the only colored fill.
+function renderBaseSimple(ctx,P){
+  ctx.fillStyle=`rgb(${P.bgLo[0]},${P.bgLo[1]},${P.bgLo[2]})`;ctx.fillRect(0,0,W,H);
+  const byCls={alley:[],minor:[],mid:[],major:[]};
+  for(const r of DATA.roads)byCls[r.c].push(r);
+  strokeWays(ctx,byCls.minor,9,P.casing);
+  strokeWays(ctx,byCls.mid.concat(byCls.major),16,P.casing);
+  strokeWays(ctx,byCls.minor,6.5,P.street);
+  strokeWays(ctx,byCls.mid.concat(byCls.major),13,P.street);
+  strokeWays(ctx,DATA.waters,6,P.creek);
 }
 
 /* ---------- NOAH reference overlay ---------- */
@@ -489,7 +605,7 @@ function renderFlood(){
   for(let i=0;i<N;i++){
     const d=depth[i];
     if(d<=0.03)continue;
-    const c=d<0.22?cols[0]:d<0.55?cols[1]:cols[2];
+    const c=VIEW==="public"?(d<0.45?cols[1]:cols[2]):(d<0.22?cols[0]:d<0.55?cols[1]:cols[2]);
     const o=i*4;px[o]=c[0];px[o+1]=c[1];px[o+2]=c[2];
     px[o+3]=anySel?(srcIdx[i]===selIdx?240:120):225;
   }
@@ -520,7 +636,15 @@ function zoomAt(factor,sx,sy){
   applyView();drawMap();
 }
 function zoomTo(x,y,z){ZOOM.z=Math.max(ZOOM.min,Math.min(ZOOM.max,z));ZOOM.cx=x;ZOOM.cy=y;applyView();drawMap();}
-function resetView(){ZOOM.z=1;ZOOM.cx=W/2;ZOOM.cy=H/2;applyView();drawMap();}
+function fitSensors(){
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const s of HOUSEHOLD){x0=Math.min(x0,s.x);y0=Math.min(y0,s.y);x1=Math.max(x1,s.x);y1=Math.max(y1,s.y);}
+  const padX=150,padY=70;x0-=padX;x1+=padX;y0-=padY;y1+=padY;
+  const fit=Math.min(view.w/W,view.h/H);
+  const z=Math.min(view.w/(x1-x0),view.h/(y1-y0))/fit;
+  zoomTo((x0+x1)/2,(y0+y1)/2,Math.min(z,3.5));
+}
+function resetView(){if(VIEW==="public"&&view.w){fitSensors();return;}ZOOM.z=1;ZOOM.cx=W/2;ZOOM.cy=H/2;applyView();drawMap();}
 function resize(){
   const wrap=document.getElementById("map-wrap");
   const dpr=Math.min(window.devicePixelRatio||1,2);
@@ -538,7 +662,7 @@ function drawMap(){
   ctx.fillRect(0,0,view.w,view.h);
   ctx.imageSmoothingEnabled=true;
   ctx.drawImage(baseCv,view.ox,view.oy,W*view.sc,H*view.sc);
-  ctx.drawImage(noahCv,view.ox,view.oy,W*view.sc,H*view.sc);
+  if(VIEW!=="public")ctx.drawImage(noahCv,view.ox,view.oy,W*view.sc,H*view.sc);
   ctx.drawImage(floodCv,view.ox,view.oy,W*view.sc,H*view.sc);
 }
 const STATUS_COL_LIGHT={ok:"#008f68",warn:"#bd7a00",alert:"#d55e00"};
@@ -565,7 +689,7 @@ function drawOverlayCanvas(){
   ctx.clearRect(0,0,view.w,view.h);
   const wx=x=>view.ox+x*view.sc, wy=y=>view.oy+y*view.sc;
   const P=mapPal();
-  for(const g of cutSegs){
+  if(VIEW!=="public")for(const g of cutSegs){
     const X=wx(g[0]),Y=wy(g[1]);
     ctx.beginPath();ctx.arc(X,Y,8,0,7);
     ctx.fillStyle=P.markerFill;ctx.fill();
@@ -574,7 +698,7 @@ function drawOverlayCanvas(){
     ctx.lineWidth=2.6;ctx.stroke();
   }
   ctx.textAlign="center";ctx.textBaseline="middle";
-  for(const L of DATA.labels){
+  if(VIEW!=="public")for(const L of DATA.labels){
     const X=wx(L.x),Y=wy(L.y);
     if(X<-80||Y<-40||X>view.w+80||Y>view.h+40)continue;
     ctx.save();ctx.translate(X,Y);ctx.rotate(L.a);
@@ -582,22 +706,31 @@ function drawOverlayCanvas(){
     ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(L.n,0,-9);
     ctx.fillStyle=L.w?P.creekLabel:P.label;ctx.fillText(L.n,0,-9);ctx.restore();
   }
-  ctx.save();ctx.translate(wx(W-120),wy(26));
+  if(VIEW!=="public"){ctx.save();ctx.translate(wx(W-120),wy(26));
   ctx.font="600 12px Helvetica, Arial, sans-serif";
   ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText("UP Diliman ▴",0,0);
-  ctx.fillStyle=P.label;ctx.fillText("UP Diliman ▴",0,0);ctx.restore();
+  ctx.fillStyle=P.label;ctx.fillText("UP Diliman ▴",0,0);ctx.restore();}
   for(const s of HOUSEHOLD){
     const X=wx(s.x),Y=wy(s.y),col=STATUS_COL[s.status],R=9;
-    if(s.status!=="ok"&&!reducedMotion){
+    if(s.status!=="ok"&&!reducedMotion&&VIEW!=="public"){
       const p=pulseT%1;
       ctx.beginPath();ctx.arc(X,Y,R+3+p*15,0,7);
       ctx.strokeStyle=col;ctx.globalAlpha=0.5*(1-p);ctx.lineWidth=3;ctx.stroke();ctx.globalAlpha=1;
     }
     drawMarker(ctx,X,Y,R,s.status,col,P);
     if(s===selected){ctx.beginPath();ctx.arc(X,Y,R+7,0,7);ctx.strokeStyle=P.select;ctx.lineWidth=2.5;ctx.stroke();}
-    ctx.font="700 11px Helvetica, Arial, sans-serif";ctx.textAlign="center";
-    ctx.lineWidth=4;ctx.strokeStyle=P.labelHalo;ctx.strokeText(s.id,X,Y-R-9);
-    ctx.fillStyle=P.label;ctx.fillText(s.id,X,Y-R-9);
+    if(VIEW!=="public"){
+      ctx.font="700 11px Helvetica, Arial, sans-serif";ctx.textAlign="center";
+      ctx.lineWidth=4;ctx.strokeStyle=P.labelHalo;ctx.strokeText(s.id,X,Y-R-9);
+      ctx.fillStyle=P.label;ctx.fillText(s.id,X,Y-R-9);
+    }else{
+      // station-style: the sensor carries the street name, so the map stays a diagram
+      const nm=s.street.replace(" Street","").replace(" Road","").replace(" Avenue","");
+      ctx.font="700 12.5px Helvetica, Arial, sans-serif";ctx.textAlign=s.labelLeft?"right":"left";ctx.textBaseline="middle";
+      const lx=s.labelLeft?X-R-9:X+R+9;
+      ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(nm,lx,Y);
+      ctx.fillStyle=P.markerInk;ctx.fillText(nm,lx,Y);
+    }
   }
 }
 /* ---------- pan / zoom interaction ---------- */
@@ -707,9 +840,10 @@ const STATUS_LABEL={ok:"Normal",warn:"Water on street",alert:"Flooded"};
 function selectSensor(s){
   selected=s;
   renderFlood();drawMap();refreshCards();
+  if(VIEW==="public")renderPublic();
 }
 function statusOf(s){
-  if(s.depth>=0.30)return"alert";
+  if(s.depth>=0.45)return"alert";
   if(s.depth>=0.05)return"warn";
   return"ok";
 }
@@ -743,7 +877,7 @@ function drawSpark(s){
   const X=i=>i/Math.max(data.length-1,1)*(c.width-8)+4;
   const Y=v=>c.height-6-(v/maxV)*(c.height-14);
   ctx.setLineDash([6,5]);ctx.strokeStyle="rgba(213,94,0,0.7)";ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(0,Y(0.30));ctx.lineTo(c.width,Y(0.30));ctx.stroke();ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(0,Y(0.45));ctx.lineTo(c.width,Y(0.45));ctx.stroke();ctx.setLineDash([]);
   if(data.length>1){
     ctx.beginPath();data.forEach((r,i)=>{i?ctx.lineTo(X(i),Y(r.v)):ctx.moveTo(X(i),Y(r.v));});
     ctx.strokeStyle=STATUS_COL[s.status];ctx.lineWidth=3.5;ctx.lineJoin="round";ctx.stroke();
@@ -788,13 +922,13 @@ function updateImpact(){
   let predict=null;
   for(const s of HOUSEHOLD){
     if(s.status!=="alert"&&s.rate>0.08){
-      const eta=(0.30-s.depth)/s.rate*60;
+      const eta=(0.45-s.depth)/s.rate*60;
       if(eta>0&&eta<180&&(!predict||eta<predict.eta))predict={s,eta};
     }
   }
   if(alerts.length){
     banner.className="alert";
-    bt.innerHTML=`Flooding at ${alerts.length} household${alerts.length>1?"s":""}: ${alerts.map(s=>s.id).join(", ")}.<small>Evacuation guidance would trigger here in production.</small>`;
+    bt.innerHTML=`Knee-deep or more at ${alerts.length} unit${alerts.length>1?"s":""}: ${alerts.map(s=>s.id).join(", ")}.<small>Not passable to light vehicles. Evacuation guidance would trigger here in production.</small>`;
   }else if(predict){
     banner.className="warn";
     bt.innerHTML=`${predict.s.id} · ${predict.s.street} likely to flood in ~${Math.round(predict.eta/5)*5} min.<small>Rate of rise ${Math.round(predict.s.rate*100)} cm/hr — the early-warning window.</small>`;
@@ -813,7 +947,7 @@ function drawScrub(){
   const maxV=0.95;
   const X=t=>t/T_END*w, Y=v=>h-5-(Math.min(v,maxV)/maxV)*(h-12);
   ctx.setLineDash([5,5]);ctx.strokeStyle="rgba(213,94,0,0.55)";ctx.lineWidth=1.5;
-  ctx.beginPath();ctx.moveTo(0,Y(0.30));ctx.lineTo(w,Y(0.30));ctx.stroke();ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(0,Y(0.45));ctx.lineTo(w,Y(0.45));ctx.stroke();ctx.setLineDash([]);
   ctx.globalAlpha=0.3;
   for(const s of HOUSEHOLD){
     ctx.beginPath();
@@ -899,8 +1033,8 @@ ovCv.addEventListener("pointermove",e=>{
     tip.style.display="block";
     tip.style.left=(e.clientX-r.left)+"px";tip.style.top=(e.clientY-r.top)+"px";
     const src=srcIdx[i]>=0?HOUSEHOLD[srcIdx[i]].id:"—";
-    tip.textContent=Math.round(d*100)+" cm · via "+src+" · ground "+g+" m";
-  }else if(noahSel!=="off"&&NOAH[noahSel][i]>0){
+    tip.textContent=VIEW==="public"?(T().tier[tierOf(d)]+" · "+Math.round(d*100)+" cm"):(Math.round(d*100)+" cm · via "+src+" · ground "+g+" m");
+  }else if(VIEW!=="public"&&noahSel!=="off"&&NOAH[noahSel][i]>0){
     tip.style.display="block";
     tip.style.left=(e.clientX-r.left)+"px";tip.style.top=(e.clientY-r.top)+"px";
     tip.textContent="NOAH "+noahSel+"-yr hazard: "+["low","medium","high"][NOAH[noahSel][i]-1]+" · ground "+g+" m";
@@ -936,6 +1070,7 @@ function step(dtMs,force){
     drawMap();
     refreshCards();
     updateImpact();
+    renderPublic();
   }
   document.getElementById("clock").textContent=clockStr(tMin);
   scrub.setAttribute("aria-valuenow",Math.round(tMin));scrub.setAttribute("aria-valuetext",clockStr(tMin)+(playing?" playing":" paused"));
@@ -960,16 +1095,197 @@ function setTheme(t,render){
   themeBtn.textContent=t==="dark"?"☀":"☾";
   themeBtn.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");
   themeBtn.setAttribute("aria-pressed",t==="dark"?"true":"false");
+  const pt=document.getElementById("p-theme");if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
   if(render){renderBase();renderNoah();renderFlood();drawMap();}
 }
 let savedTheme=null;try{savedTheme=localStorage.getItem("bw-theme");}catch(e){}
 setTheme(savedTheme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"),false);
 themeBtn.addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
 
+/* ---------- public view ---------- */
+
+/* =========================================================================
+   PUBLIC VIEW — the default. Two questions, answered first:
+   "Is there water at my place?"  "Can I get through?"
+   Vocabulary follows MMDA / PAGASA flood advisories (gutter / knee / waist;
+   passable / not passable to light vehicles).
+   ========================================================================= */
+const LANGS={
+  en:{name:"English",
+    none:"No flooding reported.",allPass:"All monitored streets passable.",
+    wet:n=>`Water on ${n} ${n===1?"street":"streets"}.`,wetPass:"All still passable.",
+    cut1:s=>`${s} not passable to light vehicles.`,cutN:n=>`${n} streets not passable to light vehicles.`,
+    updated:t=>`Updated ${t}`,sim:"simulated",
+    my:"My street",choose:"Choose my street",change:"Change",all:"Monitored streets",
+    pickHint:"Pick the street closest to your home or the one you take to get there.",
+    tier:["No water","Gutter-deep","Half-knee-deep","Knee-deep","Waist-deep"],
+    pass:["Passable to all vehicles","Passable to all vehicles","Passable — drive slowly","Not passable to light vehicles","Not passable to any vehicle"],
+    rising:"rising",falling:"falling",
+    lg:["Water on the street","Deeper water","Sensor · no water","Water on street","Knee-deep or more"],
+    details:"Details",simple:"Simple view",mapHint:"Tap a street on the map or in the list to see where its water reaches.",
+    demo:"Demo: sensor readings are simulated.",notEmergency:"Not for emergency use. In an emergency call 911 or your barangay.",
+    near:{"BW-H01":"near V. Luna","BW-H02":"near Malingap"}},
+  fil:{name:"Filipino",
+    none:"Walang naiulat na baha.",allPass:"Madadaanan ang lahat ng binabantayang kalye.",
+    wet:n=>`May tubig sa ${n} kalye.`,wetPass:"Madadaanan pa ang lahat.",
+    cut1:s=>`Hindi madadaanan ng maliliit na sasakyan ang ${s}.`,cutN:n=>`${n} kalye ang hindi madadaanan ng maliliit na sasakyan.`,
+    updated:t=>`Na-update ${t}`,sim:"kunwari",
+    my:"Kalye ko",choose:"Piliin ang kalye ko",change:"Palitan",all:"Mga binabantayang kalye",
+    pickHint:"Piliin ang kalyeng pinakamalapit sa bahay mo o ang dinadaanan mo pauwi.",
+    tier:["Walang tubig","Hanggang gutter","Hanggang kalahating tuhod","Hanggang tuhod","Hanggang baywang"],
+    pass:["Madadaanan ng lahat ng sasakyan","Madadaanan ng lahat ng sasakyan","Madadaanan — dahan-dahan lang","Hindi madadaanan ng maliliit na sasakyan","Hindi madadaanan ng anumang sasakyan"],
+    rising:"tumataas",falling:"bumababa",
+    lg:["May tubig sa kalye","Mas malalim","Sensor · walang tubig","May tubig sa kalye","Hanggang tuhod o higit pa"],
+    details:"Detalye",simple:"Simpleng view",mapHint:"Pindutin ang kalye sa mapa o sa listahan para makita kung hanggang saan ang tubig.",
+    demo:"Demo: kunwaring datos ng sensor.",notEmergency:"Hindi para sa emergency. Kung may emergency, tumawag sa 911 o sa barangay.",
+    near:{"BW-H01":"malapit sa V. Luna","BW-H02":"malapit sa Malingap"}},
+  ceb:{name:"Bisaya (Cebuano)",
+    none:"Walay gitaho nga baha.",allPass:"Maagian ang tanang gibantayang dalan.",
+    wet:n=>`Naay tubig sa ${n} ka dalan.`,wetPass:"Maagian pa ang tanan.",
+    cut1:s=>`Dili maagian sa gagmayng sakyanan ang ${s}.`,cutN:n=>`${n} ka dalan ang dili maagian sa gagmayng sakyanan.`,
+    updated:t=>`Gi-update ${t}`,sim:"pasumbingay",
+    my:"Akong dalan",choose:"Pilia ang akong dalan",change:"Usba",all:"Mga gibantayang dalan",
+    pickHint:"Pilia ang dalan nga pinakaduol sa imong balay o ang imong agianan pauli.",
+    tier:["Walay tubig","Hangtod sa gutter","Hangtod sa tunga sa tuhod","Hangtod sa tuhod","Hangtod sa hawak"],
+    pass:["Maagian sa tanang sakyanan","Maagian sa tanang sakyanan","Maagian — hinay lang","Dili maagian sa gagmayng sakyanan","Dili maagian sa bisan unsang sakyanan"],
+    rising:"nagsaka",falling:"nagkunhod",
+    lg:["Naay tubig sa dalan","Mas lawom","Sensor · walay tubig","Naay tubig sa dalan","Hangtod sa tuhod o labaw pa"],
+    details:"Detalye",simple:"Simple nga view",mapHint:"Tap-a ang dalan sa mapa o sa listahan aron makita hangtod asa ang tubig.",
+    demo:"Demo: pasumbingay ang datos sa sensor.",notEmergency:"Dili para sa emerhensya. Kung naay emerhensya, tawag sa 911 o sa barangay.",
+    near:{"BW-H01":"duol sa V. Luna","BW-H02":"duol sa Malingap"}},
+  ilo:{name:"Ilokano",
+    none:"Awan ti naipadamag a layus.",allPass:"Malasatan amin a mabambantayan a kalsada.",
+    wet:n=>`Adda danum iti ${n} a kalsada.`,wetPass:"Malasatan pay amin.",
+    cut1:s=>`Saan a malasatan dagiti babassit a lugan ti ${s}.`,cutN:n=>`${n} a kalsada ti saan a malasatan dagiti babassit a lugan.`,
+    updated:t=>`Naipabaro ${t}`,sim:"pagarigan",
+    my:"Kalsadak",choose:"Pilien ti kalsadak",change:"Baliwan",all:"Dagiti mabambantayan a kalsada",
+    pickHint:"Pilien ti kalsada a kaasitgan iti balaymo wenno ti dalanmo nga agawid.",
+    tier:["Awan danum","Agingga iti gutter","Agingga iti kagudua ti tumeng","Agingga iti tumeng","Agingga iti siket"],
+    pass:["Malasatan ti amin a lugan","Malasatan ti amin a lugan","Malasatan — in-inayad","Saan a malasatan dagiti babassit a lugan","Saan a malasatan ti aniaman a lugan"],
+    rising:"ngumatngato",falling:"bumabbaba",
+    lg:["Adda danum iti kalsada","Nauneg pay","Sensor · awan danum","Adda danum iti kalsada","Agingga iti tumeng wenno ad-adda pay"],
+    details:"Detalye",simple:"Simple a view",mapHint:"I-tap ti kalsada iti mapa wenno iti listaan tapno makita no agingga sadino ti danum.",
+    demo:"Demo: pagarigan laeng ti datos ti sensor.",notEmergency:"Saan a para iti emerhensia. No adda emerhensia, tumawag iti 911 wenno iti barangay.",
+    near:{"BW-H01":"asideg ti V. Luna","BW-H02":"asideg ti Malingap"}},
+  hil:{name:"Hiligaynon",
+    none:"Wala sang ginreport nga baha.",allPass:"Maagyan ang tanan nga ginabantayan nga dalan.",
+    wet:n=>`May tubig sa ${n} ka dalan.`,wetPass:"Maagyan pa ang tanan.",
+    cut1:s=>`Indi maagyan sang magagmay nga salakyan ang ${s}.`,cutN:n=>`${n} ka dalan ang indi maagyan sang magagmay nga salakyan.`,
+    updated:t=>`Gin-update ${t}`,sim:"pakuno-kuno",
+    my:"Dalan ko",choose:"Pilia ang dalan ko",change:"Bag-uhon",all:"Mga ginabantayan nga dalan",
+    pickHint:"Pilia ang dalan nga pinakamalapit sa imo balay ukon ang imo ginaagyan pauli.",
+    tier:["Wala tubig","Hasta sa gutter","Hasta sa tunga sang tuhod","Hasta sa tuhod","Hasta sa hawak"],
+    pass:["Maagyan sang tanan nga salakyan","Maagyan sang tanan nga salakyan","Maagyan — hinay lang","Indi maagyan sang magagmay nga salakyan","Indi maagyan sang bisan ano nga salakyan"],
+    rising:"nagataas",falling:"nagaubos",
+    lg:["May tubig sa dalan","Mas madalom","Sensor · wala tubig","May tubig sa dalan","Hasta sa tuhod ukon labaw pa"],
+    details:"Detalye",simple:"Simple nga view",mapHint:"I-tap ang dalan sa mapa ukon sa lista para makita kon hasta diin ang tubig.",
+    demo:"Demo: pakuno-kuno ang datos sang sensor.",notEmergency:"Indi para sa emerhensya. Kon may emerhensya, tawag sa 911 ukon sa barangay.",
+    near:{"BW-H01":"malapit sa V. Luna","BW-H02":"malapit sa Malingap"}},
+};
+let LANG="en";
+const T=()=>LANGS[LANG];
+// depth tiers (m) → index into tier/pass arrays. MMDA convention.
+function tierOf(d){return d<0.05?0:d<0.20?1:d<0.45?2:d<0.75?3:4;}
+
+let myStreet=null;
+try{myStreet=localStorage.getItem("bw-street");}catch(e){}
+const $=id=>document.getElementById(id);
+
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function unitLabel(s){const n=T().near[s.id];return esc(s.street.replace(" Street"," St").replace(" Avenue"," Ave").replace(" Road"," Rd"))+(n?`<small>${esc(n)}</small>`:"");}
+function rowHTML(s,extraCls){
+  const t=tierOf(s.depth),L=T();
+  const trend=s.rate>0.03?` · ${L.rising}`:s.rate<-0.03?` · ${L.falling}`:"";
+  return `<button class="p-row ${s.status}${extraCls||""}${s===selected?" selected":""}" data-id="${s.id}" aria-pressed="${s===selected}">
+    <span class="shape ${s.status}" aria-hidden="true"></span>
+    <span><span class="r-name">${unitLabel(s)}</span><span class="r-tier" style="display:block">${L.tier[t]}${trend}</span><span class="r-pass" style="display:block">${L.pass[t]}</span></span>
+    <span class="r-cm">${Math.round(s.depth*100)} cm</span></button>`;
+}
+function renderPublic(){
+  if(VIEW!=="public")return;
+  const L=T();
+  const streetsOf=f=>[...new Set(HOUSEHOLD.filter(f).map(s=>s.street))];
+  const wet=streetsOf(s=>s.depth>=0.05),cut=streetsOf(s=>s.depth>=0.45);
+  const st=$("p-status");
+  let head,sub,cls="";
+  if(cut.length){cls="tier-alert";head=cut.length===1?L.cut1(cut[0].replace(" Street"," St").replace(" Road"," Rd")):L.cutN(cut.length);sub=L.wet(wet.length);}
+  else if(wet.length){cls="tier-warn";head=L.wet(wet.length);sub=L.wetPass;}
+  else{head=L.none;sub=L.allPass;}
+  st.className="p-status "+cls;
+  $("p-headline").textContent=head;$("p-subline").textContent=sub;
+  $("p-updated").textContent=L.updated(clockStr(tMin))+" · "+L.sim;
+  // my street
+  const mine=HOUSEHOLD.find(s=>s.id===myStreet);
+  $("p-my-h").textContent=L.my;
+  $("p-my-btn").textContent=mine?L.change:L.choose;
+  $("p-my").innerHTML=mine?rowHTML(mine):`<div class="p-empty">${esc(L.pickHint)}</div>`;
+  $("p-all-h").textContent=L.all;
+  const sorted=[...HOUSEHOLD].sort((a,b)=>b.depth-a.depth||a.street.localeCompare(b.street));
+  $("p-all").innerHTML=sorted.map(s=>rowHTML(s)).join("");
+  $("p-lg1").textContent=L.lg[0];$("p-lg2").textContent=L.lg[1];$("p-lg3").textContent=L.lg[2];$("p-lg4").textContent=L.lg[3];$("p-lg5").textContent=L.lg[4];
+  $("p-maphint").textContent=L.mapHint;
+  $("p-details").textContent=L.details;$("d-simple").textContent=L.simple;
+  $("p-my-h").textContent=L.my;
+  $("p-demo").textContent=L.demo;$("p-emerg").textContent=L.notEmergency;
+  document.documentElement.lang=LANG==="fil"?"fil":LANG==="ceb"?"ceb":LANG==="ilo"?"ilo":LANG==="hil"?"hil":"en";
+}
+document.addEventListener("click",e=>{
+  const row=e.target.closest(".p-row");
+  if(row){
+    const s=HOUSEHOLD.find(h=>h.id===row.dataset.id);
+    if(!s)return;
+    if(pickMode){myStreet=s.id;try{localStorage.setItem("bw-street",s.id);}catch(x){}pickMode=false;$("p-pick").style.display="none";}
+    selectSensor(s===selected&&!pickMode?null:s);
+    if(selected)zoomTo(selected.x,selected.y,2.6);else resetView();
+    renderPublic();
+    $("public-map").scrollIntoView({behavior:reducedMotion?"auto":"smooth",block:"nearest"});
+  }
+});
+let pickMode=false;
+$("p-my-btn").addEventListener("click",()=>{
+  pickMode=!pickMode;
+  const pk=$("p-pick");
+  pk.style.display=pickMode?"grid":"none";
+  if(pickMode){
+    pk.innerHTML=[...HOUSEHOLD].sort((a,b)=>a.street.localeCompare(b.street)).map(s=>`<button data-pick="${s.id}">${unitLabel(s)}</button>`).join("");
+  }
+});
+$("p-pick").addEventListener("click",e=>{
+  const b=e.target.closest("[data-pick]");if(!b)return;
+  myStreet=b.dataset.pick;try{localStorage.setItem("bw-street",myStreet);}catch(x){}
+  pickMode=false;$("p-pick").style.display="none";
+  const s=HOUSEHOLD.find(h=>h.id===myStreet);selectSensor(s);zoomTo(s.x,s.y,2.6);renderPublic();
+});
+$("p-lang").addEventListener("change",e=>{LANG=e.target.value;try{localStorage.setItem("bw-lang",LANG);}catch(x){}renderPublic();});
+(function initLang(){
+  const sel=$("p-lang");
+  for(const k in LANGS){const o=document.createElement("option");o.value=k;o.textContent=LANGS[k].name;sel.appendChild(o);}
+  let saved=null;try{saved=localStorage.getItem("bw-lang");}catch(e){}
+  if(saved&&LANGS[saved])LANG=saved;
+  else{const nav=(navigator.language||"").toLowerCase();LANG=nav.startsWith("fil")||nav.startsWith("tl")?"fil":nav.startsWith("ceb")?"ceb":"en";}
+  sel.value=LANG;
+})();
+
+/* ---------- view switching: the map canvas moves between the two layouts ---------- */
+function setView(v){
+  VIEW=v;document.body.dataset.view=v;
+  const mw=$("map-wrap");
+  if(v==="public"){$("public-map").insertBefore(mw,$("public-map").firstChild);selected=null;}
+  else{document.querySelector("main").insertBefore(mw,document.querySelector("aside"));}
+  renderBase();renderFlood();resize();resetView();
+  if(v==="public")renderPublic();else refreshCards();
+  history.replaceState(null,"",v==="details"?"#details":location.pathname+location.search);
+  window.scrollTo(0,0);
+}
+$("p-details").addEventListener("click",()=>setView("details"));
+$("d-simple").addEventListener("click",()=>setView("public"));
+$("p-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
+
 /* ---------- boot ---------- */
 window.addEventListener("resize",resize);
-renderBase();
-resize();
+if(location.hash==="#details")VIEW="details";
+if(VIEW==="public")speed=720;   // the story plays in ~3 real minutes for a resident just glancing
+setView(VIEW);
 log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
 log(`8 household units online · LoRaWAN, 10-min uplink (simulated)`);
 log(`Basemap: OSM · Terrain: Copernicus GLO-30 · Hazard ref: Project NOAH`);
