@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BahaWatch — Teachers Village Flood Monitor</title>
+<style>
+:root{
+  /* Mini Motorways paper */
+  --bg:#f8f4ec; --panel:#fffdf8; --panel-2:#f1ebdf; --ink:#232120; --ink-2:#6b6660;
+  --line:#e3dccd; --brand:#0030a0; --on-brand:#ffffff; --brand-lt:#70c0e0;
+  /* Okabe-Ito colour-vision-safe status palette */
+  --ok:#008f68; --warn:#bd7a00; --alert:#d55e00;
+  --warn-bg:#fbeccb; --alert-bg:#f9d9c6;
+  --map-bg:#f7f1e5; --marker-fill:#fffdf8;
+}
+:root[data-theme="dark"]{
+  --bg:#1f1e1c; --panel:#262421; --panel-2:#302d29; --ink:#f3efe7; --ink-2:#aaa39a;
+  --line:#3b3733; --brand:#70c0e0; --on-brand:#1f1e1c; --brand-lt:#70c0e0;
+  --ok:#00b386; --warn:#e69f00; --alert:#e8763a;
+  --warn-bg:#4a3a12; --alert-bg:#4d2a14;
+  --map-bg:#242220; --marker-fill:#262421;
+}
+*{box-sizing:border-box; margin:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.4; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column; min-height:100vh;
+}
+button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0}
+button:focus-visible, summary:focus-visible, .house-card:focus-visible, #overlay:focus-visible, #scrub:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
+.sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+h1,h2{font-size:inherit; font-weight:inherit}
+
+header{display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:14px 22px 12px; border-bottom:1px solid var(--line)}
+.brand{display:flex; align-items:center; gap:12px}
+.brand img{width:40px; height:40px; display:block}
+.brand-name{font-size:19px; font-weight:700; letter-spacing:-.01em; line-height:1.1}
+.brand-sub{font-size:12px; color:var(--ink-2); margin-top:2px}
+.demo-badge{font-size:11.5px; font-weight:600; color:var(--ink-2); border:1px solid var(--line); border-radius:999px; padding:5px 12px}
+.hdr-right{margin-left:auto; display:flex; align-items:center; gap:10px}
+.scenarios{display:flex; gap:2px; border:1px solid var(--line); border-radius:999px; padding:3px; background:var(--panel)}
+.scenarios button{padding:7px 16px; font-weight:600; color:var(--ink-2); font-size:13px; border-radius:999px; min-height:32px}
+.scenarios button.active{background:var(--brand); color:var(--on-brand)}
+#theme-toggle{width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:var(--panel); font-size:16px; display:flex; align-items:center; justify-content:center}
+
+main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
+#map-wrap{position:relative; overflow:hidden; background:var(--map-bg); min-height:430px; margin:16px 0 16px 22px; border-radius:10px; border:1px solid var(--line)}
+#map,#overlay{position:absolute; inset:0; width:100%; height:100%; display:block}
+#overlay{cursor:grab; touch-action:none}
+#overlay.dragging{cursor:grabbing}
+#map-tooltip{
+  position:absolute; pointer-events:none; display:none; z-index:5;
+  background:var(--ink); color:var(--bg); font-size:12px; font-weight:600;
+  padding:6px 10px; border-radius:5px; transform:translate(14px,-32px); white-space:nowrap;
+}
+#legend{
+  position:absolute; top:14px; left:14px; z-index:4;
+  background:var(--panel); border-radius:10px; padding:12px 14px; font-size:12px; max-width:214px;
+  border:1px solid var(--line);
+}
+#legend .lg-title{font-weight:700; margin-bottom:8px; font-size:12px}
+#legend .row{display:flex; align-items:center; gap:9px; margin-top:7px; color:var(--ink-2); font-weight:500}
+#legend .bands{display:flex; gap:2px}
+#legend .bands i{height:9px; flex:1; border-radius:3px}
+#legend .bands-lab{display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-2); margin-top:3px}
+#legend .hint{margin-top:10px; font-size:11px; color:var(--ink-2); line-height:1.4; border-top:1px solid var(--line); padding-top:8px}
+#legend .noah-h{font-weight:700; margin-top:12px; font-size:12px}
+.noah-chips{display:flex; gap:2px; margin-top:6px; border:1px solid var(--line); border-radius:999px; padding:2px}
+.noah-chips button{flex:1; font-size:11px; font-weight:600; color:var(--ink-2); border-radius:999px; min-height:26px}
+.noah-chips button.active{background:var(--brand); color:var(--on-brand)}
+.noah-bands{display:flex; gap:2px; margin-top:6px}
+.noah-bands i{height:7px; flex:1; border-radius:3px}
+/* status shapes: circle = normal, triangle = water on street, square = flooded */
+.shape{width:12px; height:12px; flex:none; display:inline-block}
+.shape.ok{border-radius:50%; border:3px solid var(--ok); background:var(--marker-fill)}
+.shape.warn{background:var(--warn); clip-path:polygon(50% 0,100% 100%,0 100%)}
+.shape.warn,.shape.alert{outline:1.5px solid var(--ink); outline-offset:-1.5px}
+.shape.alert{background:var(--alert); border-radius:2px}
+.zoom-ctl{position:absolute; top:14px; right:14px; z-index:4; display:flex; flex-direction:column; gap:2px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:3px}
+.zoom-ctl button{width:34px; height:34px; border-radius:7px; font-size:18px; color:var(--ink); display:flex; align-items:center; justify-content:center}
+.zoom-ctl button:hover{background:var(--panel-2)}
+.zoom-ctl .zl{font-size:10.5px; font-weight:600; color:var(--ink-2); text-align:center; padding:2px 0 3px; font-variant-numeric:tabular-nums}
+.map-attr{
+  position:absolute; left:14px; bottom:12px; z-index:4; max-width:72%;
+  font-size:10.5px; color:var(--ink-2); background:var(--panel); border:1px solid var(--line);
+  padding:4px 9px; border-radius:5px; line-height:1.35;
+}
+.map-note{
+  position:absolute; right:14px; bottom:12px; z-index:4;
+  font-size:11px; color:var(--ink-2); background:var(--panel); border:1px solid var(--line);
+  padding:4px 10px; border-radius:5px;
+}
+
+aside{display:flex; flex-direction:column; min-height:0; overflow-y:auto; padding:16px 22px 8px 20px; scrollbar-width:thin}
+#banner{display:none; align-items:flex-start; gap:10px; border-radius:7px; padding:11px 13px; margin-bottom:14px; font-weight:600; line-height:1.35; color:var(--ink); font-size:13px; border-left:5px solid transparent}
+#banner.warn{display:flex; background:var(--warn-bg); border-color:var(--warn)}
+#banner.alert{display:flex; background:var(--alert-bg); border-color:var(--alert)}
+#banner small{display:block; font-weight:400; color:var(--ink-2); margin-top:2px}
+.rail-h{font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2); margin:0 0 8px}
+.sensor{padding:0 0 14px; margin-bottom:14px; border-bottom:1px solid var(--line)}
+.sensor .s-top{display:flex; align-items:center; gap:8px}
+.sensor .s-id{font-weight:700; font-size:14px}
+.sensor .s-name{font-size:12px; color:var(--ink-2); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.zoom-unit{font-size:11.5px; font-weight:600; color:var(--brand); border:1px solid var(--line); border-radius:999px; padding:5px 11px; flex:none; min-height:28px}
+.sensor .s-mid{display:flex; align-items:flex-end; gap:14px; margin-top:10px}
+.sensor .s-level{font-size:30px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.02em; line-height:1}
+.sensor .s-level small{font-size:12px; font-weight:500; color:var(--ink-2)}
+.sensor .s-meta{font-size:11.5px; color:var(--ink-2); line-height:1.5}
+.sensor .s-meta b{color:var(--ink); font-weight:600}
+.sensor canvas{width:100%; height:46px; display:block; margin-top:10px}
+.house-grid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:16px}
+.house-card{background:var(--panel); padding:9px 11px 8px; cursor:pointer; min-height:44px}
+.house-card:hover{background:var(--panel-2)}
+.house-card.selected{box-shadow:inset 0 0 0 2px var(--brand)}
+.house-card .h-top{display:flex; align-items:center; gap:7px; font-weight:700; font-size:12px}
+.house-card .h-top .shape{width:10px; height:10px}
+.house-card .h-lv{font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.02em; margin-top:3px}
+.house-card .h-lv small{font-size:11px; font-weight:500; color:var(--ink-2)}
+.house-card .h-st{font-size:11px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.house-card .h-stat{font-weight:600; color:var(--ink)}
+.stats{padding:0 0 14px; margin-bottom:14px; border-bottom:1px solid var(--line)}
+.stats .st-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px 12px}
+.stats .st v{display:block; font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.stats .st l{display:block; font-size:11px; color:var(--ink-2)}
+details.api, details.log{border-bottom:1px solid var(--line); margin-bottom:14px}
+details summary{padding:0 0 12px; font-weight:700; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2); cursor:pointer; list-style:none; display:flex; align-items:center; min-height:28px}
+details summary::after{content:"+"; margin-left:auto; font-weight:400; font-size:15px}
+details[open] summary::after{content:"–"}
+.api-body{padding:0 0 14px}
+.api-url{font-size:11.5px; color:var(--ink-2); word-break:break-all; margin-bottom:8px}
+pre#api-json{
+  background:var(--panel-2); border-radius:7px;
+  font:11.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  padding:10px 12px; overflow-x:auto; color:var(--ink); white-space:pre;
+}
+#log-list{list-style:none; padding:0 0 12px; font-size:12px; color:var(--ink-2); max-height:168px; overflow-y:auto}
+#log-list li{padding:4px 0; border-top:1px solid var(--line)}
+#log-list li:first-child{border-top:none}
+#log-list time{font-variant-numeric:tabular-nums; font-weight:600; color:var(--ink); margin-right:6px}
+.foot-note{font-size:11px; color:var(--ink-2); padding:0 0 8px; line-height:1.5}
+
+#timeline{display:flex; align-items:center; gap:16px; padding:12px 22px 16px; flex-wrap:wrap; border-top:1px solid var(--line)}
+#play{width:44px; height:44px; border-radius:50%; background:var(--brand); color:var(--on-brand); font-size:15px; display:flex; align-items:center; justify-content:center; flex:none}
+.t-clock{min-width:112px}
+.t-clock v{display:block; font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.t-clock l{display:block; font-size:11px; color:var(--ink-2)}
+#scrub-wrap{flex:1; min-width:240px}
+#scrub{width:100%; height:60px; display:block; border-radius:7px; background:var(--panel-2); cursor:ew-resize; touch-action:none}
+.speed{display:flex; gap:2px; border:1px solid var(--line); border-radius:999px; padding:3px; background:var(--panel)}
+.speed button{padding:6px 13px; font-size:12px; font-weight:600; color:var(--ink-2); border-radius:999px; min-height:28px}
+.speed button.active{background:var(--brand); color:var(--on-brand)}
+
+@media (max-width:900px){
+  main{grid-template-columns:1fr; grid-template-rows:58vh auto}
+  #map-wrap{min-height:360px; margin:12px 14px 0}
+  aside{padding:14px; overflow:visible}
+  .hdr-right{margin-left:0; width:100%}
+  .scenarios{flex:1}
+  .scenarios button{flex:1}
+  .map-attr{display:none}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="data:image/png;base64,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" alt="BahaWatch logo">
+    <div>
+      <h1 class="brand-name">BahaWatch</h1>
+      <div class="brand-sub">Teachers Village, Quezon City · household sensor network on real terrain</div>
+    </div>
+  </div>
+  <span class="demo-badge">Real map &amp; terrain · sensor feed simulated</span>
+  <div class="hdr-right">
+    <div class="scenarios" role="group" aria-label="Storm scenario">
+      <button data-sc="clear" aria-pressed="false">Dry day</button>
+      <button data-sc="monsoon" class="active" aria-pressed="true">Habagat rain</button>
+      <button data-sc="typhoon" aria-pressed="false">Typhoon</button>
+    </div>
+    <button id="theme-toggle" aria-label="Switch to dark theme" aria-pressed="false">☾</button>
+  </div>
+</header>
+
+<main>
+  <div id="map-wrap">
+    <canvas id="map"></canvas>
+    <canvas id="overlay" tabindex="0" role="application" aria-label="Flood map. Use plus and minus to zoom, arrow keys to pan, 0 to reset." aria-describedby="map-desc"></canvas>
+    <p id="map-desc" class="sr-only"></p>
+    <div id="legend" aria-hidden="true">
+      <div class="lg-title">Modeled water depth</div>
+      <div class="bands"><i style="background:#8fc6e2"></i><i style="background:#2f86c2"></i><i style="background:#0030a0"></i></div>
+      <div class="bands-lab"><span>ankle</span><span>knee</span><span>waist+</span></div>
+      <div class="row"><span class="shape ok"></span>Sensor · normal</div>
+      <div class="row"><span class="shape warn"></span>Water on street</div>
+      <div class="row"><span class="shape alert"></span>Flooded</div>
+      <div class="noah-h">NOAH hazard reference</div>
+      <div class="noah-chips" role="group" aria-label="NOAH hazard layer">
+        <button data-noah="off" class="active" aria-pressed="true">Off</button>
+        <button data-noah="5" aria-pressed="false">5-yr</button>
+        <button data-noah="25" aria-pressed="false">25-yr</button>
+        <button data-noah="100" aria-pressed="false">100-yr</button>
+      </div>
+      <div class="noah-bands" aria-hidden="true"><i style="background:#d9c2ea"></i><i style="background:#a978cf"></i><i style="background:#5b2a8f"></i></div>
+      <div class="bands-lab"><span>low</span><span>medium</span><span>high</span></div>
+      <div class="hint">Extents come only from sensor readings, spread over the Copernicus terrain. Tap a sensor to isolate its footprint.</div>
+    </div>
+    <div id="map-tooltip"></div>
+    <div class="map-attr">Map data © OpenStreetMap contributors · Terrain: Copernicus GLO-30 © ESA/DLR/Airbus via OpenTopography · Hazard: UP Project NOAH (ODbL)</div>
+    <div class="map-note">Scroll or pinch to zoom · drag to pan · hover for depth · keys: + − arrows 0</div>
+    <div class="zoom-ctl" aria-label="Map zoom">
+      <button id="zoom-in" aria-label="Zoom in">+</button>
+      <button id="zoom-out" aria-label="Zoom out">−</button>
+      <button id="zoom-reset" aria-label="Reset view" style="font-size:15px">⌂</button>
+      <div class="zl" id="zoom-lvl">1×</div>
+    </div>
+  </div>
+
+  <aside>
+    <div id="banner" role="status"><span>⚠️</span><span id="banner-text"></span></div>
+
+    <h2 class="rail-h">Selected unit</h2>
+    <div class="sensor" id="featured">
+      <div class="s-top"><span class="shape ok" id="f-shape"></span><span class="s-id" id="f-id">BW-H01</span>
+        <span class="s-name" id="f-name">—</span>
+        <button class="zoom-unit" id="f-zoom">Zoom to unit</button></div>
+      <div class="s-mid">
+        <span class="s-level"><b class="lv" id="f-lv">0</b><small> cm on street</small></span>
+        <span class="s-meta"><b id="f-stx">Normal</b> · rate <b id="f-rt">0</b> cm/hr<br>ground <b id="f-ge">0.0 m</b> ASL · NOAH class <b id="f-nh">0</b></span>
+      </div>
+      <canvas id="f-spark" width="620" height="92"></canvas>
+    </div>
+
+    <h2 class="rail-h">Household units · depth at the gate post, uplink every 10 min</h2>
+    <div class="house-grid" id="house-cards"></div>
+
+    <div class="stats">
+      <h2 class="rail-h">Modeled impact right now</h2>
+      <div class="st-grid">
+        <span class="st"><v id="st-houses">0</v><l>buildings in flooded cells</l></span>
+        <span class="st"><v id="st-pop">0</v><l>est. residents affected</l></span>
+        <span class="st"><v id="st-streets">0</v><l>street segments cut</l></span>
+        <span class="st"><v id="st-deep">0 cm</v><l>deepest sensor reading</l></span>
+      </div>
+    </div>
+
+    <details class="api">
+      <summary>Sensor API feed (simulated)</summary>
+      <div class="api-body">
+        <div class="api-url">GET /api/v1/devices/<span id="api-dev">BW-H02</span>/readings?latest=1</div>
+        <pre id="api-json">{ }</pre>
+      </div>
+    </details>
+
+    <details class="log" open>
+      <summary>Event log</summary>
+      <ul id="log-list"></ul>
+    </details>
+
+    <p class="foot-note">Proof of concept on real data: OpenStreetMap streets and 17,993 building footprints, Copernicus GLO-30 terrain (conditioned: surface features filtered, streets carved as flow paths), and Project NOAH flood hazard as a reference layer. Each geotagged unit reports water depth at its own location; the model sets a local water surface there (ground + measured depth) and spreads it across the terrain only where topography allows, with a conservative decay away from the observation. No sensor reading, no modeled extent. Sensor readings are simulated — storm response is calibrated per site using its NOAH hazard class and local elevation. Not a forecast; not for emergency use.</p>
+  </aside>
+</main>
+
+<div id="timeline">
+  <button id="play" aria-label="Pause simulation">❚❚</button>
+  <div class="t-clock"><v id="clock">00:00</v><l id="clock-date">Simulated PHT</l></div>
+  <div id="scrub-wrap"><canvas id="scrub" tabindex="0" role="slider" aria-label="Storm timeline" aria-valuemin="0" aria-valuemax="2160" aria-valuenow="0" aria-valuetext="00:00"></canvas></div>
+  <div class="speed" role="group" aria-label="Playback speed">
+    <button data-sp="60" aria-pressed="false">1×</button>
+    <button data-sp="240" class="active" aria-pressed="true">4×</button>
+    <button data-sp="720" aria-pressed="false">12×</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+   BahaWatch — Teachers Village on real data
+   DATA: OSM streets/buildings/creeks, Copernicus GLO-30 terrain grid,
+   NOAH hazard rasters. Model contract unchanged: flood extents derive ONLY
+   from sensor observations, spread across the DEM with distance decay.
+   ========================================================================= */
+const DATA=__DATA_JSON__;
+
+const W=DATA.W,H=DATA.H,GW=DATA.GW,GH=DATA.GH,N=GW*GH;
+function b64bytes(s){const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+const elev=(()=>{const v=new Int16Array(b64bytes(DATA.elev).buffer);const f=new Float32Array(N);for(let i=0;i<N;i++)f[i]=v[i]/10;return f;})();
+function unrle(s){const b=b64bytes(s);const g=new Uint8Array(N);let o=0;for(let i=0;i<b.length;i+=2){g.fill(b[i+1],o,o+b[i]);o+=b[i];}return g;}
+const NOAH={"5":unrle(DATA.noah["5"]),"25":unrle(DATA.noah["25"]),"100":unrle(DATA.noah["100"])};
+const STREETMASK=unrle(DATA.street);
+const BLDS=(()=>{const v=new Uint16Array(b64bytes(DATA.blds).buffer);const a=[];for(let i=0;i<v.length;i+=2)a.push([v[i]/10,v[i+1]/10]);return a;})();
+const cellAt=(x,y)=>Math.min(GH-1,Math.max(0,(y/H*GH)|0))*GW+Math.min(GW-1,Math.max(0,(x/W*GW)|0));
+const mulberry32=a=>function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+
+/* ---------- sensors: real sites, NOAH-calibrated response ---------- */
+function noah3x3(grid,gx,gy){
+  let m=0;
+  for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+    const x=gx+dx,y=gy+dy;
+    if(x<0||y<0||x>=GW||y>=GH)continue;
+    m=Math.max(m,grid[y*GW+x]);
+  }
+  return m;
+}
+const HOUSEHOLD=DATA.sensors.map((s,k)=>{
+  const gx=Math.min((s.x/W*GW)|0,GW-1),gy=Math.min((s.y/H*GH)|0,GH-1);
+  const h5=noah3x3(NOAH["5"],gx,gy),h25=noah3x3(NOAH["25"],gx,gy),h100=noah3x3(NOAH["100"],gx,gy);
+  const lowness=(56-s.g)/4;
+  const wNoah=h5*0.5+h25*0.3+h100*0.2;
+  const sus=Math.min(2.6,Math.max(0.15,0.35+0.5*lowness+0.45*wNoah));
+  const r=mulberry32(500+k)();
+  return {id:s.id,idx:k,name:"Household unit · "+s.street,street:s.street,
+    x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,noahCls:Math.max(h5,h25,h100),sus,
+    expos:0.92+r*0.2,readings:[],depth:0,rate:0,status:"ok"};
+});
+
+/* ---------- scenarios & synthetic API ---------- */
+const SCEN={
+  clear:  {label:"Dry day",     P:0,    dur:0,   start:0},
+  monsoon:{label:"Habagat rain",P:0.16, dur:300, start:180},
+  typhoon:{label:"Typhoon",     P:0.50, dur:340, start:150},
+};
+let scenario="monsoon";
+function gp(u){if(u<=0)return 0;const a=2.2;return Math.pow(u,a)*Math.exp(a*(1-u));}
+function pulse(t,lag){
+  const c=SCEN[scenario];
+  if(!c.dur)return 0;
+  let p=gp((t-c.start-lag)/c.dur);
+  if(scenario==="typhoon")p+=0.34*gp((t-c.start-lag-270)/220);
+  return p;
+}
+function hhDepth(s,t){
+  const P=SCEN[scenario].P*pulse(t,10+(56-s.gElev)*4);
+  return Math.min(0.9,Math.max(0,(P*s.sus-0.02)*s.expos));
+}
+const SyntheticSensorAPI={
+  latest(id,t){
+    const s=HOUSEHOLD.find(d=>d.id===id);
+    const jit=(mulberry32((t|0)*7+id.charCodeAt(4)+id.charCodeAt(5))()-0.5)*0.015;
+    const v=Math.max(0,hhDepth(s,t)+(hhDepth(s,t)>0?jit:0)), prev=hhDepth(s,t-60);
+    return {device_id:id,type:"household",mount:"gate post",site:s.name,ts:iso(t),
+      water_depth_cm:Math.round(v*100),rate_cm_per_hr:Math.round((v-prev)*100),
+      ground_elev_m_asl:+s.gElev.toFixed(1),
+      lat:s.lat,lon:s.lon,
+      battery_v:+(3.85-0.0004*t).toFixed(2),rssi_dbm:-(99+((t/11|0)%8)),
+      transport:"LoRaWAN",fw:"bw-fw 0.4.1"};
+  }
+};
+
+/* ---------- flood model: sensor-seeded terrain fill ---------- */
+const DECAY_PER_CELL=0.010;
+const MAX_STEPS=80;
+const depth=new Float32Array(N);
+const srcIdx=new Int8Array(N);
+const fillGen=new Int32Array(N);let gen=0;
+const fillDist=new Int32Array(N);
+const fq=new Int32Array(N);
+function computeFlood(t){
+  depth.fill(0);srcIdx.fill(-1);
+  for(const s of HOUSEHOLD){
+    if(s.depth<=0.02)continue;
+    const WSE=s.gElev+s.depth;
+    const cap=s.depth+0.45;   // extrapolate only within the observed depth band
+    gen++;
+    let qh=0,qt=0;
+    const start=s.cy*GW+s.cx;
+    fillGen[start]=gen;fillDist[start]=0;fq[qt++]=start;
+    while(qh<qt){
+      const i=fq[qh++],x=i%GW,y=(i/GW)|0,dstep=fillDist[i];
+      const avail=WSE-DECAY_PER_CELL*dstep;
+      const d=avail-elev[i];
+      if(d<=0.02||d>cap)continue; // dry ground, or far below the observed surface: no claim, no traverse
+      if(d>depth[i]){depth[i]=d;srcIdx[i]=s.idx;}
+      if(dstep>=MAX_STEPS)continue;
+      for(const j of [i-1,i+1,i-GW,i+GW]){
+        if(j<0||j>=N)continue;
+        if((j===i-1&&x===0)||(j===i+1&&x===GW-1))continue;
+        if(fillGen[j]===gen)continue;
+        fillGen[j]=gen;fillDist[j]=dstep+1;fq[qt++]=j;
+      }
+    }
+  }
+}
+const depthAtWorld=(x,y)=>(x<0||y<0||x>=W||y>=H)?0:depth[cellAt(x,y)];
+
+/* ---------- map theming ---------- */
+function mapPal(){
+  const dark=document.documentElement.dataset.theme==="dark";
+  return dark?{
+    bgLo:[36,34,32],bgHi:[50,47,42],street:"#4a4640",casing:"#1c1a18",alley:"#3a3733",
+    house:"rgba(150,141,126,0.8)",creek:"#70c0e0",
+    label:"#bfb7aa",labelHalo:"rgba(36,34,32,0.92)",creekLabel:"#8fd3ef",
+    bands:["#2e5a7a","#3f93bf","#a7e0f5"],markerFill:"#262421",markerInk:"#f3efe7",select:"#70c0e0",
+    noah:["rgba(196,150,230,0.35)","rgba(170,110,215,0.45)","rgba(140,80,200,0.55)"]
+  }:{
+    bgLo:[248,242,230],bgHi:[235,226,207],street:"#ffffff",casing:"#dfd4bf",alley:"#f3ecdd",
+    house:"rgba(199,184,154,0.85)",creek:"#7cc4e4",
+    label:"#66605a",labelHalo:"rgba(248,242,230,0.92)",creekLabel:"#1f6f9e",
+    bands:["#8fc6e2","#2f86c2","#0030a0"],markerFill:"#fffdf8",markerInk:"#232120",select:"#0030a0",
+    noah:["rgba(217,194,234,0.55)","rgba(169,120,207,0.55)","rgba(91,42,143,0.55)"]
+  };
+}
+const RES=2.2;
+
+/* ---------- base map ---------- */
+const baseCv=document.createElement("canvas");baseCv.width=Math.round(W*RES);baseCv.height=Math.round(H*RES);
+function strokeWays(ctx,ways,w,c){
+  ctx.strokeStyle=c;ctx.lineWidth=w;ctx.lineCap="round";ctx.lineJoin="round";
+  ctx.beginPath();
+  for(const r of ways){
+    const p=r.p;
+    ctx.moveTo(p[0][0],p[0][1]);
+    for(let k=1;k<p.length;k++)ctx.lineTo(p[k][0],p[k][1]);
+  }
+  ctx.stroke();
+}
+let eMinD=1e9,eMaxD=-1e9;
+for(let i=0;i<N;i++){if(elev[i]<eMinD)eMinD=elev[i];if(elev[i]>eMaxD)eMaxD=elev[i];}
+function renderBase(){
+  const P=mapPal(),ctx=baseCv.getContext("2d");
+  ctx.setTransform(RES,0,0,RES,0,0);
+  // hypsometric paper: subtle elevation tint so terrain is legible
+  const img=ctx.createImageData(GW,GH),px=img.data;
+  for(let i=0;i<N;i++){
+    const t=(elev[i]-eMinD)/(eMaxD-eMinD);
+    const o=i*4;
+    px[o]=P.bgLo[0]+(P.bgHi[0]-P.bgLo[0])*t;
+    px[o+1]=P.bgLo[1]+(P.bgHi[1]-P.bgLo[1])*t;
+    px[o+2]=P.bgLo[2]+(P.bgHi[2]-P.bgLo[2])*t;
+    px[o+3]=255;
+  }
+  const tmp=document.createElement("canvas");tmp.width=GW;tmp.height=GH;
+  tmp.getContext("2d").putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true;ctx.drawImage(tmp,0,0,W,H);
+  // roads by class, casing then fill
+  const byCls={alley:[],minor:[],mid:[],major:[]};
+  for(const r of DATA.roads)byCls[r.c].push(r);
+  strokeWays(ctx,byCls.major,20,P.casing);strokeWays(ctx,byCls.mid,15,P.casing);
+  strokeWays(ctx,byCls.minor,11,P.casing);
+  strokeWays(ctx,byCls.alley,5.5,P.alley);
+  strokeWays(ctx,byCls.minor,8.5,P.street);
+  strokeWays(ctx,byCls.mid,12,P.street);
+  strokeWays(ctx,byCls.major,16.5,P.street);
+  // creeks over roads, metro-line blue
+  strokeWays(ctx,DATA.waters,11,P.casing);
+  strokeWays(ctx,DATA.waters,7.5,P.creek);
+  // buildings
+  ctx.fillStyle=P.house;
+  for(const b of BLDS)ctx.fillRect(b[0]-1.4,b[1]-1.4,2.8,2.8);
+}
+
+/* ---------- NOAH reference overlay ---------- */
+let noahSel="off";
+const noahCv=document.createElement("canvas");noahCv.width=Math.round(W*RES);noahCv.height=Math.round(H*RES);
+function renderNoah(){
+  const ctx=noahCv.getContext("2d");
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,noahCv.width,noahCv.height);
+  if(noahSel==="off")return;
+  const P=mapPal(),g=NOAH[noahSel];
+  const img=ctx.createImageData(GW,GH),px=img.data;
+  const cols=P.noah.map(c=>c.match(/[\d.]+/g).map(Number));
+  for(let i=0;i<N;i++){
+    const v=g[i];
+    if(!v)continue;
+    const c=cols[v-1],o=i*4;
+    px[o]=c[0];px[o+1]=c[1];px[o+2]=c[2];px[o+3]=Math.round(c[3]*255);
+  }
+  const tmp=document.createElement("canvas");tmp.width=GW;tmp.height=GH;
+  tmp.getContext("2d").putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(tmp,0,0,noahCv.width,noahCv.height);
+}
+
+/* ---------- flood overlay ---------- */
+const floodCv=document.createElement("canvas");floodCv.width=Math.round(W*RES);floodCv.height=Math.round(H*RES);
+function renderFlood(){
+  const P=mapPal(),ctx=floodCv.getContext("2d");
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,floodCv.width,floodCv.height);
+  const img=ctx.createImageData(GW,GH),px=img.data;
+  const cols=P.bands.map(c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)]);
+  const selIdx=(selected&&selected.idx!==undefined)?selected.idx:-1;
+  const anySel=selIdx>=0;
+  for(let i=0;i<N;i++){
+    const d=depth[i];
+    if(d<=0.03)continue;
+    const c=d<0.22?cols[0]:d<0.55?cols[1]:cols[2];
+    const o=i*4;px[o]=c[0];px[o+1]=c[1];px[o+2]=c[2];
+    px[o+3]=anySel?(srcIdx[i]===selIdx?240:120):225;
+  }
+  const tmp=document.createElement("canvas");tmp.width=GW;tmp.height=GH;
+  tmp.getContext("2d").putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(tmp,0,0,floodCv.width,floodCv.height);
+}
+
+/* ---------- compositing ---------- */
+const mapCv=document.getElementById("map"),ovCv=document.getElementById("overlay");
+const view={sc:1,ox:0,oy:0,w:0,h:0,dpr:1};
+const ZOOM={z:1,cx:W/2,cy:H/2,min:1,max:6};
+function applyView(){
+  const fit=Math.min(view.w/W,view.h/H);
+  view.sc=fit*ZOOM.z;
+  const hw=view.w/2/view.sc,hh=view.h/2/view.sc;
+  ZOOM.cx=(W*view.sc<=view.w)?W/2:Math.max(hw,Math.min(W-hw,ZOOM.cx));
+  ZOOM.cy=(H*view.sc<=view.h)?H/2:Math.max(hh,Math.min(H-hh,ZOOM.cy));
+  view.ox=view.w/2-ZOOM.cx*view.sc;view.oy=view.h/2-ZOOM.cy*view.sc;
+  const zl=document.getElementById("zoom-lvl");if(zl)zl.textContent=(Math.round(ZOOM.z*10)/10)+"×";
+}
+function zoomAt(factor,sx,sy){
+  const wxp=(sx-view.ox)/view.sc,wyp=(sy-view.oy)/view.sc;
+  ZOOM.z=Math.max(ZOOM.min,Math.min(ZOOM.max,ZOOM.z*factor));
+  const fit=Math.min(view.w/W,view.h/H),nsc=fit*ZOOM.z;
+  ZOOM.cx=wxp+(view.w/2-sx)/nsc;ZOOM.cy=wyp+(view.h/2-sy)/nsc;
+  applyView();drawMap();
+}
+function zoomTo(x,y,z){ZOOM.z=Math.max(ZOOM.min,Math.min(ZOOM.max,z));ZOOM.cx=x;ZOOM.cy=y;applyView();drawMap();}
+function resetView(){ZOOM.z=1;ZOOM.cx=W/2;ZOOM.cy=H/2;applyView();drawMap();}
+function resize(){
+  const wrap=document.getElementById("map-wrap");
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const cw=wrap.clientWidth,ch=wrap.clientHeight;
+  for(const c of[mapCv,ovCv]){c.width=cw*dpr;c.height=ch*dpr;}
+  Object.assign(view,{dpr,w:cw,h:ch});
+  applyView();
+  drawMap();
+}
+function drawMap(){
+  const ctx=mapCv.getContext("2d");
+  ctx.setTransform(view.dpr,0,0,view.dpr,0,0);
+  const P=mapPal();
+  ctx.fillStyle=`rgb(${P.bgLo[0]},${P.bgLo[1]},${P.bgLo[2]})`;
+  ctx.fillRect(0,0,view.w,view.h);
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(baseCv,view.ox,view.oy,W*view.sc,H*view.sc);
+  ctx.drawImage(noahCv,view.ox,view.oy,W*view.sc,H*view.sc);
+  ctx.drawImage(floodCv,view.ox,view.oy,W*view.sc,H*view.sc);
+}
+const STATUS_COL_LIGHT={ok:"#008f68",warn:"#bd7a00",alert:"#d55e00"};
+const STATUS_COL_DARK={ok:"#00b386",warn:"#e69f00",alert:"#e8763a"};
+let STATUS_COL=STATUS_COL_LIGHT;
+let pulseT=0, cutSegs=[];
+const reducedMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+// status encoded by shape as well as colour: circle = normal, triangle = water on street, square = flooded
+function drawMarker(ctx,X,Y,R,status,col,P){
+  ctx.lineJoin="round";
+  const path=()=>{
+    ctx.beginPath();
+    if(status==="ok")ctx.arc(X,Y,R,0,7);
+    else if(status==="warn"){const r=R+3;ctx.moveTo(X,Y-r*1.05);ctx.lineTo(X+r*1.05,Y+r*0.8);ctx.lineTo(X-r*1.05,Y+r*0.8);ctx.closePath();}
+    else{const r=R+1;ctx.rect(X-r,Y-r,2*r,2*r);}
+  };
+  path();ctx.lineWidth=7;ctx.strokeStyle=P.markerFill;ctx.stroke();      // paper halo
+  path();ctx.fillStyle=status==="ok"?P.markerFill:col;ctx.fill();
+  ctx.lineWidth=status==="ok"?4:2.5;ctx.strokeStyle=status==="ok"?col:P.markerInk;ctx.stroke();
+}
+function drawOverlayCanvas(){
+  const ctx=ovCv.getContext("2d");
+  ctx.setTransform(view.dpr,0,0,view.dpr,0,0);
+  ctx.clearRect(0,0,view.w,view.h);
+  const wx=x=>view.ox+x*view.sc, wy=y=>view.oy+y*view.sc;
+  const P=mapPal();
+  for(const g of cutSegs){
+    const X=wx(g[0]),Y=wy(g[1]);
+    ctx.beginPath();ctx.arc(X,Y,8,0,7);
+    ctx.fillStyle=P.markerFill;ctx.fill();
+    ctx.lineWidth=3;ctx.strokeStyle="#d55e00";ctx.stroke();
+    ctx.beginPath();ctx.moveTo(X-3.6,Y+3.6);ctx.lineTo(X+3.6,Y-3.6);
+    ctx.lineWidth=2.6;ctx.stroke();
+  }
+  ctx.textAlign="center";ctx.textBaseline="middle";
+  for(const L of DATA.labels){
+    const X=wx(L.x),Y=wy(L.y);
+    if(X<-80||Y<-40||X>view.w+80||Y>view.h+40)continue;
+    ctx.save();ctx.translate(X,Y);ctx.rotate(L.a);
+    ctx.font=(L.w?"italic 600 12.5px":"600 12px")+" Helvetica, Arial, sans-serif";
+    ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(L.n,0,-9);
+    ctx.fillStyle=L.w?P.creekLabel:P.label;ctx.fillText(L.n,0,-9);ctx.restore();
+  }
+  ctx.save();ctx.translate(wx(W-120),wy(26));
+  ctx.font="600 12px Helvetica, Arial, sans-serif";
+  ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText("UP Diliman ▴",0,0);
+  ctx.fillStyle=P.label;ctx.fillText("UP Diliman ▴",0,0);ctx.restore();
+  for(const s of HOUSEHOLD){
+    const X=wx(s.x),Y=wy(s.y),col=STATUS_COL[s.status],R=9;
+    if(s.status!=="ok"&&!reducedMotion){
+      const p=pulseT%1;
+      ctx.beginPath();ctx.arc(X,Y,R+3+p*15,0,7);
+      ctx.strokeStyle=col;ctx.globalAlpha=0.5*(1-p);ctx.lineWidth=3;ctx.stroke();ctx.globalAlpha=1;
+    }
+    drawMarker(ctx,X,Y,R,s.status,col,P);
+    if(s===selected){ctx.beginPath();ctx.arc(X,Y,R+7,0,7);ctx.strokeStyle=P.select;ctx.lineWidth=2.5;ctx.stroke();}
+    ctx.font="700 11px Helvetica, Arial, sans-serif";ctx.textAlign="center";
+    ctx.lineWidth=4;ctx.strokeStyle=P.labelHalo;ctx.strokeText(s.id,X,Y-R-9);
+    ctx.fillStyle=P.label;ctx.fillText(s.id,X,Y-R-9);
+  }
+}
+/* ---------- pan / zoom interaction ---------- */
+const tip=document.getElementById("map-tooltip");
+const ptrs=new Map();let dragMoved=false,pinchD0=0,pinchZ0=1;
+let dragging=false;
+ovCv.addEventListener("pointerdown",e=>{
+  ovCv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});
+  dragMoved=false;
+  if(ptrs.size===2){const[a,b]=[...ptrs.values()];pinchD0=Math.hypot(a.x-b.x,a.y-b.y);pinchZ0=ZOOM.z;}
+});
+ovCv.addEventListener("pointermove",e=>{
+  const p=ptrs.get(e.pointerId);
+  if(!p)return;
+  const r=ovCv.getBoundingClientRect();
+  if(ptrs.size===2){
+    p.x=e.clientX;p.y=e.clientY;
+    const[a,b]=[...ptrs.values()];
+    const d=Math.hypot(a.x-b.x,a.y-b.y);
+    const mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top;
+    const target=Math.max(ZOOM.min,Math.min(ZOOM.max,pinchZ0*d/Math.max(pinchD0,1)));
+    zoomAt(target/ZOOM.z,mx,my);
+    dragMoved=true;tip.style.display="none";
+    return;
+  }
+  const dx=e.clientX-p.x,dy=e.clientY-p.y;
+  if(!dragMoved&&Math.hypot(e.clientX-p.sx,e.clientY-p.sy)>4){dragMoved=true;dragging=true;ovCv.classList.add("dragging");tip.style.display="none";}
+  if(dragMoved){
+    ZOOM.cx-=dx/view.sc;ZOOM.cy-=dy/view.sc;
+    applyView();drawMap();
+  }
+  p.x=e.clientX;p.y=e.clientY;
+});
+function endPtr(e){
+  const p=ptrs.get(e.pointerId);
+  ptrs.delete(e.pointerId);
+  if(ptrs.size===0){dragging=false;ovCv.classList.remove("dragging");}
+  if(p&&!dragMoved&&e.type==="pointerup"){
+    const r=ovCv.getBoundingClientRect();
+    const x=(e.clientX-r.left-view.ox)/view.sc, y=(e.clientY-r.top-view.oy)/view.sc;
+    let hit=null;
+    for(const s of HOUSEHOLD)if(Math.hypot(s.x-x,s.y-y)<20/view.sc*Math.min(view.sc,1.4))hit=s;
+    selectSensor(hit);
+  }
+}
+ovCv.addEventListener("pointerup",endPtr);
+ovCv.addEventListener("pointercancel",endPtr);
+ovCv.addEventListener("wheel",e=>{
+  e.preventDefault();
+  const r=ovCv.getBoundingClientRect();
+  zoomAt(Math.exp(-e.deltaY*0.0016),e.clientX-r.left,e.clientY-r.top);
+},{passive:false});
+ovCv.addEventListener("dblclick",e=>{
+  const r=ovCv.getBoundingClientRect();
+  zoomAt(1.8,e.clientX-r.left,e.clientY-r.top);
+});
+ovCv.addEventListener("keydown",e=>{
+  const pan=48/view.sc;let h=true;
+  switch(e.key){
+    case "+":case "=":zoomAt(1.5,view.w/2,view.h/2);break;
+    case "-":case "_":zoomAt(1/1.5,view.w/2,view.h/2);break;
+    case "0":case "Home":resetView();break;
+    case "ArrowLeft":ZOOM.cx-=pan;applyView();drawMap();break;
+    case "ArrowRight":ZOOM.cx+=pan;applyView();drawMap();break;
+    case "ArrowUp":ZOOM.cy-=pan;applyView();drawMap();break;
+    case "ArrowDown":ZOOM.cy+=pan;applyView();drawMap();break;
+    default:h=false;
+  }
+  if(h)e.preventDefault();
+});
+document.getElementById("zoom-in").addEventListener("click",()=>zoomAt(1.5,view.w/2,view.h/2));
+document.getElementById("zoom-out").addEventListener("click",()=>zoomAt(1/1.5,view.w/2,view.h/2));
+document.getElementById("zoom-reset").addEventListener("click",resetView);
+document.getElementById("f-zoom").addEventListener("click",()=>{
+  const f=selected||HOUSEHOLD[1];
+  if(!selected)selectSensor(f);
+  zoomTo(f.x,f.y,4.5);
+});
+
+/* ---------- clock ---------- */
+const T_END=36*60;
+let tMin=0, playing=!reducedMotion, speed=240, lastEmit=-999;
+let selected=null;
+const BASE=new Date(2026,8,16,0,0,0);
+const iso=m=>new Date(BASE.getTime()+m*60000).toISOString().replace("Z","+08:00");
+const clockStr=m=>{const d=new Date(BASE.getTime()+m*60000);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");};
+const dateStr=m=>new Date(BASE.getTime()+m*60000).toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · simulated PHT";
+
+/* ---------- cards ---------- */
+const STATUS_LABEL={ok:"Normal",warn:"Water on street",alert:"Flooded"};
+(function buildCards(){
+  const grid=document.getElementById("house-cards");
+  for(const hh of HOUSEHOLD){
+    const c=document.createElement("div");
+    c.className="house-card ok";c.tabIndex=0;c.setAttribute("role","button");
+    c.setAttribute("aria-label",hh.id+" on "+hh.street);
+    c.innerHTML=`
+      <div class="h-top"><span class="shape ok"></span>${hh.id}</div>
+      <div class="h-lv"><b class="lv">0</b><small> cm</small></div>
+      <div class="h-st"><span class="h-stat">Normal</span> · ${hh.street}</div>`;
+    c.addEventListener("click",()=>selectSensor(hh));
+    c.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();selectSensor(hh);}});
+    grid.appendChild(c);hh.el=c;
+  }
+})();
+function selectSensor(s){
+  selected=s;
+  renderFlood();drawMap();refreshCards();
+}
+function statusOf(s){
+  if(s.depth>=0.30)return"alert";
+  if(s.depth>=0.05)return"warn";
+  return"ok";
+}
+function refreshCards(){
+  for(const hh of HOUSEHOLD){
+    hh.el.className="house-card "+hh.status+(hh===selected?" selected":"");
+    hh.el.querySelector(".shape").className="shape "+hh.status;
+    hh.el.querySelector(".h-stat").textContent=STATUS_LABEL[hh.status];
+    hh.el.querySelector(".lv").textContent=Math.round(hh.depth*100);
+    hh.el.setAttribute("aria-pressed",hh===selected?"true":"false");
+  }
+  const f=selected||HOUSEHOLD[1];
+  const fe=document.getElementById("featured");
+  fe.className="sensor "+f.status;
+  document.getElementById("f-shape").className="shape "+f.status;
+  document.getElementById("f-id").textContent=f.id;
+  document.getElementById("f-name").textContent=f.name;
+  document.getElementById("f-lv").textContent=Math.round(f.depth*100);
+  document.getElementById("f-rt").textContent=(f.rate>=0?"+":"")+Math.round(f.rate*100);
+  document.getElementById("f-stx").textContent=STATUS_LABEL[f.status];
+  document.getElementById("f-ge").textContent=f.gElev.toFixed(1)+" m";
+  document.getElementById("f-nh").textContent=f.noahCls;
+  drawSpark(f);
+  document.getElementById("api-dev").textContent=f.id;
+}
+function drawSpark(s){
+  const c=document.getElementById("f-spark"),ctx=c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+  const data=s.readings;
+  const maxV=Math.max(0.7,...data.map(r=>r.v));
+  const X=i=>i/Math.max(data.length-1,1)*(c.width-8)+4;
+  const Y=v=>c.height-6-(v/maxV)*(c.height-14);
+  ctx.setLineDash([6,5]);ctx.strokeStyle="rgba(213,94,0,0.7)";ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(0,Y(0.30));ctx.lineTo(c.width,Y(0.30));ctx.stroke();ctx.setLineDash([]);
+  if(data.length>1){
+    ctx.beginPath();data.forEach((r,i)=>{i?ctx.lineTo(X(i),Y(r.v)):ctx.moveTo(X(i),Y(r.v));});
+    ctx.strokeStyle=STATUS_COL[s.status];ctx.lineWidth=3.5;ctx.lineJoin="round";ctx.stroke();
+    ctx.lineTo(X(data.length-1),c.height);ctx.lineTo(X(0),c.height);ctx.closePath();
+    ctx.globalAlpha=0.13;ctx.fillStyle=STATUS_COL[s.status];ctx.fill();ctx.globalAlpha=1;
+  }
+}
+
+/* ---------- log, stats, banner ---------- */
+const logEl=document.getElementById("log-list");
+function log(msg){
+  const li=document.createElement("li");
+  li.innerHTML=`<time>${clockStr(tMin)}</time>${msg}`;
+  logEl.prepend(li);
+  while(logEl.children.length>40)logEl.lastChild.remove();
+}
+const SEG_SAMPLES=[];
+for(const r of DATA.roads){
+  if(r.c==="alley")continue;
+  for(let k=1;k<r.p.length;k+=2)SEG_SAMPLES.push(r.p[k]);
+}
+function updateImpact(){
+  let floodedB=0,deep=0;
+  for(const b of BLDS)if(depthAtWorld(b[0],b[1])>0.05)floodedB++;
+  for(const s of HOUSEHOLD)if(s.depth>deep)deep=s.depth;
+  cutSegs=[];
+  for(const p of SEG_SAMPLES){
+    if(depthAtWorld(p[0],p[1])<=0.25)continue;
+    if(cutSegs.some(q=>(q[0]-p[0])**2+(q[1]-p[1])**2<75*75))continue;
+    cutSegs.push(p);
+  }
+  document.getElementById("st-houses").textContent=floodedB.toLocaleString();
+  document.getElementById("st-pop").textContent=(Math.round(floodedB*4.2/5)*5).toLocaleString();
+  document.getElementById("st-streets").textContent=cutSegs.length;
+  document.getElementById("st-deep").textContent=Math.round(deep*100)+" cm";
+  const nA=HOUSEHOLD.filter(s=>s.status==="alert").length,nW=HOUSEHOLD.filter(s=>s.status==="warn").length;
+  document.getElementById("map-desc").textContent=
+    `Map of Teachers Village with ${HOUSEHOLD.length} sensor units: ${nA} flooded, ${nW} with water on the street, ${HOUSEHOLD.length-nA-nW} normal. `+
+    `Modeled flooding reaches ${floodedB} buildings; deepest reading ${Math.round(deep*100)} centimeters.`;
+  const banner=document.getElementById("banner"),bt=document.getElementById("banner-text");
+  const alerts=HOUSEHOLD.filter(s=>s.status==="alert");
+  let predict=null;
+  for(const s of HOUSEHOLD){
+    if(s.status!=="alert"&&s.rate>0.08){
+      const eta=(0.30-s.depth)/s.rate*60;
+      if(eta>0&&eta<180&&(!predict||eta<predict.eta))predict={s,eta};
+    }
+  }
+  if(alerts.length){
+    banner.className="alert";
+    bt.innerHTML=`Flooding at ${alerts.length} household${alerts.length>1?"s":""}: ${alerts.map(s=>s.id).join(", ")}.<small>Evacuation guidance would trigger here in production.</small>`;
+  }else if(predict){
+    banner.className="warn";
+    bt.innerHTML=`${predict.s.id} · ${predict.s.street} likely to flood in ~${Math.round(predict.eta/5)*5} min.<small>Rate of rise ${Math.round(predict.s.rate*100)} cm/hr — the early-warning window.</small>`;
+  }else banner.className="";
+}
+
+/* ---------- timeline ---------- */
+const scrub=document.getElementById("scrub");
+function drawScrub(){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const w=scrub.clientWidth,h=scrub.clientHeight;
+  if(scrub.width!==w*dpr){scrub.width=w*dpr;scrub.height=h*dpr;}
+  const ctx=scrub.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  const maxV=0.95;
+  const X=t=>t/T_END*w, Y=v=>h-5-(Math.min(v,maxV)/maxV)*(h-12);
+  ctx.setLineDash([5,5]);ctx.strokeStyle="rgba(213,94,0,0.55)";ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(0,Y(0.30));ctx.lineTo(w,Y(0.30));ctx.stroke();ctx.setLineDash([]);
+  ctx.globalAlpha=0.3;
+  for(const s of HOUSEHOLD){
+    ctx.beginPath();
+    for(let t=0;t<=T_END;t+=15){const v=hhDepth(s,t);t?ctx.lineTo(X(t),Y(v)):ctx.moveTo(X(t),Y(v));}
+    ctx.strokeStyle="#9a9a9a";ctx.lineWidth=1.5;ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  ctx.beginPath();
+  for(let t=0;t<=T_END;t+=15){
+    const v=Math.max(...HOUSEHOLD.map(s=>hhDepth(s,t)));
+    t?ctx.lineTo(X(t),Y(v)):ctx.moveTo(X(t),Y(v));
+  }
+  ctx.strokeStyle="#0030a0";ctx.lineWidth=2.5;ctx.lineJoin="round";ctx.stroke();
+  ctx.fillStyle="rgba(0,48,160,0.08)";ctx.fillRect(0,0,X(tMin),h);
+  ctx.strokeStyle="#0030a0";ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(X(tMin),0);ctx.lineTo(X(tMin),h);ctx.stroke();
+  ctx.fillStyle="#0030a0";ctx.beginPath();ctx.arc(X(tMin),7,4.5,0,7);ctx.fill();
+}
+let scrubbing=false;
+function rebuildHistory(){
+  for(const s of HOUSEHOLD){
+    s.readings.length=0;
+    for(let t=Math.max(0,tMin-2100);t<=tMin;t+=10){
+      const r=SyntheticSensorAPI.latest(s.id,t);
+      s.readings.push({t,v:r.water_depth_cm/100});
+    }
+  }
+}
+function scrubTo(cx){
+  const r=scrub.getBoundingClientRect();
+  tMin=Math.max(0,Math.min(T_END,(cx-r.left)/r.width*T_END));
+  rebuildHistory();lastEmit=-999;step(0,true);
+}
+scrub.addEventListener("pointerdown",e=>{scrubbing=true;scrub.setPointerCapture(e.pointerId);scrubTo(e.clientX);});
+scrub.addEventListener("pointermove",e=>{if(scrubbing)scrubTo(e.clientX);});
+scrub.addEventListener("pointerup",()=>scrubbing=false);
+scrub.addEventListener("keydown",e=>{
+  const stepMap={ArrowLeft:-10,ArrowRight:10,ArrowDown:-10,ArrowUp:10,PageDown:-60,PageUp:60};
+  let t=null;
+  if(e.key in stepMap)t=tMin+stepMap[e.key];
+  else if(e.key==="Home")t=0;else if(e.key==="End")t=T_END;
+  else if(e.key===" "){e.preventDefault();setPlay(!playing);return;}
+  if(t===null)return;
+  e.preventDefault();tMin=Math.max(0,Math.min(T_END,t));rebuildHistory();lastEmit=-999;step(0,true);
+});
+
+/* ---------- controls ---------- */
+const playBtn=document.getElementById("play");
+function setPlay(p){playing=p;playBtn.textContent=p?"❚❚":"▶";playBtn.setAttribute("aria-label",p?"Pause simulation":"Play simulation");}
+playBtn.addEventListener("click",()=>setPlay(!playing));
+setPlay(playing);
+document.querySelectorAll(".speed button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".speed button").forEach(x=>{x.classList.remove("active");x.setAttribute("aria-pressed","false");});
+  b.classList.add("active");b.setAttribute("aria-pressed","true");speed=+b.dataset.sp;
+}));
+document.querySelectorAll(".scenarios button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".scenarios button").forEach(x=>{x.classList.remove("active");x.setAttribute("aria-pressed","false");});
+  b.classList.add("active");b.setAttribute("aria-pressed","true");
+  scenario=b.dataset.sc;tMin=0;lastEmit=-999;
+  for(const s of HOUSEHOLD)s.readings.length=0;
+  logEl.innerHTML="";
+  log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
+  setPlay(true);step(0,true);
+}));
+document.querySelectorAll(".noah-chips button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".noah-chips button").forEach(x=>{x.classList.remove("active");x.setAttribute("aria-pressed","false");});
+  b.classList.add("active");b.setAttribute("aria-pressed","true");
+  noahSel=b.dataset.noah;
+  renderNoah();drawMap();
+  if(noahSel!=="off")log(`NOAH ${noahSel}-yr hazard layer on (reference)`);
+}));
+
+/* ---------- tooltip ---------- */
+ovCv.addEventListener("pointermove",e=>{
+  if(dragging||ptrs.size>1)return;
+  const r=ovCv.getBoundingClientRect();
+  const x=(e.clientX-r.left-view.ox)/view.sc, y=(e.clientY-r.top-view.oy)/view.sc;
+  if(x<0||y<0||x>=W||y>=H){tip.style.display="none";return;}
+  const i=cellAt(x,y);
+  const d=depth[i];
+  const g=elev[i].toFixed(1);
+  if(d>0.03){
+    tip.style.display="block";
+    tip.style.left=(e.clientX-r.left)+"px";tip.style.top=(e.clientY-r.top)+"px";
+    const src=srcIdx[i]>=0?HOUSEHOLD[srcIdx[i]].id:"—";
+    tip.textContent=Math.round(d*100)+" cm · via "+src+" · ground "+g+" m";
+  }else if(noahSel!=="off"&&NOAH[noahSel][i]>0){
+    tip.style.display="block";
+    tip.style.left=(e.clientX-r.left)+"px";tip.style.top=(e.clientY-r.top)+"px";
+    tip.textContent="NOAH "+noahSel+"-yr hazard: "+["low","medium","high"][NOAH[noahSel][i]-1]+" · ground "+g+" m";
+  }else tip.style.display="none";
+});
+ovCv.addEventListener("pointerleave",()=>tip.style.display="none");
+
+/* ---------- loop ---------- */
+function emitReadings(){
+  for(const s of HOUSEHOLD){
+    const r=SyntheticSensorAPI.latest(s.id,tMin);
+    s.depth=r.water_depth_cm/100;s.rate=r.rate_cm_per_hr/100;
+    s.readings.push({t:tMin,v:s.depth});
+    if(s.readings.length>220)s.readings.shift();
+    const st=statusOf(s);
+    if(st!==s.status){
+      s.status=st;
+      log(`<b>${s.id}</b> → ${STATUS_LABEL[st]} · ${Math.round(s.depth*100)} cm on ${s.street}`);
+    }
+  }
+  const f=selected||HOUSEHOLD[1];
+  document.getElementById("api-json").textContent=
+    JSON.stringify(SyntheticSensorAPI.latest(f.id,tMin),null,2);
+}
+function step(dtMs,force){
+  if(playing&&!scrubbing)tMin+=dtMs/1000*(speed/60);
+  if(tMin>=T_END){tMin=T_END;setPlay(false);}
+  if(force||tMin-lastEmit>=10||tMin<lastEmit){
+    lastEmit=Math.floor(tMin/10)*10;
+    emitReadings();
+    computeFlood(tMin);
+    renderFlood();
+    drawMap();
+    refreshCards();
+    updateImpact();
+  }
+  document.getElementById("clock").textContent=clockStr(tMin);
+  scrub.setAttribute("aria-valuenow",Math.round(tMin));scrub.setAttribute("aria-valuetext",clockStr(tMin)+(playing?" playing":" paused"));
+  document.getElementById("clock-date").textContent=dateStr(tMin);
+  drawScrub();
+  drawOverlayCanvas();
+}
+let lastT=performance.now();
+function loop(now){
+  const dt=Math.min(now-lastT,100);lastT=now;
+  pulseT+=dt/1400;
+  step(dt,false);
+  requestAnimationFrame(loop);
+}
+
+/* ---------- theme ---------- */
+const themeBtn=document.getElementById("theme-toggle");
+function setTheme(t,render){
+  document.documentElement.dataset.theme=t;
+  STATUS_COL=t==="dark"?STATUS_COL_DARK:STATUS_COL_LIGHT;
+  try{localStorage.setItem("bw-theme",t);}catch(e){}
+  themeBtn.textContent=t==="dark"?"☀":"☾";
+  themeBtn.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");
+  themeBtn.setAttribute("aria-pressed",t==="dark"?"true":"false");
+  if(render){renderBase();renderNoah();renderFlood();drawMap();}
+}
+let savedTheme=null;try{savedTheme=localStorage.getItem("bw-theme");}catch(e){}
+setTheme(savedTheme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"),false);
+themeBtn.addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
+
+/* ---------- boot ---------- */
+window.addEventListener("resize",resize);
+renderBase();
+resize();
+log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
+log(`8 household units online · LoRaWAN, 10-min uplink (simulated)`);
+log(`Basemap: OSM · Terrain: Copernicus GLO-30 · Hazard ref: Project NOAH`);
+step(0,true);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

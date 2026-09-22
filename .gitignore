@@ -1,0 +1,14 @@
+# raw hazard shapefiles (103 MB) — see README §2.3 for the download
+inputs/noah/
+inputs/noah_tmp/
+# scratch, backups, built package
+pkg/
+*.zip
+data_prev.json
+template_v*_backup.html
+public_view.js
+public_view.css
+__pycache__/
+.superpowers/
+node_modules/
+*.log
