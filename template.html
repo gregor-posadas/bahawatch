@@ -181,17 +181,26 @@ pre#api-json{
 .p-review{font-size:12.5px; color:var(--ink-2); padding:8px 0 0; display:none}
 .p-review.on{display:block}
 
+/* site tabs (one bar per view; the details copy sits under the header) */
+.site-tabs{display:flex; gap:22px; border-bottom:1px solid var(--line); padding:0}
+.site-tabs button{font-size:14px; font-weight:700; color:var(--ink-2); padding:10px 0 9px; border-bottom:3px solid transparent; margin-bottom:-1px; min-height:40px}
+.site-tabs button[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--ink)}
+.site-tabs button:hover{color:var(--ink)}
+[data-view="details"] .site-tabs{padding:0 22px}
+[data-view="public"] header + .site-tabs{display:none}
+@media (max-width:560px){.site-tabs{gap:14px}.site-tabs button{font-size:13px}}
+
 /* status band: sentence on the left, depth figure on the right */
 /* sentence column flexes, figure column is fixed at the right edge — the figure never moves with sentence length */
-.p-status{display:grid; grid-template-columns:minmax(0,1fr) 440px; gap:12px 40px; align-items:center; padding:14px 0 12px; border-bottom:1px solid var(--line)}
+.p-status{display:grid; grid-template-columns:minmax(0,1fr) 580px; gap:12px 40px; align-items:center; padding:14px 0 12px; border-bottom:1px solid var(--line)}
 .p-status > div:first-child{max-width:620px}
 .p-status .p-head-line{font-size:38px; font-weight:700; letter-spacing:-.02em; line-height:1.12}
 .p-status .p-sub{font-size:19px; color:var(--ink); margin-top:10px; line-height:1.4}
 .p-status .p-upd{font-size:13px; color:var(--ink-2); margin-top:10px; font-variant-numeric:tabular-nums}
 .p-status.tier-warn .p-head-line{color:var(--warn-ink)}
 .p-status.tier-alert .p-head-line{color:var(--alert)}
-.p-fig{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:440px}
-.p-fig svg{width:440px; height:auto; display:block}
+.p-fig{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:580px}
+.p-fig svg{width:580px; height:auto; display:block}
 .p-fig .f-cap{font-size:13px; font-weight:600; text-align:center; line-height:1.3}
 .p-fig .f-cap small{display:block; font-weight:400; color:var(--ink-2); font-size:12px}
 
@@ -220,6 +229,7 @@ pre#api-json{
 .p-pick{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px}
 .p-pick button{font-size:14px; font-weight:600; border:1px solid var(--ink); border-radius:4px; padding:10px 10px; min-height:44px; background:var(--panel); text-align:left}
 .p-pick button:hover{background:var(--panel-2)}
+.p-pick button small{display:block; font-weight:400; color:var(--ink-2); font-size:12.5px; margin-top:3px; line-height:1.3}
 
 #public-map{margin-top:0}
 [data-view="public"] #map-wrap{margin:0; height:min(calc(100vh - 160px),640px); min-height:340px; border-radius:6px; border:1px solid var(--ink)}
@@ -260,6 +270,10 @@ pre#api-json{
   .p-fig svg{width:min(100%,360px)}
   .p-fig .f-cap{font-size:12.5px}
   .p-fig svg .ft{display:none}
+  /* the SVG is drawn at ~57 % here; enlarge the scale type so it still reads without pinching */
+  .p-fig svg #fig-ruler text{font-size:20px}
+  .p-fig svg #fig-car-ticks text, .p-fig svg #fig-bike-ticks text{font-size:16px}
+  .p-fig svg #fig-ticks text{font-size:12.5px}
   .p-head .p-place{display:none}
   .p-tools select{max-width:118px}
   .p-tools .p-link{padding:6px 9px}
@@ -272,7 +286,7 @@ pre#api-json{
  <div class="p-inner">
   <div class="p-head">
     <img src="data:image/png;base64,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" alt="BahaWatch logo">
-    <div><div class="p-name">BahaWatch</div><div class="p-place">Teachers Village, Quezon City</div></div>
+    <div><div class="p-name">BahaWatch</div><div class="p-place" id="p-place">Teachers Village, Quezon City</div></div>
     <div class="p-tools">
       <label class="sr-only" for="p-lang">Language</label>
       <select id="p-lang"></select>
@@ -280,6 +294,11 @@ pre#api-json{
       <button class="p-link" id="p-details">Details</button>
     </div>
   </div>
+<nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
+  <button role="tab" data-site="diliman" aria-selected="false">UP Diliman</button>
+  <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
+</nav>
   <div class="p-review" id="p-review"></div>
   <div class="p-status" id="p-status">
     <div role="status" aria-live="polite">
@@ -321,7 +340,7 @@ pre#api-json{
  </div>
   <footer class="p-foot"><div class="p-foot-in">
     <div><b id="p-demo"></b> <span id="p-emerg"></span></div>
-    <div class="p-attr">Map data © OpenStreetMap contributors · Terrain: Copernicus GLO-30 © ESA · Hazard reference: UP Project NOAH</div>
+    <div class="p-attr" id="p-attr">Map data © OpenStreetMap contributors · Terrain: Copernicus GLO-30 © ESA · Hazard reference: UP Project NOAH</div>
   </div></footer>
 </section>
 
@@ -344,6 +363,11 @@ pre#api-json{
     <button class="p-link" id="d-simple">Simple view</button>
   </div>
 </header>
+<nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
+  <button role="tab" data-site="diliman" aria-selected="false">UP Diliman</button>
+  <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
+</nav>
 
 <main>
   <div id="map-wrap">
@@ -364,9 +388,9 @@ pre#api-json{
         <button data-noah="25" aria-pressed="false">25-yr</button>
         <button data-noah="100" aria-pressed="false">100-yr</button>
       </div>
-      <div class="noah-bands" aria-hidden="true"><i style="background:#d9c2ea"></i><i style="background:#a978cf"></i><i style="background:#5b2a8f"></i></div>
-      <div class="bands-lab"><span>low</span><span>medium</span><span>high</span></div>
-      <div class="hint">Extents come only from sensor readings, spread over the Copernicus terrain. Tap a sensor to isolate its footprint.</div>
+      <div class="noah-lg"><div class="noah-bands" aria-hidden="true"><i style="background:#d9c2ea"></i><i style="background:#a978cf"></i><i style="background:#5b2a8f"></i></div>
+      <div class="bands-lab"><span>low</span><span>medium</span><span>high</span></div></div>
+      <div class="hint">Extents come only from sensor readings, spread over the site's terrain. Tap a sensor to isolate its footprint.</div>
     </div>
     <div id="map-tooltip"></div>
     <div class="p-coach" id="p-coach" role="note"></div>
@@ -390,7 +414,7 @@ pre#api-json{
         <button class="zoom-unit" id="f-zoom">Zoom to unit</button></div>
       <div class="s-mid">
         <span class="s-level"><b class="lv" id="f-lv">0</b><small> cm on street</small></span>
-        <span class="s-meta"><b id="f-stx">Normal</b> · rate <b id="f-rt">0</b> cm/hr<br>ground <b id="f-ge">0.0 m</b> ASL · NOAH class <b id="f-nh">0</b></span>
+        <span class="s-meta"><b id="f-stx">Normal</b> · rate <b id="f-rt">0</b> cm/hr<br>ground <b id="f-ge">0.0 m</b> ASL<span id="f-nh-wrap"> · NOAH class <b id="f-nh">0</b></span></span>
       </div>
       <canvas id="f-spark" width="620" height="92"></canvas>
     </div>
@@ -444,16 +468,16 @@ pre#api-json{
    NOAH hazard rasters. Model contract unchanged: flood extents derive ONLY
    from sensor observations, spread across the DEM with distance decay.
    ========================================================================= */
-const DATA=__DATA_JSON__;
+const DATA_ALL=__DATA_ALL__;
 let VIEW="public";
+const RES=2.2;
 
-const W=DATA.W,H=DATA.H,GW=DATA.GW,GH=DATA.GH,N=GW*GH;
+/* Site state — everything below is rebuilt by initSite(id) when a tab changes. */
+let SITE="tv", DATA=null, SITE_CFG=null;
+let W,H,GW,GH,N, elev,NOAH,STREETMASK,BLDS,HOUSEHOLD,SCEN, depth,srcIdx,fillGen,fillDist,fq, eMinD,eMaxD,tLo,tHi, SEG_SAMPLES;
+let baseCv=document.createElement("canvas"), noahCv=document.createElement("canvas"), floodCv=document.createElement("canvas");
 function b64bytes(s){const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
-const elev=(()=>{const v=new Int16Array(b64bytes(DATA.elev).buffer);const f=new Float32Array(N);for(let i=0;i<N;i++)f[i]=v[i]/10;return f;})();
 function unrle(s){const b=b64bytes(s);const g=new Uint8Array(N);let o=0;for(let i=0;i<b.length;i+=2){g.fill(b[i+1],o,o+b[i]);o+=b[i];}return g;}
-const NOAH={"5":unrle(DATA.noah["5"]),"25":unrle(DATA.noah["25"]),"100":unrle(DATA.noah["100"])};
-const STREETMASK=unrle(DATA.street);
-const BLDS=(()=>{const v=new Uint16Array(b64bytes(DATA.blds).buffer);const a=[];for(let i=0;i<v.length;i+=2)a.push([v[i]/10,v[i+1]/10]);return a;})();
 const cellAt=(x,y)=>Math.min(GH-1,Math.max(0,(y/H*GH)|0))*GW+Math.min(GW-1,Math.max(0,(x/W*GW)|0));
 const mulberry32=a=>function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 
@@ -467,24 +491,35 @@ function noah3x3(grid,gx,gy){
   }
   return m;
 }
-const HOUSEHOLD=DATA.sensors.map((s,k)=>{
-  const gx=Math.min((s.x/W*GW)|0,GW-1),gy=Math.min((s.y/H*GH)|0,GH-1);
-  const h5=noah3x3(NOAH["5"],gx,gy),h25=noah3x3(NOAH["25"],gx,gy),h100=noah3x3(NOAH["100"],gx,gy);
-  const lowness=(56-s.g)/4;
-  const wNoah=h5*0.5+h25*0.3+h100*0.2;
-  const sus=Math.min(2.6,Math.max(0.15,0.35+0.5*lowness+0.45*wNoah));
-  const r=mulberry32(500+k)();
-  return {id:s.id,idx:k,name:"Household unit · "+(s.hn?s.hn+" ":"")+s.street,street:s.street,
-    x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,hn:s.hn||"",near:s.near||null,labelPos:s.id==="BW-H06"?"above":(s.id==="BW-H01"||s.id==="BW-H02")?"left":"right",noahCls:Math.max(h5,h25,h100),sus,
-    expos:0.92+r*0.2,readings:[],depth:0,rate:0,status:"ok"};
-});
+function initSite(id){
+  SITE=id; DATA=DATA_ALL[id]; SITE_CFG=DATA.site;
+  W=DATA.W;H=DATA.H;GW=DATA.GW;GH=DATA.GH;N=GW*GH;
+  elev=(()=>{const v=new Int16Array(b64bytes(DATA.elev).buffer);const f=new Float32Array(N);for(let i=0;i<N;i++)f[i]=v[i]/10;return f;})();
+  NOAH=SITE_CFG.hazard?{"5":unrle(DATA.noah["5"]),"25":unrle(DATA.noah["25"]),"100":unrle(DATA.noah["100"])}:{"5":new Uint8Array(N),"25":new Uint8Array(N),"100":new Uint8Array(N)};
+  STREETMASK=unrle(DATA.street);
+  BLDS=(()=>{const v=new Uint16Array(b64bytes(DATA.blds).buffer);const a=[];for(let i=0;i<v.length;i+=2)a.push([v[i]/10,v[i+1]/10]);return a;})();
+  // storm-response reference: the site's median sensor street elevation (was the constant 56 m)
+  const gs=DATA.sensors.map(s=>s.g).sort((a,b)=>a-b), gRef=SITE_CFG.g_ref!=null?SITE_CFG.g_ref:gs[Math.floor(gs.length/2)];
+  HOUSEHOLD=DATA.sensors.map((s,k)=>{
+    const gx=Math.min((s.x/W*GW)|0,GW-1),gy=Math.min((s.y/H*GH)|0,GH-1);
+    const h5=noah3x3(NOAH["5"],gx,gy),h25=noah3x3(NOAH["25"],gx,gy),h100=noah3x3(NOAH["100"],gx,gy);
+    const lowness=(gRef-s.g)/4, wNoah=h5*0.5+h25*0.3+h100*0.2;
+    const sus=Math.min(2.6,Math.max(0.15,0.35+0.5*lowness+0.45*wNoah));
+    const r=mulberry32(500+k)();
+    return {id:s.id,idx:k,name:"Household unit · "+(s.hn?s.hn+" ":"")+(s.bld||s.street),street:s.street,bld:s.bld||null,
+      x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,gRef,hn:s.hn||"",near:s.bld?shortSt(s.street):(s.near||null),
+      short:s.short||null,labelPos:s.lp||(s.id==="BW-H06"?"above":(s.id==="BW-H01"||s.id==="BW-H02")?"left":"right"),
+      noahCls:Math.max(h5,h25,h100),sus,expos:0.92+r*0.2,readings:[],depth:0,rate:0,status:"ok"};
+  });
+  SCEN={};for(const k in SITE_CFG.scen)SCEN[k]={label:SITE_CFG.scen[k].label,P:SITE_CFG.scen[k].P,dur:SITE_CFG.scen[k].dur,start:SITE_CFG.scen[k].start};
+  depth=new Float32Array(N);srcIdx=new Int8Array(N);fillGen=new Int32Array(N);fillDist=new Int32Array(N);fq=new Int32Array(N);
+  for(const c of[baseCv,noahCv,floodCv]){c.width=Math.round(W*RES);c.height=Math.round(H*RES);}
+  eMinD=1e9;eMaxD=-1e9;for(let i=0;i<N;i++){if(elev[i]<eMinD)eMinD=elev[i];if(elev[i]>eMaxD)eMaxD=elev[i];}
+  const sorted=Float32Array.from(elev).sort();tLo=sorted[Math.floor(N*0.05)];tHi=sorted[Math.floor(N*0.95)];if(tHi-tLo<1)tHi=tLo+1;
+  SEG_SAMPLES=[];for(const r of DATA.roads){if(r.c==="alley")continue;for(let k=1;k<r.p.length;k+=2)SEG_SAMPLES.push(r.p[k]);}
+}
 
 /* ---------- scenarios & synthetic API ---------- */
-const SCEN={
-  clear:  {label:"Dry day",     P:0,    dur:0,   start:0},
-  monsoon:{label:"Habagat rain",P:0.16, dur:300, start:180},
-  typhoon:{label:"Typhoon",     P:0.50, dur:340, start:150},
-};
 let scenario="monsoon";
 function gp(u){if(u<=0)return 0;const a=2.2;return Math.pow(u,a)*Math.exp(a*(1-u));}
 function pulse(t,lag){
@@ -495,7 +530,7 @@ function pulse(t,lag){
   return p;
 }
 function hhDepth(s,t){
-  const P=SCEN[scenario].P*pulse(t,10+(56-s.gElev)*4);
+  const P=SCEN[scenario].P*pulse(t,10+(s.gRef-s.gElev)*4);
   return Math.min(0.9,Math.max(0,(P*s.sus-0.02)*s.expos));
 }
 const SyntheticSensorAPI={
@@ -515,11 +550,7 @@ const SyntheticSensorAPI={
 /* ---------- flood model: sensor-seeded terrain fill ---------- */
 const DECAY_PER_CELL=0.010;
 const MAX_STEPS=80;
-const depth=new Float32Array(N);
-const srcIdx=new Int8Array(N);
-const fillGen=new Int32Array(N);let gen=0;
-const fillDist=new Int32Array(N);
-const fq=new Int32Array(N);
+let gen=0;
 function computeFlood(t){
   depth.fill(0);srcIdx.fill(-1);
   for(const s of HOUSEHOLD){
@@ -565,10 +596,8 @@ function mapPal(){
     noah:["rgba(217,194,234,0.55)","rgba(169,120,207,0.55)","rgba(91,42,143,0.55)"]
   };
 }
-const RES=2.2;
 
 /* ---------- base map ---------- */
-const baseCv=document.createElement("canvas");baseCv.width=Math.round(W*RES);baseCv.height=Math.round(H*RES);
 function strokeWays(ctx,ways,w,c){
   ctx.strokeStyle=c;ctx.lineWidth=w;ctx.lineCap="round";ctx.lineJoin="round";
   ctx.beginPath();
@@ -579,8 +608,6 @@ function strokeWays(ctx,ways,w,c){
   }
   ctx.stroke();
 }
-let eMinD=1e9,eMaxD=-1e9;
-for(let i=0;i<N;i++){if(elev[i]<eMinD)eMinD=elev[i];if(elev[i]>eMaxD)eMaxD=elev[i];}
 function renderBase(){
   const P=mapPal(),ctx=baseCv.getContext("2d");
   ctx.setTransform(RES,0,0,RES,0,0);
@@ -588,7 +615,7 @@ function renderBase(){
   // hypsometric paper: subtle elevation tint so terrain is legible
   const img=ctx.createImageData(GW,GH),px=img.data;
   for(let i=0;i<N;i++){
-    const t=(elev[i]-eMinD)/(eMaxD-eMinD);
+    const t=Math.min(1,Math.max(0,(elev[i]-tLo)/(tHi-tLo)));
     const o=i*4;
     px[o]=P.bgLo[0]+(P.bgHi[0]-P.bgLo[0])*t;
     px[o+1]=P.bgLo[1]+(P.bgHi[1]-P.bgLo[1])*t;
@@ -630,7 +657,6 @@ function renderBaseSimple(ctx,P){
 
 /* ---------- NOAH reference overlay ---------- */
 let noahSel="off";
-const noahCv=document.createElement("canvas");noahCv.width=Math.round(W*RES);noahCv.height=Math.round(H*RES);
 function renderNoah(){
   const ctx=noahCv.getContext("2d");
   ctx.setTransform(1,0,0,1,0,0);
@@ -652,7 +678,6 @@ function renderNoah(){
 }
 
 /* ---------- flood overlay ---------- */
-const floodCv=document.createElement("canvas");floodCv.width=Math.round(W*RES);floodCv.height=Math.round(H*RES);
 function renderFlood(){
   const P=mapPal(),ctx=floodCv.getContext("2d");
   ctx.setTransform(1,0,0,1,0,0);
@@ -800,10 +825,11 @@ function drawOverlayCanvas(){
     ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(L.n,0,-9);
     ctx.fillStyle=L.w?P.creekLabel:P.label;ctx.fillText(L.n,0,-9);ctx.restore();
   }
-  if(VIEW!=="public"){ctx.save();ctx.translate(wx(W-120),wy(26));
+  const corner={tv:"UP Diliman ▴"}[SITE];                       // off-frame orientation cue, where one helps
+  if(VIEW!=="public"&&corner){ctx.save();ctx.translate(wx(W-120),wy(26));
   ctx.font="600 12px Helvetica, Arial, sans-serif";
-  ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText("UP Diliman ▴",0,0);
-  ctx.fillStyle=P.label;ctx.fillText("UP Diliman ▴",0,0);ctx.restore();}
+  ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(corner,0,0);
+  ctx.fillStyle=P.label;ctx.fillText(corner,0,0);ctx.restore();}
   const sl=selectedStreetLabel();
   if(sl){
     ctx.save();ctx.translate(wx(sl.x),wy(sl.y));ctx.rotate(sl.a);
@@ -813,7 +839,7 @@ function drawOverlayCanvas(){
   }
   for(const s of HOUSEHOLD){
     const X=wx(s.x),Y=wy(s.y),col=STATUS_COL[s.status],R=9;
-    if(s.status!=="ok"&&!reducedMotion&&VIEW!=="public"){
+    if(s.status!=="ok"&&!reducedMotion){                        // ping ring in both views (off under prefers-reduced-motion)
       const p=pulseT%1;
       ctx.beginPath();ctx.arc(X,Y,R+3+p*15,0,7);
       ctx.strokeStyle=col;ctx.globalAlpha=0.5*(1-p);ctx.lineWidth=3;ctx.stroke();ctx.globalAlpha=1;
@@ -825,11 +851,13 @@ function drawOverlayCanvas(){
       ctx.fillStyle=P.label;ctx.fillText(s.id,X,Y-R-9);
     }else{
       // station-style: the sensor carries the street name, so the map stays a diagram
-      const nm=(s.hn?s.hn+" ":"")+s.street.replace(" Street","").replace(" Road","").replace(" Avenue","");
+      // building name on the campuses (short form for the map), house number + street in Teachers Village
+      const nm=s.short||(s.bld?s.bld:(s.hn?s.hn+" ":"")+s.street.replace(" Street","").replace(" Road","").replace(" Avenue",""));
       ctx.font="700 12.5px Helvetica, Arial, sans-serif";
-      ctx.textAlign=s.labelPos==="left"?"right":s.labelPos==="above"?"center":"left";ctx.textBaseline="middle";
+      const lp=s.labelPos;
+      ctx.textAlign=lp==="left"?"right":(lp==="above"||lp==="below")?"center":"left";ctx.textBaseline="middle";
       const Rl=R*(s===selected?1.45:1);
-      const lx=s.labelPos==="left"?X-Rl-9:s.labelPos==="above"?X:X+Rl+9, ly=s.labelPos==="above"?Y-Rl-13:Y;
+      const lx=lp==="left"?X-Rl-9:(lp==="above"||lp==="below")?X:X+Rl+9, ly=lp==="above"?Y-Rl-13:lp==="below"?Y+Rl+13:Y;
       ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(nm,lx,ly);
       ctx.fillStyle=P.markerInk;ctx.fillText(nm,lx,ly);
     }
@@ -918,13 +946,13 @@ const T_END=36*60;
 let tMin=0, playing=!reducedMotion, speed=240, lastEmit=-999;
 let selected=null;
 const BASE=new Date(2026,8,16,0,0,0);
-const iso=m=>new Date(BASE.getTime()+m*60000).toISOString().replace("Z","+08:00");
+const iso=m=>new Date(BASE.getTime()+m*60000).toISOString().replace("Z",SITE_CFG.utc);
 const clockStr=m=>{const d=new Date(BASE.getTime()+m*60000);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");};
-const dateStr=m=>new Date(BASE.getTime()+m*60000).toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · simulated PHT";
+const dateStr=m=>new Date(BASE.getTime()+m*60000).toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · simulated "+SITE_CFG.tz;
 
 /* ---------- cards ---------- */
 const STATUS_LABEL={ok:"Normal",warn:"Water on street",alert:"Flooded"};
-(function buildCards(){
+function buildCards(){
   const grid=document.getElementById("house-cards");
   for(const hh of HOUSEHOLD){
     const c=document.createElement("div");
@@ -938,7 +966,7 @@ const STATUS_LABEL={ok:"Normal",warn:"Water on street",alert:"Flooded"};
     c.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();selectSensor(hh);}});
     grid.appendChild(c);hh.el=c;
   }
-})();
+}
 function selectSensor(s){
   selected=s;
   renderFlood();drawMap();refreshCards();
@@ -996,11 +1024,6 @@ function log(msg){
   logEl.prepend(li);
   while(logEl.children.length>40)logEl.lastChild.remove();
 }
-const SEG_SAMPLES=[];
-for(const r of DATA.roads){
-  if(r.c==="alley")continue;
-  for(let k=1;k<r.p.length;k+=2)SEG_SAMPLES.push(r.p[k]);
-}
 function updateImpact(){
   let floodedB=0,deep=0;
   for(const b of BLDS)if(depthAtWorld(b[0],b[1])>0.05)floodedB++;
@@ -1017,7 +1040,7 @@ function updateImpact(){
   document.getElementById("st-deep").textContent=Math.round(deep*100)+" cm";
   const nA=HOUSEHOLD.filter(s=>s.status==="alert").length,nW=HOUSEHOLD.filter(s=>s.status==="warn").length;
   document.getElementById("map-desc").textContent=
-    `Map of Teachers Village with ${HOUSEHOLD.length} sensor units: ${nA} flooded, ${nW} with water on the street, ${HOUSEHOLD.length-nA-nW} normal. `+
+    `Map of ${SITE_CFG.name} with ${HOUSEHOLD.length} sensor units: ${nA} flooded, ${nW} with water on the ${SITE_CFG.profile==="path"?"path":"street"}, ${HOUSEHOLD.length-nA-nW} normal. `+
     `Modeled flooding reaches ${floodedB} buildings; deepest reading ${Math.round(deep*100)} centimeters.`;
   const banner=document.getElementById("banner"),bt=document.getElementById("banner-text");
   const alerts=HOUSEHOLD.filter(s=>s.status==="alert");
@@ -1030,7 +1053,7 @@ function updateImpact(){
   }
   if(alerts.length){
     banner.className="alert";
-    bt.innerHTML=`Half-tire or more at ${alerts.length} unit${alerts.length>1?"s":""}: ${alerts.map(s=>s.id).join(", ")}.<small>Not passable to light vehicles (MMDA). Evacuation guidance would trigger here in production.</small>`;
+    bt.innerHTML=`Half-tire or more at ${alerts.length} unit${alerts.length>1?"s":""}: ${alerts.map(s=>s.id).join(", ")}.<small>${SITE_CFG.profile==="path"?"Paths closed; cars must not drive through.":"Not passable to light vehicles (MMDA)."} Evacuation guidance would trigger here in production.</small>`;
   }else if(predict){
     banner.className="warn";
     bt.innerHTML=`${predict.s.id} · ${predict.s.street} likely to flood in ~${Math.round(predict.eta/5)*5} min.<small>Rate of rise ${Math.round(predict.s.rate*100)} cm/hr — the early-warning window.</small>`;
@@ -1213,7 +1236,7 @@ themeBtn.addEventListener("click",()=>setTheme(document.documentElement.dataset.
    ========================================================================= */
 const REVIEW_TAG={en:"",fil:"",ceb:" (for professional translation review)",ilo:" (for professional translation review)",hil:" (for professional translation review)",pam:" (for professional translation review)"};
 const LANGS={
-  en:{car:"Sedan",carAt:["under the car", "at the half-tire", "at the tire", "over the hood"],name:"English",
+  en:{bike:"Motorcycle",bikeAt:["under the engine","at the engine","over the exhaust","over the seat"],bikePass:["passable","passable","ride slowly","not passable"],car:"Sedan",carAt:["under the car", "at the half-tire", "at the tire", "over the hood"],name:"English",
     none:"No flooding reported.",allPass:"All monitored streets passable.",
     wet:n=>`Water on ${n} ${n===1?"street":"streets"}.`,wetPass:"All still passable.",
     cut1:s=>`${s} not passable to light vehicles.`,cutN:n=>`${n} streets not passable to light vehicles.`,
@@ -1232,7 +1255,7 @@ const LANGS={
     review:"This translation is pending professional review.",
     demo:"Demo: sensor readings are simulated.",notEmergency:"Not for emergency use. In an emergency call 911 or your barangay.",
     near:"near"},
-  fil:{car:"Sedan",carAt:["sa ilalim ng kotse", "hanggang kalahating gulong", "hanggang gulong", "lampas sa hood"],name:"Filipino",
+  fil:{bike:"Motorsiklo",bikeAt:["sa ilalim ng makina","hanggang makina","lampas sa tambutso","lampas sa upuan"],bikePass:["madadaanan","madadaanan","dahan-dahan lang","hindi madadaanan"],car:"Sedan",carAt:["sa ilalim ng kotse", "hanggang kalahating gulong", "hanggang gulong", "lampas sa hood"],name:"Filipino",
     none:"Walang naiulat na baha.",allPass:"Madadaanan ang lahat ng binabantayang kalye.",
     wet:n=>`May tubig sa ${n} kalye.`,wetPass:"Madadaanan pa ang lahat.",
     cut1:s=>`Hindi madadaanan ng maliliit na sasakyan ang ${s}.`,cutN:n=>`${n} kalye ang hindi madadaanan ng maliliit na sasakyan.`,
@@ -1251,7 +1274,7 @@ const LANGS={
     review:"Ang saling ito ay hinihintay pang masuri ng propesyonal na tagasalin.",
     demo:"Demo: kunwaring datos ng sensor.",notEmergency:"Hindi para sa emergency. Kung may emergency, tumawag sa 911 o sa barangay.",
     near:"malapit sa"},
-  ceb:{car:"Sedan",carAt:["ilalom sa sakyanan", "hangtod sa tunga sa ligid", "hangtod sa ligid", "lapas sa hood"],name:"Bisaya (Cebuano)",
+  ceb:{bike:"Motorsiklo",bikeAt:["ilalom sa makina","hangtod sa makina","lapas sa tambutso","lapas sa lingkoranan"],bikePass:["maagian","maagian","hinay lang","dili maagian"],car:"Sedan",carAt:["ilalom sa sakyanan", "hangtod sa tunga sa ligid", "hangtod sa ligid", "lapas sa hood"],name:"Bisaya (Cebuano)",
     none:"Walay gitaho nga baha.",allPass:"Maagian ang tanang gibantayang dalan.",
     wet:n=>`Naay tubig sa ${n} ka dalan.`,wetPass:"Maagian pa ang tanan.",
     cut1:s=>`Dili maagian sa gagmayng sakyanan ang ${s}.`,cutN:n=>`${n} ka dalan ang dili maagian sa gagmayng sakyanan.`,
@@ -1270,7 +1293,7 @@ const LANGS={
     review:"Kini nga hubad wala pa masusi sa propesyonal nga tighubad.",
     demo:"Demo: pasumbingay ang datos sa sensor.",notEmergency:"Dili para sa emerhensya. Kung naay emerhensya, tawag sa 911 o sa barangay.",
     near:"duol sa"},
-  ilo:{car:"Sedan",carAt:["iti baba ti lugan", "agingga iti kagudua ti pilid", "agingga iti pilid", "labes ti hood"],name:"Ilokano",
+  ilo:{bike:"Motorsiklo",bikeAt:["iti baba ti makina","agingga iti makina","labes ti tambutso","labes ti tugaw"],bikePass:["malasatan","malasatan","in-inayad","saan a malasatan"],car:"Sedan",carAt:["iti baba ti lugan", "agingga iti kagudua ti pilid", "agingga iti pilid", "labes ti hood"],name:"Ilokano",
     none:"Awan ti naipadamag a layus.",allPass:"Malasatan amin a mabambantayan a kalsada.",
     wet:n=>`Adda danum iti ${n} a kalsada.`,wetPass:"Malasatan pay amin.",
     cut1:s=>`Saan a malasatan dagiti babassit a lugan ti ${s}.`,cutN:n=>`${n} a kalsada ti saan a malasatan dagiti babassit a lugan.`,
@@ -1289,7 +1312,7 @@ const LANGS={
     review:"Daytoy a patarus ket saan pay a narepaso ti propesional nga agipatpatarus.",
     demo:"Demo: pagarigan laeng ti datos ti sensor.",notEmergency:"Saan a para iti emerhensia. No adda emerhensia, tumawag iti 911 wenno iti barangay.",
     near:"asideg ti"},
-  hil:{car:"Sedan",carAt:["sa idalom sang salakyan", "hasta sa tunga sang goma", "hasta sa goma", "labaw sa hood"],name:"Hiligaynon",
+  hil:{bike:"Motorsiklo",bikeAt:["sa idalom sang makina","hasta sa makina","labaw sa tambutso","labaw sa pulungkuan"],bikePass:["maagyan","maagyan","hinay lang","indi maagyan"],car:"Sedan",carAt:["sa idalom sang salakyan", "hasta sa tunga sang goma", "hasta sa goma", "labaw sa hood"],name:"Hiligaynon",
     none:"Wala sang ginreport nga baha.",allPass:"Maagyan ang tanan nga ginabantayan nga dalan.",
     wet:n=>`May tubig sa ${n} ka dalan.`,wetPass:"Maagyan pa ang tanan.",
     cut1:s=>`Indi maagyan sang magagmay nga salakyan ang ${s}.`,cutN:n=>`${n} ka dalan ang indi maagyan sang magagmay nga salakyan.`,
@@ -1308,7 +1331,7 @@ const LANGS={
     review:"Ini nga translation wala pa ma-review sang propesyonal nga manugbadbad.",
     demo:"Demo: pakuno-kuno ang datos sang sensor.",notEmergency:"Indi para sa emerhensya. Kon may emerhensya, tawag sa 911 ukon sa barangay.",
     near:"malapit sa"},
-  pam:{car:"Sedan",carAt:["king lalam ning sasakyan", "anggang kapitna ning gulung", "anggang gulung", "lampas king hood"],name:"Kapampangan",
+  pam:{bike:"Motorsiklu",bikeAt:["king lalam ning makina","anggang makina","lampas king tambutsu","lampas king luklukan"],bikePass:["malyaring dalanan","malyaring dalanan","mabagal mu","e malyaring dalanan"],car:"Sedan",carAt:["king lalam ning sasakyan", "anggang kapitna ning gulung", "anggang gulung", "lampas king hood"],name:"Kapampangan",
     none:"Alang me-report a albug.",allPass:"Malyaring dalanan ding sablang dalan a babantayan.",
     wet:n=>`Ating danum king ${n} dalan.`,wetPass:"Malyari pang dalanan ngan.",
     cut1:s=>`E malyaring dalanan da ring mangalating sasakyan ing ${s}.`,cutN:n=>`${n} dalan ing e malyaring dalanan da ring mangalating sasakyan.`,
@@ -1329,7 +1352,23 @@ const LANGS={
     near:"malapit king"},
 };
 let LANG="en";
-const T=()=>LANGS[LANG];
+// Campus profile: the "streets" are footpaths, and a resident asks "can I walk it?" rather than "can I drive it?".
+// English only (SITE_CFG.langs="en"); the car verdict stays as a secondary line because service roads share the paths.
+const PATH_EN={
+  none:"No flooding reported.",allPass:"All monitored paths open.",
+  wet:n=>`Water on ${n} ${n===1?"path":"paths"}.`,wetPass:"All still open.",
+  cut1:s=>`1 path closed: ${s}.`,cutN:n=>`${n} paths closed.`,
+  my:"My path",choose:"Choose my path",change:"Change",all:"Monitored paths",
+  pickHint:"Pick the path you take across campus.",
+  pass:["Path open","Path open","Water on the path — walk with care","Path closed","Path closed"],
+  lg:["Water on the path","Deeper water","Sensor · no water","Water on path","Path closed"],
+  mapHint:"Tap a building on the map or in the list to see where its water reaches.",
+  notEmergency:"Not for emergency use. In an emergency call 911 or UCPD (510-642-3333).",
+  carPass:["Cars: passable","Cars: passable","Cars: drive slowly","Cars: do not drive through","Cars: do not drive through"],
+};
+const T=()=>SITE_CFG&&SITE_CFG.profile==="path"?Object.assign({},LANGS.en,PATH_EN):LANGS[LANG];
+// depth wording order follows the site's units: "16 in · 40 cm" on a US campus, "40 cm (16 in)" in the Philippines
+function fmtDepth(cm){return SITE_CFG&&SITE_CFG.units==="imperial"?`${inchesOf(cm)} in · ${cm} cm`:`${cm} cm (${inchesOf(cm)} in)`;}
 // depth tiers (m) → index into tier/pass arrays. MMDA convention.
 function tierOf(d){return d<0.05?0:d<0.20?1:d<0.45?2:d<0.75?3:4;}
 // Passability follows the car, per the MMDA Flood Gauge and Mamuyac et al. (2025, Nat. Hazards 121:14907):
@@ -1338,14 +1377,19 @@ const PASS={slow:0.25,nplv:0.33,npatv:0.66};
 function passIdx(d){return d<0.05?0:d<PASS.slow?1:d<PASS.nplv?2:d<PASS.npatv?3:4;}
 // where the water sits on a sedan: 0 under the car (< ground clearance 15 cm), 1 half-tire, 2 tire, 3 over the hood (75 cm)
 function carPart(d){return d<0.15?0:d<PASS.npatv?(d<PASS.nplv?0:1):d<0.75?2:3;}
+// Motorcycle (underbone): BahaWatch's own exhaust rule — the MMDA gauge defines no motorcycle level. Crankcase 15 cm, exhaust
+// outlet / footpegs 30 cm (where bikes stall), seat 78 cm. 0 under the engine, 1 at the engine, 2 over the exhaust, 3 over the seat.
+const BIKE={slow:0.15,np:0.30,seat:0.78};
+function bikeIdx(d){return d<0.05?0:d<BIKE.slow?1:d<BIKE.np?2:3;}
+function bikePart(d){return d<BIKE.slow?0:d<BIKE.np?1:d<BIKE.seat?2:3;}
 
 let myStreet=null;
-try{myStreet=localStorage.getItem("bw-street");}catch(e){}
+try{myStreet=localStorage.getItem(siteKey("bw-street"));}catch(e){}
 const $=id=>document.getElementById(id);
 
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 const shortSt=n=>n.replace(" Street"," St").replace(" Avenue"," Ave").replace(" Road"," Rd");
-const addr=s=>(s.hn?s.hn+" ":"")+shortSt(s.street);
+const addr=s=>s.bld?s.bld:(s.hn?s.hn+" ":"")+shortSt(s.street);
 function unitLabel(s){return esc(addr(s))+(s.near?`<small>${esc(T().near)} ${esc(shortSt(s.near))}</small>`:"");}
 function rowHTML(s,extraCls){
   const t=tierOf(s.depth),L=T();
@@ -1353,12 +1397,12 @@ function rowHTML(s,extraCls){
   return `<button class="p-row ${s.status}${extraCls||""}${s===selected?" selected":""}" data-id="${s.id}" aria-pressed="${s===selected}">
     <span class="shape ${s.status}" aria-hidden="true"></span>
     <span><span class="r-name">${unitLabel(s)}</span><span class="r-tier" style="display:block">${L.tier[t]}${trend}</span><span class="r-pass" style="display:block">${L.pass[passIdx(s.depth)]}</span></span>
-    <span class="r-cm">${Math.round(s.depth*100)} cm</span></button>`;
+    <span class="r-cm">${fmtDepth(Math.round(s.depth*100))}</span></button>`;
 }
 
 /* ---------- depth figure: an adult (160 cm) and a child (120 cm), original geometric silhouettes,
    on one ground line with water drawn over both and a cm / ft ruler. ---------- */
-const FIG={groundY:232,pxPerCm:1.25,adultCm:160,childCm:120,adultX:86,childX:150,carX:296,carW:212,rulerX:508};
+const FIG={groundY:232,pxPerCm:1.25,adultCm:160,childCm:120,adultX:86,childX:150,bikeX:302,carX:482,carW:212,rulerX:722};
 const cmY=cm=>FIG.groundY-cm*FIG.pxPerCm;
 const inchesOf=cm=>Math.round(cm/2.54);
 const ftIn=cm=>{const i=Math.round(cm/2.54);return `${Math.floor(i/12)}′${i%12}″`;};
@@ -1367,20 +1411,51 @@ function bodyPart(d,H){const r=d/H;return r<0.07?0:r<0.25?1:r<0.32?2:r<0.5?3:r<0
 // silhouette (right half, mirrored about x=52; drawn for a 210 px tall figure with ground at y=222)
 const SIL=(()=>{const R=[[56,39],[62,42],[72,48],[78,56],[82,66],[85,92],[86,118],[85,130],[80,134],[75,130],[75,118],[72,98],[71,78],[70,66],[67,84],[65,100],[67,116],[70,128],[68,146],[66,168],[65,190],[64,208],[66,216],[70,220],[60,221],[55,218],[54,208],[54,190],[54,168],[53,146],[52,134]];
   const L=R.slice(0,-1).reverse().map(([x,y])=>[104-x,y]);return "M"+[...R,...L].map(([x,y])=>x+" "+y).join(" L ")+" Z";})();
-// Sedan, front view, Vios-class: 1.70 m wide, 1.47 m tall, ground clearance 15 cm, tire top 66 cm, hood 75 cm, roof 147 cm.
+// Sedan, front view, subcompact class (Vios-size): 1.70 m wide, 1.47 m tall, ground clearance 15 cm, tire top 66 cm,
+// hood 78 cm, cowl 92 cm, roof 147 cm. Original geometric drawing; the MMDA half-tire / tire marks fall on the wheel.
 function carSVG(ink){
-  const x=FIG.carX,w=FIG.carW,g=FIG.groundY,y=cm=>g-cm*FIG.pxPerCm,px=cm=>cm*FIG.pxPerCm;
-  const L=x-w/2,R=x+w/2;
-  const tw=px(20),tr=px(33);            // tire width, tire radius (66 cm diameter)
+  const cx=FIG.carX, y=cm=>FIG.groundY-cm*FIG.pxPerCm, px=cm=>cm*FIG.pxPerCm;
+  const P=(hx,cm)=>`${(cx+px(hx)).toFixed(1)} ${y(cm).toFixed(1)}`;      // hx = half-width offset in cm (signed)
+  const R=(hx0,cm0,hx1,cm1,rx)=>`<rect x="${(cx+px(Math.min(hx0,hx1))).toFixed(1)}" y="${y(Math.max(cm0,cm1)).toFixed(1)}" width="${px(Math.abs(hx1-hx0)).toFixed(1)}" height="${px(Math.abs(cm1-cm0)).toFixed(1)}" rx="${px(rx).toFixed(1)}"`;
+  const body=`M${P(-85,23)} L${P(-86,46)} L${P(-84,79)} L${P(-72,92)} L${P(-61,137)} Q${P(-58,147)} ${P(-42,147)} L${P(42,147)} Q${P(58,147)} ${P(61,137)} L${P(72,92)} L${P(84,79)} L${P(86,46)} L${P(85,23)} Q${P(85,17)} ${P(79,17)} L${P(-79,17)} Q${P(-85,17)} ${P(-85,23)} Z`;
+  const tire=hx=>`${R(hx-10,0,hx+10,66,7)} class="tire" fill="${ink}" stroke="none"/>
+    ${R(hx-7,7,hx+7,59,5)} fill="none" stroke="var(--panel-2)" stroke-width="1.2" stroke-opacity="0.6"/>
+    <circle cx="${(cx+px(hx)).toFixed(1)}" cy="${y(33).toFixed(1)}" r="${px(6).toFixed(1)}" fill="var(--panel-2)" stroke="none"/>`;
+  const headlight=sg=>`<path class="headlight" d="M${P(sg*84,65)} L${P(sg*84,78)} L${P(sg*46,80)} L${P(sg*50,68)} Z" fill="var(--panel-2)"/>`;
+  const mirror=sg=>`${R(sg*73,96,sg*95,108,3)} class="mirror" fill="var(--panel-2)"/>`;
   return `
-    <rect x="${L+px(8)}" y="${y(66)}" width="${tw}" height="${px(51)}" rx="${px(6)}" fill="${ink}" stroke="none"/>
-    <rect x="${R-px(8)-tw}" y="${y(66)}" width="${tw}" height="${px(51)}" rx="${px(6)}" fill="${ink}" stroke="none"/>
-    <path d="M${L} ${y(30)} L${L} ${y(75)} Q${L} ${y(82)} ${L+px(8)} ${y(82)} L${L+px(22)} ${y(84)} L${L+px(38)} ${y(140)} Q${L+px(42)} ${y(147)} ${L+px(50)} ${y(147)} L${R-px(50)} ${y(147)} Q${R-px(42)} ${y(147)} ${R-px(38)} ${y(140)} L${R-px(22)} ${y(84)} L${R-px(8)} ${y(82)} Q${R} ${y(82)} ${R} ${y(75)} L${R} ${y(30)} Q${R} ${y(15)} ${R-px(6)} ${y(15)} L${L+px(6)} ${y(15)} Q${L} ${y(15)} ${L} ${y(30)} Z"/>
-    <path d="M${L+px(40)} ${y(88)} L${L+px(48)} ${y(136)} L${R-px(48)} ${y(136)} L${R-px(40)} ${y(88)} Z" fill="var(--water-fig)" fill-opacity="0.18"/>
-    <rect x="${L+px(12)}" y="${y(66)}" width="${px(30)}" height="${px(12)}" rx="${px(3)}"/>
-    <rect x="${R-px(12)-px(30)}" y="${y(66)}" width="${px(30)}" height="${px(12)}" rx="${px(3)}"/>
-    <rect x="${L+px(40)}" y="${y(52)}" width="${w-px(80)}" height="${px(16)}" rx="${px(4)}" fill="${ink}" fill-opacity="0.15" stroke="none"/>
-    <line x1="${L+px(20)}" x2="${R-px(20)}" y1="${y(30)}" y2="${y(30)}" stroke-width="1.2"/>`;
+    ${tire(-80)}${tire(80)}
+    <path d="${body}"/>
+    <path class="windshield" d="M${P(-70,94)} L${P(70,94)} L${P(60,135)} Q${P(0,139)} ${P(-60,135)} Z" fill="${ink}" fill-opacity="0.12" stroke-width="1.4"/>
+    ${headlight(-1)}${headlight(1)}
+    ${R(-40,71,40,77,1.5)} fill="${ink}" fill-opacity="0.28" stroke="none"/>
+    <path d="M${P(-50,28)} L${P(50,28)} L${P(44,60)} L${P(-44,60)} Z" fill="${ink}" fill-opacity="0.16" stroke-width="1.4"/>
+    ${R(-19,36,19,46,1)} fill="var(--panel-2)" stroke-width="1.4"/>
+    <line x1="${(cx-px(85)).toFixed(1)}" x2="${(cx+px(85)).toFixed(1)}" y1="${y(62).toFixed(1)}" y2="${y(62).toFixed(1)}" stroke-width="1.2" stroke-opacity="0.5"/>
+    ${mirror(-1)}${mirror(1)}`;
+}
+// Motorcycle, front view, underbone class (Wave / XRM / Sniper): 17″ wheel (tire top 66 cm), leg shield, handlebar 100 cm,
+// mirrors to 120 cm, crankcase 15–35 cm, exhaust header down the right side, footpegs at 30 cm. Original geometric drawing.
+function bikeSVG(ink){
+  const cx=FIG.bikeX, y=cm=>FIG.groundY-cm*FIG.pxPerCm, px=cm=>cm*FIG.pxPerCm;
+  const P=(hx,cm)=>`${(cx+px(hx)).toFixed(1)} ${y(cm).toFixed(1)}`;
+  const R=(hx0,cm0,hx1,cm1,rx)=>`<rect x="${(cx+px(Math.min(hx0,hx1))).toFixed(1)}" y="${y(Math.max(cm0,cm1)).toFixed(1)}" width="${px(Math.abs(hx1-hx0)).toFixed(1)}" height="${px(Math.abs(cm1-cm0)).toFixed(1)}" rx="${px(rx).toFixed(1)}"`;
+  return `
+    ${R(-4,0,4,66,4)} class="tire" fill="${ink}" stroke="none"/>
+    <circle cx="${(cx).toFixed(1)}" cy="${y(33).toFixed(1)}" r="${px(4).toFixed(1)}" fill="var(--panel-2)" stroke="none"/>
+    ${R(-13,14,13,36,4)} fill="${ink}" fill-opacity="0.35"/>
+    <path d="M${P(4,38)} Q${P(14,34)} ${P(16,20)}" fill="none" stroke-width="3" stroke-linecap="round"/>
+    ${R(-27,28,-19,31,1)} fill="${ink}"/>${R(19,28,27,31,1)} fill="${ink}"/>
+    <line x1="${(cx-px(5)).toFixed(1)}" x2="${(cx-px(5)).toFixed(1)}" y1="${y(36).toFixed(1)}" y2="${y(78).toFixed(1)}" stroke-width="2.4"/>
+    <line x1="${(cx+px(5)).toFixed(1)}" x2="${(cx+px(5)).toFixed(1)}" y1="${y(36).toFixed(1)}" y2="${y(78).toFixed(1)}" stroke-width="2.4"/>
+    <path d="M${P(-12,60)} Q${P(0,74)} ${P(12,60)}" fill="var(--panel-2)"/>
+    <path d="M${P(-22,36)} L${P(-24,60)} L${P(-17,82)} L${P(17,82)} L${P(24,60)} L${P(22,36)} Q${P(0,30)} ${P(-22,36)} Z" fill="var(--panel-2)"/>
+    <path d="M${P(-13,82)} L${P(-11,104)} Q${P(0,109)} ${P(11,104)} L${P(13,82)} Z" fill="var(--panel-2)"/>
+    <circle cx="${(cx).toFixed(1)}" cy="${y(92).toFixed(1)}" r="${px(7).toFixed(1)}" fill="${ink}" fill-opacity="0.18"/>
+    ${R(-35,98,35,102,2)} fill="${ink}"/>
+    <line x1="${(cx-px(32)).toFixed(1)}" x2="${(cx-px(36)).toFixed(1)}" y1="${y(102).toFixed(1)}" y2="${y(114).toFixed(1)}" stroke-width="1.6"/>
+    <line x1="${(cx+px(32)).toFixed(1)}" x2="${(cx+px(36)).toFixed(1)}" y1="${y(102).toFixed(1)}" y2="${y(114).toFixed(1)}" stroke-width="1.6"/>
+    ${R(-42,113,-30,121,2)} class="mirror" fill="var(--panel-2)"/>${R(30,113,42,121,2)} class="mirror" fill="var(--panel-2)"/>`;
 }
 function figureSVG(){
   const ink="var(--fig-ink)",water="var(--water-fig)",dim="var(--ink-2)";
@@ -1392,15 +1467,15 @@ function figureSVG(){
   const cS=(FIG.childCm*FIG.pxPerCm-2*10.5-3)/183, cHeadR=10.5;
   const cNeckY=FIG.groundY-183*cS, cHeadC=cNeckY-cHeadR-1;
   const ruler=[];
-  for(let cm=0;cm<=150;cm+=25)ruler.push(`<line x1="${FIG.rulerX-5}" x2="${FIG.rulerX}" y1="${cmY(cm)}" y2="${cmY(cm)}" stroke="${ink}" stroke-width="1"/><text x="${FIG.rulerX-8}" y="${cm===0?cmY(0)+9.5:cmY(cm)+3.2}" text-anchor="end" font-size="8.5" fill="${dim}">${cm}</text>`);
-  for(let ft=1;ft<=5;ft++){const y=cmY(ft*30.48);ruler.push(`<line class="ft" x1="${FIG.rulerX}" x2="${FIG.rulerX+5}" y1="${y}" y2="${y}" stroke="${ink}" stroke-width="1"/><text class="ft" x="${FIG.rulerX+8}" y="${y+3.2}" font-size="8.5" fill="${dim}">${ft} ft</text>`);}
-  return `<svg viewBox="-46 0 596 250" role="img" aria-labelledby="fig-title fig-desc" focusable="false">
+  for(let cm=0;cm<=150;cm+=25)ruler.push(`<line x1="${FIG.rulerX-5}" x2="${FIG.rulerX}" y1="${cmY(cm)}" y2="${cmY(cm)}" stroke="${ink}" stroke-width="1"/><text x="${FIG.rulerX-8}" y="${cm===0?cmY(0)+9.5:cmY(cm)+3.2}" text-anchor="end" font-size="13" fill="${dim}">${cm}</text>`);
+  for(let ft=1;ft<=5;ft++){const y=cmY(ft*30.48);ruler.push(`<line class="ft" x1="${FIG.rulerX}" x2="${FIG.rulerX+5}" y1="${y}" y2="${y}" stroke="${ink}" stroke-width="1"/><text class="ft" x="${FIG.rulerX+8}" y="${y+3.6}" font-size="11" fill="${dim}">${ft} ft</text>`);}
+  return `<svg viewBox="-46 0 812 250" role="img" aria-labelledby="fig-title fig-desc" focusable="false">
     <title id="fig-title"></title><desc id="fig-desc"></desc>
     <g font-family="Helvetica, Arial, sans-serif">
-      <text id="fig-adult-w" x="${FIG.adultX}" y="${aHeadC-aHeadR-14}" text-anchor="middle" font-size="9" font-weight="700" fill="${ink}"></text>
-      <text x="${FIG.adultX}" y="${aHeadC-aHeadR-4}" text-anchor="middle" font-size="8.5" fill="${dim}">1.60 m · ${ftIn(160)}</text>
-      <text id="fig-child-w" x="${FIG.childX}" y="${cHeadC-cHeadR-14}" text-anchor="middle" font-size="9" font-weight="700" fill="${ink}"></text>
-      <text x="${FIG.childX}" y="${cHeadC-cHeadR-4}" text-anchor="middle" font-size="8.5" fill="${dim}">1.20 m · ${ftIn(120)}</text>
+      <text id="fig-adult-w" x="${FIG.adultX}" y="${aHeadC-aHeadR-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${ink}"></text>
+      <text x="${FIG.adultX}" y="${aHeadC-aHeadR-4}" text-anchor="middle" font-size="11" fill="${dim}">1.60 m · ${ftIn(160)}</text>
+      <text id="fig-child-w" x="${FIG.childX}" y="${cHeadC-cHeadR-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${ink}"></text>
+      <text x="${FIG.childX}" y="${cHeadC-cHeadR-4}" text-anchor="middle" font-size="11" fill="${dim}">1.20 m · ${ftIn(120)}</text>
     </g>
     <g fill="var(--panel-2)" stroke="${ink}" stroke-width="2" stroke-linejoin="round">
       <circle cx="${FIG.adultX}" cy="${aHeadC}" r="${aHeadR}"/>
@@ -1411,25 +1486,33 @@ function figureSVG(){
     <g id="fig-car" fill="var(--panel2, var(--panel-2))" stroke="${ink}" stroke-width="2" stroke-linejoin="round">
       ${carSVG(ink)}
     </g>
+    <g id="fig-bike" fill="var(--panel-2)" stroke="${ink}" stroke-width="2" stroke-linejoin="round">
+      ${bikeSVG(ink)}
+    </g>
+    <g id="fig-bike-ticks" font-family="Helvetica, Arial, sans-serif" font-size="13">
+      ${[[15,"engine 6″"],[30,"exhaust 12″"]].map(([cm,lab])=>`<line x1="${FIG.bikeX-45}" x2="${FIG.bikeX-37}" y1="${cmY(cm)}" y2="${cmY(cm)}" stroke="${ink}" stroke-width="1"/><text x="${FIG.bikeX-48}" y="${cmY(cm)+3.6}" text-anchor="end" fill="${dim}" data-bike="${cm}">${lab}</text>`).join("")}
+      <text id="fig-bike-w" x="${FIG.bikeX}" y="${cmY(121)-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${ink}"></text>
+      <text x="${FIG.bikeX}" y="${cmY(121)-4}" text-anchor="middle" font-size="11" fill="${dim}">1.00 m · ${ftIn(100)}</text>
+    </g>
     <g id="fig-face-adult" data-mood="happy" transform="translate(${FIG.adultX},${aHeadC})" fill="${ink}" stroke="${ink}" stroke-width="1.6" stroke-linecap="round">
       <circle cx="-4" cy="-3" r="1.3" stroke="none"/><circle cx="4" cy="-3" r="1.3" stroke="none"/><path class="mouth" fill="none" d="M-4 3 q4 4 8 0"/>
     </g>
     <g id="fig-face-child" data-mood="happy" transform="translate(${FIG.childX},${cHeadC})" fill="${ink}" stroke="${ink}" stroke-width="1.5" stroke-linecap="round">
       <circle cx="-3.5" cy="-2.5" r="1.2" stroke="none"/><circle cx="3.5" cy="-2.5" r="1.2" stroke="none"/><path class="mouth" fill="none" d="M-3.5 2.5 q3.5 3.5 7 0"/>
     </g>
-    <g id="fig-ticks" font-family="Helvetica, Arial, sans-serif" font-size="8.5">
+    <g id="fig-ticks" font-family="Helvetica, Arial, sans-serif" font-size="10.5">
       ${words.map(([cm,i])=>`<line x1="${FIG.adultX-40}" x2="${FIG.adultX-30}" y1="${cmY(cm)}" y2="${cmY(cm)}" stroke="${ink}" stroke-width="1"/><text x="${FIG.adultX-43}" y="${cmY(cm)+3.2}" text-anchor="end" data-mark="${i}"></text>`).join("")}
     </g>
-    <g id="fig-car-ticks" font-family="Helvetica, Arial, sans-serif" font-size="8.5">
+    <g id="fig-car-ticks" font-family="Helvetica, Arial, sans-serif" font-size="13">
       ${[[15,"clr"],[33,"half-tire 13″"],[66,"tire 26″"],[75,"clr"]].map(([cm,lab])=>`<line x1="${FIG.carX+FIG.carW/2+4}" x2="${FIG.carX+FIG.carW/2+12}" y1="${cmY(cm)}" y2="${cmY(cm)}" stroke="${ink}" stroke-width="1"/><text x="${FIG.carX+FIG.carW/2+15}" y="${cmY(cm)+3.2}" fill="${dim}" data-car="${cm}">${lab==="clr"?"":lab}</text>`).join("")}
-      <text id="fig-car-w" x="${FIG.carX}" y="${cmY(147)-14}" text-anchor="middle" font-size="9" font-weight="700" fill="${ink}"></text>
-      <text x="${FIG.carX}" y="${cmY(147)-4}" text-anchor="middle" font-size="8.5" fill="${dim}">1.47 m · ${ftIn(147)}</text>
+      <text id="fig-car-w" x="${FIG.carX}" y="${cmY(147)-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${ink}"></text>
+      <text x="${FIG.carX}" y="${cmY(147)-4}" text-anchor="middle" font-size="11" fill="${dim}">1.47 m · ${ftIn(147)}</text>
     </g>
     <g id="fig-ruler" font-family="Helvetica, Arial, sans-serif">
       <line x1="${FIG.rulerX}" x2="${FIG.rulerX}" y1="${cmY(160)}" y2="${FIG.groundY}" stroke="${ink}" stroke-width="1.2"/>
       ${ruler.join("")}
-      <text x="${FIG.rulerX-8}" y="${cmY(160)-2}" text-anchor="end" font-size="8.5" font-weight="700" fill="${ink}">cm</text>
-      <text class="ft" x="${FIG.rulerX+8}" y="${cmY(160)-2}" font-size="8.5" font-weight="700" fill="${ink}">ft</text>
+      <text x="${FIG.rulerX-8}" y="${cmY(160)-2}" text-anchor="end" font-size="11" font-weight="700" fill="${ink}">cm</text>
+      <text class="ft" x="${FIG.rulerX+8}" y="${cmY(160)-2}" font-size="11" font-weight="700" fill="${ink}">ft</text>
     </g>
     <g id="fig-water">
       <path id="fig-wave" fill="${water}" fill-opacity="0.55" d=""/>
@@ -1461,12 +1544,13 @@ function renderFigure(s){
   }
   const childPart=L.parts[bodyPart(cm,FIG.childCm)];
   $("fig-title").textContent=L.figTitle;
-  $("fig-desc").textContent=L.figAlt(L.tier[t],cm,addr(s),childPart)+(cm>=5?` ${L.car}: ${L.carAt[carPart(s.depth)]}, ${L.pass[passIdx(s.depth)].toLowerCase()}.`:"");
+  $("fig-desc").textContent=L.figAlt(L.tier[t],cm,addr(s),childPart)+(cm>=5?` ${L.bike}: ${L.bikeAt[bikePart(s.depth)]}, ${L.bikePass[bikeIdx(s.depth)]}. ${L.car}: ${L.carAt[carPart(s.depth)]}, ${(L.carPass?L.carPass[passIdx(s.depth)]:L.pass[passIdx(s.depth)]).toLowerCase()}.`:"");
   const where=esc(addr(s));
   const childLine=cm>=5?`${esc(L.child)}, 1.20 m: ${esc(L.upto(childPart))}`:"";
-  const carLine=cm>=5?`${esc(L.car)}: ${esc(L.carAt[carPart(s.depth)])} · ${esc(L.pass[passIdx(s.depth)])}`:"";
-  $("fig-car-w").textContent=L.car;
-  $("p-fig-cap").innerHTML=`${esc(L.tier[t])} · ${cm} cm (${inchesOf(cm)} in) · ${where}<small>${childLine}${childLine&&carLine?" · ":""}${carLine}</small>`;
+  const bikeLine=cm>=5?`${esc(L.bike)}: ${esc(L.bikeAt[bikePart(s.depth)])} · ${esc(L.bikePass[bikeIdx(s.depth)])}`:"";
+  const carLine=cm>=5?`${esc(L.car)}: ${esc(L.carAt[carPart(s.depth)])} · ${esc(L.carPass?L.carPass[passIdx(s.depth)]:L.pass[passIdx(s.depth)])}`:"";
+  $("fig-car-w").textContent=L.car;$("fig-bike-w").textContent=L.bike;
+  $("p-fig-cap").innerHTML=`${esc(L.tier[t])} · ${fmtDepth(cm)} · ${where}<small>${[childLine,bikeLine,carLine].filter(Boolean).join(" · ")}</small>`;
   $("p-fig-h").textContent=L.figTitle;
 }
 
@@ -1525,18 +1609,19 @@ $("p-my-btn").addEventListener("click",()=>{
 });
 $("p-pick").addEventListener("click",e=>{
   const b=e.target.closest("[data-pick]");if(!b)return;
-  myStreet=b.dataset.pick;try{localStorage.setItem("bw-street",myStreet);}catch(x){}
+  myStreet=b.dataset.pick;try{localStorage.setItem(siteKey("bw-street"),myStreet);}catch(x){}
   pickMode=false;$("p-pick").style.display="none";
   const s=HOUSEHOLD.find(h=>h.id===myStreet);selectSensor(s);zoomTo(s.x,s.y,2.8);renderPublic();
   $("p-my-btn").focus();
 });
-$("p-lang").addEventListener("change",e=>{LANG=e.target.value;try{localStorage.setItem("bw-lang",LANG);}catch(x){}renderPublic();});
+$("p-lang").addEventListener("change",e=>{LANG=e.target.value;try{localStorage.setItem(siteKey("bw-lang"),LANG);}catch(x){}renderPublic();});
+const NAV_LANG=(()=>{const nav=(navigator.language||"").toLowerCase();return nav.startsWith("fil")||nav.startsWith("tl")?"fil":nav.startsWith("ceb")?"ceb":nav.startsWith("ilo")?"ilo":nav.startsWith("hil")?"hil":nav.startsWith("pam")?"pam":"en";})();
 (function initLang(){
   const sel=$("p-lang");
   for(const k in LANGS){const o=document.createElement("option");o.value=k;o.textContent=LANGS[k].name+REVIEW_TAG[k];sel.appendChild(o);}
-  let saved=null;try{saved=localStorage.getItem("bw-lang");}catch(e){}
+  let saved=null;try{saved=localStorage.getItem(siteKey("bw-lang"));}catch(e){}
   if(saved&&LANGS[saved])LANG=saved;
-  else{const nav=(navigator.language||"").toLowerCase();LANG=nav.startsWith("fil")||nav.startsWith("tl")?"fil":nav.startsWith("ceb")?"ceb":nav.startsWith("ilo")?"ilo":nav.startsWith("hil")?"hil":nav.startsWith("pam")?"pam":"en";}
+  else LANG=NAV_LANG;
   sel.value=LANG;
   $("p-figure").innerHTML=figureSVG();
 })();
@@ -1550,25 +1635,79 @@ function setView(v){
   else{document.querySelector("main").insertBefore(mw,document.querySelector("aside"));}
   renderBase();renderFlood();resize();resetView();
   if(v==="public")renderPublic();else refreshCards();
-  history.replaceState(null,"",v==="details"?"#details":location.pathname+location.search);
+  writeHash();
   window.scrollTo(0,0);
+}
+function siteKey(k){return k+":"+SITE;}
+function switchSite(id){
+  if(!DATA_ALL[id])id="tv";
+  // per-site language is persisted by the menu's change handler; nothing to save here
+  selected=null;pickMode=false;
+  const pk=document.getElementById("p-pick");pk.style.display="none";pk.setAttribute("aria-hidden","true");pk.innerHTML="";
+  initSite(id);
+  // DOM that was built once at boot
+  document.getElementById("house-cards").innerHTML="";buildCards();
+  document.getElementById("p-place").textContent=SITE_CFG.place;
+  document.querySelector(".brand-sub").textContent=SITE_CFG.place+" · household sensor network on real terrain";
+  document.title="BahaWatch — "+SITE_CFG.name+" Flood Monitor";
+  const keys=Object.keys(SCEN);
+  document.querySelectorAll(".scenarios button").forEach((b,i)=>{b.dataset.sc=keys[i];b.textContent=SCEN[keys[i]].label;b.classList.toggle("active",i===1);b.setAttribute("aria-pressed",i===1?"true":"false");});
+  scenario=keys[1];tMin=0;lastEmit=-999;cutSegs=[];noahSel="off";
+  document.querySelectorAll(".noah-chips button").forEach(b=>{b.classList.toggle("active",b.dataset.noah==="off");});
+  document.querySelector(".map-attr").textContent=SITE_CFG.attribution;document.getElementById("p-attr").textContent=SITE_CFG.attribution;
+  // restore per-site state
+  myStreet=null;try{myStreet=localStorage.getItem(siteKey("bw-street"));}catch(e){}
+  if(myStreet&&!HOUSEHOLD.some(s=>s.id===myStreet))myStreet=null;
+  applySiteLang();                                    // language menu, forced English, hazard UI
+  logEl.innerHTML="";log(`Site: <b>${SITE_CFG.name}</b>`);
+  renderBase();renderNoah();resize();resetView();
+  setPlay(!reducedMotion);                            // the story may have ended on the previous site
+  step(0,true);
+  if(VIEW==="public")renderPublic();else refreshCards();
+}
+function applySiteLang(){
+  const sel=document.getElementById("p-lang"),lab=document.querySelector('label[for=p-lang]');
+  if(SITE_CFG.langs==="en"){LANG="en";sel.value="en";sel.style.display="none";if(lab)lab.style.display="none";}
+  else{sel.style.display="";if(lab)lab.style.display="";let saved=null;try{saved=localStorage.getItem(siteKey("bw-lang"));}catch(e){}LANG=saved&&LANGS[saved]?saved:NAV_LANG;sel.value=LANG;}
+  // hazard reference UI exists only where a hazard layer does
+  const hz=SITE_CFG.hazard?"":"none";
+  document.querySelector(".noah-chips").style.display=hz;document.querySelector(".noah-h").style.display=hz;document.querySelector(".noah-lg").style.display=hz;
+  document.getElementById("f-nh-wrap").style.display=hz;
 }
 $("p-details").addEventListener("click",()=>setView("details"));
 $("d-simple").addEventListener("click",()=>setView("public"));
 $("p-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
 
+/* ---------- site tabs + hash routing: #<site>[/details] ---------- */
+function parseHash(){
+  const m=(location.hash||"").replace(/^#/,"").split("/");
+  if(m[0]==="details")m.unshift("tv");                       // pre-tab links: #details → Teachers Village details
+  const site=DATA_ALL[m[0]]?m[0]:"tv", view=m[1]==="details"?"details":"public";
+  return {site,view};
+}
+function writeHash(){history.replaceState(null,"",(SITE==="tv"&&VIEW==="public")?location.pathname+location.search:"#"+SITE+(VIEW==="details"?"/details":""));}
+function syncTabs(){document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=b.dataset.site===SITE;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
+document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
+  b.addEventListener("click",()=>{if(b.dataset.site!==SITE){switchSite(b.dataset.site);syncTabs();writeHash();}});
+  b.addEventListener("keydown",e=>{
+    const tabs=[...b.parentElement.querySelectorAll('[role="tab"]')],i=tabs.indexOf(b);
+    const j=e.key==="ArrowRight"?(i+1)%tabs.length:e.key==="ArrowLeft"?(i-1+tabs.length)%tabs.length:-1;
+    if(j<0)return;e.preventDefault();tabs[j].click();tabs[j].focus();
+  });
+});
+window.addEventListener("hashchange",()=>{const h=parseHash();if(h.site!==SITE){switchSite(h.site);syncTabs();}if(h.view!==VIEW)setView(h.view);});
+
 /* ---------- boot ---------- */
 window.addEventListener("resize",resize);
-if(location.hash==="#details")VIEW="details";
+const h0=parseHash();
+initSite(h0.site);buildCards();VIEW=h0.view;
 if(VIEW==="public")speed=720;   // the story plays in ~3 real minutes for a resident just glancing
-setView(VIEW);
+setView(VIEW);switchSite(h0.site);syncTabs();writeHash();
 log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
-log(`8 household units online · LoRaWAN, 10-min uplink (simulated)`);
-log(`Basemap: OSM · Terrain: Copernicus GLO-30 · Hazard ref: Project NOAH`);
+log(`${HOUSEHOLD.length} household units online · LoRaWAN, 10-min uplink (simulated)`);
+log(SITE_CFG.attribution);
 step(0,true);
 requestAnimationFrame(loop);
 </script>
 </body>
 </html>
-
-</body></html>
