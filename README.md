@@ -15,6 +15,11 @@ device API without touching the model.
 
 Live artifact: <https://claude.ai/artifact/Mjsm9genvWF9sFdXxuKis9>
 
+On GitHub Pages the repository root serves the dashboard: `index.html`
+redirects to `bahawatch_dashboard.html` and keeps a `#berkeley` /
+`#diliman/details` hash. Code is MIT-licensed; the data files carry their
+source licences (`DATA-LICENSE.md`).
+
 The file has **two views**:
 
 - **Public view (default)** — for residents: one status line, a street board
