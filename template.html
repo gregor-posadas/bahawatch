@@ -626,7 +626,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <ul id="rep-log"></ul>
     </details>
 
-    <p class="foot-note">Proof of concept on real data: OpenStreetMap streets and 17,993 building footprints, Copernicus GLO-30 terrain (conditioned: surface features filtered, streets carved as flow paths), and Project NOAH flood hazard as a reference layer. Each geotagged unit reports water depth at its own location; the model sets a local water surface there (ground + measured depth) and spreads it across the terrain only where topography allows, with a conservative decay away from the observation. No sensor reading, no modeled extent. Sensor readings are simulated — storm response is calibrated per site using its NOAH hazard class and local elevation. Not a forecast; not for emergency use.</p>
+    <p class="foot-note">Proof of concept on real data: OpenStreetMap streets, <span id="foot-nb"></span> building footprints, <span id="foot-terrain"></span> terrain (streets carved as flow paths<span id="foot-block">; water goes around cells that are at least 75% built</span>), and Project NOAH flood hazard as a reference layer.<span id="foot-limits"> FABDEM heights can be 1–3 m off in dense cities, and this is a spread from measured points over terrain and buildings, not a hydraulic model.</span> Each geotagged unit reports water depth at its own location; the model sets a local water surface there (ground + measured depth) and spreads it across the terrain only where topography allows, with a conservative decay away from the observation. No sensor reading, no modeled extent. Sensor readings are simulated — storm response is calibrated per site using its NOAH hazard class and local elevation. Not a forecast; not for emergency use.</p>
   </aside>
 </main>
 
@@ -645,7 +645,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 "use strict";
 /* =========================================================================
    BahaWatch — Teachers Village on real data
-   DATA: OSM streets/buildings/creeks, Copernicus GLO-30 terrain grid,
+   DATA: OSM streets/creeks, building footprints, FABDEM (USGS 1 m at Berkeley) terrain grid,
    NOAH hazard rasters. Model contract unchanged: flood extents derive ONLY
    from sensor observations, spread across the DEM with distance decay.
    ========================================================================= */
@@ -676,6 +676,7 @@ const RES=2.2;
 /* Site state — everything below is rebuilt by initSite(id) when a tab changes. */
 let SITE="tv", DATA=null, SITE_CFG=null;
 let W,H,GW,GH,N, elev,NOAH,STREETMASK,BLDS,HOUSEHOLD,SCEN, depth,srcIdx,fillGen,fillDist,fq, eMinD,eMaxD,tLo,tHi, SEG_SAMPLES;
+let BLOCK=null, SEA=null, BC=null;    // per-cell grids: water may not enter / sea / building footprints (Philippine sites)
 let baseCv=document.createElement("canvas"), noahCv=document.createElement("canvas"), floodCv=document.createElement("canvas");
 function b64bytes(s){const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
 function unrle(s){const b=b64bytes(s);const g=new Uint8Array(N);let o=0;for(let i=0;i<b.length;i+=2){g.fill(b[i+1],o,o+b[i]);o+=b[i];}return g;}
@@ -714,6 +715,10 @@ function initSite(id){
   });
   SCEN={};for(const k in SITE_CFG.scen)SCEN[k]={label:SITE_CFG.scen[k].label,P:SITE_CFG.scen[k].P,dur:SITE_CFG.scen[k].dur,start:SITE_CFG.scen[k].start};
   depth=new Float32Array(N);srcIdx=new Int8Array(N);fillGen=new Int32Array(N);fillDist=new Int32Array(N);fq=new Int32Array(N);
+  FS={depth,src:srcIdx,gen:fillGen,dist:fillDist,q:fq,g:0};
+  SEA=DATA.sea?unrle(DATA.sea):null;
+  BLOCK=DATA.block?unrle(DATA.block):SEA;
+  BC=DATA.bc?unrle(DATA.bc):null;
   for(const c of[baseCv,noahCv,floodCv]){c.width=Math.round(W*RES);c.height=Math.round(H*RES);}
   eMinD=1e9;eMaxD=-1e9;for(let i=0;i<N;i++){if(elev[i]<eMinD)eMinD=elev[i];if(elev[i]>eMaxD)eMaxD=elev[i];}
   const sorted=Float32Array.from(elev).sort();tLo=sorted[Math.floor(N*0.05)];tHi=sorted[Math.floor(N*0.95)];if(tHi-tLo<1)tHi=tLo+1;
@@ -749,49 +754,23 @@ const SyntheticSensorAPI={
   }
 };
 
-/* ---------- flood model: sensor-seeded terrain fill ---------- */
-const DECAY_PER_CELL=0.010;
-const MAX_STEPS=80;
-let gen=0;
-function computeFlood(t){
-  depth.fill(0);srcIdx.fill(-1);
-  for(const s of HOUSEHOLD){
-    if(s.depth<=0.02)continue;
-    const WSE=s.gElev+s.depth;
-    const cap=s.depth+0.45;   // extrapolate only within the observed depth band
-    gen++;
-    let qh=0,qt=0;
-    const start=s.cy*GW+s.cx;
-    fillGen[start]=gen;fillDist[start]=0;fq[qt++]=start;
-    while(qh<qt){
-      const i=fq[qh++],x=i%GW,y=(i/GW)|0,dstep=fillDist[i];
-      const avail=WSE-DECAY_PER_CELL*dstep;
-      const d=avail-elev[i];
-      if(d<=0.02||d>cap)continue; // dry ground, or far below the observed surface: no claim, no traverse
-      if(d>depth[i]){depth[i]=d;srcIdx[i]=s.idx;}
-      if(dstep>=MAX_STEPS)continue;
-      for(const j of [i-1,i+1,i-GW,i+GW]){
-        if(j<0||j>=N)continue;
-        if((j===i-1&&x===0)||(j===i+1&&x===GW-1))continue;
-        if(fillGen[j]===gen)continue;
-        fillGen[j]=gen;fillDist[j]=dstep+1;fq[qt++]=j;
-      }
-    }
-  }
-}
+/* ---------- flood model: sensor-seeded terrain fill, with buildings and sea as obstacles (shared/flood.js) ---------- */
+/*__FLOOD_JS__*/
+let FS=null;                          // the fill's scratch buffers, sized per site in initSite()
+function computeFlood(t){fillFlood({elev,block:BLOCK,GW,GH},HOUSEHOLD,FS);}
 const depthAtWorld=(x,y)=>(x<0||y<0||x>=W||y>=H)?0:depth[cellAt(x,y)];
 
 /* ---------- map theming ---------- */
 function mapPal(){
   const dark=document.documentElement.dataset.theme==="dark";
   return dark?{
-    bgLo:[36,34,32],bgHi:[50,47,42],street:"#4a4640",casing:"#1c1a18",alley:"#3a3733",
+    bgLo:[36,34,32],bgHi:[50,47,42],sea:[31,52,66],street:"#4a4640",casing:"#1c1a18",alley:"#3a3733",
     house:"rgba(150,141,126,0.8)",creek:"#70c0e0",
     label:"#bfb7aa",labelHalo:"rgba(36,34,32,0.92)",creekLabel:"#8fd3ef",
     bands:["#2e5a7a","#3f93bf","#a7e0f5"],markerFill:"#262421",markerInk:"#f3efe7",select:"#70c0e0",
     noah:["rgba(196,150,230,0.35)","rgba(170,110,215,0.45)","rgba(140,80,200,0.55)"]
   }:{
-    bgLo:[248,242,230],bgHi:[235,226,207],street:"#ffffff",casing:"#dfd4bf",alley:"#f3ecdd",
+    bgLo:[248,242,230],bgHi:[235,226,207],sea:[204,226,238],street:"#ffffff",casing:"#dfd4bf",alley:"#f3ecdd",
     house:"rgba(199,184,154,0.85)",creek:"#7cc4e4",
     label:"#66605a",labelHalo:"rgba(248,242,230,0.92)",creekLabel:"#1f6f9e",
     bands:["#8fc6e2","#2f86c2","#0030a0"],markerFill:"#fffdf8",markerInk:"#232120",select:"#0030a0",
@@ -827,6 +806,7 @@ function renderBase(){
   const tmp=document.createElement("canvas");tmp.width=GW;tmp.height=GH;
   tmp.getContext("2d").putImageData(img,0,0);
   ctx.imageSmoothingEnabled=true;ctx.drawImage(tmp,0,0,W,H);
+  paintSea(ctx,P);
   // roads by class, casing then fill
   const byCls={alley:[],minor:[],mid:[],major:[]};
   for(const r of DATA.roads)byCls[r.c].push(r);
@@ -846,8 +826,17 @@ function renderBase(){
 
 // Public map: a diagram, not a picture. Flat paper, named streets only, no buildings,
 // no terrain tint, no alleys — water is the only colored fill.
+// sea cells as open water under everything else (never flooded: the fill treats them as blocked)
+function paintSea(ctx,P){
+  if(!SEA)return;
+  const img=new ImageData(GW,GH),px=img.data;
+  for(let i=0;i<N;i++)if(SEA[i]){const o=i*4;px[o]=P.sea[0];px[o+1]=P.sea[1];px[o+2]=P.sea[2];px[o+3]=255;}
+  const tmp=document.createElement("canvas");tmp.width=GW;tmp.height=GH;tmp.getContext("2d").putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(tmp,0,0,W,H);ctx.imageSmoothingEnabled=true;
+}
 function renderBaseSimple(ctx,P){
   ctx.fillStyle=`rgb(${P.bgLo[0]},${P.bgLo[1]},${P.bgLo[2]})`;ctx.fillRect(0,0,W,H);
+  paintSea(ctx,P);
   const byCls={alley:[],minor:[],mid:[],major:[]};
   for(const r of DATA.roads)byCls[r.c].push(r);
   strokeWays(ctx,byCls.minor,9,P.casing);
@@ -1269,7 +1258,8 @@ function log(msg){
 }
 function updateImpact(){
   let floodedB=0,deep=0;
-  for(const b of BLDS)if(depthAtWorld(b[0],b[1])>0.05)floodedB++;
+  if(BC){for(let i=0;i<N;i++)if(BC[i]&&depth[i]>0.05)floodedB+=BC[i];}   // every footprint, even when the dots are a sample
+  else for(const b of BLDS)if(depthAtWorld(b[0],b[1])>0.05)floodedB++;
   for(const s of HOUSEHOLD)if(s.depth>deep)deep=s.depth;
   cutSegs=[];
   for(const p of SEG_SAMPLES){
@@ -2527,6 +2517,9 @@ function switchSite(id){
   scenario=keys[1];tMin=0;lastEmit=-999;cutSegs=[];noahSel="off";
   document.querySelectorAll(".noah-chips button").forEach(b=>{b.classList.toggle("active",b.dataset.noah==="off");});
   document.querySelector(".map-attr").textContent=SITE_CFG.attribution;document.getElementById("p-attr").textContent=SITE_CFG.attribution;
+  $("foot-nb").textContent=DATA.nb.toLocaleString()+(DATA.thin>1?" (drawn as a sample: one dot in "+DATA.thin+")":"");
+  $("foot-terrain").textContent=SITE_CFG.terrain||"Copernicus GLO-30";$("foot-block").hidden=!DATA.block;
+  $("foot-limits").hidden=!/FABDEM/.test(SITE_CFG.terrain||"");
   // restore per-site state
   myStreet=null;try{myStreet=localStorage.getItem(siteKey("bw-street"));}catch(e){}
   if(myStreet&&!HOUSEHOLD.some(s=>s.id===myStreet))myStreet=null;
