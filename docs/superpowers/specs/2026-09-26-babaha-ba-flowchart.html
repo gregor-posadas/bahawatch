@@ -1,0 +1,231 @@
+<title>Babaha ba? Decision Rule</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#f6f5f2; --ink:#1d1c1a; --ink-2:#5f5b55; --line:#d9d5ce;
+  --ok:#007a58; --warn:#9a6300; --alert:#c24e00; --stale:#6b6660;
+  --ok-bg:#e3f2ec; --warn-bg:#fbf0dc; --alert-bg:#fbe4d6; --stale-bg:#efedea;
+  --brand:#0030a0;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#1b1a19; --panel:#262422; --ink:#f3efe7; --ink-2:#b3aca2; --line:#3d3934;
+    --ok:#3cc79a; --warn:#f0b43a; --alert:#f08a4b; --stale:#aaa39a;
+    --ok-bg:#16312a; --warn-bg:#3a2d12; --alert-bg:#3d2415; --stale-bg:#2c2a27;
+    --brand:#8fb2ff;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#1b1a19; --panel:#262422; --ink:#f3efe7; --ink-2:#b3aca2; --line:#3d3934;
+  --ok:#3cc79a; --warn:#f0b43a; --alert:#f08a4b; --stale:#aaa39a;
+  --ok-bg:#16312a; --warn-bg:#3a2d12; --alert-bg:#3d2415; --stale-bg:#2c2a27;
+  --brand:#8fb2ff;
+}
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; font-size:15px; line-height:1.5}
+.wrap{max-width:980px; margin:0 auto; padding-inline:20px; padding-block:28px 48px}
+header{border-bottom:3px solid var(--ink); padding-bottom:12px; margin-bottom:22px}
+.kicker{font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2)}
+h1{font-size:34px; line-height:1.1; margin:6px 0 8px; letter-spacing:-.02em; text-wrap:balance}
+.lede{max-width:66ch; margin:0; color:var(--ink)}
+.lede b{font-weight:700}
+.chart{overflow-x:auto; border:1px solid var(--line); border-radius:6px; background:var(--bg); padding:8px 0}
+.chart svg{display:block; width:100%; min-width:760px; height:auto}
+.legend{display:flex; flex-wrap:wrap; gap:8px 22px; font-size:13px; color:var(--ink-2); margin:12px 2px 0}
+.legend span{display:inline-flex; align-items:center; gap:7px}
+.sw{width:14px; height:14px; display:inline-block}
+h2{font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2); margin:34px 0 10px}
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px}
+.card{border:1px solid var(--line); border-radius:6px; padding:14px 16px; background:var(--panel)}
+.card h3{font-size:15px; margin:0 0 6px}
+.card p{margin:0; font-size:14px; color:var(--ink)}
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{text-align:left; padding:6px 8px; border-top:1px solid var(--line); vertical-align:top}
+th{font-weight:600; color:var(--ink-2); font-size:12px; letter-spacing:.04em; text-transform:uppercase; border-top:none}
+td.num{font-variant-numeric:tabular-nums; white-space:nowrap}
+ol.words{max-width:72ch; padding-left:22px; margin:0}
+ol.words li{margin:6px 0}
+ol.words b{font-weight:700}
+.foot{margin-top:34px; padding-top:12px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-2)}
+@media (max-width:560px){ h1{font-size:26px} }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="kicker">BahaWatch · design draft · 26 Sept 2026</div>
+  <h1>Babaha ba? Will it flood here in the next hour?</h1>
+  <p class="lede">Every five minutes, for every place people follow, BahaWatch answers with one word: <b>Oo</b> (yes), <b>Baka</b> (maybe) or <b>Hindi</b> (no). The checks run top to bottom and the first match wins. Sensors outrank neighbours' reports, and the page never says "Hindi" on stale data.</p>
+</header>
+
+<div class="chart">
+<svg viewBox="0 0 880 900" role="img" aria-labelledby="t d">
+  <title id="t">Babaha ba? decision flowchart</title>
+  <desc id="d">Start every five minutes for each place. If the newest input is older than twenty minutes, answer "Walang bagong datos". Otherwise, if a sensor here reads at least 5 cm, will within 60 minutes, or water from a connected sensor arrives within 60 minutes, answer Oo. Otherwise, if three or more Yes reports from different phones came in within 1 km in the last hour: answer Baka if a sensor within 500 m is dry and steady, otherwise Oo. Otherwise, if heavy rain meets a NOAH flood zone, orange or red rain falls in any mapped area, one or two Yes reports arrived, or a sensor shows 1 to 4 cm, answer Baka. Otherwise answer Hindi. Every answer shows one reason line and how old its data is.</desc>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="var(--ink)"/>
+    </marker>
+  </defs>
+  <style>
+    .q{fill:var(--panel); stroke:var(--ink); stroke-width:1.4}
+    .qt{fill:var(--ink); font:14px "Helvetica Neue",Helvetica,Arial,sans-serif}
+    .qb{font-weight:700}
+    .sm{fill:var(--ink-2); font:12.5px "Helvetica Neue",Helvetica,Arial,sans-serif}
+    .ln{stroke:var(--ink); stroke-width:1.5; fill:none}
+    .yl{fill:var(--ink); font:700 12px "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:.04em}
+    .word{font:700 22px "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:.02em}
+    .gloss{font:13px "Helvetica Neue",Helvetica,Arial,sans-serif}
+    .num{fill:var(--ink-2); font:700 11px "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:.06em}
+  </style>
+
+  <!-- start -->
+  <rect x="80" y="16" width="320" height="40" rx="20" fill="var(--ink)"/>
+  <text x="240" y="41" text-anchor="middle" style="fill:var(--bg); font:700 14px 'Helvetica Neue',Helvetica,Arial,sans-serif">Every 5 minutes, for each place</text>
+  <line class="ln" x1="240" y1="56" x2="240" y2="86" marker-end="url(#ah)"/>
+
+  <!-- Q1 freshness -->
+  <text class="num" x="40" y="84">CHECK 1 · FRESH DATA</text>
+  <rect class="q" x="40" y="90" width="400" height="58" rx="4"/>
+  <text class="qt" x="58" y="115"><tspan class="qb">Is the newest input less than 20 min old?</tspan></text>
+  <text class="sm" x="58" y="135">Sensor readings, reports and rain data</text>
+  <line class="ln" x1="440" y1="119" x2="548" y2="119" marker-end="url(#ah)"/>
+  <text class="yl" x="476" y="112">NO</text>
+  <line class="ln" x1="240" y1="148" x2="240" y2="194" marker-end="url(#ah)"/>
+  <text class="yl" x="250" y="176">YES</text>
+
+  <!-- Q2 sensors -->
+  <text class="num" x="40" y="190">CHECK 2 · SENSORS</text>
+  <rect class="q" x="40" y="196" width="400" height="104" rx="4"/>
+  <text class="qt" x="58" y="221"><tspan class="qb">Does a sensor say water is here, or coming?</tspan></text>
+  <text class="sm" x="58" y="243">• A sensor here reads 5 cm or more now</text>
+  <text class="sm" x="58" y="262">• or will reach 5 cm within 60 min at its current rate</text>
+  <text class="sm" x="58" y="281">• or water from a connected sensor arrives within 60 min</text>
+  <line class="ln" x1="440" y1="248" x2="548" y2="248" marker-end="url(#ah)"/>
+  <text class="yl" x="476" y="241">YES</text>
+  <line class="ln" x1="240" y1="300" x2="240" y2="346" marker-end="url(#ah)"/>
+  <text class="yl" x="250" y="328">NO</text>
+
+  <!-- Q3 reports -->
+  <text class="num" x="40" y="342">CHECK 3 · REPORTS</text>
+  <rect class="q" x="40" y="348" width="400" height="58" rx="4"/>
+  <text class="qt" x="58" y="373"><tspan class="qb">3 or more "Yes" reports in the last hour?</tspan></text>
+  <text class="sm" x="58" y="393">From different phones, within 1 km</text>
+  <line class="ln" x1="240" y1="406" x2="240" y2="446" marker-end="url(#ah)"/>
+  <text class="yl" x="250" y="430">YES</text>
+  <!-- NO path around the left -->
+  <path class="ln" d="M40 377 H20 V560 H38" marker-end="url(#ah)"/>
+  <text class="yl" x="27" y="446">NO</text>
+
+  <!-- Q3b dry sensor -->
+  <rect class="q" x="80" y="448" width="360" height="58" rx="4"/>
+  <text class="qt" x="98" y="473"><tspan class="qb">Is a sensor within 500 m dry and steady?</tspan></text>
+  <text class="sm" x="98" y="493">A dry sensor outranks reports</text>
+  <!-- no -> up to Oo -->
+  <path class="ln" d="M440 470 H500 V300 H548" marker-end="url(#ah)"/>
+  <text class="yl" x="452" y="463">NO</text>
+  <!-- yes -> Baka -->
+  <line class="ln" x1="440" y1="494" x2="548" y2="494" marker-end="url(#ah)"/>
+  <text class="yl" x="476" y="487">YES</text>
+
+  <!-- Q4 conditions -->
+  <text class="num" x="40" y="540">CHECK 4 · CONDITIONS</text>
+  <rect class="q" x="40" y="546" width="400" height="150" rx="4"/>
+  <text class="qt" x="58" y="571"><tspan class="qb">Are flood conditions building?</tspan> Any of:</text>
+  <text class="sm" x="58" y="594">• Yellow rain or heavier (7.5 mm/h +), now or next hour,</text>
+  <text class="sm" x="70" y="611">and the place is in NOAH's 5- or 25-year flood zone</text>
+  <text class="sm" x="58" y="632">• Orange or red rain (15 mm/h +) anywhere NOAH-mapped</text>
+  <text class="sm" x="58" y="653">• 1 or 2 "Yes" reports nearby</text>
+  <text class="sm" x="58" y="674">• A sensor here shows 1 to 4 cm</text>
+  <line class="ln" x1="440" y1="610" x2="548" y2="610" marker-end="url(#ah)"/>
+  <text class="yl" x="476" y="603">YES</text>
+  <path class="ln" d="M240 696 V758 H548" marker-end="url(#ah)"/>
+  <text class="yl" x="250" y="726">NO</text>
+
+  <!-- outcomes -->
+  <!-- stale -->
+  <rect x="550" y="88" width="300" height="64" rx="4" fill="var(--stale-bg)" stroke="var(--stale)" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <text class="word" x="570" y="116" style="fill:var(--stale); font-size:17px">WALANG BAGONG DATOS</text>
+  <text class="gloss" x="570" y="138" style="fill:var(--ink)">No fresh data. Never shown as "Hindi".</text>
+
+  <!-- Oo -->
+  <rect x="550" y="196" width="300" height="118" rx="4" fill="var(--alert-bg)" stroke="var(--alert)" stroke-width="2"/>
+  <rect x="570" y="214" width="20" height="20" rx="2" fill="var(--alert)" stroke="var(--ink)" stroke-width="1.2"/>
+  <text class="word" x="602" y="232" style="fill:var(--alert)">OO</text>
+  <text class="gloss" x="570" y="258" style="fill:var(--ink)">Yes: flooding here now,</text>
+  <text class="gloss" x="570" y="276" style="fill:var(--ink)">or expected within the hour.</text>
+  <text class="sm" x="570" y="300">"Water rising on Maginhawa St, ~20 min away"</text>
+
+  <!-- Baka -->
+  <rect x="550" y="480" width="300" height="160" rx="4" fill="var(--warn-bg)" stroke="var(--warn)" stroke-width="2"/>
+  <path d="M580 498 L591 518 L569 518 Z" fill="var(--warn)" stroke="var(--ink)" stroke-width="1.2" stroke-linejoin="round"/>
+  <text class="word" x="602" y="516" style="fill:var(--warn)">BAKA</text>
+  <text class="gloss" x="570" y="542" style="fill:var(--ink)">Maybe: conditions for flooding,</text>
+  <text class="gloss" x="570" y="560" style="fill:var(--ink)">but no water measured yet.</text>
+  <text class="sm" x="570" y="586">"Heavy rain, and this barangay floods</text>
+  <text class="sm" x="570" y="603">in a 5-year storm"</text>
+  <text class="sm" x="570" y="625">"Neighbours report flooding; sensor here is dry"</text>
+
+  <!-- Hindi -->
+  <rect x="550" y="724" width="300" height="72" rx="4" fill="var(--ok-bg)" stroke="var(--ok)" stroke-width="2"/>
+  <circle cx="580" cy="748" r="9" fill="var(--bg)" stroke="var(--ok)" stroke-width="3.5"/>
+  <text class="word" x="602" y="756" style="fill:var(--ok)">HINDI</text>
+  <text class="gloss" x="570" y="782" style="fill:var(--ink)">No sign of flooding in the next hour.</text>
+
+  <!-- footer band -->
+  <rect x="40" y="826" width="810" height="54" rx="4" fill="none" stroke="var(--line)" stroke-width="1.2"/>
+  <text class="qt" x="58" y="850"><tspan class="qb">Every answer shows one reason and its age.</tspan></text>
+  <text class="sm" x="58" y="869">For example: "Water rising on Maginhawa St, ~20 min away · updated 3 min ago"</text>
+</svg>
+</div>
+<div class="legend" aria-hidden="true">
+  <span><span class="sw" style="background:var(--alert);border:1.2px solid var(--ink);border-radius:2px"></span>Oo · square</span>
+  <span><span class="sw" style="background:var(--warn);clip-path:polygon(50% 0,100% 100%,0 100%)"></span>Baka · triangle</span>
+  <span><span class="sw" style="border:3px solid var(--ok);border-radius:50%"></span>Hindi · circle</span>
+  <span><span class="sw" style="border:2px dashed var(--stale)"></span>No fresh data · dashed</span>
+  <span>Same shapes as the map markers, so the answer reads without colour.</span>
+</div>
+
+<h2>The same rule in words</h2>
+<ol class="words">
+  <li>If the newest sensor reading, report or rain figure is <b>more than 20 minutes old</b>, say <b>Walang bagong datos</b> (no fresh data). Stop.</li>
+  <li>If a <b>sensor here reads 5 cm or more</b>, will reach 5 cm within 60 minutes at its current rate, or water from a <b>connected sensor</b> will arrive within 60 minutes, say <b>Oo</b>.</li>
+  <li>If <b>3 or more "Yes" reports</b> came from different phones within 1 km in the last hour: say <b>Baka</b> if a sensor within 500 m is dry and steady, otherwise say <b>Oo</b>.</li>
+  <li>If <b>heavy rain meets a flood-prone place</b>, orange or red rain falls anywhere NOAH has mapped, 1–2 "Yes" reports came in, or a sensor shows 1–4 cm, say <b>Baka</b>.</li>
+  <li>Otherwise, say <b>Hindi</b>.</li>
+</ol>
+
+<h2>What each input means</h2>
+<div class="grid">
+  <div class="card">
+    <h3>"Here"</h3>
+    <p>The street the person picked, if it has a sensor. Otherwise within about 1 km of their phone's location, if they allow it. Otherwise the barangay they picked. No account needed; the choice stays on their phone.</p>
+  </div>
+  <div class="card">
+    <h3>Sensors</h3>
+    <p>BahaWatch household units measuring water depth at the gate. 5 cm is where water stands on the street; the 60-minute look-ahead uses each sensor's rate of rise and the time water takes to travel between connected sensors.</p>
+  </div>
+  <div class="card">
+    <h3>Reports</h3>
+    <p>One tap: "Is there flooding here?" Yes / No / Not sure. Counted per phone, not per tap, and only within 1 km and the last hour. An invisible bot check stops spam without logins.</p>
+  </div>
+  <div class="card">
+    <h3>Flood-prone places</h3>
+    <p>UP Project NOAH flood hazard maps for 5-, 25- and 100-year storms, plus how low the place sits in the terrain.</p>
+  </div>
+</div>
+
+<h2>Rain bands (PAGASA rainfall warnings)</h2>
+<div style="overflow-x:auto">
+<table>
+  <thead><tr><th>Warning</th><th>Rain rate</th><th>Role in the rule</th></tr></thead>
+  <tbody>
+    <tr><td>Yellow</td><td class="num">7.5–15 mm/h</td><td>Baka, but only in NOAH's 5- or 25-year flood zone</td></tr>
+    <tr><td>Orange</td><td class="num">15–30 mm/h</td><td>Baka anywhere NOAH has mapped</td></tr>
+    <tr><td>Red</td><td class="num">over 30 mm/h</td><td>Baka anywhere NOAH has mapped</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="foot">Design draft for discussion. Thresholds (5 cm, 3 reports, 1 km, 20 min) are starting values to be tuned with field data. Rain comes from forecast and satellite feeds; sensor readings in the current prototype are simulated. Hazard reference: UP Project NOAH. Not for emergency use.</p>
+</div>

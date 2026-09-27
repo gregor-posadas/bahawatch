@@ -19,6 +19,7 @@ the model should be as true to reality as the free data allows.
 about uncertainty; the public page stays static on GitHub Pages.
 
 **Success looks like:**
+
 - Anyone opening the page for a place sees Oo / Baka / Hindi with one reason and its age,
   and everyone looking at the same place sees the same answer.
 - A report takes one tap, needs no login, and cannot be spammed cheaply.
