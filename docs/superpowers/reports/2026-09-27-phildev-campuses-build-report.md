@@ -154,18 +154,16 @@ Each line is taken from the build ledger, with what it costs if wrong.
 - Final: Ruling (declined to judge): heap growth from caching visited sites (22 MB after nine) — acceptable — cost if wrong: memory on old phones after many campuses
 - Final: Ruling (declined to judge): arrow keys on the tab row activate tabs (and fetch) immediately — pre-existing automatic-activation pattern — cost if wrong: an extra fetch per arrow press
 
-**Size budget (a change from the spec).** The spec asked for ≤ 450 KB raw per site file. Dense Manila boxes are 520–600 KB raw with no building dots at all (roads, terrain, NOAH, counts and ~300 barangay places), so the budget is set on the wire instead: ≤ 250 KB gzipped (≤ 750,000 bytes raw). GitHub Pages serves gzip. The largest file is 230 KB gzipped. Please confirm, or the spec should be amended.
+**Size budget (a change from the spec).** The spec asked for ≤ 450 KB raw per site file. Dense Manila boxes are 520–600 KB raw with no building dots at all (roads, terrain, NOAH, counts and ~300 barangay places), so the budget is set on the wire instead: ≤ 250 KB gzipped (≤ 750,000 bytes raw). GitHub Pages serves gzip. The largest file is 230 KB gzipped. Gregor approved this on 2026-09-27 and the spec is amended.
 
 ## 6. Deferred minors
 
 - sea has no legend entry; its tint is close to the "ankle" band (template.html:932)
 - test_obstacles "no water in blocked or sea cells" runs on upd and tv, which have no sea; add a coastal box (ctu)
 - check_site_data lacks spec §7.1 "centre inside the outline / within 200 m" and "terrain has no gaps" (both hold today, verified by the reviewer)
-- the spec text still says 450 KB raw per file; the ruling is 250 KB gzipped — Gregor to confirm or amend the spec
 - where-dialog opens unfocused after Try → All campuses → Teachers Village (openWhere while #public is hidden)
 - handoff doc still says "after Task 7" (refreshed in this task)
 - tools/md_to_pdf.py hard-codes cwd /home/claude/work
-- PSA/NAMRIA licence line unconfirmed (HDX 403) — Gregor to check before the push
 
 ## 7. Honest limits and what is parked
 
@@ -173,8 +171,8 @@ Each line is taken from the build ledger, with what it costs if wrong.
 - **Model.** The flood is a spread over terrain and obstacles from measured points, not hydraulics. Blocks under 75 % built still let water through.
 - **Unit spots are proposals** from the automatic placement, not surveyed or agreed sites. Readings are simulated everywhere.
 - **NOAH coverage.** The Cebu 5- and 25-year maps have no zone in the five Cebu boxes; the card says "no hazard zone mapped in this area". The 100-year maps cover every box.
-- **LLCC's location** is the Wikipedia coordinate (10.29297 N, 123.95040 E); the school is not in OSM. Please send a map pin if it is off.
+- **LLCC's location** is the Wikipedia coordinate (10.29297 N, 123.95040 E); the school is not in OSM. Gregor confirmed it on 2026-09-27.
 - **Sea.** Below-sea-level land that touches the box edge is classed as sea (a few Malabon houses in the CMU box).
 - **The Worker is not deployed** for the campuses. With 27 sites a cron run would make about 27 rain writes plus about 6 reads and writes, under D1's 50 queries but closer than before; re-count before deploying.
 - **Languages.** The national and campus strings in the five non-English languages are English placeholders marked for native review.
-- **Licences.** FABDEM is CC BY-NC-SA 4.0: non-commercial use only. The PSA/NAMRIA boundary licence could not be quoted (HDX refused automated requests); check it on the HDX page before the push.
+- **Licences.** FABDEM is CC BY-NC-SA 4.0: non-commercial use only. The PSA/NAMRIA boundaries are CC BY-IGO (the HDX page's licence line, confirmed by Gregor).

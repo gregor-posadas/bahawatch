@@ -180,7 +180,7 @@ One folder on the PC ("Nationwide Update") holds the national downloads.
 | `PHL_buildings.parquet` (≈ 5 GB) | VIDA's combined building footprints (Google Open Buildings + Microsoft + OSM) | CC BY 4.0 (Google) / ODbL (Microsoft, OSM) |
 | `bahawatch-data/fabdem/*_FABDEM_V1-2.tif` | FABDEM V1-2 1° tiles (University of Bristol): Copernicus GLO-30 with buildings and trees removed, 30 m | CC BY-NC-SA 4.0 (non-commercial) |
 | `5yr-*.zip`, `25yr-*.zip`, `100yr-*.zip` | UP Project NOAH flood hazard shapefiles, one per province and return period | ODbL |
-| `phl_admin_boundaries.shp.zip` | PSA/NAMRIA administrative boundaries (OCHA HDX `cod-ab-phl`): barangays and the country outline | see `DATA-LICENSE.md` |
+| `phl_admin_boundaries.shp.zip` | PSA/NAMRIA administrative boundaries (OCHA HDX `cod-ab-phl`): barangays and the country outline | CC BY-IGO |
 
 ### 2.5 PhilDev campuses: the pipeline
 
@@ -964,7 +964,7 @@ Buildings: Google Open Buildings (CC BY 4.0), Microsoft Building Footprints
 (ODbL), OSM (ODbL), combined by VIDA · Terrain: FABDEM V1-2 © University of
 Bristol (CC BY-NC-SA 4.0, non-commercial); USGS 3DEP 1 m at Berkeley (public
 domain) · Flood hazard reference: UP Project NOAH / UP Resilience Institute
-(ODbL) · Administrative boundaries: PSA / NAMRIA via OCHA HDX. Full list:
+(ODbL) · Administrative boundaries: PSA / NAMRIA via OCHA HDX (CC BY-IGO). Full list:
 `DATA-LICENSE.md`.
 
 Not a forecast. Not for emergency use.

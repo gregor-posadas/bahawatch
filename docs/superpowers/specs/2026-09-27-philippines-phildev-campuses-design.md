@@ -320,7 +320,7 @@ The LiPAD 1 m DTM replaces FABDEM wherever it is granted.
   - Every unit has a street name and a barangay.
   - At least one barangay is covered.
   - NOAH shares are in 0–100 %, or "not available".
-  - `data/<id>.json` is ≤ 450 KB.
+  - `data/<id>.json` is ≤ 250 KB gzipped and ≤ 750,000 bytes before compression (amended 2026-09-27, see §7.5).
 - **Campus list:** 25 rows, no duplicate ids, ids lowercase letters only. Each row has a group, type, city
   and province. Groups count 17 / 5 / 3.
 
@@ -367,7 +367,9 @@ The LiPAD 1 m DTM replaces FABDEM wherever it is granted.
 ### 7.5 Speed and size
 
 - The opening page, with no campus data, is ≤ 250 KB gzipped.
-- Each campus file is ≤ 450 KB before compression.
+- Each campus file is ≤ 250 KB gzipped (≤ 750,000 bytes before compression). *Amended 2026-09-27, approved by Gregor: the
+  first budget was ≤ 450 KB before compression, but dense Manila boxes are 520–600 KB with no building dots at all, and
+  what a phone downloads is the gzipped size (GitHub Pages serves gzip).*
 - A campus appears within 3 s on the test browser's throttled "Fast 3G" profile.
 
 ### 7.6 Existing suites and screenshots

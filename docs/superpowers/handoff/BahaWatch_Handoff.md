@@ -1,7 +1,6 @@
 # BahaWatch: handoff for a new chat
 
-Last updated: 2026-09-27 (Sunday), after plan Task 13 of 13: the branch is built, reviewed and fixed, and waits for
-Gregor's review before it is merged into `main`.
+Last updated: 2026-09-27 (Sunday): the nationwide PhilDev prototype (plan Tasks 1–13) is merged into `main`.
 Kept at `docs/superpowers/handoff/BahaWatch_Handoff.md` in the repo and as `claude/BahaWatch_Handoff.md` in the
 "Berkeley PhD" Project. It is refreshed at milestones (after plan Tasks 5, 7 and 13) and whenever work stops mid-plan.
 
@@ -11,22 +10,19 @@ Kept at `docs/superpowers/handoff/BahaWatch_Handoff.md` in the repo and as `clau
 
 1. **Start the chat inside the "Berkeley PhD" Project.** That way this document, the spec and the plan are readable
    from the Project.
-2. **Attach `bahawatch.bundle`** from your Downloads. It is the whole git history, including the unmerged
-   `phildev-campuses` branch. The newest copy is the one Claude sent last in the previous chat.
+2. **Attach `bahawatch.bundle`** from your Downloads. It is the whole git history of the
+   `main` branch. The newest copy is the one Claude sent last in the previous chat.
 3. **Link the chat to your computer** (desktop app → "Link to this computer") if the work needs your PC.
    The pipeline step (plan Task 5), and re-staging the campus cuts, both need it.
 4. **Paste this as the first message:**
 
 > Continue BahaWatch from the handoff document `claude/BahaWatch_Handoff.md` in this Project (read it first, all
-> of it). Restore the repo from the attached `bahawatch.bundle` into `/home/claude/work` on branch
-> `phildev-campuses`. All 13 plan tasks are done. [Say one: "I reviewed it; merge it into main
-> (superpowers:finishing-a-development-branch), re-bundle, and give me the PowerShell commands." — or — "Change
-> these things first: …"] Answers to the open questions in §3: [LLCC pin / size budget / HDX licence].
+> of it). Restore the repo from the attached `bahawatch.bundle` into `/home/claude/work` on branch `main`. The PhilDev prototype is merged and live. Next I want to: [say what].
 
 **What the new chat should do first:**
 
 ```bash
-git clone -b phildev-campuses /mnt/user-data/uploads/bahawatch.bundle /home/claude/work
+git clone -b main /mnt/user-data/uploads/bahawatch.bundle /home/claude/work
 cd /home/claude/work && git config user.name "Gregor" && git config user.email "gregor500man.gerp@gmail.com"
 git branch -a && git log --oneline -12
 ```
@@ -78,7 +74,7 @@ git push
 4. A nationwide Philippines prototype for PhilDev showing "what a partnership would look like" at all 25 PhilDev partner
    institutions.
 
-Points 1–3 are live, and so is the "Try reporting" tab. **Point 4 is in progress** (§3).
+All four points are done; point 4 is live once Gregor pushes the merged `main` (§3).
 
 ---
 
@@ -90,7 +86,7 @@ Points 1–3 are live, and so is the "Try reporting" tab. **Point 4 is in progre
 |---|---|---|---|
 | Design spec | approved 2026-09-27 | `docs/superpowers/specs/2026-09-27-philippines-phildev-campuses-design.md` | BahaWatch_PhilDev-Campuses_Spec_2026-09-27.pdf |
 | Implementation plan | approved; **execution: Native** | `docs/superpowers/plans/2026-09-27-philippines-phildev-campuses.md` | BahaWatch_PhilDev-Campuses_Plan_2026-09-27.pdf |
-| Branch | `phildev-campuses` (from `main` at 539d17d) | — | — |
+| Branch | `phildev-campuses`, merged into `main` 2026-09-27 | — | — |
 
 **Progress table.** Claude updates this at each refresh. "Done" means committed on the branch; check `git log`.
 
@@ -110,31 +106,10 @@ Points 1–3 are live, and so is the "Try reporting" tab. **Point 4 is in progre
 | 12 | Accessibility, speed and size checks | **done** (e99ad3c) |
 | 13 | Docs, QR codes, screenshots, final review, build report PDF, demo, bundle | **done** (8a8873c … f7eec65, plus the handoff commit) |
 
-**What is left, in order:**
-1. Gregor reviews: the build report PDF (`BahaWatch_PhilDev-Campuses_Build_Report_2026-09-27.pdf`), the private demo
-   (updated to version 25; open `#xu` there to check a campus loads), and the open questions below.
-2. On his go-ahead: merge `phildev-campuses` into `main` with superpowers:finishing-a-development-branch, re-bundle
-   (`git bundle create /mnt/user-data/outputs/bahawatch.bundle main`), send it, and give him the PowerShell pull/push
-   commands (§2). GitHub Pages then serves the national map at the plain link.
-
-**Open questions for Gregor:**
-- **LLCC's location:** the Wikipedia point 10.29297 N, 123.95040 E (not in OSM). A Google Maps pin fixes it (re-cut one box).
-- **Size budget:** the spec says ≤ 450 KB raw per site file; the build uses ≤ 250 KB gzipped (≤ 750,000 raw). Confirm, or amend the spec.
-- **PSA/NAMRIA licence:** HDX refused automated requests, so `DATA-LICENSE.md` says "as stated on the HDX page, to confirm".
-  Check https://data.humdata.org/dataset/cod-ab-phl before the push.
-
-**Rulings made during execution (Task 5):**
-- PC steps run in the foreground, because background jobs die when a call ends. `cut` ran in groups of 3–5 boxes.
-- Streets pass: every 8th node is checked first, with a 0.05° pad.
-- NOAH: a province-extent index (`_noah_index.json`), a numpy shapefile reader, and empty zips skipped.
-- Outline choices, e.g. upd r20670730 and uplb w517120243. The wider pattern for QCU found the Quezon City Polytechnic University main campus.
-- LLCC isn't in OpenStreetMap, so it uses the Wikipedia point 10.29297, 123.95040 as a `manual` centre. Gregor was asked to correct it if wrong.
-- The country outline is 70 KB. Task 7 simplifies it further.
-
-**Task 7 rulings:**
-- **File size is measured on the wire:** ≤ 250 KB gzipped, and ≤ 750,000 bytes raw. Dense Manila boxes are over the spec's 450 KB raw even without building dots. Building dots are thinned to fit.
-- **Units 02–08 are kept off campus.** CLSU, UP Diliman and UPLB had several units on campus.
-- **The country outline** was simplified to 33 KB (tolerance 0.02°).
+**Status:** Gregor reviewed and approved on 2026-09-27; the branch is merged into `main` and `phildev-campuses` is deleted.
+His answers: LLCC stays on the Wikipedia point; the size budget is ≤ 250 KB gzipped (spec amended); the PSA/NAMRIA
+boundaries are CC BY-IGO (in `DATA-LICENSE.md` and the national-map footer). Nothing from this plan is left except
+the deferred minors below and §6.
 
 **Task 13 and final-review rulings and fixes:**
 - **Units stay ≥ 300 m inside the 3 km box** (the screenshots showed units clipped at the map edge or under the legend or
