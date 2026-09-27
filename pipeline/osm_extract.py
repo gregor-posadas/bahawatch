@@ -11,6 +11,7 @@ NAME_KEYS = ("name", "name:en", "official_name", "alt_name", "short_name", "old_
 HIGHWAYS = {"trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link", "tertiary", "tertiary_link",
             "residential", "unclassified", "busway", "service", "living_street", "pedestrian", "footway", "path", "cycleway"}
 WATERWAYS = {"river", "stream", "drain", "canal", "ditch"}
+SAMPLE_PAD_DEG = 0.05          # ≈5.5 km: how far a way may stray between its sampled nodes and still be found
 
 
 def _dist_m(lat1, lon1, lat2, lon2):
@@ -76,9 +77,20 @@ def extract_ways(pbf, boxes, index=None, margin_m=MARGIN_M):
         tags = {t.k: t.v for t in o.tags}
         if tags.get("highway") not in HIGHWAYS and tags.get("waterway") not in WATERWAYS:
             continue
-        if not all(n.location.valid() for n in o.nodes):
+        nodes = o.nodes
+        # Speed: most of the 1.8 M ways are nowhere near a box. Look at every 8th node (and the last) first, and only
+        # read the whole way when that sample, padded by SAMPLE_PAD_DEG, touches a box.
+        sample = [nodes[i].location for i in list(range(0, len(nodes), 8)) + [len(nodes) - 1]]
+        sample = [loc for loc in sample if loc.valid()]
+        if not sample:
+            continue
+        sx = [loc.lon for loc in sample]; sy = [loc.lat for loc in sample]
+        sb = (min(sx) - SAMPLE_PAD_DEG, min(sy) - SAMPLE_PAD_DEG, max(sx) + SAMPLE_PAD_DEG, max(sy) + SAMPLE_PAD_DEG)
+        if not any(overlaps(sb, b) for b in big.values()):
+            continue
+        if not all(n.location.valid() for n in nodes):
             continue                   # a way running off the edge of the extract
-        pts = [[round(n.lon, 6), round(n.lat, 6)] for n in o.nodes]
+        pts = [[round(n.lon, 6), round(n.lat, 6)] for n in nodes]
         if len(pts) < 2:
             continue
         xs = [p[0] for p in pts]; ys = [p[1] for p in pts]

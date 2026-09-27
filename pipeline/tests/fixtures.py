@@ -14,12 +14,30 @@ OSM = """<?xml version="1.0" encoding="UTF-8"?>
  <node id="9" lat="10.300" lon="123.900" version="1"><tag k="amenity" v="college"/><tag k="name" v="Mandaue City College"/></node>
  <node id="11" lat="10.301" lon="123.901" version="1"/>
  <node id="12" lat="10.302" lon="123.902" version="1"/>
+ <node id="100" lat="14.6500" lon="121.028" version="1"/>
+ <node id="101" lat="14.6505" lon="121.065" version="1"/>
+ <node id="102" lat="14.6510" lon="121.065" version="1"/>
+ <node id="103" lat="14.6515" lon="121.065" version="1"/>
+ <node id="104" lat="14.6520" lon="121.065" version="1"/>
+ <node id="105" lat="14.6525" lon="121.065" version="1"/>
+ <node id="106" lat="14.6530" lon="121.065" version="1"/>
+ <node id="107" lat="14.6535" lon="121.065" version="1"/>
+ <node id="108" lat="14.6540" lon="121.028" version="1"/>
+ <node id="109" lat="14.6545" lon="121.065" version="1"/>
+ <node id="110" lat="14.6550" lon="121.065" version="1"/>
+ <node id="111" lat="14.6555" lon="121.065" version="1"/>
+ <node id="112" lat="14.6560" lon="121.065" version="1"/>
+ <node id="113" lat="14.6565" lon="121.065" version="1"/>
+ <node id="114" lat="14.6570" lon="121.065" version="1"/>
+ <node id="115" lat="14.6575" lon="121.065" version="1"/>
+ <node id="116" lat="14.6580" lon="121.028" version="1"/>
  <way id="10" version="1"><nd ref="1"/><nd ref="2"/><nd ref="3"/><nd ref="4"/><nd ref="1"/>
   <tag k="amenity" v="university"/><tag k="name" v="University of the Philippines Diliman"/></way>
  <way id="20" version="1"><nd ref="5"/><nd ref="6"/><tag k="highway" v="primary"/><tag k="name" v="C.P. Garcia Avenue"/><tag k="surface" v="asphalt"/></way>
  <way id="21" version="1"><nd ref="7"/><nd ref="8"/><tag k="waterway" v="stream"/><tag k="name" v="Pansol Creek"/></way>
  <way id="22" version="1"><nd ref="7"/><nd ref="8"/><tag k="highway" v="motorway"/></way>
  <way id="23" version="1"><nd ref="11"/><nd ref="12"/><tag k="highway" v="residential"/></way>
+ <way id="24" version="1"><nd ref="100"/><nd ref="101"/><nd ref="102"/><nd ref="103"/><nd ref="104"/><nd ref="105"/><nd ref="106"/><nd ref="107"/><nd ref="108"/><nd ref="109"/><nd ref="110"/><nd ref="111"/><nd ref="112"/><nd ref="113"/><nd ref="114"/><nd ref="115"/><nd ref="116"/><tag k="highway" v="service"/></way>
 </osm>
 """
 

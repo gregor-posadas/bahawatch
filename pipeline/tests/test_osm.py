@@ -21,6 +21,10 @@ class Osm(unittest.TestCase):
         self.assertEqual([c["ref"] for c in got["mcc"]], ["n9"])
         self.assertEqual(got["mcc"][0]["area_m2"], 0)
         self.assertEqual(got["xu"], [])
+    def test_way_found_even_when_its_sampled_nodes_are_outside(self):
+        # extract_ways checks every 8th node first (speed); a street whose sampled nodes sit 4 km away must still count
+        got = X.extract_ways(self.pbf, {"a": C.box_around(14.655, 121.065)})
+        self.assertIn("service", [f["properties"].get("highway") for f in got["a"]])
     def test_radius_limits_matches(self):
         got = X.find_campus_areas(self.pbf, [dict(CAMPUSES[1], hint_lat=11.5, hint_lon=124.5)])
         self.assertEqual(got["mcc"], [])
@@ -28,7 +32,7 @@ class Osm(unittest.TestCase):
         b1 = C.box_around(14.655, 121.065); b2 = C.box_around(10.301, 123.901); b3 = C.box_around(8.0, 125.0)
         got = X.extract_ways(self.pbf, {"a": b1, "b": b2, "c": b3})
         kinds = sorted((f["properties"].get("highway") or f["properties"].get("waterway")) for f in got["a"])
-        self.assertEqual(kinds, ["primary", "stream"])       # the motorway is not a street people live on
+        self.assertEqual(kinds, ["primary", "service", "stream"])   # the motorway is not a street people live on
         self.assertEqual(got["a"][0]["properties"], {"highway": "primary", "name": "C.P. Garcia Avenue"})
         self.assertEqual(len(got["b"]), 1); self.assertEqual(got["c"], [])
         self.assertEqual(got["a"][0]["geometry"]["coordinates"][0], [121.05, 14.655])
