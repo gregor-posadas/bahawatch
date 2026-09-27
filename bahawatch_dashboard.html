@@ -353,7 +353,7 @@ pre#api-json{
     <div class="p-left">
       <section class="p-answer" id="p-answer" data-answer="nodata" aria-labelledby="p-ans-q">
         <div class="p-ans-q" id="p-ans-q">Babaha ba? · <span id="p-ans-place">—</span></div>
-        <div class="p-ans-live" role="status" aria-live="polite" aria-atomic="true">
+        <div class="p-ans-live">
           <div class="p-ans-row">
             <span class="p-ans-shape" id="p-ans-shape" aria-hidden="true"></span>
             <span class="p-ans-word" id="p-ans-word">—</span>
@@ -362,6 +362,7 @@ pre#api-json{
           <div class="p-ans-reason" id="p-ans-reason"></div>
         </div>
         <div class="p-ans-age" id="p-ans-age"></div>
+        <p id="p-ans-announce" class="sr-only" role="status" aria-live="polite"></p>
         <button class="p-link p-ans-pick" id="p-ans-pick" hidden></button>
       </section>
       <div id="p-rep-slot"></div>
@@ -1581,15 +1582,24 @@ function demoInputs(p){
   const rain={nowMmH:P*pulse(tMin,0)*DEMO_RAIN_MMH_PER_P,nextMmH:P*pulse(tMin+60,0)*DEMO_RAIN_MMH_PER_P,at:now};
   return {now,place:p,sensors,reports:{yesPhones:0,newestAt:null},rain};
 }
+let lastAnnounced=null;   // (place, answer, reason key) triple last spoken through #p-ans-announce
 function showAnswer(v,serverNow){
   const L=A(),box=$("p-answer");
   box.dataset.answer=v.answer;
   $("p-ans-word").textContent=L.word[v.answer];
   $("p-ans-gloss").textContent=L.gloss[v.answer];
-  $("p-ans-reason").textContent=fill(L.reason[v.reason.key]||"",v.reason.vars||{});
+  const reasonText=fill(L.reason[v.reason.key]||"",v.reason.vars||{});
+  $("p-ans-reason").textContent=reasonText;
   const ref=serverNow!=null?serverNow:BASE.getTime()+tMin*60000;
   const m=v.updatedAt!=null?Math.max(0,Math.round((ref-v.updatedAt)/60000)):null;
   $("p-ans-age").textContent=m==null?"":m<1?L.justNow:fill(L.age,{m});
+  // announce through the hidden live region only when the answer materially changed — not on every
+  // re-render tick (which would re-speak the whole thing, reason included, every few seconds while playing)
+  const triple=myPlace+"|"+v.answer+"|"+v.reason.key;
+  if(triple!==lastAnnounced){
+    lastAnnounced=triple;
+    $("p-ans-announce").textContent=`${L.word[v.answer]}. ${L.gloss[v.answer]}. ${reasonText}`;
+  }
 }
 function placeArea(){
   const area=$("p-area"),target=myPlace?$("p-bottom-area"):$("p-top-area");

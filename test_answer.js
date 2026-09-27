@@ -19,19 +19,35 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
   assert(s.n>=18&&s.b&&s.berk,"places.json embedded with barangays for Philippine sites only");
   // pick a sensor street, storm peak -> Oo with square shape, reason names the street
   await pg.evaluate(()=>{setPlace("tv:s:BW-H07");playing=false;scenario="typhoon";tMin=495;lastEmit=-999;step(0,true);});
-  s=await pg.evaluate(()=>{
-    const live=document.querySelector('#p-answer [role=status]');
-    return {ans:document.getElementById('p-answer').dataset.answer,word:document.getElementById('p-ans-word').textContent,
-      shape:getComputedStyle(document.getElementById('p-ans-shape')).borderRadius,
-      reason:document.getElementById('p-ans-reason').textContent,
-      live:live.getAttribute('aria-live'),
-      reasonInLive:live.contains(document.getElementById('p-ans-reason')),
-      ageInLive:live.contains(document.getElementById('p-ans-age')),
-      bottom:document.getElementById('p-bottom-area').contains(document.getElementById('p-area'))};
-  });
+  s=await pg.evaluate(()=>({ans:document.getElementById('p-answer').dataset.answer,word:document.getElementById('p-ans-word').textContent,
+    shape:getComputedStyle(document.getElementById('p-ans-shape')).borderRadius,
+    reason:document.getElementById('p-ans-reason').textContent,
+    bottom:document.getElementById('p-bottom-area').contains(document.getElementById('p-area'))}));
   assert(s.ans==="oo"&&s.shape==="3px"&&/Mayaman/.test(s.reason),"storm peak on Mayaman: Oo, square shape, reason naming the street: "+s.reason);
-  assert(s.live==="polite"&&s.reasonInLive&&!s.ageInLive,"live region covers word+gloss+reason but excludes the age line (which shouldn't re-announce every minute): "+JSON.stringify(s));
   assert(s.bottom,"with a place chosen, the area headline moves under the list");
+  // the visible answer text is no longer itself a live region — a visually-hidden #p-ans-announce is
+  s=await pg.evaluate(()=>{
+    const ann=document.getElementById('p-ans-announce'),cs=getComputedStyle(ann);
+    return {role:ann.getAttribute('role'),live:ann.getAttribute('aria-live'),
+      hiddenVisually:cs.position==="absolute"&&parseFloat(cs.width)<=1&&parseFloat(cs.height)<=1,
+      text:ann.textContent,
+      visibleNotLive:!document.querySelector('#p-answer .p-ans-live[role], #p-answer .p-ans-live[aria-live]')};
+  });
+  assert(s.role==="status"&&s.live==="polite"&&s.hiddenVisually,"a visually-hidden #p-ans-announce carries role=status/aria-live=polite: "+JSON.stringify(s));
+  assert(s.visibleNotLive,"the visible word/gloss/reason are plain text, not themselves a live region");
+  assert(/Yes/.test(s.text)&&/Mayaman/.test(s.text),"announcement names the word and the reason: "+s.text);
+  // stepping forward within the same answer state must NOT rewrite the announcement (no per-tick re-announce)
+  s=await pg.evaluate(async()=>{
+    const ann=document.getElementById('p-ans-announce');
+    let mutations=0;const mo=new MutationObserver(()=>mutations++);
+    mo.observe(ann,{childList:true,characterData:true,subtree:true});
+    const before=ann.textContent;
+    for(let i=0;i<5;i++){tMin+=1;lastEmit=-999;step(0,true);}
+    await new Promise(r=>setTimeout(r,0));   // let any queued MutationObserver callback actually fire before disconnecting
+    mo.disconnect();
+    return {mutations,unchanged:ann.textContent===before,stillOo:document.getElementById('p-answer').dataset.answer==="oo"};
+  });
+  assert(s.stillOo&&s.mutations===0&&s.unchanged,"same answer state across several ticks does not rewrite the hidden announcement: "+JSON.stringify(s));
   // area headline/sub/updated keep their severity styling (colour + hierarchy) once moved under the list, just smaller
   s=await pg.evaluate(()=>{
     const toRGB=v=>{const d=document.createElement('span');d.style.color=v;document.body.appendChild(d);const c=getComputedStyle(d).color;d.remove();return c;};
@@ -46,10 +62,19 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
   assert(s.hlColor===s.alertRGB,"headline keeps its --alert severity colour once moved under the list: "+s.hlColor+" vs "+s.alertRGB);
   assert(s.updColor===s.ink2RGB,"updated line keeps its --ink-2 colour once moved under the list: "+s.updColor+" vs "+s.ink2RGB);
   assert(s.hlSize<topArea.hlSize&&s.updSize<=topArea.updSize,`area line is visibly smaller under the list than at the top: headline ${s.hlSize}px vs ${topArea.hlSize}px, updated ${s.updSize}px vs ${topArea.updSize}px`);
-  // dry day -> Hindi
-  await pg.evaluate(()=>{scenario="clear";tMin=100;lastEmit=-999;step(0,true);});
-  s=await pg.evaluate(()=>document.getElementById('p-answer').dataset.answer);
-  assert(s==="hindi","dry day: Hindi");
+  // dry day -> Hindi; a real state change (oo -> hindi) rewrites the hidden announcement exactly once
+  s=await pg.evaluate(async()=>{
+    const ann=document.getElementById('p-ans-announce');
+    let mutations=0;const mo=new MutationObserver(()=>mutations++);
+    mo.observe(ann,{childList:true,characterData:true,subtree:true});
+    scenario="clear";tMin=100;lastEmit=-999;step(0,true);
+    await new Promise(r=>setTimeout(r,0));
+    mo.disconnect();
+    return {mutations,text:ann.textContent,ans:document.getElementById('p-answer').dataset.answer};
+  });
+  assert(s.ans==="hindi","dry day: Hindi");
+  assert(s.mutations===1,"a real state change rewrites the hidden announcement exactly once: "+s.mutations);
+  assert(/No/.test(s.text),"announcement updates to the new state's word: "+s.text);
   // nodata rendering is grey and dashed, never Hindi
   s=await pg.evaluate(()=>{showAnswer({answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:null,etaMin:null});const e=document.getElementById('p-answer');return {a:e.dataset.answer,bs:getComputedStyle(e).borderStyle,w:document.getElementById('p-ans-word').textContent};});
   assert(s.a==="nodata"&&/dashed/.test(s.bs)&&!/Hindi|^No$/.test(s.w),"nodata: dashed grey box, not Hindi: "+s.w);
