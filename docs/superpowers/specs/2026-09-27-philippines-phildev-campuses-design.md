@@ -62,15 +62,17 @@ acting as obstacles to water.
 
 - **Plain link.** A plain link (no hash) or `#ph` opens a map of the Philippines with all 25 campuses.
 - **Outline.** The country outline is simplified from the admin boundaries file, about 30 KB.
-- **Pins by type**, told apart by shape as well as colour:
 
-  | Type | Pin |
-  |---|---|
-  | State university / college (SUC) | Blue #385F96 circle |
-  | Local university / college (LUC) | Orange #CF5921 square |
-  | Private | Maroon #800000 triangle |
+**Pins by type**, told apart by shape as well as colour:
 
-  A legend says this in words.
+| Type | Pin |
+|---|---|
+| State university / college (SUC) | Blue #385F96 circle |
+| Local university / college (LUC) | Orange #CF5921 square |
+| Private | Maroon #800000 triangle |
+
+A legend says this in words.
+
 - **Labels.** Each pin has a short text label (e.g. "UPLB"). Where labels collide in Metro Manila, the map
   shows a count bubble ("12 campuses") that zooms in when chosen.
 - **Campus list** beside the map on desktop, below it on phones:
@@ -85,7 +87,7 @@ acting as obstacles to water.
 
 - **Link.** `#<id>`, e.g. `#upd`, `#xu`. The same scheme as the existing `#tv`, `#tv/details` and
   `#tv/live`. Ids are lowercase letters only, so share tokens `#p.<id>.s.<sensor>` keep working.
-- **Header:** "‹ All campuses · <campus name> ▾". The ▾ opens the same picker.
+- **Header:** "‹ All campuses · [campus name] ▾". The ▾ opens the same picker.
 - **Map.** The existing simple view on the new terrain: streets, creeks, buildings, the 8 units and the
   simulated storm, with the "Babaha ba?" answer for the chosen place.
   - Detail view, language menu, share links and QR codes work as they do today.
@@ -342,7 +344,7 @@ The LiPAD 1 m DTM replaces FABDEM wherever it is granted.
   - The list is grouped 17 / 5 / 3.
   - Search finds "Xavier" → XU, "UPLB" → UPLB, "Iligan" → MSU-IIT, and says how many matched.
 - **Campus pages:**
-  - Choosing a campus fetches only `data/<id>.json`, and the header reads "‹ All campuses · <name>".
+  - Choosing a campus fetches only `data/<id>.json`, and the header reads "‹ All campuses · [campus name]".
   - "‹ All campuses" and the browser Back button both return to the national map.
   - `#xu` opens XU directly.
   - Each card shows 8 units, the barangay count and three NOAH lines, with the simulation label present.

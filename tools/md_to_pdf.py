@@ -6,6 +6,28 @@ args=sys.argv[1:]; src, out = args[0], args[1]
 svg_src = args[args.index("--svg")+1] if "--svg" in args else None
 after   = args[args.index("--after")+1] if "--after" in args else None
 md=open(src,encoding="utf-8").read()
+def _lists_for_python_markdown(md):
+    """Python-Markdown needs 4-space nesting and a blank line before a list; specs use CommonMark's 2-space style."""
+    LIST=re.compile(r"^( *)([-*+]|\d+\.)\s")
+    lines=md.split("\n")
+    two=any((m:=LIST.match(l)) and len(m.group(1))%4==2 for l in lines)   # a 2-space-nested document
+    out=[]; fence=False; prev=""; in_list=False
+    for line in lines:
+        if line.lstrip().startswith("```"): fence=not fence
+        m=None if fence else LIST.match(line)
+        if m:
+            n=len(m.group(1))
+            if prev.strip() and n==0 and not in_list and not prev.lstrip().startswith("|"): out.append("")
+            if two: line=" "*(n*2)+line[n:]
+            in_list=True
+        elif not fence and in_list and line.strip() and line.startswith(" "):
+            n=len(line)-len(line.lstrip())
+            if two: line=" "*(n*2)+line[n:]      # continuation line keeps pace with its item
+        elif not line.strip() or not line.startswith(" "):
+            if line.strip(): in_list=False
+        out.append(line); prev=line
+    return "\n".join(out)
+md=_lists_for_python_markdown(md)
 body=markdown.markdown(md, extensions=["tables","fenced_code","sane_lists"])
 if svg_src and after:
     svg=re.search(r"<svg.*?</svg>", open(svg_src,encoding="utf-8").read(), re.S).group(0)
