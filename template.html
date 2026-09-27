@@ -259,6 +259,8 @@ body[data-live="1"][data-view="public"] .p-maplegend, body[data-live="1"][data-v
 .p-where .p-where-skip{border-color:transparent; color:var(--ink-2); font-weight:400}
 .p-where-list{display:grid; gap:6px; max-height:40vh; overflow-y:auto}
 .p-where-list[hidden]{display:none}
+.p-where-msg{font-size:15px; font-weight:600; color:var(--ink)}
+.p-where-msg:empty{display:none}
 .p-fig{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:580px}
 .p-fig[hidden]{display:none}
 .p-live-note{font-size:14.5px; color:var(--ink-2); line-height:1.4; padding-top:2px}
@@ -373,6 +375,7 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
     <button data-act="brgy"></button>
     <button data-act="sensor"></button>
     <button data-act="skip" class="p-where-skip"></button>
+    <p class="p-where-msg" id="p-where-msg" role="status" aria-live="polite"></p>
     <div class="p-where-list" id="p-where-list" hidden></div>
   </div>
   <div class="p-review" id="p-review"></div>
@@ -1512,42 +1515,42 @@ const PATH_EN={
 };
 /* ---------- "Babaha ba?" answer strings (spec §3, §5, §6). ceb/ilo/hil/pam pending professional review. ---------- */
 const ANS_LANGS={
- en:{q:"Will it flood here?",demoChip:"Demo · simulated storm",word:{oo:"Yes",baka:"Maybe",hindi:"No",nodata:"No fresh data"},
+ en:{q:"Will it flood here?",notCovered:"BahaWatch doesn't cover your location yet.",demoChip:"Demo · simulated storm",word:{oo:"Yes",baka:"Maybe",hindi:"No",nodata:"No fresh data"},
   gloss:{oo:"Flooding here now, or expected within the hour.",baka:"Conditions for flooding, but no water measured yet.",hindi:"No sign of flooding in the next hour.",nodata:"Check again soon."},
   reason:{stale:"The newest data is over 20 minutes old.",sensor_now:"Water on {name}: {cm} cm.",sensor_soon:"Water rising on {name}, about {min} min away.",upstream:"Water rising near {name}, about {min} min away.",reports:"{n} neighbours report flooding nearby.",reports_vs_dry_sensor:"Neighbours report flooding; sensor here is dry.",rain_flood_zone:"Heavy rain ({mm} mm/h), and this area floods in a 5- or 25-year storm.",rain_heavy:"Very heavy rain ({mm} mm/h) in a mapped flood area.",reports_few:"Neighbours report flooding nearby ({n}).",sensor_trace:"A little water on {name} ({cm} cm).",clear:"No flood signs from sensors, reports or rain.",clear_no_sensor:"No heavy rain or flood reports nearby. No sensor here yet."},
   age:"updated {m} min ago",justNow:"updated just now",pick:"Pick your place to get an answer.",pickBtn:"Pick your place",
   whereQ:"Where are you?",useLoc:"Use my location",pickBrgy:"Pick my barangay",pickSensor:"Pick a street with a sensor",skip:"Skip",
   locFail:"Couldn't get your location. Pick your barangay instead.",
   share:"Share my place",copied:"Link copied"},
- fil:{q:"Babaha ba?",demoChip:"Demo · kunwaring bagyo",word:{oo:"Oo",baka:"Baka",hindi:"Hindi",nodata:"Walang bagong datos"},
+ fil:{q:"Babaha ba?",notCovered:"Hindi pa sakop ng BahaWatch ang lugar mo.",demoChip:"Demo · kunwaring bagyo",word:{oo:"Oo",baka:"Baka",hindi:"Hindi",nodata:"Walang bagong datos"},
   gloss:{oo:"May baha rito ngayon, o inaasahan sa loob ng isang oras.",baka:"May palatandaan ng baha, pero wala pang nasusukat na tubig.",hindi:"Walang palatandaan ng baha sa susunod na isang oras.",nodata:"Tingnan ulit mamaya."},
   reason:{stale:"Mahigit 20 minuto na ang pinakabagong datos.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Tumataas ang tubig sa {name}, mga {min} minuto pa.",upstream:"Tumataas ang tubig malapit sa {name}, mga {min} minuto pa.",reports:"{n} kapitbahay ang nag-ulat ng baha malapit dito.",reports_vs_dry_sensor:"May nag-ulat ng baha, pero tuyo ang sensor dito.",rain_flood_zone:"Malakas na ulan ({mm} mm/oras), at binabaha ang lugar na ito sa 5- o 25-taong bagyo.",rain_heavy:"Napakalakas na ulan ({mm} mm/oras) sa lugar na may flood map.",reports_few:"May nag-ulat ng baha malapit dito ({n}).",sensor_trace:"Kaunting tubig sa {name} ({cm} cm).",clear:"Walang palatandaan ng baha mula sa sensor, ulat, o ulan.",clear_no_sensor:"Walang malakas na ulan o ulat ng baha sa malapit. Wala pang sensor dito."},
   age:"na-update {m} min na ang nakalipas",justNow:"kaka-update lang",pick:"Piliin ang lugar mo para makita ang sagot.",pickBtn:"Piliin ang lugar mo",
   whereQ:"Saan ka?",useLoc:"Gamitin ang lokasyon ko",pickBrgy:"Piliin ang barangay ko",pickSensor:"Piliin ang kalyeng may sensor",skip:"Laktawan",
   locFail:"Hindi makuha ang lokasyon mo. Piliin na lang ang barangay mo.",
   share:"Ibahagi ang lugar ko",copied:"Nakopya ang link"},
- ceb:{q:"Mobaha ba?",demoChip:"Demo · simulated nga bagyo",word:{oo:"Oo",baka:"Basin",hindi:"Dili",nodata:"Walay bag-ong datos"},
+ ceb:{q:"Mobaha ba?",notCovered:"Wala pa masakop sa BahaWatch ang imong lugar.",demoChip:"Demo · simulated nga bagyo",word:{oo:"Oo",baka:"Basin",hindi:"Dili",nodata:"Walay bag-ong datos"},
   gloss:{oo:"Naay baha diri karon, o gipaabot sulod sa usa ka oras.",baka:"Naay timailhan sa baha, pero wala pay nasukod nga tubig.",hindi:"Walay timailhan sa baha sa sunod nga usa ka oras.",nodata:"Tan-awa pag-usab unya."},
   reason:{stale:"Kapin na sa 20 minutos ang pinakabag-ong datos.",sensor_now:"Naay tubig sa {name}: {cm} cm.",sensor_soon:"Nagsaka ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagsaka ang tubig duol sa {name}, mga {min} minutos pa.",reports:"{n} ka silingan ang nagtaho og baha duol diri.",reports_vs_dry_sensor:"Naay nagtaho og baha, pero uga ang sensor diri.",rain_flood_zone:"Kusog nga ulan ({mm} mm/oras), ug mobaha kini nga lugar sa 5- o 25-ka-tuig nga bagyo.",rain_heavy:"Kusog kaayo nga ulan ({mm} mm/oras) sa lugar nga naay flood map.",reports_few:"Naay nagtaho og baha duol diri ({n}).",sensor_trace:"Gamay nga tubig sa {name} ({cm} cm).",clear:"Walay timailhan sa baha gikan sa sensor, taho, o ulan.",clear_no_sensor:"Walay kusog nga ulan o taho sa baha duol diri. Wala pay sensor diri."},
   age:"gi-update {m} min na ang milabay",justNow:"bag-o lang gi-update",pick:"Pilia ang imong lugar aron makita ang tubag.",pickBtn:"Pilia ang imong lugar",
   whereQ:"Asa ka?",useLoc:"Gamita ang akong lokasyon",pickBrgy:"Pilia ang akong barangay",pickSensor:"Pilia ang dalan nga naay sensor",skip:"Laktawi",
   locFail:"Dili makuha ang imong lokasyon. Pilia na lang ang imong barangay.",
   share:"Ipakigbahin ang akong lugar",copied:"Nakopya ang link"},
- ilo:{q:"Aglayus kadi?",demoChip:"Demo · simulated a bagyo",word:{oo:"Wen",baka:"Mabalin",hindi:"Saan",nodata:"Awan ti baro a datos"},
+ ilo:{q:"Aglayus kadi?",notCovered:"Saan pay a sakup ti BahaWatch ti lugarmo.",demoChip:"Demo · simulated a bagyo",word:{oo:"Wen",baka:"Mabalin",hindi:"Saan",nodata:"Awan ti baro a datos"},
   gloss:{oo:"Adda layus ditoy ita, wenno mapakpakadaan iti uneg ti maysa nga oras.",baka:"Adda pagilasinan ti layus, ngem awan pay nasukat a danum.",hindi:"Awan ti pagilasinan ti layus iti sumaruno a maysa nga oras.",nodata:"Kitaen manen no madamdama."},
   reason:{stale:"Nasurok a 20 minuto ti kabaruan a datos.",sensor_now:"Adda danum iti {name}: {cm} cm.",sensor_soon:"Ngumatngato ti danum iti {name}, agarup {min} minuto pay.",upstream:"Ngumatngato ti danum iti asideg ti {name}, agarup {min} minuto pay.",reports:"{n} a kaarruba ti nangipadamag iti layus iti asideg.",reports_vs_dry_sensor:"Adda nangipadamag iti layus, ngem namaga ti sensor ditoy.",rain_flood_zone:"Napigsa a tudo ({mm} mm/oras), ken aglayus daytoy a lugar iti 5- wenno 25-tawen a bagyo.",rain_heavy:"Napigsa unay a tudo ({mm} mm/oras) iti lugar nga adda flood map-na.",reports_few:"Adda nangipadamag iti layus iti asideg ({n}).",sensor_trace:"Bassit a danum iti {name} ({cm} cm).",clear:"Awan ti pagilasinan ti layus manipud iti sensor, padamag, wenno tudo.",clear_no_sensor:"Awan ti napigsa a tudo wenno damag ti layus iti asideg. Awan pay ti sensor ditoy."},
   age:"naipabaro {m} min ti napalabas",justNow:"kaipapabaro",pick:"Pilien ti lugarmo tapno makita ti sungbat.",pickBtn:"Pilien ti lugarmo",
   whereQ:"Sadino ti ayanmo?",useLoc:"Usaren ti lokasionko",pickBrgy:"Pilien ti barangayko",pickSensor:"Pilien ti kalsada nga adda sensorna",skip:"Laktawan",
   locFail:"Saan a makuha ti lokasionmo. Pilien laengen ti barangaymo.",
   share:"Iranud ti lugarko",copied:"Nakopia ti link"},
- hil:{q:"Magabaha bala?",demoChip:"Demo · simulated nga bagyo",word:{oo:"Huo",baka:"Basi",hindi:"Indi",nodata:"Wala sang bag-o nga datos"},
+ hil:{q:"Magabaha bala?",notCovered:"Wala pa nasakop sang BahaWatch ang imo lugar.",demoChip:"Demo · simulated nga bagyo",word:{oo:"Huo",baka:"Basi",hindi:"Indi",nodata:"Wala sang bag-o nga datos"},
   gloss:{oo:"May baha diri subong, ukon ginapaabot sa sulod sang isa ka oras.",baka:"May mga tanda sang baha, pero wala pa sang nasukat nga tubig.",hindi:"Wala sang tanda sang baha sa masunod nga isa ka oras.",nodata:"Tan-awa liwat sa ulihi."},
   reason:{stale:"Labaw na sa 20 minutos ang pinakabag-o nga datos.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Nagataas ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagataas ang tubig malapit sa {name}, mga {min} minutos pa.",reports:"{n} ka kaingod ang nag-report sang baha malapit diri.",reports_vs_dry_sensor:"May nag-report sang baha, pero uga ang sensor diri.",rain_flood_zone:"Mabaskog nga ulan ({mm} mm/oras), kag ginabaha ini nga lugar sa 5- ukon 25-ka-tuig nga bagyo.",rain_heavy:"Mabaskog gid nga ulan ({mm} mm/oras) sa lugar nga may flood map.",reports_few:"May nag-report sang baha malapit diri ({n}).",sensor_trace:"Diutay nga tubig sa {name} ({cm} cm).",clear:"Wala sang tanda sang baha halin sa sensor, report, ukon ulan.",clear_no_sensor:"Wala sang mabaskog nga ulan ukon report sang baha malapit diri. Wala pa sang sensor diri."},
   age:"gin-update {m} min na ang nagligad",justNow:"bag-o lang gin-update",pick:"Pilia ang imo lugar para makita ang sabat.",pickBtn:"Pilia ang imo lugar",
   whereQ:"Diin ka?",useLoc:"Gamita ang akon lokasyon",pickBrgy:"Pilia ang akon barangay",pickSensor:"Pilia ang dalan nga may sensor",skip:"Laktawan",
   locFail:"Indi makuha ang imo lokasyon. Pilia na lang ang imo barangay.",
   share:"Ipaambit ang akon lugar",copied:"Nakopya ang link"},
- pam:{q:"Albugan kaya?",demoChip:"Demo · simulated a bagyu",word:{oo:"Wa",baka:"Malyari",hindi:"Ali",nodata:"Alang bayung datos"},
+ pam:{q:"Albugan kaya?",notCovered:"E pa sakup ning BahaWatch ing lugal mu.",demoChip:"Demo · simulated a bagyu",word:{oo:"Wa",baka:"Malyari",hindi:"Ali",nodata:"Alang bayung datos"},
   gloss:{oo:"Atin albug keni ngeni, o aasanan king loob ning metung a oras.",baka:"Atin tanda ning albug, oneng ala pang masukat a danum.",hindi:"Alang tanda ning albug king datang a metung a oras.",nodata:"Lawen mu pasibayu mamaya."},
   reason:{stale:"Mayigit 20 minutu ne ing pekabayung datos.",sensor_now:"Atin danum king {name}: {cm} cm.",sensor_soon:"Sasampa ing danum king {name}, lagyu {min} minutu pa.",upstream:"Sasampa ing danum malapit king {name}, lagyu {min} minutu pa.",reports:"{n} a kapitbale ing mengreport albug malapit keni.",reports_vs_dry_sensor:"Atin mengreport albug, oneng mamalang ing sensor keni.",rain_flood_zone:"Makusug a uran ({mm} mm/oras), at albugan ya ining lugal king 5- o 25-banwang bagyu.",rain_heavy:"Makusug dili a uran ({mm} mm/oras) king lugal a atin flood map.",reports_few:"Atin mengreport albug malapit keni ({n}).",sensor_trace:"Kakaunti a danum king {name} ({cm} cm).",clear:"Alang tanda ning albug manibat king sensor, report, o uran.",clear_no_sensor:"Alang makusog a uran o report ning albug malapit keni. Ala pang sensor keni."},
   age:"me-update {m} min ne ing milabas",justNow:"bayu pa mu me-update",pick:"Pilinan me ing lugal mu ban akit me ing sagut.",pickBtn:"Pilinan me ing lugal mu",
@@ -1678,8 +1681,11 @@ function renderAnswer(){
   else showAnswer(babahaBa(demoInputs(p)));
 }
 /* ---------- "Saan ka?" ---------- */
+let whereOpener=null;   // the element that opened "Saan ka?" — focus goes back there on Escape (m6)
 function openWhere(){
   const L=A(),w=$("p-where");
+  if(w.hidden)whereOpener=document.activeElement;
+  $("p-where-msg").textContent="";
   $("p-where-q").textContent=L.whereQ;
   const set=(act,txt)=>{const b=w.querySelector(`[data-act="${act}"]`);b.textContent=txt;return b;};
   set("loc",L.useLoc);set("sensor",L.pickSensor);set("skip",L.skip);
@@ -1688,6 +1694,13 @@ function openWhere(){
   w.querySelector('button:not([hidden])').focus();
 }
 function closeWhere(){$("p-where").hidden=true;try{localStorage.setItem(siteKey("bw-asked"),"1");}catch(e){}}
+$("p-where").addEventListener("keydown",e=>{
+  if(e.key!=="Escape")return;
+  e.preventDefault();closeWhere();renderPublic();
+  const o=whereOpener;whereOpener=null;
+  if(o&&o.isConnected&&!o.hidden&&typeof o.focus==="function")o.focus();
+});
+const COVER_M=3000;   // "Use my location" farther than this from every place: not covered yet (m7)
 function listPlaces(kind){
   const list=$("p-where-list");
   list.innerHTML=placesForSite().filter(p=>p.kind===kind).sort((a,b)=>a.name.localeCompare(b.name))
@@ -1711,10 +1724,14 @@ $("p-where").addEventListener("click",e=>{
   else if(act==="brgy")listPlaces("barangay");
   else if(act==="sensor")listPlaces("sensor");
   else if(act==="loc"){
-    if(!navigator.geolocation){$("p-ans-reason").textContent=A().locFail;return listPlaces("barangay");}
+    const manual=()=>listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");
+    if(!navigator.geolocation){$("p-where-msg").textContent=A().locFail;return manual();}
     navigator.geolocation.getCurrentPosition(pos=>{
-        const p=nearestPlace(pos.coords.latitude,pos.coords.longitude);if(p)setPlace(p.id,true);else listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");},
-      ()=>{$("p-ans-reason").textContent=A().locFail;listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");},{timeout:8000,maximumAge:600000});
+        const lat=pos.coords.latitude,lon=pos.coords.longitude;
+        const d=Math.min(...placesForSite().map(q=>haversineM(lat,lon,q.lat,q.lon)));
+        if(!(d<=COVER_M)){$("p-where-msg").textContent=A().notCovered;return manual();}   // outside coverage: say so, never assign a far place
+        const p=nearestPlace(lat,lon);if(p)setPlace(p.id,true);else manual();},
+      ()=>{$("p-where-msg").textContent=A().locFail;manual();},{timeout:8000,maximumAge:600000});
   }
 });
 $("p-ans-pick").addEventListener("click",openWhere);
@@ -1742,13 +1759,23 @@ function deviceId(){
   if(!/^[a-f0-9]{24}$/.test(d||"")){const a=new Uint8Array(12);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");try{localStorage.setItem("bw-device",d);}catch(e){}}
   return d;
 }
+let tsLoading=null;   // one script load at a time; cleared on failure/timeout so the next tap tries again
 function loadTurnstile(){
-  return new Promise((res,rej)=>{if(window.turnstile)return res(window.turnstile);
+  if(window.turnstile)return Promise.resolve(window.turnstile);
+  if(!tsLoading)tsLoading=new Promise((res,rej)=>{
     const s=document.createElement("script");s.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-    s.onload=()=>res(window.turnstile);s.onerror=rej;document.head.appendChild(s);});
+    s.onload=()=>res(window.turnstile);s.onerror=e=>{tsLoading=null;rej(e);};document.head.appendChild(s);});
+  return tsLoading;
 }
+function withTimeout(pr,ms,msg){let t;return Promise.race([pr,new Promise((_,rej)=>{t=setTimeout(()=>rej(new Error(msg)),ms);})]).finally(()=>clearTimeout(t));}
+// The TURNSTILE_TIMEOUT_MS budget covers loading the script AND the challenge (M1): a script that never loads
+// must fail the send like any other bot-check failure, not leave the buttons on "Sending…".
 async function turnstileToken(){
-  const ts=await loadTurnstile();
+  const t0=performance.now();
+  let ts;
+  try{ts=await withTimeout(loadTurnstile(),TURNSTILE_TIMEOUT_MS,"turnstile load timeout");}
+  catch(e){tsLoading=null;throw e;}
+  const left=Math.max(0,TURNSTILE_TIMEOUT_MS-(performance.now()-t0));
   return new Promise((res,rej)=>{
     // not sr-only: an invisible ("interaction-only") widget normally stays 0×0, but if Cloudflare decides it needs
     // interaction it resizes itself — a visually/AT-hidden container would make that challenge impossible to complete.
@@ -1756,7 +1783,7 @@ async function turnstileToken(){
     document.body.appendChild(el);
     let done=false,id=null;
     const finish=(fn,arg)=>{if(done)return;done=true;clearTimeout(timer);try{if(id!=null)ts.remove(id);}catch(e){}el.remove();fn(arg);};
-    const timer=setTimeout(()=>finish(rej,new Error("turnstile timeout")),TURNSTILE_TIMEOUT_MS);
+    const timer=setTimeout(()=>finish(rej,new Error("turnstile timeout")),left);
     id=ts.render(el,{sitekey:TURNSTILE_SITEKEY,appearance:"interaction-only",
       callback:t=>finish(res,t),
       "error-callback":()=>finish(rej,new Error("turnstile error")),
@@ -1772,11 +1799,15 @@ async function canUseGPS(){
   if(!navigator.permissions||!navigator.permissions.query)return false;
   try{const st=await navigator.permissions.query({name:"geolocation"});return st.state==="granted";}catch(e){return false;}
 }
+const GPS_NEAR_PLACE_M=1000;   // a fix farther than this from the place isn't about that place (e.g. answering for a relative's barangay)
 async function where(p){
   const centre={lat:round3(p.lat),lon:round3(p.lon)};
   if(!navigator.geolocation||!(await canUseGPS()))return centre;
   return new Promise(res=>{
-    navigator.geolocation.getCurrentPosition(pos=>res({lat:round3(pos.coords.latitude),lon:round3(pos.coords.longitude)}),()=>res(centre),{timeout:5000,maximumAge:600000});
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const lat=pos.coords.latitude,lon=pos.coords.longitude;
+      res(haversineM(lat,lon,p.lat,p.lon)<=GPS_NEAR_PLACE_M?{lat:round3(lat),lon:round3(lon)}:centre);
+    },()=>res(centre),{timeout:5000,maximumAge:600000});
   });
 }
 let undoTimer=null;
@@ -1812,6 +1843,7 @@ async function sendReport(answer){
     body={place:p.id,answer,lat:pos.lat,lon:pos.lon,device:deviceId(),demo:false};
     if(!navigator.onLine){try{localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body}));}catch(e){}repMsg(L.held);return;}
     const id=await postReport(body);
+    try{localStorage.removeItem("bw-pending");}catch(e){}   // sent: nothing older may be flushed later as a stray "Thanks, recorded" (m3)
     if(id)repMsg(L.thanks,id);
     else if($("p-rep-undo").hidden)repMsg(L.thanks);   // 429 (already recorded), and no still-valid Undo to preserve
     else setRepMsg(L.thanks);                          // 429, but a prior tap's Undo is still valid — never clear it
@@ -1853,6 +1885,20 @@ function renderReportRow(){
 
 /* ---------- live status (spec §7) ---------- */
 const FRESH_MS=20*60000, POLL_MS=60000, POLL_BACKOFF_MAX_MS=5*60000;
+// /status is not edge-cached (Cache-Control doesn't cache Worker responses), so every poll is a Worker request.
+// The cron recomputes every 5 min, so poll once per run: at checkedAt + 5 min + 0–30 s (spread), never sooner than 60 s.
+const CRON_MS=5*60000, POLL_JITTER_MS=30000;
+let pollTimer=null;window.nextPollDelay=null;
+function schedulePoll(ms){
+  clearTimeout(pollTimer);window.nextPollDelay=ms;
+  pollTimer=setTimeout(()=>{if(document.visibilityState==="visible")pollStatus();},ms);   // hidden: visibilitychange picks it up
+}
+function nextPollAfterSuccess(){
+  const base=lastLive.checkedAt!=null?lastLive.checkedAt:lastLive.serverNow;
+  return Math.max(POLL_MS,Math.round(base+CRON_MS+Math.random()*POLL_JITTER_MS-serverClock()));
+}
+// the answer on screen is older than one cron run: a newer one likely exists
+const liveAnswerOld=()=>!lastLive||lastLive.place!==myPlace||serverClock()-(lastLive.checkedAt!=null?lastLive.checkedAt:lastLive.serverNow)>CRON_MS;
 let pollInFlight=false, pollBackoff=POLL_MS, pollNotBefore=0;
 let STATUS_TIMEOUT_MS=15000;   // a `let`, not `const`, so a test can shorten it instead of waiting out a real 15 s
 // a hung connection must never wedge a poller forever — time it out and treat that the same as any other failure.
@@ -1894,8 +1940,10 @@ async function pollStatus(){
     pollBackoff=POLL_MS;pollNotBefore=0;
     try{const {_perf,...keep}=lastLive;localStorage.setItem("bw-last:"+body.place,JSON.stringify({...keep,receivedAt:Date.now()}));}catch(e){}
     renderLive();
+    schedulePoll(nextPollAfterSuccess());
   }else if(!failed){
     // response body names a different place than the one requested — drop it rather than show it under the wrong name
+    schedulePoll(POLL_MS);                           // …and try again in a minute rather than never
   }else{
     // no fresh reply — re-render the still-cached one if any; renderLive() itself extrapolates its clock forward,
     // so nothing needs updating here beyond the backoff below.
@@ -1906,6 +1954,7 @@ async function pollStatus(){
       renderReportRow();
     }
     pollBackoff=Math.min(pollBackoff*2,POLL_BACKOFF_MAX_MS);pollNotBefore=Date.now()+pollBackoff;
+    schedulePoll(pollBackoff);
   }
 }
 // Time since lastLive arrived. Same session: the monotonic clock (performance.now), immune to the phone's wall clock
@@ -1941,8 +1990,11 @@ function restoreLast(){
 }
 // re-render on every tick even when the poll itself is skipped (in flight, or backing off) — the band must be able
 // to turn nodata purely from the passage of time, not only from a fresh reply landing.
-setInterval(()=>{if(document.visibilityState==="visible"){pollStatus();if(LIVE)renderLive();pollRecent();}},POLL_MS);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){pollStatus();if(LIVE)renderLive();pollRecent();}});
+// /status itself is polled on its own schedule (schedulePoll above) — this tick only re-renders (so the band can turn
+// nodata from time passing) and refreshes the details view's report list.
+function liveTick(){if(document.visibilityState==="visible"){if(LIVE)renderLive();pollRecent();}}
+setInterval(liveTick,POLL_MS);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){if(liveAnswerOld())pollStatus();if(LIVE)renderLive();pollRecent();}});
 
 /* ---------- details view: neighbours' reports (spec §4 Display) ---------- */
 let recentReports=[], drawnReports=0, recentFetchSite=null;    // recentFetchSite: the site of the request currently in flight, if any

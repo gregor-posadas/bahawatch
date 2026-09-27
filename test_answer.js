@@ -168,6 +168,26 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
     return {mutations,unchanged:ann.textContent===before};
   });
   assert(s.mutations===0&&s.unchanged,"on the no-place site, ticking does not repeatedly rewrite the pick-your-place announcement: "+JSON.stringify(s));
+  // m6: Escape closes "Saan ka?" and returns focus to the button that opened it
+  s=await pg.evaluate(()=>{closeWhere();renderPublic();return !document.getElementById('p-ans-pick').hidden;});
+  await pg.focus('#p-ans-pick');await pg.keyboard.press('Enter');await pg.waitForTimeout(100);
+  const openedM6=await pg.evaluate(()=>!document.getElementById('p-where').hidden);
+  await pg.keyboard.press('Escape');await pg.waitForTimeout(100);
+  s=await pg.evaluate(()=>({open:!document.getElementById('p-where').hidden,focus:document.activeElement&&document.activeElement.id}));
+  assert(openedM6&&!s.open&&s.focus==="p-ans-pick","m6: Escape closes Saan ka? and focus goes back to its opener: "+JSON.stringify({openedM6,...s}));
+  // m7: "Use my location" more than 3 km from every place -> "not covered yet" and the manual list, no assignment
+  s=await pg.evaluate(()=>{navigator.geolocation.getCurrentPosition=(ok)=>ok({coords:{latitude:37.95,longitude:-122.26}});   // ~9 km north of campus
+    openWhere();document.querySelector('#p-where [data-act="loc"]').click();
+    return {open:!document.getElementById('p-where').hidden,list:!document.getElementById('p-where-list').hidden,
+      msg:(document.getElementById('p-where-msg')||{}).textContent,my:myPlace,
+      all:Object.fromEntries(Object.keys(ANS_LANGS).map(k=>[k,ANS_LANGS[k].notCovered]))};});
+  assert(s.open&&s.list&&s.my===null&&s.msg==="BahaWatch doesn't cover your location yet.","m7: outside coverage -> message + manual list, place not assigned: "+JSON.stringify({open:s.open,list:s.list,msg:s.msg,my:s.my}));
+  assert(s.all.en==="BahaWatch doesn't cover your location yet."&&s.all.fil==="Hindi pa sakop ng BahaWatch ang lugar mo."&&s.all.ceb==="Wala pa masakop sa BahaWatch ang imong lugar."
+    &&s.all.ilo==="Saan pay a sakup ti BahaWatch ti lugarmo."&&s.all.hil==="Wala pa nasakop sang BahaWatch ang imo lugar."&&s.all.pam==="E pa sakup ning BahaWatch ing lugal mu.","m7: six languages: "+JSON.stringify(s.all));
+  s=await pg.evaluate(()=>{const p=PLACES.sites.berkeley[0];navigator.geolocation.getCurrentPosition=(ok)=>ok({coords:{latitude:p.lat,longitude:p.lon}});
+    openWhere();document.querySelector('#p-where [data-act="loc"]').click();const r={my:myPlace,id:p.id};closeWhere();return r;});
+  assert(s.my===s.id,"m7: inside coverage, Use my location still assigns the nearest place: "+JSON.stringify(s));
+  s=await pg.evaluate(()=>{myPlace=null;try{localStorage.removeItem("bw-place:berkeley");}catch(e){}document.getElementById('p-where-list').innerHTML="";renderPublic();return myPlace;});   // leave Saan ka? as a fresh open would
   // Berkeley: no barangay choice
   s=await pg.evaluate(()=>{openWhere();return document.querySelector('#p-where [data-act="brgy"]').hidden;});
   assert(s===true,"Berkeley has no barangay choice");

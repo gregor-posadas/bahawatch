@@ -398,6 +398,102 @@ const U='file:///tmp/bw_live_test.html#tv/live';
     await pgF.close();
   }
 
+  // ---- final-review fix wave: reports, GPS, polling ----
+  {
+    // I3: a GPS fix is used only when it's within 1 km of the place's centre (someone answering about a relative's
+    // barangay must not pin their own position there); farther away -> the place centre
+    const ctxG=await b.newContext({viewport:{width:390,height:844},permissions:['geolocation']});
+    await ctxG.addInitScript(()=>{localStorage.setItem("bw-place:tv","tv:s:BW-H01");localStorage.setItem("bw-asked:tv","1");
+      window.turnstile={render:(el,o)=>{setTimeout(()=>o.callback("tok-ok"),0);return "w1";},remove(){}};});
+    const pgG=await ctxG.newPage();const errsG=[];pgG.on('pageerror',e=>errsG.push(e.message));
+    const postedG=[];
+    await pgG.route('https://api.test.local/**',async r=>{
+      const u=r.request().url(),m=r.request().method();
+      if(m==="POST"&&/\/report$/.test(u)){postedG.push(JSON.parse(r.request().postData()));return r.fulfill({status:201,contentType:'application/json',body:JSON.stringify({id:70+postedG.length})});}
+      if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
+      return r.fulfill({status:404,body:'{}'});
+    });
+    await pgG.goto(U);await pgG.waitForTimeout(500);
+    const PG=await pgG.evaluate(()=>currentPlace());
+    await pgG.evaluate(({lat,lon})=>{navigator.geolocation.getCurrentPosition=(ok)=>ok({coords:{latitude:lat+0.045,longitude:lon}});},PG);   // ~5 km away
+    await pgG.click('#p-rep [data-ans="oo"]');await pgG.waitForTimeout(400);
+    assert(postedG.length===1&&postedG[0].lat===Math.round(PG.lat*1000)/1000&&postedG[0].lon===Math.round(PG.lon*1000)/1000,"I3: a GPS fix 5 km from the place is not used — report pinned at the place centre: "+JSON.stringify(postedG[0]));
+    await pgG.evaluate(({lat,lon})=>{navigator.geolocation.getCurrentPosition=(ok)=>ok({coords:{latitude:lat+0.0045,longitude:lon}});},PG);   // ~500 m away
+    await pgG.waitForTimeout(100);
+    await pgG.click('#p-rep [data-ans="hindi"]');await pgG.waitForTimeout(400);
+    assert(postedG.length===2&&postedG[1].lat===Math.round((PG.lat+0.0045)*1000)/1000,"I3: a GPS fix 500 m from the place is used (rounded): "+JSON.stringify(postedG[1]));
+    // m3: a successful send clears any held (offline) report, so a later 'online' can't flush a stray one
+    await pgG.evaluate(()=>localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body:{place:"tv:s:BW-H01",answer:"oo",lat:1,lon:1,device:"e".repeat(24),demo:false}})));
+    await pgG.click('#p-rep [data-ans="di_sigurado"]');await pgG.waitForTimeout(400);
+    let pend=await pgG.evaluate(()=>localStorage.getItem("bw-pending"));
+    assert(postedG.length===3&&pend===null,"m3: bw-pending is cleared after a successful send: "+pend);
+    await pgG.evaluate(()=>window.dispatchEvent(new Event("online")));await pgG.waitForTimeout(300);
+    assert(postedG.length===3,"m3: going online afterwards sends nothing stray: "+postedG.length);
+    assert(errsG.length===0,"no page errors (I3/m3): "+errsG.join("; "));
+    await ctxG.close();
+  }
+  {
+    // M1: the 15 s Turnstile budget covers loading the script too — a script that never loads must not leave the
+    // buttons on "Sending…"
+    const ctxT=await b.newContext({viewport:{width:390,height:844}});
+    await ctxT.addInitScript(()=>{localStorage.setItem("bw-place:tv","tv:s:BW-H01");localStorage.setItem("bw-asked:tv","1");});
+    const pgT=await ctxT.newPage();const errsT=[];pgT.on('pageerror',e=>errsT.push(e.message));
+    let scriptAsked=0;
+    await pgT.route('https://challenges.cloudflare.com/**',()=>{scriptAsked++;});                // never fulfilled: a stalled load
+    await pgT.route('https://api.test.local/**',async r=>{
+      if(/\/status\//.test(r.request().url()))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
+      return r.fulfill({status:404,body:'{}'});
+    });
+    await pgT.goto(U);await pgT.waitForTimeout(500);
+    await pgT.evaluate(()=>{TURNSTILE_TIMEOUT_MS=400;navigator.geolocation.getCurrentPosition=(ok,fail)=>fail({code:1});});
+    await pgT.click('#p-rep [data-ans="oo"]');await pgT.waitForTimeout(1200);
+    let sT=await pgT.evaluate(()=>({msg:document.getElementById('p-rep-msg').textContent,busy:[...document.querySelectorAll('#p-rep [data-ans]')].some(b=>b.disabled),sending,pend:!!localStorage.getItem("bw-pending")}));
+    assert(scriptAsked>=1,"setup: the Turnstile script request was made and is stalled: "+scriptAsked);
+    assert(/Couldn't send|Hindi naipadala/.test(sT.msg)&&!sT.busy&&!sT.sending&&sT.pend,"M1: a Turnstile script that never loads times out within the budget -> fail message, buttons usable, report held: "+JSON.stringify(sT));
+    assert(errsT.length===0,"no page errors (M1): "+errsT.join("; "));
+    await ctxT.close();
+  }
+  {
+    // I6: /status is polled once per cron run, not every minute: after a success the next poll is due at
+    // checkedAt + 5 min + 0–30 s (server time), never sooner than 60 s; a failure keeps the old backoff;
+    // coming back to the tab only polls when the answer is more than 5 minutes old.
+    const ctxP=await b.newContext({viewport:{width:390,height:844}});
+    await ctxP.addInitScript(()=>{localStorage.setItem("bw-place:tv","tv:s:BW-H01");localStorage.setItem("bw-asked:tv","1");});
+    const pgP=await ctxP.newPage();const errsP=[];pgP.on('pageerror',e=>errsP.push(e.message));
+    let hitsP=0,failP=false,bodyP={...statusBody,checkedAt:SN-60000,serverNow:SN};
+    await pgP.route('https://api.test.local/**',async r=>{
+      if(/\/status\//.test(r.request().url())){hitsP++;if(failP)return r.abort();return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(bodyP)});}
+      return r.fulfill({status:404,body:'{}'});
+    });
+    await pgP.goto(U);await pgP.waitForTimeout(500);
+    await pgP.evaluate(()=>{const d=Date.now;Date.now=()=>d()+3*3600000;});      // a phone clock 3 h fast changes nothing
+    await pgP.evaluate(()=>pollNow());await pgP.waitForTimeout(200);
+    let dP=await pgP.evaluate(()=>window.nextPollDelay);
+    assert(dP>=240000&&dP<=270000,"I6: checked 1 min ago -> next poll in 4 min + 0–30 s jitter (server time): "+dP);
+    bodyP={...bodyP,checkedAt:SN-4.5*60000};
+    await pgP.evaluate(()=>pollNow());await pgP.waitForTimeout(200);
+    dP=await pgP.evaluate(()=>window.nextPollDelay);
+    assert(dP===60000,"I6: never sooner than 60 s: "+dP);
+    // the once-a-minute tick re-renders but does not fetch while the answer is fresh
+    let before=hitsP;
+    await pgP.evaluate(()=>liveTick());await pgP.waitForTimeout(200);
+    assert(hitsP===before,"I6: the 60 s render tick does not poll /status: "+(hitsP-before));
+    // back to the tab: fresh answer -> no poll; answer older than 5 min -> poll
+    bodyP={...bodyP,checkedAt:SN-60000};await pgP.evaluate(()=>pollNow());await pgP.waitForTimeout(200);
+    before=hitsP;
+    await pgP.evaluate(()=>document.dispatchEvent(new Event("visibilitychange")));await pgP.waitForTimeout(200);
+    assert(hitsP===before,"I6: returning to the tab with a 1-min-old answer does not poll: "+(hitsP-before));
+    await pgP.evaluate(()=>{const real=performance.now.bind(performance);performance.now=()=>real()+5*60000;});
+    await pgP.evaluate(()=>document.dispatchEvent(new Event("visibilitychange")));await pgP.waitForTimeout(200);
+    assert(hitsP===before+1,"I6: returning to the tab with a 6-min-old answer polls once: "+(hitsP-before));
+    // failure: the old backoff (2 min after the first failure) decides the next attempt
+    failP=true;await pgP.evaluate(()=>pollNow());await pgP.waitForTimeout(300);
+    dP=await pgP.evaluate(()=>({d:window.nextPollDelay,b:pollBackoff}));
+    assert(dP.b===120000&&dP.d===120000,"I6: a failed poll schedules the retry by the existing backoff: "+JSON.stringify(dP));
+    assert(errsP.length===0,"no page errors (I6): "+errsP.join("; "));
+    await ctxP.close();
+  }
+
   // Finding 9: the demo page (not LIVE) never sends a report — tapping shows a demo-specific "not sent" message
   const pg2=await ctx.newPage();
   let netReqs=0;pg2.on('request',req=>{if(req.url().startsWith('http'))netReqs++;});
