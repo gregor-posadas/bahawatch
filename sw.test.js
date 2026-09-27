@@ -31,6 +31,15 @@ test('offline, a data file visited before comes from the cache', async () => {
   const get = load({ 'bahawatch_dashboard.html': HTML, 'data/xu.json': XU });
   assert.equal(await get('https://bw.test/data/xu.json', 'cors'), XU);
 });
-test('the cache name moved to v2 so old shells are cleared', () => {
-  assert.match(fs.readFileSync(__dirname + '/sw.js', 'utf8'), /bahawatch-v2/);
+test('the cache name moved to v3 so old shells are cleared', () => {
+  assert.match(fs.readFileSync(__dirname + '/sw.js', 'utf8'), /bahawatch-v3/);
+});
+test('tiles and fonts from OpenFreeMap are left to the network: never cached, never answered', () => {
+  const handlers = {}; let answered = false;
+  const ctx = { self: { addEventListener: (t, f) => { handlers[t] = f; }, skipWaiting() {}, clients: { claim() {} } },
+    location: { origin: 'https://bw.test' }, URL, Response, fetch: () => Promise.reject(new Error('offline')), caches: {} };
+  vm.runInNewContext(fs.readFileSync(__dirname + '/sw.js', 'utf8'), ctx);
+  for (const url of ['https://tiles.openfreemap.org/planet/20250101_001001_pt/9/428/231.pbf', 'https://tiles.openfreemap.org/fonts/Noto%20Sans%20Regular/0-255.pbf'])
+    handlers.fetch({ request: { method: 'GET', url, mode: 'cors' }, respondWith: () => { answered = true; } });
+  assert.equal(answered, false);
 });

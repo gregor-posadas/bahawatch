@@ -2721,6 +2721,7 @@ const NAT_LANGS=__NAT_I18N__;
 const NAT_EN=NAT_LANGS.en;
 const NL=()=>NAT_LANGS[LANG]||NAT_EN;
 const siteLabel=id=>CAMPUS_BY_ID[id]?CAMPUS_BY_ID[id].short:{tv:"Teachers Village",berkeley:"UC Berkeley"}[id]||id;
+/*__BASEMAP_JS__*/
 /* ---------- the national map: PhilDev partner campuses ---------- */
 const K_LAT=Math.cos(12.5*Math.PI/180);
 const natProj=(lon,lat)=>[(lon-116)*K_LAT*100,(22-lat)*100];   // equirectangular; 100 units per degree of latitude

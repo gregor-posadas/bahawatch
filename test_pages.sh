@@ -3,7 +3,7 @@
 # gzip test server, runs each suite, and stops it.   ./test_pages.sh            # every suite
 #                                                    ./test_pages.sh test_try.js   # one
 cd "$(dirname "$0")"
-node tools/test_server.js > /tmp/bw_test_server.log 2>&1 & SRV=$!
+BW_TEST_BASEMAP=offline node tools/test_server.js > /tmp/bw_test_server.log 2>&1 & SRV=$!
 trap 'kill $SRV 2>/dev/null' EXIT
 for i in $(seq 1 50); do curl -s -o /dev/null http://127.0.0.1:8765/index.html && break; sleep 0.1; done
 SUITES=${@:-$(ls test_*.js)}
