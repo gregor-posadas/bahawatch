@@ -74,6 +74,21 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .nat-item:hover b{text-decoration:underline}
 .nat-where{flex-basis:100%; padding-left:24px; color:var(--ink-2); font-size:13px}
 .nat-foot{font-size:12px; color:var(--ink-2); margin-top:20px}
+/* campus pages: the bar under the tabs, and the partnership card */
+.c-bar{display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:6px 0}
+[data-view="details"] .c-bar{padding:6px 22px}
+.c-bar[hidden]{display:none}
+.c-back,.c-pick{min-height:48px; display:inline-flex; align-items:center; font-weight:700; font-size:15px}
+.c-back{color:var(--brand)}
+.c-sim{flex-basis:100%; font-size:13px; color:var(--ink); background:var(--warn-bg); border-radius:4px; padding:6px 10px; margin:0}
+.c-card{border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin-top:14px; background:var(--panel)}
+.c-card[hidden]{display:none}
+.c-card h2{font-size:16px; font-weight:700; margin-bottom:4px}
+.c-card h3{font-size:14px; font-weight:700; margin:12px 0 4px}
+.c-card ol,.c-card ul{margin:0; padding-left:20px}
+.c-card li{margin:2px 0}
+.c-card summary{min-height:48px; display:flex; align-items:center; cursor:pointer}
+.c-oc{font-weight:700}
 .route-msg{max-width:640px; margin:0 auto; padding:48px 16px; font-size:16px}
 .route-btn{min-height:48px; padding:0 18px; border:2px solid var(--ink); border-radius:6px; font-weight:700; margin:16px 12px 0 0}
 .route-link{color:var(--brand); display:inline-flex; align-items:center; min-height:48px}
@@ -492,6 +507,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
 </nav>
+<div class="c-bar" data-cbar hidden>
+  <a href="#ph" class="c-back"></a><span aria-hidden="true">·</span><button class="c-pick"></button>
+  <p class="c-sim"></p>
+</div>
   <p class="try-sim" id="try-sim" hidden></p>
   <div class="p-area" id="p-area" role="status" aria-live="polite">
     <h1 class="p-head-line" id="p-headline">—</h1>
@@ -535,6 +554,13 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <div class="p-rep-msg" id="p-rep-msg" role="status" aria-live="polite"></div>
         <button class="p-link" id="p-rep-undo" hidden></button>
         <button class="p-link" id="p-try-link" hidden></button>
+      </section>
+      <section class="c-card" id="c-card" aria-labelledby="c-card-h" hidden>
+        <h2 id="c-card-h"></h2>
+        <h3 id="c-units-h"></h3><ol id="c-units"></ol>
+        <h3 id="c-brgy-h"></h3><details id="c-brgy-d"><summary id="c-brgy-s"></summary><ul id="c-brgy"></ul></details>
+        <h3 id="c-noah-h"></h3><ul id="c-noah"></ul>
+        <h3 id="c-role-h"></h3><ul id="c-role"></ul>
       </section>
       <div class="p-live-note" id="p-live-note" hidden></div>
       <div id="p-top-area"></div>
@@ -614,6 +640,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
 </nav>
+<div class="c-bar" data-cbar hidden>
+  <a href="#ph" class="c-back"></a><span aria-hidden="true">·</span><button class="c-pick"></button>
+  <p class="c-sim"></p>
+</div>
 <div class="d-live-banner" id="d-live-banner" role="note" hidden>Simulated sensor feed — the answer above is live</div>
 
 <main>
@@ -1793,6 +1823,7 @@ function renderTry(v){
 }
 // Where the map canvas lives, the body flag CSS keys on, the panel and label.
 function syncTryUI(){
+  syncCampusUI();
   document.body.dataset.try=TRY?"1":"0";
   $("try-panel").hidden=!TRY;$("try-sim").hidden=!TRY;
   $("try-panel").setAttribute("aria-label",TL().tab);
@@ -2538,7 +2569,7 @@ $("p-pick").addEventListener("click",e=>{
   $("p-my-btn").focus();
   pollNow();
 });
-$("p-lang").addEventListener("change",e=>{LANG=e.target.value;try{localStorage.setItem(siteKey("bw-lang"),LANG);}catch(x){}renderPublic();});
+$("p-lang").addEventListener("change",e=>{LANG=e.target.value;try{localStorage.setItem(siteKey("bw-lang"),LANG);}catch(x){}renderPublic();syncCampusUI();});
 const NAV_LANG=(()=>{const nav=(navigator.language||"").toLowerCase();return nav.startsWith("fil")||nav.startsWith("tl")?"fil":nav.startsWith("ceb")?"ceb":nav.startsWith("ilo")?"ilo":nav.startsWith("hil")?"hil":nav.startsWith("pam")?"pam":"en";})();
 (function initLang(){
   const sel=$("p-lang");
@@ -2555,7 +2586,7 @@ function dismissCoach(){try{localStorage.setItem("bw-coach","1");}catch(e){}cons
 function setView(v){
   const prevView=VIEW;
   VIEW=v;document.body.dataset.view=v;
-  syncLiveUI();
+  syncLiveUI();syncCampusUI();
   if(LIVE&&v==="public")setPlay(false);                        // the simulated storm never plays under a live answer
   const mw=$("map-wrap");
   if(v==="public"){$("public-map").insertBefore(mw,$("public-map").firstChild);selected=null;}
@@ -2604,7 +2635,7 @@ function switchSite(id){
   {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!TRY&&!myPlace&&!asked)openWhere();}
   pollNow();
   recentReports=[];renderRecent();pollRecent();
-  markReady(id);
+  syncCampusUI();markReady(id);
 }
 function applySiteLang(){
   const sel=document.getElementById("p-lang"),lab=document.querySelector('label[for=p-lang]');
@@ -2662,6 +2693,12 @@ const NAT_EN={loading:"Loading {name}…",fail:"{name} didn't load. Check your c
   types:{SUC:"State university or college",LUC:"Local university or college",Private:"Private"},
   shapes:{SUC:"circle",LUC:"square",Private:"triangle"},
   cluster:"{n} campuses: {names}. Zoom in",zoomOut:"‹ Whole country",pilots:"Pilot sites",tryLink:"Try reporting",
+  change:"Change campus (now {name})",
+  sim:"Simulation: sensor readings are simulated; unit spots are proposals. Terrain: FABDEM (30 m). Not a forecast; not for emergency use.",
+  cardH:"What a partnership looks like",unitsH:"Proposed units: {n} household water-level units, placed automatically",onCampus:"on campus",
+  brgyH:"Barangays covered",brgy1:"1 barangay",brgyN:"{n} barangays",
+  noahH:"NOAH flood hazard in this area (share of the land in a hazard zone)",noahRp:"{rp}-year rain",noahNA:"not available from NOAH",
+  roleH:"University role",role:["Students install and look after the units with residents.","Faculty check the data.","The campus hosts one unit and the local dashboard."],
   foot:"Campus list: PhilDev partners across the Philippines (PhilDev Starter Pack). Map: PSA/NAMRIA administrative boundaries, simplified. Main campuses are shown where a university has several."};
 const NAT_LANGS={en:NAT_EN,fil:Object.assign({_review:true},NAT_EN),ceb:Object.assign({_review:true},NAT_EN),
   ilo:Object.assign({_review:true},NAT_EN),hil:Object.assign({_review:true},NAT_EN),pam:Object.assign({_review:true},NAT_EN)};
@@ -2741,7 +2778,31 @@ function natRender(){
   document.title="BahaWatch — "+L.title;
   natSetView(NAT.vb);natList();
 }
-function natEnter(){let saved=null;try{saved=localStorage.getItem("bw-lang:ph");}catch(e){}if(saved&&LANGS[saved])LANG=saved;natRender();}
+let natFocusSearch=false;             // the campus bar's "▾" opens the national list with the search box focused
+function natEnter(){let saved=null;try{saved=localStorage.getItem("bw-lang:ph");}catch(e){}if(saved&&LANGS[saved])LANG=saved;natRender();
+  if(natFocusSearch){natFocusSearch=false;$("nat-q").focus();}}
+// Campus pages: the "‹ All campuses · <campus> ▾" bar with the simulation label, and the partnership card (spec §3.2).
+function syncCampusUI(){
+  const c=CAMPUS_BY_ID[SITE],L=NL(),on=!!c&&!TRY;
+  document.querySelectorAll("[data-cbar]").forEach(bar=>{
+    bar.hidden=!on;if(!on)return;
+    bar.querySelector(".c-back").textContent=L.back;
+    const p=bar.querySelector(".c-pick");p.textContent=c.short+" ▾";p.setAttribute("aria-label",fill(L.change,{name:c.name}));
+    bar.querySelector(".c-sim").textContent=L.sim;
+  });
+  const card=$("c-card"),D=DATA&&DATA.card;
+  card.hidden=!on||!D||VIEW!=="public";if(card.hidden)return;
+  $("c-card-h").textContent=L.cardH;
+  $("c-units-h").textContent=fill(L.unitsH,{n:D.units.length});
+  $("c-units").innerHTML=D.units.map(u=>`<li><b>${esc(u.id)}</b> · ${esc(u.name)}${u.oc?` · <span class="c-oc">${esc(L.onCampus)}</span>`:""}</li>`).join("");
+  $("c-brgy-h").textContent=L.brgyH;
+  $("c-brgy-s").textContent=fill(D.barangays.length===1?L.brgy1:L.brgyN,{n:D.barangays.length});
+  $("c-brgy").innerHTML=D.barangays.map(b=>`<li>${esc(b)}</li>`).join("");
+  $("c-noah-h").textContent=L.noahH;
+  $("c-noah").innerHTML=["5","25","100"].map(rp=>{const v=D.noah[rp];return `<li>${esc(fill(L.noahRp,{rp}))}: ${v==null?esc(L.noahNA):Math.round(v*100)+"%"}</li>`;}).join("");
+  $("c-role-h").textContent=L.roleH;$("c-role").innerHTML=L.role.map(r=>`<li>${esc(r)}</li>`).join("");
+}
+document.addEventListener("click",e=>{if(e.target.closest(".c-pick")){natFocusSearch=true;location.hash="#ph";}});
 
 let ROUTE=null, siteBooted=false, navSeq=0, lastNav=null;
 function showRoute(r){ROUTE=r;document.body.dataset.route=r;}
