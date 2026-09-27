@@ -1,4 +1,4 @@
-import { json } from './http.js';
+import { json, safeEqual } from './http.js';
 import { placeById, round3 } from './geo.js';
 
 const ANSWERS = new Set(['oo', 'hindi', 'di_sigurado']);
@@ -37,7 +37,12 @@ export async function handleIngest(req, env, now) {
   let keys = {}; try { keys = JSON.parse(env.DEVICE_KEYS || '{}'); } catch {}
   let b; try { b = await req.json(); } catch { return json({ error: 'bad json' }, 400, env); }
   const auth = (req.headers.get('authorization') || '').replace(/^Bearer /, '');
-  if (!b.sensor || !keys[b.sensor] || keys[b.sensor] !== auth) return json({ error: 'unauthorized' }, 401, env);
+  // Always hash-compare against something, even for an unknown sensor, so an unknown
+  // sensor and a wrong key take the same code path and cost the same time (no early
+  // exit on `!keys[b.sensor]` that would let a timing difference reveal which sensors
+  // exist).
+  const expected = typeof keys[b.sensor] === 'string' ? keys[b.sensor] : `\0no-such-sensor:${b.sensor}`;
+  if (!(await safeEqual(expected, auth))) return json({ error: 'unauthorized' }, 401, env);
   const at = Number.isFinite(b.at) ? b.at : now;
   if (at > now + 5 * 60000 || !Number.isFinite(b.depthCm) || b.depthCm < 0 || b.depthCm > 500) return json({ error: 'invalid reading' }, 400, env);
   await env.DB.prepare('INSERT OR REPLACE INTO readings(sensor,at,depth_cm) VALUES(?,?,?)').bind(b.sensor, at, b.depthCm).run();

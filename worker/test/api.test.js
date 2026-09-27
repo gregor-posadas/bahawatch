@@ -4,6 +4,7 @@ import worker from '../src/index.js';
 import { handleReport, handleUndo } from '../src/api.js';
 import { envWith, turnstileOK, turnstileFail } from './fake-d1.js';
 import { round3, haversineM } from '../src/geo.js';
+import { safeEqual } from '../src/http.js';
 
 const NOW = Date.UTC(2026, 8, 26, 9, 0);
 const DEV = 'a1b2c3d4e5f6a7b8c9d0e1f2';
@@ -52,6 +53,12 @@ test('undo: same phone within 15 s deletes; later or other phone -> 410', async 
   assert.equal((await handleUndo(req({ device: DEV }, 'POST', `/report/${id}/undo`), env, NOW + 16000, id)).status, 410);
   assert.equal((await handleUndo(req({ device: DEV }, 'POST', `/report/${id}/undo`), env, NOW + 5000, id)).status, 200);
   assert.equal((await env.DB.prepare('SELECT COUNT(*) AS n FROM reports').first()).n, 0);
+});
+test('safeEqual: constant-time comparison', async () => {
+  assert.equal(await safeEqual('k-h01', 'k-h01'), true);
+  assert.equal(await safeEqual('k-h01', 'k-h02'), false);
+  assert.equal(await safeEqual('k-h01', 'k-h010'), false);
+  assert.equal(await safeEqual('', 'k-h01'), false);
 });
 test('ingest: device key required', async () => {
   const env = envWith();
