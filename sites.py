@@ -26,21 +26,37 @@ Fields
   scen                  scenario key → (label, rain intensity P, duration min, start min)
   emergency             who to call, for the footer
   attribution           data credits, for the footer and map
+  terrain               terrain source, for the footnote ("FABDEM V1-2 (30 m bare earth)")
+  buildings             optional footprints GeoJSON (pipeline cut): drawn as dots, counted per cell, and ≥75 % built cells block water
+  sea                   True: cells with no terrain or ≤ 0 m touching the edge are sea (never flooded, never a unit)
+  noah                  … or "geojson": per-period noah_<rp>.geojson files in noah_dir (a missing file = no NOAH map)
+  sensors / labels      … or "auto" (campuses: units placed by model/placement.py, labels from the longest named roads)
+  campus                campuses only: identity shown on the page (id, short, name, campus, group, type, city, province, lat, lon)
+Campus sites are not listed in SITES: get_site(id) builds them from pipeline/campuses.csv.
 """
+import os, sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "pipeline"))
+from common import read_campuses, box_around, CAMPUSES_CSV  # noqa: E402
+
 ROAD_STREET = {"primary":"major","primary_link":"major","secondary":"major","secondary_link":"major",
                "tertiary":"mid","residential":"minor","unclassified":"minor","busway":"minor",
                "service":"alley"}
 # Campus profile: footpaths are the streets. Steps are excluded (not walkable in water anyway).
+# Campus cuts come straight from the national extract, which also has trunk roads and pedestrian streets.
+ROAD_CAMPUS = dict(ROAD_STREET, trunk="major", trunk_link="major", tertiary_link="mid", living_street="minor", pedestrian="minor")
 ROAD_PATH = dict(ROAD_STREET, **{"footway":"minor","path":"minor","pedestrian":"minor","cycleway":"minor","living_street":"minor"})
 
 NOAH = {"5":"inputs/noah/MetroManila_Flood_5year","25":"inputs/noah/MetroManila_Flood_25year","100":"inputs/noah/MetroManila_Flood_100year"}
 PH_SCEN = {"clear":("Dry day",0,0,0),"monsoon":("Habagat rain",0.16,300,180),"typhoon":("Typhoon",0.50,340,150)}
-PH_ATTR = "Map data © OpenStreetMap contributors · Terrain: Copernicus GLO-30 © ESA · Hazard reference: UP Project NOAH"
+FAB_ATTR = ("Map data © OpenStreetMap contributors · Buildings: Google Open Buildings, Microsoft, OSM (combined by VIDA) · "
+            "Terrain: FABDEM V1-2 © University of Bristol (CC BY-NC-SA 4.0) · Hazard reference: UP Project NOAH")
+FAB_TERRAIN = "FABDEM V1-2 (30 m, buildings and trees removed)"
 
 SITES = {
  "tv": dict(id="tv", name="Teachers Village", place="Teachers Village, Quezon City",
    bbox=(121.0470,14.6300,121.0755,14.6545), W=1200, H=1059, GW=200, GH=177,
-   dem="inputs/output_hh.tif", dem_kind="dsm", min_filter=3, sigma=1.6, carve=0.5,
+   dem="inputs/campuses/tv/dem.tif", dem_kind="dtm", min_filter=None, sigma=1.0, carve=0.5, sea=True,
+   buildings="inputs/campuses/tv/buildings.geojson",
    osm="inputs/export.geojson", noah=NOAH,
    sensors=[("BW-H01","Maginhawa Street",121.0602,14.6382),("BW-H02","Maginhawa Street",121.0582,14.6438),
             ("BW-H03","Malingap Street",121.0575,14.6425),("BW-H04","Matahimik Street",121.0545,14.6412),
@@ -51,32 +67,8 @@ SITES = {
            "Magiting Street","Mahusay Street","Matimtiman Street","V. Luna Road","Anonas Street","Katipunan Avenue",
            "Masaya Street","Maalalahanin Street"],
    road_class=ROAD_STREET, creek_tags={"river","stream"}, profile="street", langs="all", units="metric",
-   g_ref=56.0,                                                     # v17 constant, kept so Teachers Village behaves exactly as before
    tz="PHT", utc="+08:00",
-   scen=PH_SCEN, emergency="911 or your barangay", attribution=PH_ATTR),
-
- "diliman": dict(id="diliman", name="UP Diliman", place="UP Diliman, Quezon City",
-   bbox=(121.0560,14.6440,121.0820,14.6700), W=1200, H=1200, GW=200, GH=200,
-   dem="sites/diliman/output_hh.tif", dem_kind="dsm", min_filter=3, sigma=1.6, carve=0.5,
-   osm="sites/diliman/export.geojson", noah=NOAH,
-   # all eight sit on OSM-named buildings within 90 m of a mapped creek (San Vicente, Tandang Sora, Katipunan/Lagarian, Pansol, Luzon)
-   sensors=[("BW-D01","San Vicente Sentrong Sigla",121.05704,14.65352),            # San Vicente Creek, west edge
-            ("BW-D02","UP Checkpoint- Carabao Horn R",121.06199,14.65465),        # University Ave checkpoint, creek culvert
-            ("BW-D03","NEU Dorm 4 (Megadorm)",121.05702,14.66551),                # Tandang Sora Creek, north-west
-            ("BW-D04","UP Integrated School K-2",121.07253,14.65236),             # Katipunan/Lagarian Creek, campus core
-            ("BW-D05","Orosa Hall",121.08144,14.65480),                          # Balara, east (62 m from creek, on Betany St)
-            ("BW-D06","BPI",121.07400,14.64520),                                  # Katipunan Ave, south-east
-            ("BW-D07","Parroquia dela Nuestra Señora dela Paz y Buen Viaje de Balara",121.07463,14.66323),  # Old Balara, north-east
-            ("BW-D08","Philippine Red Cross",121.05886,14.65146)],                # south-west
-   site_by="name",
-   short={"BW-D01":"Sentrong Sigla","BW-D02":"UP Checkpoint","BW-D03":"NEU Megadorm","BW-D04":"UPIS K-2",
-          "BW-D07":"Balara Parish","BW-D08":"Red Cross"},
-   label_pos={"BW-D05":"left","BW-D01":"right","BW-D03":"right","BW-D08":"right","BW-D06":"left"},
-   labels=["University Avenue","Commonwealth Avenue","C.P. Garcia Avenue","Katipunan Avenue","Tandang Sora Avenue",
-           "Magsaysay Avenue","Osmeña Avenue","Roxas Avenue"],
-   road_class=ROAD_STREET, creek_tags={"river","stream","drain"}, profile="street", langs="all", units="metric",
-   tz="PHT", utc="+08:00",
-   scen=PH_SCEN, emergency="911 or your barangay", attribution=PH_ATTR),
+   scen=PH_SCEN, emergency="911 or your barangay", attribution=FAB_ATTR, terrain=FAB_TERRAIN),
 
  "berkeley": dict(id="berkeley", name="UC Berkeley", place="UC Berkeley, California",
    bbox=(-122.2700,37.8660,-122.2480,37.8790), W=1200, H=880, GW=240, GH=180,
@@ -102,5 +94,34 @@ SITES = {
    tz="PT", utc="-07:00",
    scen={"clear":("Dry day",0,0,0),"monsoon":("Winter storm",0.14,300,180),"typhoon":("Atmospheric river",0.40,340,150)},
    emergency="911 or UCPD (510-642-3333)",
-   attribution="Map data © OpenStreetMap contributors · Terrain: USGS 3DEP 1 m via OpenTopography"),
+   attribution="Map data © OpenStreetMap contributors · Terrain: USGS 3DEP 1 m via OpenTopography",
+   terrain="USGS 3DEP 1 m lidar (bare earth)"),
 }
+
+
+def campus_site(r, root=None):
+    """Site config for one PhilDev campus row of pipeline/campuses.csv (spec §3.2, §6)."""
+    root = root or os.environ.get("CAMPUS_INPUTS", "inputs/campuses")
+    d = f"{root}/{r['id']}"
+    ident = {k: r[k] for k in ("id", "short", "name", "campus", "group", "type", "city", "province")}
+    ident.update(lat=r["lat"], lon=r["lon"])
+    return dict(id=r["id"], name=r["short"], place=f"{r['name']} · {r['city']}, {r['province']}", campus=ident,
+                bbox=box_around(r["lat"], r["lon"]), W=1200, H=1200, GW=200, GH=200,
+                dem=f"{d}/dem.tif", dem_kind="dtm", min_filter=None, sigma=1.0, carve=0.5, sea=True,
+                osm=f"{d}/osm.geojson", buildings=f"{d}/buildings.geojson", noah="geojson", noah_dir=d,
+                barangays=f"{d}/barangays.geojson", outline=f"{d}/outline.geojson",
+                sensors="auto", site_by="auto", labels="auto",
+                road_class=ROAD_CAMPUS, creek_tags={"river", "stream", "drain", "canal", "ditch"}, profile="street",
+                langs="all", units="metric", tz="PHT", utc="+08:00", scen=PH_SCEN, emergency="911 or your barangay",
+                attribution=FAB_ATTR, terrain=FAB_TERRAIN)
+
+
+def get_site(site_id):
+    if site_id in SITES:
+        return SITES[site_id]
+    rows = {r["id"]: r for r in read_campuses(os.environ.get("CAMPUSES_CSV", CAMPUSES_CSV))}
+    if site_id not in rows:
+        raise KeyError(f"unknown site {site_id!r}")
+    if rows[site_id]["lat"] is None:
+        raise ValueError(f"{site_id}: no centre in campuses.csv yet (pipeline Task 5)")
+    return campus_site(rows[site_id])

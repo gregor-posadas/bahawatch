@@ -31,6 +31,11 @@ class Pick(unittest.TestCase):
         cs = self.line(20, 310.0, oc_at=5)
         chosen, sp = P.pick(cs)
         self.assertEqual(chosen[0]["fid"], 5); self.assertEqual(sp, 300.0); self.assertEqual(len(chosen), 8)
+    def test_only_unit_01_is_on_campus(self):
+        # spec §7.1: exactly one unit inside the campus outline, even when the campus fills much of the box
+        cs = [cand(i, i * 400.0, 0.0, 1.0 - i / 100, oc=(i < 10)) for i in range(30)]
+        chosen, _ = P.pick(cs)
+        self.assertEqual([c["oc"] for c in chosen], [True] + [False] * 7)
     def test_spacing_is_kept(self):
         cs = [cand(i, (i % 10) * 100.0, (i // 10) * 100.0, 1.0 - i / 1000, oc=(i == 0)) for i in range(100)]
         chosen, sp = P.pick(cs)

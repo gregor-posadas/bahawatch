@@ -2,31 +2,39 @@
 """
 BahaWatch dashboard — data preprocessing.
 
-Turns raw open geodata for Teachers Village, Quezon City into the compact
-JSON blob (data.json) that the dashboard embeds.  Run once; re-run only when
-inputs, the frame, or the sensor sites change.
+Turns open geodata for one site into the compact JSON file the dashboard fetches (data/<site>.json).
+Run once per site; re-run only when inputs, the frame, or the sensor sites change.
+
+  SITE=tv python3 build_data.py          # a pilot site from sites.SITES
+  SITE=upd python3 build_data.py         # a PhilDev campus from pipeline/campuses.csv (inputs/campuses/upd/)
 
 Inputs (see README.md for how to obtain each):
-  INPUT_OSM   OpenStreetMap Overpass export (GeoJSON): highways, buildings, waterways
-  INPUT_DEM   Copernicus GLO-30 GeoTIFF from OpenTopography (EPSG:4326)
-  INPUT_NOAH  Project NOAH Metro Manila flood hazard shapefiles (5/25/100-yr)
+  osm         OpenStreetMap GeoJSON: highways, waterways (and, for the pilots, buildings with addresses/names)
+  dem         terrain GeoTIFF: FABDEM V1-2 for Philippine sites, USGS 1 m for Berkeley
+  buildings   footprint GeoJSON from the pipeline (Philippine sites)
+  noah        NOAH flood hazard (shapefiles for Teachers Village, clipped GeoJSON for campuses)
 
 Output:
-  data.json   frame + terrain grid + streets + creeks + buildings + NOAH rasters + sensors
+  data/<site>.json   frame + terrain + streets + creeks + buildings + NOAH + sea/blocked/building-count grids + units
+                     (+ the partnership card for campuses; tools/build_places.py adds "places" afterwards)
 
-Dependencies:  numpy scipy rasterio pyshp
+Dependencies:  numpy scipy rasterio pyshp shapely
 """
 import json, base64, math, os, sys
 import numpy as np
 import rasterio, shapefile
 from scipy.ndimage import minimum_filter, gaussian_filter
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from model import grids, placement, campus as campus_model
 
 # ------------------------------------------------------------------ site config
-from sites import SITES
+from sites import get_site
 SITE_ID = os.environ.get("SITE", "tv")
-CFG = SITES[SITE_ID]
+CFG = get_site(SITE_ID)
 INPUT_OSM, INPUT_DEM, INPUT_NOAH = CFG["osm"], CFG["dem"], CFG["noah"]
-OUTPUT = os.environ.get("OUTPUT", "data.json" if SITE_ID=="tv" else f"data_{SITE_ID}.json")   # build_html.py embeds these names
+OUTPUT = os.environ.get("OUTPUT", f"data/{SITE_ID}.json")        # the page fetches data/<site>.json
+BUDGET = int(os.environ.get("BW_BUDGET", "650000"))              # raw bytes before places
+GZ_BUDGET = int(os.environ.get("BW_GZ_BUDGET", str(225 * 1024)))  # gzipped bytes before places; the file must stay ≤ 250 KB gz
 LON0, LAT0, LON1, LAT1 = CFG["bbox"]
 W, H, GW, GH = CFG["W"], CFG["H"], CFG["GW"], CFG["GH"]
 DSM_MIN_FILTER, DSM_SMOOTH_SIGMA, STREET_CARVE_M = CFG["min_filter"], CFG["sigma"], CFG["carve"]
@@ -77,6 +85,7 @@ elev=np.zeros((GH,GW))
 for gy in range(GH):
     for gx in range(GW):
         elev[gy,gx]=dem_at(*cell_ll(gx,gy))
+raw=elev.copy()                                   # before any filling: sea detection needs the gaps
 hole=np.isnan(elev)
 if hole.any():
     from scipy.ndimage import distance_transform_edt
@@ -85,6 +94,8 @@ if hole.any():
     print(f"  filled {int(hole.sum())} nodata cells from nearest neighbours")
 if DSM_MIN_FILTER: elev=minimum_filter(elev,size=DSM_MIN_FILTER)
 elev=gaussian_filter(elev,sigma=DSM_SMOOTH_SIGMA)
+SEA=grids.sea_mask(raw) if CFG.get("sea") else np.zeros((GH,GW),bool)
+if SEA.any(): print(f"  sea: {int(SEA.sum())} cells")
 
 # ------------------------------------------------------------------ 2. OSM
 print("2/5 osm: streets, creeks, buildings ...")
@@ -116,6 +127,14 @@ for f in osm["features"]:
             if p.get("name"):
                 named.append({"x":wx(cx),"y":wy(cy),"lon":cx,"lat":cy,"name":p["name"]})
 
+# footprints from the pipeline replace OSM's building dots (OSM still supplies addresses and names for siting)
+ALLFOOT=[]; FOOT=[]
+if CFG.get("buildings"):
+    ALLFOOT=json.load(open(CFG["buildings"],encoding="utf-8"))["features"]
+    FOOT=[f for f in ALLFOOT if LON0<=f["properties"]["px"]<=LON1 and LAT0<=f["properties"]["py"]<=LAT1]
+    blds=[(wx(f["properties"]["px"]),wy(f["properties"]["py"])) for f in FOOT]
+    print(f"  {len(FOOT)} footprints in the frame ({len(ALLFOOT)} cut)")
+
 # street mask + carve
 street=np.zeros((GH,GW),bool)
 for r in roads:
@@ -131,6 +150,24 @@ for r in roads:
                         if 0<=gx+dx<GW and 0<=gy+dy<GH: street[gy+dy,gx+dx]=True
 mn=minimum_filter(elev,size=3)
 elev[street]=mn[street]-STREET_CARVE_M
+
+# creek mask: water may always run along a creek, however built-up its banks are
+creek=np.zeros((GH,GW),bool)
+for wt in waters:
+    w=wt["p"]
+    for i in range(len(w)-1):
+        (x1,y1),(x2,y2)=w[i],w[i+1]; L=math.hypot(x2-x1,y2-y1); n=max(int(L/(W/GW*0.5)),1)
+        for k in range(n+1):
+            gx=int((x1+(x2-x1)*k/n)/W*GW); gy=int((y1+(y2-y1)*k/n)/H*GH)
+            if 0<=gx<GW and 0<=gy<GH: creek[gy,gx]=True
+
+# buildings as obstacles (spec §6.2): built fraction → blocked cells; footprints counted per cell
+BLOCK=SEA.copy(); BC=None
+if CFG.get("buildings"):
+    frac=grids.built_fraction([f["geometry"] for f in ALLFOOT],(LON0,LAT0,LON1,LAT1),GW,GH)
+    BLOCK=grids.block_mask(frac,street,creek,SEA)
+    BC=grids.counts([(min(int(x/W*GW),GW-1),min(int(y/H*GH),GH-1)) for x,y in blds],GW,GH)
+    print(f"  blocked: {int((BLOCK&~SEA).sum())} built-up cells of {GW*GH}")
 
 # ------------------------------------------------------------------ 3. NOAH
 print("3/5 noah: rasterizing hazard polygons (even-odd scanline) ...")
@@ -154,7 +191,15 @@ def rasterize_noah(path):
             inside=np.searchsorted(xc,cell_x)%2==1
             grid[gy,inside]=np.maximum(grid[gy,inside],var)
     return grid
-noah={k:rasterize_noah(v) for k,v in INPUT_NOAH.items()} if INPUT_NOAH else {}
+def noah_geojson(path):
+    """A clipped NOAH GeoJSON → grid of hazard class (highest wins); None when the pipeline found no map."""
+    if not os.path.exists(path): return None
+    fs=sorted(json.load(open(path,encoding="utf-8"))["features"],key=lambda f:f["properties"]["Var"])
+    return grids.rasterize(((f["geometry"],int(f["properties"]["Var"])) for f in fs),(LON0,LAT0,LON1,LAT1),GW,GH)
+if INPUT_NOAH=="geojson":
+    noah={rp:noah_geojson(f"{CFG['noah_dir']}/noah_{rp}.geojson") for rp in ("5","25","100")}
+else:
+    noah={k:rasterize_noah(v) for k,v in INPUT_NOAH.items()} if INPUT_NOAH else {}
 
 # ------------------------------------------------------------------ 4. sensors
 print("4/5 sensors: siting on buildings, referencing to street cells ...")
@@ -175,8 +220,55 @@ def nearest_other_street(px,py,own):
             dd=dist_pt_seg(px,py,*r["p"][i],*r["p"][i+1])
             if dd<best[0]: best=(dd,n)
     return best
+def shortSt(n): return n.replace(" Street"," St").replace(" Avenue"," Ave").replace(" Road"," Rd")
+def nearest_cell(mask,gx,gy,R=10):
+    for r in range(R+1):
+        for dy in range(-r,r+1):
+            for dx in range(-r,r+1):
+                if max(abs(dx),abs(dy))!=r: continue
+                x,y=gx+dx,gy+dy
+                if 0<=x<GW and 0<=y<GH and mask[y,x]: return x,y
+    return None
+def auto_units():
+    """Campus units (spec §6.3): score every footprint near a street, unit 01 on campus, the rest ≥ 300 m apart."""
+    from shapely.geometry import shape, Point
+    cell_m=(LON1-LON0)*MDEG_X/GW
+    score=placement.score(elev,noah,grids.dist_m(creek,cell_m),cell_m,valid=~SEA)
+    geom=shape(json.load(open(CFG["outline"],encoding="utf-8"))["features"][0]["geometry"])
+    has_outline=geom.geom_type in ("Polygon","MultiPolygon"); c=CFG["campus"]
+    def on_campus(lon,lat):
+        if has_outline: return geom.contains(Point(lon,lat))
+        return math.hypot((lon-c["lon"])*MDEG_X,(lat-c["lat"])*MDEG_Y)<=150
+    pts=[]
+    for f in FOOT:
+        p=f["properties"]; x,y=wx(p["px"]),wy(p["py"])
+        pts.append(dict(fid=p["fid"],px=p["px"],py=p["py"],x=x,y=y,cx=min(int(x/W*GW),GW-1),cy=min(int(y/H*GH),GH-1),
+                        x_m=x*MX,y_m=y*MY,oc=on_campus(p["px"],p["py"])))
+    cands=campus_model.candidates(pts,score,street,SEA,cell_m)
+    bfeats=json.load(open(CFG["barangays"],encoding="utf-8"))["features"]
+    bgrid=grids.label_polys([f["geometry"] for f in bfeats],(LON0,LAT0,LON1,LAT1),GW,GH)
+    bnames=[f["properties"]["name"] for f in bfeats]
+    def ok(cd):                                   # asked only of a house about to be chosen
+        dn,st=nearest_other_street(cd["x"],cd["y"],"")
+        b=int(bgrid[cd["cy"],cd["cx"]]); cell=nearest_cell(street,cd["cx"],cd["cy"])
+        if not st or dn>200 or b==0 or cell is None or SEA[cell[1],cell[0]]: return False
+        cd["street"],cd["brgy"],cd["cell"]=st,bnames[b-1],cell
+        return True
+    chosen,spacing=placement.pick(cands,ok=ok)
+    out=[]
+    for k,cd in enumerate(chosen,1):
+        cx,cy=cd["cell"]
+        out.append({"id":f"BW-{SITE_ID.upper()}-{k:02d}","street":cd["street"],"hn":"","near":None,
+                    "x":round(float(cd["x"]),1),"y":round(float(cd["y"]),1),"cx":cx,"cy":cy,
+                    "lon":round(cd["px"],5),"lat":round(cd["py"],5),"g":round(float(elev[cy,cx]),2),
+                    "bld":f"near {shortSt(cd['street'])} · {cd['brgy']}","short":shortSt(cd["street"]),
+                    "oc":bool(cd["oc"]),"brgy":cd["brgy"],"fid":cd["fid"]})
+        print(f"  {out[-1]['id']} → {out[-1]['bld']}{' (on campus)' if cd['oc'] else ''} score {cd['score']:.2f}")
+    print(f"  {len(cands)} candidate houses; spacing {spacing:.0f} m")
+    return out,spacing,bgrid,bnames,has_outline
+
 sensors=[]
-for sid,st,lon,lat in SENSOR_TARGETS:
+for sid,st,lon,lat in ([] if SENSOR_TARGETS=="auto" else SENSOR_TARGETS):
     tx,ty=wx(lon),wy(lat)
     if sid in CFG.get("fixed",set()):
         b={"x":tx,"y":ty,"lon":lon,"lat":lat,"name":st}                # sited at the coordinate itself
@@ -238,8 +330,17 @@ for sid,st,lon,lat in SENSOR_TARGETS:
     sensors.append(rec)
     print(f"  {sid} → {bld or b.get('hn','')} {street_name}  ({dst:.0f} m from {'creek' if bld else 'street'}; near {near}, {dnear:.0f} m)")
 
+if SENSOR_TARGETS=="auto":
+    sensors,SPACING,BGRID,BNAMES,HAS_OUTLINE=auto_units()
+
 # ------------------------------------------------------------------ 5. labels + encode
 print("5/5 labels + encoding ...")
+if LABEL_STREETS=="auto":                         # campuses: the longest named main roads
+    lens={}
+    for r in roads:
+        if r.get("n") and r["c"] in ("major","mid"):
+            lens[r["n"]]=lens.get(r["n"],0)+sum(math.hypot(r["p"][i+1][0]-r["p"][i][0],r["p"][i+1][1]-r["p"][i][1]) for i in range(len(r["p"])-1))
+    LABEL_STREETS=[n for n,_ in sorted(lens.items(),key=lambda kv:(-kv[1],kv[0]))[:12]]
 labels=[]
 for nm in LABEL_STREETS:
     if nm not in name_ways: continue
@@ -256,17 +357,37 @@ for wt in waters:
         if ang>math.pi/2 or ang<-math.pi/2: ang+=math.pi
         labels.append({"n":wt["n"],"x":p[mid][0],"y":p[mid][1],"a":round(ang,3),"w":1})
 
+noah_ok={k:v for k,v in noah.items() if v is not None}
 data={"W":W,"H":H,"GW":GW,"GH":GH,"bbox":[LON0,LAT0,LON1,LAT1],
       "elev":b64(np.clip(np.round(elev*10),0,32000).astype("<i2")),
       "elev_min":float(elev.min()),"elev_max":float(elev.max()),
-      "blds":b64(np.array([[int(x*10),int(y*10)] for x,y in blds],dtype="<u2")),"nb":len(blds),
+      "blds":"","nb":len(blds),
       "roads":roads,"waters":waters,"labels":labels,"sensors":sensors,
-      "noah":{k:rle(v) for k,v in noah.items()},"street":rle(street.astype(np.uint8))}
+      "noah":{k:rle(v) for k,v in noah_ok.items()},"street":rle(street.astype(np.uint8))}
+if CFG.get("sea"): data["sea"]=rle(SEA.astype(np.uint8))
+if CFG.get("buildings"): data["block"]=rle(BLOCK.astype(np.uint8)); data["bc"]=rle(BC)
 data["site"]={k:CFG[k] for k in ("id","name","place","profile","langs","units","emergency","attribution","tz","utc")}
 if "g_ref" in CFG: data["site"]["g_ref"]=CFG["g_ref"]
 data["site"]["scen"]={k:{"label":v[0],"P":v[1],"dur":v[2],"start":v[3]} for k,v in CFG["scen"].items()}
-data["site"]["hazard"]=CFG["noah"] is not None
-json.dump(data,open(OUTPUT,"w"),separators=(",",":"),ensure_ascii=False)
+data["site"]["hazard"]=bool(noah_ok)
+data["site"]["noah_missing"]=[rp for rp in ("5","25","100") if CFG["noah"] and rp not in noah_ok]
+data["site"]["terrain"]=CFG.get("terrain","")
+if "campus" in CFG:
+    data["site"]["campus"]=CFG["campus"]
+    data["card"]=campus_model.card(sensors,SPACING,BGRID,BNAMES,{rp:noah.get(rp) for rp in ("5","25","100")},SEA,HAS_OUTLINE)
+# building dots last: thin them evenly if the file would pass its budget (the count and the model keep every footprint)
+base=len(json.dumps(data,separators=(",",":"),ensure_ascii=False).encode())
+nmax=max(int((BUDGET-base)/5.34),1)
+step=1 if len(blds)<=nmax else math.ceil(len(blds)/nmax)
+import gzip
+while True:                                       # and thin further until it fits GZ_BUDGET on the wire (places come on top)
+    data["blds"]=b64(np.array([[int(x*10),int(y*10)] for x,y in blds[::step]],dtype="<u2").reshape(-1,2))
+    data["thin"]=step
+    if step>=max(len(blds),1) or len(gzip.compress(json.dumps(data,separators=(",",":"),ensure_ascii=False).encode(),6))<=GZ_BUDGET: break
+    step=max(step+1,int(step*1.15))
+if step>1: print(f"  building dots thinned 1 in {step} to fit {BUDGET} bytes")
+os.makedirs(os.path.dirname(OUTPUT) or ".",exist_ok=True)
+json.dump(data,open(OUTPUT,"w",encoding="utf-8"),separators=(",",":"),ensure_ascii=False)
 print(f"wrote {OUTPUT}: {os.path.getsize(OUTPUT)//1024} KB · {len(blds)} buildings · {len(roads)} road ways · "
       f"{len(waters)} creek segments · terrain {elev.min():.1f}–{elev.max():.1f} m")
 for s in sensors: print(f"  {s['id']} {s['hn']:>5s} {s['street']:20s} street cell ({s['cx']},{s['cy']}) ground {s['g']:.1f} m")
