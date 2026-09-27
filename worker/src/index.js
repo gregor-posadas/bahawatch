@@ -1,5 +1,6 @@
 import { corsHeaders, json } from './http.js';
 import { handleReport, handleUndo, handleIngest, handleSubscribe, handleStatus } from './api.js';
+import { runCron } from './cron.js';
 
 export default {
   async fetch(req, env) {
@@ -14,5 +15,5 @@ export default {
     if (req.method === 'GET' && st) return handleStatus(req, env, now, decodeURIComponent(st[1]));
     return json({ error: 'not found' }, 404, env);
   },
-  async scheduled() { /* Task 4 */ },
+  async scheduled(event, env, ctx) { ctx.waitUntil(runCron(env, event.scheduledTime ?? Date.now())); },
 };

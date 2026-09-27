@@ -54,5 +54,12 @@ export async function handleSubscribe(req, env) {
 }
 
 export async function handleStatus(req, env, now, placeId) {
-  return json({ error: 'not implemented' }, 404, env);   // Task 4
+  if (!placeById(placeId)) return json({ error: 'unknown place' }, 404, env);
+  const s = await env.DB.prepare('SELECT * FROM status WHERE place=?').bind(placeId).first();
+  const hb = await env.DB.prepare('SELECT ran_at, newest_at FROM heartbeat WHERE id=1').first();
+  const body = s
+    ? { place: placeId, answer: s.answer, reason: JSON.parse(s.reason), etaMin: s.eta_min, updatedAt: hb?.newest_at ?? s.updated_at,
+        checkedAt: hb?.ran_at ?? null, serverNow: now, stillThere: s.still_there ? JSON.parse(s.still_there) : null }
+    : { place: placeId, answer: 'nodata', reason: { key: 'stale', vars: {} }, etaMin: null, updatedAt: null, checkedAt: hb?.ran_at ?? null, serverNow: now, stillThere: null };
+  return json(body, 200, env, { 'cache-control': 'public, max-age=60' });
 }
