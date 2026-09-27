@@ -115,6 +115,49 @@ def _inner_shapefile(z, stem):
                             dbf=io.BytesIO(z.read(stem + ".dbf")))
 
 
+def _shp_polygons(shp, shx, boxes):
+    """One shapely geometry per record of a polygon shapefile (bytes), keeping only rings whose extent touches one of
+    `boxes`. Parsed with numpy (pyshp spends ~60 s on one province's 1.7 M points); rings are outers when clockwise and
+    holes when anticlockwise, as the shapefile format defines them. Records away from every box come back empty."""
+    import struct
+    import numpy as np
+    from shapely.geometry import Polygon
+    from shapely.ops import unary_union
+    ub = (min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes))
+    n = (len(shx) - 100) // 8
+    offs = np.frombuffer(shx, dtype=">i4", count=2 * n, offset=100).reshape(n, 2)[:, 0]
+    out = []
+    for off in offs:
+        p = int(off) * 2 + 8
+        if struct.unpack_from("<i", shp, p)[0] == 0 or not any(overlaps(struct.unpack_from("<4d", shp, p + 4), b) for b in boxes):
+            out.append(Polygon())
+            continue
+        nparts, npts = struct.unpack_from("<2i", shp, p + 36)
+        parts = np.frombuffer(shp, "<i4", nparts, p + 44).astype(np.int64)
+        pts = np.frombuffer(shp, "<f8", npts * 2, p + 44 + 4 * nparts).reshape(npts, 2)
+        ends = np.append(parts[1:], npts)
+        x, y = pts[:, 0], pts[:, 1]
+        cs = np.concatenate([[0.0], np.cumsum(x[:-1] * y[1:] - x[1:] * y[:-1])])
+        area2 = cs[ends - 1] - cs[parts]                     # shoelace per ring: < 0 clockwise (outer)
+        x0 = np.minimum.reduceat(x, parts); x1 = np.maximum.reduceat(x, parts)
+        y0 = np.minimum.reduceat(y, parts); y1 = np.maximum.reduceat(y, parts)
+        outers, holes = [], []
+        for k in range(nparts):
+            if ends[k] - parts[k] < 4 or not any(overlaps((x0[k], y0[k], x1[k], y1[k]), b) for b in boxes):
+                continue
+            g = Polygon(pts[parts[k]:ends[k]])
+            if not g.is_valid:
+                g = shapely.make_valid(g)
+            g = shapely.clip_by_rect(g, *ub)
+            if not g.is_empty:
+                (outers if area2[k] < 0 else holes).append(g)
+        g = unary_union(outers) if outers else Polygon()
+        if holes and not g.is_empty:
+            g = g.difference(unary_union(holes))
+        out.append(g)
+    return out
+
+
 def noah_index(zip_paths):
     """{download zip name: {province zip: [x0, y0, x1, y1] or None}} from each map's 100-byte shapefile header.
     Reading every header takes minutes on the PC, so run_pc.py saves this once and the clip reuses it."""
@@ -168,19 +211,14 @@ def noah_for_boxes(zip_paths, boxes, margin_m=MARGIN_M, index=None):
             hit = [k for k, b in big.items() if overlaps(tuple(rd.bbox), b)]
             if not hit:
                 continue
-            geoms = []
-            for i in range(len(rd)):
-                g = shape(rd.shape(i).__geo_interface__)
-                if not g.is_valid:
-                    g = shapely.make_valid(g)
-                geoms.append((int(round(float(rd.record(i)[0]))), g))
+            polys = _shp_polygons(inner.read(stem + ".shp"), inner.read(stem + ".shx"), [big[k] for k in hit])
+            geoms = [(int(round(float(rd.record(i)[0]))), g) for i, g in enumerate(polys)]
             for k in hit:
-                clip = sbox(*big[k])
                 feats = out[k].setdefault(rp, [])
                 for var, g in geoms:
-                    if not overlaps(g.bounds, big[k]):
+                    if g.is_empty or not overlaps(g.bounds, big[k]):
                         continue
-                    c = _polygonal(g.intersection(clip))
+                    c = _polygonal(shapely.clip_by_rect(g, *big[k]))
                     if c is not None and not c.is_empty:
                         feats.append({"type": "Feature", "properties": {"Var": var, "src": name}, "geometry": round_geom(mapping(c))})
     for k in boxes:

@@ -63,7 +63,7 @@ class EndToEnd(unittest.TestCase):
                 self.assertTrue(os.path.exists(os.path.join(self.out, k, f)), (k, f))
         self.assertTrue(os.path.exists(os.path.join(self.out, "upd", "outline.geojson")))
         self.assertFalse(os.path.exists(os.path.join(self.out, "tv", "outline.geojson")))
-        self.assertEqual(json.load(open(os.path.join(self.out, "upd", "noah.json"))), {"5": "covered", "25": "missing", "100": "missing"})
+        self.assertEqual(json.load(open(os.path.join(self.out, "upd", "noah.json"))), {"5": "covered", "25": "missing", "100": "covered"})
         self.assertTrue(os.path.exists(os.path.join(self.out, "ph_outline.geojson")))
         b = json.load(open(os.path.join(self.out, "upd", "buildings.geojson")))["features"]
         self.assertEqual(len(b), 2)

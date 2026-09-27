@@ -92,6 +92,19 @@ def shp_files(stem, polys, fields, records):
     return {stem + ".shp": shp.getvalue(), stem + ".shx": shx.getvalue(), stem + ".dbf": dbf.getvalue()}
 
 
+def shp_with_hole(stem, outer, hole, var):
+    """{name: bytes} of one polygon record with a hole: outer ring clockwise, hole anticlockwise (the shapefile rule)."""
+    import shapefile
+    shp, shx, dbf = io.BytesIO(), io.BytesIO(), io.BytesIO()
+    w = shapefile.Writer(shp=shp, shx=shx, dbf=dbf, shapeType=shapefile.POLYGON)
+    w.field("Var", "N", 5, 0)
+    (x0, y0, x1, y1), (h0, i0, h1, i1) = outer, hole
+    w.poly([[(x0, y0), (x0, y1), (x1, y1), (x1, y0), (x0, y0)], [(h0, i0), (h1, i0), (h1, i1), (h0, i1), (h0, i0)]])
+    w.record(var)
+    w.close()
+    return {stem + ".shp": shp.getvalue(), stem + ".shx": shx.getvalue(), stem + ".dbf": dbf.getvalue()}
+
+
 def _zip_bytes(files):
     b = io.BytesIO()
     with zipfile.ZipFile(b, "w") as z:
@@ -111,6 +124,8 @@ def write_noah(folder):
     open(os.path.join(folder, "5yr-B-001.zip"), "wb").write(_zip_bytes(five))          # the duplicated download
     open(os.path.join(folder, "25yr-A-001.zip"), "wb").write(_zip_bytes({"25yr/Cebu.zip": _zip_bytes(cebu)}))
     open(os.path.join(folder, "100yr-A-001.zip"), "wb").write(_zip_bytes({"100yr/TawiTawi.zip": _zip_bytes({})}))   # an empty province, as in the real download
+    holed = shp_with_hole("MetroManila_Flood_100year", (121.03, 14.63, 121.10, 14.68), (121.06, 14.645, 121.075, 14.66), 2)
+    open(os.path.join(folder, "100yr-B-001.zip"), "wb").write(_zip_bytes({"100yr/MetroManila.zip": _zip_bytes(holed)}))
     return folder
 
 

@@ -58,13 +58,39 @@ class Noah(unittest.TestCase):
         vs = sorted(f["properties"]["Var"] for f in self.got["upd"]["5"])
         self.assertEqual(vs, [1, 3])                       # the Var 2 polygon lies outside the box; the duplicate zip is read once
     def test_uncovered_period_is_none_not_empty(self):
-        self.assertIsNone(self.got["upd"]["25"]); self.assertIsNone(self.got["upd"]["100"])
+        self.assertIsNone(self.got["upd"]["25"])
         self.assertEqual(len(self.got["cebu"]["25"]), 1); self.assertIsNone(self.got["cebu"]["100"])
+    def test_holes_stay_holes(self):
+        from shapely.geometry import Point
+        from shapely.ops import unary_union
+        g = unary_union([shape(f["geometry"]) for f in self.got["upd"]["100"]])
+        self.assertFalse(g.contains(Point(121.0675, 14.6525)))          # the middle of the hole
+        self.assertTrue(g.contains(Point(121.052, 14.6525)))            # the hazard around it
+        want = (sbox(*C.grow(UPD, 300)).intersection(sbox(121.03, 14.63, 121.10, 14.68)).area - 0.015 * 0.015)
+        self.assertAlmostEqual(g.area, want, places=7)          # coordinates are rounded to 6 decimals
     def test_clipped_to_box_plus_margin(self):
         g = C.grow(UPD, 300)
         for f in self.got["upd"]["5"]:
             x0, y0, x1, y1 = shape(f["geometry"]).bounds
             self.assertTrue(x0 >= g[0] - 1e-6 and x1 <= g[2] + 1e-6 and y0 >= g[1] - 1e-6 and y1 <= g[3] + 1e-6)
+
+class ShpReader(unittest.TestCase):
+    """Province hazard maps hold millions of points in 3 records; parsing them with pyshp took ~60 s per map on the PC.
+    cut reads the .shp with numpy, keeps only rings near the boxes, and rebuilds outers and holes by orientation."""
+    def test_numpy_reader_matches_pyshp(self):
+        import io, zipfile
+        from tests.fixtures import shp_with_hole
+        files = shp_with_hole("P", (121.03, 14.63, 121.10, 14.68), (121.06, 14.645, 121.075, 14.66), 2)
+        box = C.grow(UPD, 300)
+        polys = cut._shp_polygons(files["P.shp"], files["P.shx"], [box])
+        self.assertEqual(len(polys), 1)
+        import shapefile
+        ref = shape(shapefile.Reader(shp=io.BytesIO(files["P.shp"]), shx=io.BytesIO(files["P.shx"]), dbf=io.BytesIO(files["P.dbf"])).shape(0).__geo_interface__)
+        self.assertAlmostEqual(polys[0].intersection(sbox(*box)).area, ref.intersection(sbox(*box)).area, places=12)
+    def test_rings_far_from_every_box_are_dropped(self):
+        from tests.fixtures import shp_with_hole
+        files = shp_with_hole("P", (125.0, 7.0, 125.1, 7.1), (125.02, 7.02, 125.03, 7.03), 1)
+        self.assertEqual([p.is_empty for p in cut._shp_polygons(files["P.shp"], files["P.shx"], [UPD])], [True])
 
 class NoahIndex(unittest.TestCase):
     """Reading 284 province maps' headers takes ~150 s on the PC, so the bounding boxes are indexed once and the
@@ -82,8 +108,8 @@ class NoahIndex(unittest.TestCase):
         boxes = {"upd": UPD, "cebu": CEBU}
         self.assertEqual(cut.noah_for_boxes(self.zips, boxes, index=cut.noah_index(self.zips)), cut.noah_for_boxes(self.zips, boxes))
     def test_empty_province_zip_is_skipped(self):
-        got = cut.noah_for_boxes(self.zips, {"upd": UPD})
-        self.assertIsNone(got["upd"]["100"])
+        got = cut.noah_for_boxes(self.zips, {"upd": UPD})           # Tawi-Tawi's empty zip comes first and must not stop the rest
+        self.assertTrue(got["upd"]["100"] and all(f["properties"]["src"] == "100yr/MetroManila.zip" for f in got["upd"]["100"]))
 
 class Admin(unittest.TestCase):
     @classmethod
