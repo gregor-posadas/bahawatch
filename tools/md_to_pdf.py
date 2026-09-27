@@ -29,7 +29,7 @@ table{border-collapse:collapse; width:100%; margin:4pt 0 8pt; font-size:9.2pt; b
 th,td{border-top:.6pt solid #d9d5ce; padding:3.5pt 5pt; text-align:left; vertical-align:top}
 th{font-size:8pt; text-transform:uppercase; letter-spacing:.05em; color:#5f5b55; border-top:none}
 code{font-family:"DejaVu Sans Mono",Menlo,monospace; font-size:8.6pt; background:#f3f1ed; padding:0 2pt; border-radius:2pt}
-pre{background:#f6f5f2; border:.6pt solid #d9d5ce; padding:7pt 9pt; font-size:8.2pt; line-height:1.35; overflow:hidden; break-inside:avoid}
+pre{background:#f6f5f2; border:.6pt solid #d9d5ce; padding:7pt 9pt; font-size:8.2pt; line-height:1.35; white-space:pre-wrap; overflow-wrap:anywhere; break-inside:auto}
 pre code{background:none; padding:0}
 strong{font-weight:700}
 a{color:#0030a0; text-decoration:none}
