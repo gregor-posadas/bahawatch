@@ -18,6 +18,12 @@ class CampusList(unittest.TestCase):
             for k in ("short", "name", "campus", "city", "province"): self.assertTrue(r[k].strip(), (r["id"], k))
             re.compile(r["osm_pattern"], re.I)
             self.assertTrue(4.5 <= r["hint_lat"] <= 21.5 and 116 <= r["hint_lon"] <= 127, r["id"])
+    def test_centres_resolved(self):
+        """Task 5 filled osm_ref, lat and lon from the OSM outlines found on Gregor's PC."""
+        for r in self.rows:
+            self.assertRegex(r["osm_ref"], r"^([nwr]\d+|manual)$", r["id"])
+            d = math.hypot((r["lon"] - r["hint_lon"]) * C.m_per_deg_lon(r["lat"]), (r["lat"] - r["hint_lat"]) * C.M_PER_DEG_LAT)
+            self.assertLess(d, 10000, (r["id"], round(d)))
 
 class Boxes(unittest.TestCase):
     def test_box_is_3km_square(self):
