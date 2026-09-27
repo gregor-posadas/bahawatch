@@ -3,6 +3,8 @@ import { PLACES, haversineM } from './geo.js';
 import { fetchRain } from './rain.js';
 
 const MIN = 60000;
+// Filtered by `at` alone: served by the readings_at index (migrations/0001_init.sql), never a full scan.
+export const READINGS_SQL = 'SELECT sensor, at, depth_cm FROM readings WHERE at > ? ORDER BY at DESC';
 const siteCentre = (site) => {
   const ps = PLACES.sites[site];
   return { key: site, lat: ps.reduce((a, p) => a + p.lat, 0) / ps.length, lon: ps.reduce((a, p) => a + p.lon, 0) / ps.length };
@@ -12,14 +14,14 @@ export async function runCron(env, now, fetchImpl = fetch) {
   const DB = env.DB;
   // 1. rain: refresh what we can, keep the rest. One statement per site that answered (at most a
   // handful of sites), never per place, so this never threatens the 50-query cap below.
-  const fresh = await fetchRain(Object.keys(PLACES.sites).map(siteCentre), fetchImpl, now);
+  const fresh = await fetchRain(Object.keys(PLACES.sites).map(siteCentre), fetchImpl, now, env.RAIN_TIMEOUT_MS);
   for (const [site, r] of fresh) {
     await DB.prepare('INSERT OR REPLACE INTO rain(site,now_mm,next_mm,at) VALUES(?,?,?,?)').bind(site, r.nowMmH, r.nextMmH, r.at).run();
   }
   const rainRows = new Map((await DB.prepare('SELECT * FROM rain').all()).results.map((r) => [r.site, { nowMmH: r.now_mm, nextMmH: r.next_mm, at: r.at }]));
 
   // 2. sensors: latest reading and rate from a reading 10-40 min earlier
-  const rd = (await DB.prepare('SELECT sensor, at, depth_cm FROM readings WHERE at > ? ORDER BY at DESC').bind(now - 60 * MIN).all()).results;
+  const rd = (await DB.prepare(READINGS_SQL).bind(now - 60 * MIN).all()).results;
   const latest = new Map();
   for (const r of rd) {
     const l = latest.get(r.sensor);
@@ -55,12 +57,14 @@ export async function runCron(env, now, fetchImpl = fetch) {
       for (const r of reps) {
         const d = haversineM(p.lat, p.lon, r.lat, r.lon);
         if (d > RULE.REPORT_RADIUS_M) continue;
+        // Each phone counts once, by its latest report (rows are newest first) - for the Oo count AND for
+        // "Still there?": a phone that answered Hindi after its own Oo no longer keeps the prompt alive.
+        if (seen.has(r.device)) continue;
+        seen.add(r.device);
         // Store the report's own timestamp and distance, not an age computed now: an age baked in at
         // cron time would grow stale between runs and, worse, change on every run purely because time
         // passed, defeating write-on-change. /status recomputes the age from serverNow when it's read.
         if (r.answer === 'oo' && !still && d <= 300 && now - r.at <= 30 * MIN) still = { at: r.at, distM: Math.round(d) };
-        if (seen.has(r.device)) continue;
-        seen.add(r.device);
         if (r.answer === 'oo') { yesPhones++; newestAt = Math.max(newestAt ?? 0, r.at); }
       }
       const v = babahaBa({ now, place: p, sensors, reports: { yesPhones, newestAt }, rain: rainRows.get(site) || null });
@@ -96,6 +100,9 @@ export async function runCron(env, now, fetchImpl = fetch) {
         FROM json_each(?1)`).bind(JSON.stringify(rows), h0).run();
     }
     await DB.prepare('DELETE FROM reports WHERE at < ?').bind(now - 30 * 24 * 3600000).run();
+    // Unlink the phone's random id from its ~100 m positions once a report no longer counts (60 min) -
+    // nothing reads `device` on older rows (counting, the 10-min repeat check and Undo all look back <= 60 min).
+    await DB.prepare("UPDATE reports SET device='' WHERE at < ? AND device<>''").bind(now - 61 * MIN).run();
   }
   return { places: count, changed: changedRows.length };
 }

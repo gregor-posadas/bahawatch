@@ -22,3 +22,23 @@ test('network failure -> empty map, no throw', async () => {
   const m = await fetchRain([{ key: 'tv', lat: 14.64, lon: 121.06 }], async () => { throw new Error('down'); }, NOW);
   assert.equal(m.size, 0);
 });
+test('I7: both now and next null/missing -> the site is omitted; partial nulls still answer', async () => {
+  const f = async () => new Response(JSON.stringify([loc([null, null, null, null]), loc([null, null, 4, null]), { hourly: { time: loc([]).hourly.time, precipitation: [] } }]));
+  const m = await fetchRain([{ key: 'a', lat: 1, lon: 1 }, { key: 'b', lat: 2, lon: 2 }, { key: 'c', lat: 3, lon: 3 }], f, NOW);
+  assert.equal(m.has('a'), false);
+  assert.equal(m.has('c'), false);
+  assert.deepEqual(m.get('b'), { nowMmH: 4, nextMmH: 0, at: NOW });
+});
+test('m4: a request that never answers times out -> empty map', async () => {
+  const t0 = Date.now();
+  const m = await fetchRain([{ key: 'tv', lat: 14.64, lon: 121.06 }], () => new Promise(() => {}), NOW, 50);
+  assert.equal(m.size, 0);
+  assert.ok(Date.now() - t0 < 2000);
+});
+test('m4: the default timeout is 10 s and is passed to fetch as an abort signal', async () => {
+  const { RAIN_TIMEOUT_MS } = await import('../src/rain.js');
+  assert.equal(RAIN_TIMEOUT_MS, 10000);
+  let sig = null;
+  await fetchRain([{ key: 'tv', lat: 14.64, lon: 121.06 }], async (u, o) => { sig = o && o.signal; return new Response(JSON.stringify(loc([0, 0, 0, 0]))); }, NOW);
+  assert.ok(sig && typeof sig.aborted === 'boolean');
+});

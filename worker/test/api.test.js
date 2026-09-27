@@ -37,7 +37,7 @@ test('report: bot check failure -> 403, nothing stored', async () => {
 test('report: one per place per 10 min per phone', async () => {
   const env = envWith();
   assert.equal((await handleReport(req(body()), env, NOW, turnstileOK)).status, 201);
-  assert.equal((await handleReport(req(body({ answer: 'hindi' })), env, NOW + 9 * 60000, turnstileOK)).status, 429);
+  assert.equal((await handleReport(req(body()), env, NOW + 9 * 60000, turnstileOK)).status, 429);   // same answer again
   assert.equal((await handleReport(req(body({ place: 'tv:s:BW-H02' })), env, NOW + 60000, turnstileOK)).status, 201);
   assert.equal((await handleReport(req(body()), env, NOW + 10 * 60000, turnstileOK)).status, 201);
 });
@@ -76,4 +76,32 @@ test('CORS preflight and headers', async () => {
   const pre = await worker.fetch(new Request('https://api.test/report', { method: 'OPTIONS', headers: { origin: 'https://gregor-posadas.github.io' } }), env);
   assert.equal(pre.status, 204);
   assert.equal(pre.headers.get('access-control-allow-origin'), 'https://gregor-posadas.github.io');
+});
+
+// ---- final-review fix wave ----
+test('I1: same phone, same answer within 10 min -> 429; a different answer updates that row (latest wins)', async () => {
+  const env = envWith();
+  const a = await handleReport(req(body()), env, NOW, turnstileOK);
+  assert.equal(a.status, 201);
+  const { id } = await a.json();
+  assert.equal((await handleReport(req(body()), env, NOW + 60000, turnstileOK)).status, 429);
+  const b = await handleReport(req(body({ answer: 'hindi', lat: 14.6375, lon: 121.0619 })), env, NOW + 9 * 60000, turnstileOK);
+  assert.equal(b.status, 201);
+  assert.equal((await b.json()).id, id);
+  const rows = (await env.DB.prepare('SELECT * FROM reports').all()).results;
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].answer, 'hindi'); assert.equal(rows[0].at, NOW + 9 * 60000);
+  assert.equal(rows[0].lat, 14.638); assert.equal(rows[0].lon, 121.062);
+  // and back again is also an update, not a 429
+  assert.equal((await handleReport(req(body({ answer: 'oo' })), env, NOW + 9.5 * 60000, turnstileOK)).status, 201);
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) AS n FROM reports').first()).n, 1);
+  assert.equal((await env.DB.prepare('SELECT answer FROM reports').first()).answer, 'oo');
+});
+test('I3: a position more than 2 km from the place centre -> 400, nothing stored', async () => {
+  const env = envWith();
+  // ~2.2 km north of BW-H01
+  assert.equal((await handleReport(req(body({ lat: 14.636954 + 0.02 })), env, NOW, turnstileOK)).status, 400);
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) AS n FROM reports').first()).n, 0);
+  // ~1.1 km is still accepted
+  assert.equal((await handleReport(req(body({ lat: 14.636954 + 0.01 })), env, NOW, turnstileOK)).status, 201);
 });

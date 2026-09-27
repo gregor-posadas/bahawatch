@@ -11,6 +11,9 @@ CREATE TABLE reports (
 CREATE INDEX reports_at ON reports(at);
 CREATE INDEX reports_dev ON reports(device, place, at);
 CREATE TABLE readings (sensor TEXT NOT NULL, at INTEGER NOT NULL, depth_cm REAL NOT NULL, PRIMARY KEY (sensor, at));
+-- The cron reads the last hour by `at` alone every 5 min; readings are kept forever, so without this index
+-- that read is a full-table scan and D1 Free's 5M rows-read/day runs out within a couple of weeks.
+CREATE INDEX readings_at ON readings(at);
 CREATE TABLE rain (site TEXT PRIMARY KEY, now_mm REAL NOT NULL, next_mm REAL NOT NULL, at INTEGER NOT NULL);
 CREATE TABLE status (place TEXT PRIMARY KEY, answer TEXT NOT NULL, reason TEXT NOT NULL, eta_min INTEGER,
   updated_at INTEGER, still_there TEXT, changed_at INTEGER NOT NULL);

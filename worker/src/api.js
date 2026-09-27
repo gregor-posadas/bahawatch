@@ -1,9 +1,10 @@
 import { json, safeEqual } from './http.js';
-import { placeById, round3, PLACES } from './geo.js';
+import { placeById, round3, PLACES, haversineM } from './geo.js';
 
 const ANSWERS = new Set(['oo', 'hindi', 'di_sigurado']);
 const DEVICE_RE = /^[a-f0-9]{24}$/;
 const LIMIT_MS = 10 * 60000, UNDO_MS = 15000;
+const MAX_FROM_PLACE_M = 2000;   // a report pinned farther than this from its place's centre is not about that place
 
 async function turnstileOk(env, token, fetchImpl) {
   const form = new FormData(); form.append('secret', env.TURNSTILE_SECRET); form.append('response', token || '');
@@ -19,11 +20,20 @@ export async function handleReport(req, env, now, fetchImpl = fetch) {
   if (!place || !ANSWERS.has(b.answer) || !DEVICE_RE.test(b.device || '')
       || !Number.isFinite(b.lat) || !Number.isFinite(b.lon) || Math.abs(b.lat) > 90 || Math.abs(b.lon) > 180)
     return json({ error: 'invalid report' }, 400, env);
+  if (haversineM(place.lat, place.lon, b.lat, b.lon) > MAX_FROM_PLACE_M) return json({ error: 'position too far from place' }, 400, env);
   if (!(await turnstileOk(env, b.token, fetchImpl))) return json({ error: 'bot check failed' }, 403, env);
-  const dup = await env.DB.prepare('SELECT 1 FROM reports WHERE device=? AND place=? AND at>?').bind(b.device, b.place, now - LIMIT_MS).first();
-  if (dup) return json({ error: 'already recorded' }, 429, env);
+  const demo = b.demo ? 1 : 0, lat = round3(b.lat), lon = round3(b.lon);
+  // One row per phone per place per 10 min: the same answer again is a double tap or a re-send (429, shown as
+  // "Thanks, recorded"); a different answer (e.g. Hindi to "Still there?" after its own Oo) replaces it - latest wins.
+  const prev = await env.DB.prepare('SELECT id, answer FROM reports WHERE device=? AND place=? AND demo=? AND at>? ORDER BY at DESC LIMIT 1')
+    .bind(b.device, b.place, demo, now - LIMIT_MS).first();
+  if (prev && prev.answer === b.answer) return json({ error: 'already recorded' }, 429, env);
+  if (prev) {
+    await env.DB.prepare('UPDATE reports SET answer=?, at=?, lat=?, lon=? WHERE id=?').bind(b.answer, now, lat, lon, prev.id).run();
+    return json({ id: prev.id }, 201, env);
+  }
   const r = await env.DB.prepare('INSERT INTO reports(at,place,lat,lon,answer,device,demo) VALUES(?,?,?,?,?,?,?)')
-    .bind(now, b.place, round3(b.lat), round3(b.lon), b.answer, b.device, b.demo ? 1 : 0).run();
+    .bind(now, b.place, lat, lon, b.answer, b.device, demo).run();
   return json({ id: r.meta.last_row_id }, 201, env);
 }
 

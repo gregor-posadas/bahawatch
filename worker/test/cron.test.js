@@ -166,3 +166,53 @@ test('D1 free-plan query budget: on-the-hour run (rollup + retention) stays at o
   await runCron(env, HOUR, rainOK());
   assert.ok(env.DB.queryCount <= 50, `used ${env.DB.queryCount} queries`);
 });
+
+// ---- final-review fix wave ----
+test('C1: the cron readings query uses the readings_at index (SEARCH, not a full SCAN)', async () => {
+  const { READINGS_SQL } = await import('../src/cron.js');
+  const env = envWith();
+  const plan = env.DB._db.prepare('EXPLAIN QUERY PLAN ' + READINGS_SQL).all(NOW).map((r) => r.detail).join(' | ');
+  assert.match(plan, /SEARCH readings USING (COVERING )?INDEX readings_at/, plan);
+  assert.doesNotMatch(plan, /SCAN readings(?! USING)/, plan);
+});
+test("I1: Still there? is only offered from phones whose latest report is 'oo'", async () => {
+  const env = envWith();
+  await addReport(env, { device: 'a'.repeat(24), at: NOW - 12 * 60000, lat: P.lat + 0.001 });
+  await addReport(env, { device: 'a'.repeat(24), at: NOW - 3 * 60000, lat: P.lat + 0.001, answer: 'hindi' });
+  await runCron(env, NOW, rainOK());
+  assert.equal((await status(env)).stillThere, null);
+  await addReport(env, { device: 'b'.repeat(24), at: NOW - 2 * 60000, lat: P.lat + 0.001 });
+  await runCron(env, NOW + 60000, rainOK());
+  assert.equal((await status(env, NOW + 60000)).stillThere.ageMin, 3);
+});
+test('I4: the hourly job blanks device ids on reports older than 61 min, and stays in the query budget', async () => {
+  const env = envWith();
+  const HOUR = Date.UTC(2026, 8, 26, 10, 0);
+  await addReport(env, { device: 'a'.repeat(24), at: HOUR - 62 * 60000 });
+  await addReport(env, { device: 'b'.repeat(24), at: HOUR - 30 * 60000 });
+  env.DB.resetQueryCount();
+  await runCron(env, HOUR, rainOK());
+  assert.ok(env.DB.queryCount <= 50, `used ${env.DB.queryCount} queries`);
+  const rows = (await env.DB.prepare('SELECT device FROM reports ORDER BY at').all()).results.map((r) => r.device);
+  assert.deepEqual(rows, ['', 'b'.repeat(24)]);
+  // not on the hour: device ids are left alone
+  const env2 = envWith();
+  await addReport(env2, { device: 'a'.repeat(24), at: NOW - 62 * 60000 });
+  await runCron(env2, NOW, rainOK());
+  assert.equal((await env2.DB.prepare('SELECT device FROM reports').first()).device, 'a'.repeat(24));
+});
+test('I7: Open-Meteo nulls for a site leave its last stored rain in place (no fake 0 mm/h)', async () => {
+  const env = envWith();
+  await runCron(env, NOW, rainOK(20));
+  const nullRain = async () => new Response(JSON.stringify(
+    Object.keys(PLACES.sites).map(() => ({ hourly: { time: ['2026-09-26T08:00', '2026-09-26T09:00', '2026-09-26T10:00', '2026-09-26T11:00'], precipitation: [null, null, null, null] } }))));
+  await runCron(env, NOW + 5 * 60000, nullRain);
+  const r = await env.DB.prepare('SELECT now_mm, at FROM rain WHERE site=?').bind('tv').first();
+  assert.equal(r.now_mm, 20); assert.equal(r.at, NOW);
+});
+test('m4: a hung Open-Meteo request times out; the run still completes and writes the heartbeat', async () => {
+  const env = envWith();
+  const hung = () => new Promise(() => {});
+  await runCron({ ...env, RAIN_TIMEOUT_MS: 50 }, NOW, hung);
+  assert.equal((await env.DB.prepare('SELECT ran_at FROM heartbeat').first()).ran_at, NOW);
+});
