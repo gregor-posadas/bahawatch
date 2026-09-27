@@ -342,10 +342,22 @@ const U='file:///tmp/bw_live_test.html#tv/live';
     await pgF.evaluate(()=>pollStatus());await pgF.waitForTimeout(200);
     let before=await pgF.evaluate(()=>document.getElementById('p-answer').dataset.answer);
     assert(before==="baka","a fresh live reply shows its answer before any clock manipulation: "+before);
-    await pgF.evaluate(()=>{const real=Date.now();Date.now=()=>real+21*60000;});   // fast-forward the phone's clock by 21 minutes
+    // M2: within a session, elapsed time is measured on the monotonic clock (performance.now), so "21 minutes actually
+    // passing" is a monotonic-clock advance; a wall-clock jump alone must not age the answer either way.
+    await pgF.evaluate(()=>{const real=Date.now;Date.now=()=>real()-3*3600000;});   // the phone's wall clock jumps 3 h BACK
+    await pgF.evaluate(()=>renderLive());await pgF.waitForTimeout(50);
+    let jumped=await pgF.evaluate(()=>document.getElementById('p-answer').dataset.answer);
+    assert(jumped==="baka","M2: a backward wall-clock jump does not change the live answer's age (still baka): "+jumped);
+    await pgF.evaluate(()=>{const real=performance.now.bind(performance);performance.now=()=>real()+21*60000;});   // 21 minutes actually pass
     await pgF.evaluate(()=>renderLive());await pgF.waitForTimeout(50);
     let after=await pgF.evaluate(()=>document.getElementById('p-answer').dataset.answer);
     assert(after==="nodata","20 minutes actually passing turns the band nodata purely from the clock, even with no new successful poll: "+after);
+    // M2: restored from storage (a different session) with a receivedAt in the phone's future — the clock went
+    // backwards since — is treated as stale, never as fresh
+    let restored=await pgF.evaluate(()=>{const now=Date.now();
+      localStorage.setItem("bw-last:tv:s:BW-H01",JSON.stringify({place:"tv:s:BW-H01",answer:"hindi",reason:{key:"clear",vars:{}},etaMin:null,updatedAt:now+2*3600000-60000,checkedAt:now+2*3600000,serverNow:now+2*3600000,stillThere:null,receivedAt:now+2*3600000}));
+      myPlace="tv:s:BW-H01";lastLive=null;restoreLast();return document.getElementById('p-answer').dataset.answer;});
+    assert(restored==="nodata","M2: a stored answer received 'in the future' (backward clock jump between sessions) shows nodata, not Hindi: "+restored);
     await pgF.close();
   }
 

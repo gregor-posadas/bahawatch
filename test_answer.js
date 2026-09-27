@@ -112,6 +112,17 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
     &&s.ceb==="Walay kusog nga ulan o taho sa baha duol diri. Wala pay sensor diri."&&s.ilo==="Awan ti napigsa a tudo wenno damag ti layus iti asideg. Awan pay ti sensor ditoy."
     &&s.hil==="Wala sang mabaskog nga ulan ukon report sang baha malapit diri. Wala pa sang sensor diri."&&s.pam==="Alang makusog a uran o report ning albug malapit keni. Ala pang sensor keni.",
     "clear_no_sensor strings, six languages: "+JSON.stringify(s));
+  // C3: the demo answer band carries a visible "Demo · simulated storm" chip, in every language, and the hidden
+  // announcement starts with it; m1: the announcement never doubles a full stop ("hour.. ")
+  await pg.selectOption('#p-lang','en');
+  s=await pg.evaluate(()=>{setPlace("tv:s:BW-H07");playing=false;scenario="typhoon";tMin=495;lastEmit=-999;lastAnnounced=null;step(0,true);
+    const c=document.getElementById('p-ans-demo');
+    return {has:!!c,shown:!!c&&!c.hidden&&c.getBoundingClientRect().height>0,inBand:!!c&&document.getElementById('p-answer').contains(c),t:c&&c.textContent,
+      ann:document.getElementById('p-ans-announce').textContent,all:Object.fromEntries(Object.keys(ANS_LANGS).map(k=>[k,ANS_LANGS[k].demoChip]))};});
+  assert(s.shown&&s.inBand&&s.t==="Demo · simulated storm","demo: visible chip inside the answer band: "+JSON.stringify(s.t));
+  assert(s.all.en==="Demo · simulated storm"&&s.all.fil==="Demo · kunwaring bagyo"&&s.all.ceb==="Demo · simulated nga bagyo"&&s.all.ilo==="Demo · simulated a bagyo"&&s.all.hil==="Demo · simulated nga bagyo"&&s.all.pam==="Demo · simulated a bagyu","demo chip strings, six languages: "+JSON.stringify(s.all));
+  assert(s.ann.startsWith("Demo · simulated storm"),"the hidden announcement starts with the chip text: "+s.ann);
+  assert(!/\.\s*\./.test(s.ann),"m1: no doubled full stop in the announcement: "+s.ann);
   // I2: a sensor inside a barangay counts as "here" in the demo too — U.P. Campus (Diliman) with BW-D02 at 30 cm is Oo
   s=await pg.evaluate(()=>{
     switchSite("diliman");playing=false;scenario="clear";
@@ -172,7 +183,7 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
     const alpha=c=>{const m=c.match(/^rgba?\(([^)]+)\)$/);if(!m)return 1;const p=m[1].split(",").map(Number);return p.length>3?p[3]:1;};
     const effectiveBg=el=>{let e=el;while(e){const bg=getComputedStyle(e).backgroundColor;if(alpha(bg)>0)return bg;e=e.parentElement;}return getComputedStyle(document.body).backgroundColor;};
     const states=["oo","baka","hindi","nodata"];
-    const ids=["p-ans-q","p-ans-place","p-ans-word","p-ans-gloss","p-ans-reason","p-ans-age","p-ans-pick"];
+    const ids=["p-ans-q","p-ans-place","p-ans-word","p-ans-gloss","p-ans-reason","p-ans-age","p-ans-pick","p-ans-demo"];
     const box=document.getElementById("p-answer"),pick=document.getElementById("p-ans-pick");
     const origAnswer=box.dataset.answer,origPickHidden=pick.hidden;
     pick.hidden=false;

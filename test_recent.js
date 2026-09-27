@@ -82,5 +82,50 @@ execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x0000000000000
     await ctx4.close();
   }
 
+  // C2: in LIVE the simple view never shows the simulated storm under a live answer — playback stopped, no flood
+  // layer, no depth legend, no simulated status colour on markers (only the picked place's neutral marker);
+  // the details view says plainly that its sensor feed is simulated. Demo mode is unchanged.
+  {
+    const ctx5=await b.newContext({viewport:{width:390,height:844}});
+    await ctx5.addInitScript(()=>{localStorage.setItem("bw-place:tv","tv:s:BW-H01");localStorage.setItem("bw-asked:tv","1");});
+    const pg5=await ctx5.newPage();const errs5=[];pg5.on('pageerror',e=>errs5.push(e.message));
+    await pg5.route('https://api.test.local/**',r=>{const u=r.request().url();
+      if(/\/recent\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(recent)});
+      if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({place:decodeURIComponent(u.split('/status/')[1]),answer:"hindi",reason:{key:"clear",vars:{}},etaMin:null,updatedAt:SN-60000,checkedAt:SN-60000,serverNow:SN,stillThere:null})});
+      return r.fulfill({status:404,body:'{}'});});
+    await pg5.goto('file:///tmp/bw_live_test.html#tv/live');await pg5.waitForTimeout(500);
+    const t0=await pg5.evaluate(()=>tMin);
+    await pg5.waitForTimeout(2000);
+    let s5=await pg5.evaluate(()=>({t:tMin,playing,flood:window.mapDrawn&&mapDrawn.flood,status:window.mapDrawn&&mapDrawn.statusMarkers,place:window.mapDrawn&&mapDrawn.placeMarker,
+      legend:getComputedStyle(document.querySelector('.p-maplegend')).display,coach:getComputedStyle(document.getElementById('p-coach')).display}));
+    assert(s5.playing===false&&s5.t===t0,"#tv/live: demo playback is stopped (tMin constant over 2 s): "+JSON.stringify({t0,t:s5.t,playing:s5.playing}));
+    assert(s5.flood===false,"#tv/live: the simulated flood/depth layer is not drawn: "+s5.flood);
+    assert(s5.status===0&&s5.place===true,"#tv/live: no simulated status-coloured sensor markers, only the picked place's marker: "+JSON.stringify({status:s5.status,place:s5.place}));
+    assert(s5.legend==="none"&&s5.coach==="none","#tv/live: the depth legend and the 'tap a street' coach mark are hidden: "+JSON.stringify({legend:s5.legend,coach:s5.coach}));
+    s5=await pg5.evaluate(()=>{const e=document.getElementById('p-ans-demo');return !!e&&(e.hidden||getComputedStyle(e).display==="none");});
+    assert(s5,"#tv/live: no 'Demo · simulated storm' chip on a live answer");
+    // a site switch in LIVE does not restart the demo
+    await pg5.evaluate(()=>switchSite("diliman"));await pg5.waitForTimeout(300);
+    s5=await pg5.evaluate(()=>playing);
+    assert(s5===false,"LIVE: switching site does not restart playback");
+    await pg5.goto('file:///tmp/bw_live_test.html#tv/details/live');await pg5.waitForTimeout(600);
+    s5=await pg5.evaluate(()=>{const e=document.getElementById('d-live-banner');return e?{shown:!e.hidden&&e.getBoundingClientRect().height>0,t:e.textContent.trim()}:null;});
+    assert(s5&&s5.shown&&s5.t==="Simulated sensor feed — the answer above is live","#tv/details/live: banner says the sensor feed is simulated: "+JSON.stringify(s5));
+    assert(errs5.length===0,"no page errors (C2 live): "+errs5.join("; "));
+    await ctx5.close();
+    // demo unchanged: playback runs, flood layer and status markers drawn, legend shown, no live banner
+    const ctx6=await b.newContext({viewport:{width:390,height:844}});
+    await ctx6.addInitScript(()=>{localStorage.setItem("bw-place:tv","tv:s:BW-H01");localStorage.setItem("bw-asked:tv","1");});
+    const pg6=await ctx6.newPage();
+    await pg6.goto('file:///home/claude/work/bahawatch_dashboard.html#tv');await pg6.waitForTimeout(400);
+    const d0=await pg6.evaluate(()=>tMin);await pg6.waitForTimeout(1200);
+    let s6=await pg6.evaluate(()=>({t:tMin,playing,flood:window.mapDrawn&&mapDrawn.flood,status:window.mapDrawn&&mapDrawn.statusMarkers,legend:getComputedStyle(document.querySelector('.p-maplegend')).display}));
+    assert(s6.playing===true&&s6.t>d0&&s6.flood===true&&s6.status===8&&s6.legend!=="none","demo #tv unchanged: playing, flood layer, 8 status markers, legend: "+JSON.stringify(s6));
+    await pg6.goto('file:///home/claude/work/bahawatch_dashboard.html#tv/details');await pg6.waitForTimeout(400);
+    s6=await pg6.evaluate(()=>{const e=document.getElementById('d-live-banner');return !e||e.hidden;});
+    assert(s6,"demo details view: no live banner");
+    await ctx6.close();
+  }
+
   await b.close();
 })();

@@ -223,6 +223,15 @@ pre#api-json{
 .p-ans-reason{font-size:16px; margin-top:6px}
 .p-ans-age{font-size:13px; color:var(--ans-ink-2); margin-top:2px; font-variant-numeric:tabular-nums}
 .p-ans-pick{margin-top:8px; min-height:48px}
+/* demo (not live): a chip that says the answer comes from a simulated storm — its own paper background, so its
+   contrast is the same in every answer state */
+.p-ans-demo{display:inline-block; font-size:12.5px; font-weight:700; color:var(--ink); background:var(--panel); border:1.5px dashed var(--ink); border-radius:999px; padding:2px 10px; margin-bottom:6px}
+.p-ans-demo[hidden]{display:none}
+/* LIVE simple view: the simulated depth legend and "tap a street" coach never sit under a live answer */
+body[data-live="1"][data-view="public"] .p-maplegend, body[data-live="1"][data-view="public"] .p-coach{display:none}
+/* LIVE details view: the map, cards and log still run on the simulated feed — say so */
+.d-live-banner{margin:10px 22px 0; padding:10px 14px; border:2px dashed var(--ink); border-radius:6px; background:var(--panel-2); color:var(--ink); font-weight:700; font-size:14px}
+.d-live-banner[hidden], [data-view="public"] .d-live-banner{display:none}
 .p-share{margin-top:8px; min-height:48px}
 .p-rep{border-top:1px solid var(--line); padding-top:10px}
 .p-rep-q{font-size:16px; font-weight:700}
@@ -370,6 +379,7 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
   <div class="p-status" id="p-status">
     <div class="p-left">
       <section class="p-answer" id="p-answer" data-answer="nodata" aria-labelledby="p-ans-q">
+        <span class="p-ans-demo" id="p-ans-demo" hidden></span>
         <div class="p-ans-q" id="p-ans-q">Babaha ba? · <span id="p-ans-place">—</span></div>
         <div class="p-ans-live">
           <div class="p-ans-row">
@@ -459,6 +469,7 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
   <button role="tab" data-site="diliman" aria-selected="false">UP Diliman</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
 </nav>
+<div class="d-live-banner" id="d-live-banner" role="note" hidden>Simulated sensor feed — the answer above is live</div>
 
 <main>
   <div id="map-wrap">
@@ -884,8 +895,15 @@ function drawMap(){
   ctx.globalAlpha=1;
   drawStreetHighlight(ctx,P);
   if(VIEW!=="public")ctx.drawImage(noahCv,view.ox,view.oy,W*view.sc,H*view.sc);
-  ctx.drawImage(floodCv,view.ox,view.oy,W*view.sc,H*view.sc);
+  // LIVE simple view: the flood layer is the SIMULATED storm — never draw it under a live answer
+  mapDrawn.flood=!liveSimple();
+  if(mapDrawn.flood)ctx.drawImage(floodCv,view.ox,view.oy,W*view.sc,H*view.sc);
 }
+// What the last draw put on the map (read by tests, like drawnReports): the simulated flood layer, how many
+// status-coloured sensor markers, and whether the picked place's neutral marker was drawn.
+const mapDrawn={flood:false,statusMarkers:0,placeMarker:false};
+window.mapDrawn=mapDrawn;
+const liveSimple=()=>LIVE&&VIEW==="public";
 const STATUS_COL_LIGHT={ok:"#008f68",warn:"#bd7a00",alert:"#d55e00"};
 const STATUS_COL_DARK={ok:"#00b386",warn:"#e69f00",alert:"#e8763a"};
 let STATUS_COL=STATUS_COL_LIGHT;
@@ -944,7 +962,15 @@ function drawOverlayCanvas(){
     const w=lonLatToWorld(r.lon,r.lat);
     drawReportDiamond(ctx,wx(w.x),wy(w.y),r.answer==="oo"?STATUS_COL.alert:r.answer==="hindi"?STATUS_COL.ok:P.label,P);drawnReports++;
   }
+  mapDrawn.statusMarkers=0;mapDrawn.placeMarker=false;
+  if(liveSimple()){                                             // LIVE simple view: basemap + the picked place only, no simulated status
+    const p=currentPlace();
+    if(p){const h=p.kind==="sensor"?HOUSEHOLD.find(q=>q.id===p.sensor):null,w=h?{x:h.x,y:h.y}:lonLatToWorld(p.lon,p.lat);
+      drawPlaceMarker(ctx,wx(w.x),wy(w.y),P,p.name);mapDrawn.placeMarker=true;}
+    return;
+  }
   for(const s of HOUSEHOLD){
+    mapDrawn.statusMarkers++;
     const X=wx(s.x),Y=wy(s.y),col=STATUS_COL[s.status],R=9;
     if(s.status!=="ok"&&!reducedMotion){                        // ping ring in both views (off under prefers-reduced-motion)
       const p=pulseT%1;
@@ -969,6 +995,16 @@ function drawOverlayCanvas(){
       ctx.fillStyle=P.markerInk;ctx.fillText(nm,lx,ly);
     }
   }
+}
+// The picked place in LIVE simple view: an ink disc with a paper centre — no status colour and none of the
+// status shapes (ring = normal, triangle, square), so it can't be read as a simulated sensor state.
+function drawPlaceMarker(ctx,X,Y,P,name){
+  ctx.beginPath();ctx.arc(X,Y,9,0,7);ctx.lineWidth=7;ctx.strokeStyle=P.markerFill;ctx.stroke();
+  ctx.fillStyle=P.markerInk;ctx.fill();
+  ctx.beginPath();ctx.arc(X,Y,3.5,0,7);ctx.fillStyle=P.markerFill;ctx.fill();
+  ctx.font="700 12.5px Helvetica, Arial, sans-serif";ctx.textAlign="left";ctx.textBaseline="middle";
+  ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(name,X+18,Y);
+  ctx.fillStyle=P.markerInk;ctx.fillText(name,X+18,Y);
 }
 /* ---------- pan / zoom interaction ---------- */
 const tip=document.getElementById("map-tooltip");
@@ -1006,7 +1042,7 @@ function endPtr(e){
   const p=ptrs.get(e.pointerId);
   ptrs.delete(e.pointerId);
   if(ptrs.size===0){dragging=false;ovCv.classList.remove("dragging");}
-  if(p&&!dragMoved&&e.type==="pointerup"){
+  if(p&&!dragMoved&&e.type==="pointerup"&&!liveSimple()){      // LIVE simple view has no simulated sensors to pick
     const r=ovCv.getBoundingClientRect();
     const x=(e.clientX-r.left-view.ox)/view.sc, y=(e.clientY-r.top-view.oy)/view.sc;
     let hit=null;
@@ -1255,6 +1291,7 @@ document.querySelectorAll(".noah-chips button").forEach(b=>b.addEventListener("c
 /* ---------- tooltip ---------- */
 ovCv.addEventListener("pointermove",e=>{
   if(dragging||ptrs.size>1)return;
+  if(liveSimple()){tip.style.display="none";return;}          // no simulated depth on hover under a live answer
   const r=ovCv.getBoundingClientRect();
   const x=(e.clientX-r.left-view.ox)/view.sc, y=(e.clientY-r.top-view.oy)/view.sc;
   if(x<0||y<0||x>=W||y>=H){tip.style.display="none";return;}
@@ -1475,42 +1512,42 @@ const PATH_EN={
 };
 /* ---------- "Babaha ba?" answer strings (spec §3, §5, §6). ceb/ilo/hil/pam pending professional review. ---------- */
 const ANS_LANGS={
- en:{q:"Will it flood here?",word:{oo:"Yes",baka:"Maybe",hindi:"No",nodata:"No fresh data"},
+ en:{q:"Will it flood here?",demoChip:"Demo · simulated storm",word:{oo:"Yes",baka:"Maybe",hindi:"No",nodata:"No fresh data"},
   gloss:{oo:"Flooding here now, or expected within the hour.",baka:"Conditions for flooding, but no water measured yet.",hindi:"No sign of flooding in the next hour.",nodata:"Check again soon."},
   reason:{stale:"The newest data is over 20 minutes old.",sensor_now:"Water on {name}: {cm} cm.",sensor_soon:"Water rising on {name}, about {min} min away.",upstream:"Water rising near {name}, about {min} min away.",reports:"{n} neighbours report flooding nearby.",reports_vs_dry_sensor:"Neighbours report flooding; sensor here is dry.",rain_flood_zone:"Heavy rain ({mm} mm/h), and this area floods in a 5- or 25-year storm.",rain_heavy:"Very heavy rain ({mm} mm/h) in a mapped flood area.",reports_few:"Neighbours report flooding nearby ({n}).",sensor_trace:"A little water on {name} ({cm} cm).",clear:"No flood signs from sensors, reports or rain.",clear_no_sensor:"No heavy rain or flood reports nearby. No sensor here yet."},
   age:"updated {m} min ago",justNow:"updated just now",pick:"Pick your place to get an answer.",pickBtn:"Pick your place",
   whereQ:"Where are you?",useLoc:"Use my location",pickBrgy:"Pick my barangay",pickSensor:"Pick a street with a sensor",skip:"Skip",
   locFail:"Couldn't get your location. Pick your barangay instead.",
   share:"Share my place",copied:"Link copied"},
- fil:{q:"Babaha ba?",word:{oo:"Oo",baka:"Baka",hindi:"Hindi",nodata:"Walang bagong datos"},
+ fil:{q:"Babaha ba?",demoChip:"Demo · kunwaring bagyo",word:{oo:"Oo",baka:"Baka",hindi:"Hindi",nodata:"Walang bagong datos"},
   gloss:{oo:"May baha rito ngayon, o inaasahan sa loob ng isang oras.",baka:"May palatandaan ng baha, pero wala pang nasusukat na tubig.",hindi:"Walang palatandaan ng baha sa susunod na isang oras.",nodata:"Tingnan ulit mamaya."},
   reason:{stale:"Mahigit 20 minuto na ang pinakabagong datos.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Tumataas ang tubig sa {name}, mga {min} minuto pa.",upstream:"Tumataas ang tubig malapit sa {name}, mga {min} minuto pa.",reports:"{n} kapitbahay ang nag-ulat ng baha malapit dito.",reports_vs_dry_sensor:"May nag-ulat ng baha, pero tuyo ang sensor dito.",rain_flood_zone:"Malakas na ulan ({mm} mm/oras), at binabaha ang lugar na ito sa 5- o 25-taong bagyo.",rain_heavy:"Napakalakas na ulan ({mm} mm/oras) sa lugar na may flood map.",reports_few:"May nag-ulat ng baha malapit dito ({n}).",sensor_trace:"Kaunting tubig sa {name} ({cm} cm).",clear:"Walang palatandaan ng baha mula sa sensor, ulat, o ulan.",clear_no_sensor:"Walang malakas na ulan o ulat ng baha sa malapit. Wala pang sensor dito."},
   age:"na-update {m} min na ang nakalipas",justNow:"kaka-update lang",pick:"Piliin ang lugar mo para makita ang sagot.",pickBtn:"Piliin ang lugar mo",
   whereQ:"Saan ka?",useLoc:"Gamitin ang lokasyon ko",pickBrgy:"Piliin ang barangay ko",pickSensor:"Piliin ang kalyeng may sensor",skip:"Laktawan",
   locFail:"Hindi makuha ang lokasyon mo. Piliin na lang ang barangay mo.",
   share:"Ibahagi ang lugar ko",copied:"Nakopya ang link"},
- ceb:{q:"Mobaha ba?",word:{oo:"Oo",baka:"Basin",hindi:"Dili",nodata:"Walay bag-ong datos"},
+ ceb:{q:"Mobaha ba?",demoChip:"Demo · simulated nga bagyo",word:{oo:"Oo",baka:"Basin",hindi:"Dili",nodata:"Walay bag-ong datos"},
   gloss:{oo:"Naay baha diri karon, o gipaabot sulod sa usa ka oras.",baka:"Naay timailhan sa baha, pero wala pay nasukod nga tubig.",hindi:"Walay timailhan sa baha sa sunod nga usa ka oras.",nodata:"Tan-awa pag-usab unya."},
   reason:{stale:"Kapin na sa 20 minutos ang pinakabag-ong datos.",sensor_now:"Naay tubig sa {name}: {cm} cm.",sensor_soon:"Nagsaka ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagsaka ang tubig duol sa {name}, mga {min} minutos pa.",reports:"{n} ka silingan ang nagtaho og baha duol diri.",reports_vs_dry_sensor:"Naay nagtaho og baha, pero uga ang sensor diri.",rain_flood_zone:"Kusog nga ulan ({mm} mm/oras), ug mobaha kini nga lugar sa 5- o 25-ka-tuig nga bagyo.",rain_heavy:"Kusog kaayo nga ulan ({mm} mm/oras) sa lugar nga naay flood map.",reports_few:"Naay nagtaho og baha duol diri ({n}).",sensor_trace:"Gamay nga tubig sa {name} ({cm} cm).",clear:"Walay timailhan sa baha gikan sa sensor, taho, o ulan.",clear_no_sensor:"Walay kusog nga ulan o taho sa baha duol diri. Wala pay sensor diri."},
   age:"gi-update {m} min na ang milabay",justNow:"bag-o lang gi-update",pick:"Pilia ang imong lugar aron makita ang tubag.",pickBtn:"Pilia ang imong lugar",
   whereQ:"Asa ka?",useLoc:"Gamita ang akong lokasyon",pickBrgy:"Pilia ang akong barangay",pickSensor:"Pilia ang dalan nga naay sensor",skip:"Laktawi",
   locFail:"Dili makuha ang imong lokasyon. Pilia na lang ang imong barangay.",
   share:"Ipakigbahin ang akong lugar",copied:"Nakopya ang link"},
- ilo:{q:"Aglayus kadi?",word:{oo:"Wen",baka:"Mabalin",hindi:"Saan",nodata:"Awan ti baro a datos"},
+ ilo:{q:"Aglayus kadi?",demoChip:"Demo · simulated a bagyo",word:{oo:"Wen",baka:"Mabalin",hindi:"Saan",nodata:"Awan ti baro a datos"},
   gloss:{oo:"Adda layus ditoy ita, wenno mapakpakadaan iti uneg ti maysa nga oras.",baka:"Adda pagilasinan ti layus, ngem awan pay nasukat a danum.",hindi:"Awan ti pagilasinan ti layus iti sumaruno a maysa nga oras.",nodata:"Kitaen manen no madamdama."},
   reason:{stale:"Nasurok a 20 minuto ti kabaruan a datos.",sensor_now:"Adda danum iti {name}: {cm} cm.",sensor_soon:"Ngumatngato ti danum iti {name}, agarup {min} minuto pay.",upstream:"Ngumatngato ti danum iti asideg ti {name}, agarup {min} minuto pay.",reports:"{n} a kaarruba ti nangipadamag iti layus iti asideg.",reports_vs_dry_sensor:"Adda nangipadamag iti layus, ngem namaga ti sensor ditoy.",rain_flood_zone:"Napigsa a tudo ({mm} mm/oras), ken aglayus daytoy a lugar iti 5- wenno 25-tawen a bagyo.",rain_heavy:"Napigsa unay a tudo ({mm} mm/oras) iti lugar nga adda flood map-na.",reports_few:"Adda nangipadamag iti layus iti asideg ({n}).",sensor_trace:"Bassit a danum iti {name} ({cm} cm).",clear:"Awan ti pagilasinan ti layus manipud iti sensor, padamag, wenno tudo.",clear_no_sensor:"Awan ti napigsa a tudo wenno damag ti layus iti asideg. Awan pay ti sensor ditoy."},
   age:"naipabaro {m} min ti napalabas",justNow:"kaipapabaro",pick:"Pilien ti lugarmo tapno makita ti sungbat.",pickBtn:"Pilien ti lugarmo",
   whereQ:"Sadino ti ayanmo?",useLoc:"Usaren ti lokasionko",pickBrgy:"Pilien ti barangayko",pickSensor:"Pilien ti kalsada nga adda sensorna",skip:"Laktawan",
   locFail:"Saan a makuha ti lokasionmo. Pilien laengen ti barangaymo.",
   share:"Iranud ti lugarko",copied:"Nakopia ti link"},
- hil:{q:"Magabaha bala?",word:{oo:"Huo",baka:"Basi",hindi:"Indi",nodata:"Wala sang bag-o nga datos"},
+ hil:{q:"Magabaha bala?",demoChip:"Demo · simulated nga bagyo",word:{oo:"Huo",baka:"Basi",hindi:"Indi",nodata:"Wala sang bag-o nga datos"},
   gloss:{oo:"May baha diri subong, ukon ginapaabot sa sulod sang isa ka oras.",baka:"May mga tanda sang baha, pero wala pa sang nasukat nga tubig.",hindi:"Wala sang tanda sang baha sa masunod nga isa ka oras.",nodata:"Tan-awa liwat sa ulihi."},
   reason:{stale:"Labaw na sa 20 minutos ang pinakabag-o nga datos.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Nagataas ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagataas ang tubig malapit sa {name}, mga {min} minutos pa.",reports:"{n} ka kaingod ang nag-report sang baha malapit diri.",reports_vs_dry_sensor:"May nag-report sang baha, pero uga ang sensor diri.",rain_flood_zone:"Mabaskog nga ulan ({mm} mm/oras), kag ginabaha ini nga lugar sa 5- ukon 25-ka-tuig nga bagyo.",rain_heavy:"Mabaskog gid nga ulan ({mm} mm/oras) sa lugar nga may flood map.",reports_few:"May nag-report sang baha malapit diri ({n}).",sensor_trace:"Diutay nga tubig sa {name} ({cm} cm).",clear:"Wala sang tanda sang baha halin sa sensor, report, ukon ulan.",clear_no_sensor:"Wala sang mabaskog nga ulan ukon report sang baha malapit diri. Wala pa sang sensor diri."},
   age:"gin-update {m} min na ang nagligad",justNow:"bag-o lang gin-update",pick:"Pilia ang imo lugar para makita ang sabat.",pickBtn:"Pilia ang imo lugar",
   whereQ:"Diin ka?",useLoc:"Gamita ang akon lokasyon",pickBrgy:"Pilia ang akon barangay",pickSensor:"Pilia ang dalan nga may sensor",skip:"Laktawan",
   locFail:"Indi makuha ang imo lokasyon. Pilia na lang ang imo barangay.",
   share:"Ipaambit ang akon lugar",copied:"Nakopya ang link"},
- pam:{q:"Albugan kaya?",word:{oo:"Wa",baka:"Malyari",hindi:"Ali",nodata:"Alang bayung datos"},
+ pam:{q:"Albugan kaya?",demoChip:"Demo · simulated a bagyu",word:{oo:"Wa",baka:"Malyari",hindi:"Ali",nodata:"Alang bayung datos"},
   gloss:{oo:"Atin albug keni ngeni, o aasanan king loob ning metung a oras.",baka:"Atin tanda ning albug, oneng ala pang masukat a danum.",hindi:"Alang tanda ning albug king datang a metung a oras.",nodata:"Lawen mu pasibayu mamaya."},
   reason:{stale:"Mayigit 20 minutu ne ing pekabayung datos.",sensor_now:"Atin danum king {name}: {cm} cm.",sensor_soon:"Sasampa ing danum king {name}, lagyu {min} minutu pa.",upstream:"Sasampa ing danum malapit king {name}, lagyu {min} minutu pa.",reports:"{n} a kapitbale ing mengreport albug malapit keni.",reports_vs_dry_sensor:"Atin mengreport albug, oneng mamalang ing sensor keni.",rain_flood_zone:"Makusug a uran ({mm} mm/oras), at albugan ya ining lugal king 5- o 25-banwang bagyu.",rain_heavy:"Makusug dili a uran ({mm} mm/oras) king lugal a atin flood map.",reports_few:"Atin mengreport albug malapit keni ({n}).",sensor_trace:"Kakaunti a danum king {name} ({cm} cm).",clear:"Alang tanda ning albug manibat king sensor, report, o uran.",clear_no_sensor:"Alang makusog a uran o report ning albug malapit keni. Ala pang sensor keni."},
   age:"me-update {m} min ne ing milabas",justNow:"bayu pa mu me-update",pick:"Pilinan me ing lugal mu ban akit me ing sagut.",pickBtn:"Pilinan me ing lugal mu",
@@ -1655,6 +1692,8 @@ function demoInputs(p){
   return {now,place:p,sensors,reports:{yesPhones:0,newestAt:null},rain};
 }
 let lastAnnounced=null;   // (place, answer, reason key) triple last spoken through #p-ans-announce
+// "A. B. C." from parts that may or may not already end in a full stop — never "hour.. " (m1)
+const sentences=parts=>parts.map(t=>String(t||"").trim()).filter(Boolean).map(t=>/[.!?…]$/.test(t)?t:t+".").join(" ");
 function showAnswer(v,serverNow){
   const L=A(),box=$("p-answer");
   box.dataset.answer=v.answer;
@@ -1668,10 +1707,11 @@ function showAnswer(v,serverNow){
   // announce through the hidden live region only when the answer materially changed — not on every
   // re-render tick (which would re-speak the whole thing, reason included, every few seconds while playing).
   // site/place/answer/reason key it, and language too, so a language switch re-announces once in the new tongue.
-  const triple=SITE+"|"+myPlace+"|"+v.answer+"|"+v.reason.key+"|"+LANG;
+  const triple=SITE+"|"+myPlace+"|"+v.answer+"|"+v.reason.key+"|"+LANG+"|"+(LIVE?"live":"demo");
   if(triple!==lastAnnounced){
     lastAnnounced=triple;
-    $("p-ans-announce").textContent=`${L.word[v.answer]}. ${L.gloss[v.answer]}. ${reasonText}`;
+    // demo: the chip is said first, so a screen-reader user hears it's a simulated storm before the answer
+    $("p-ans-announce").textContent=sentences([LIVE?"":L.demoChip,L.word[v.answer],L.gloss[v.answer],reasonText]);
   }
 }
 function placeArea(){
@@ -1683,6 +1723,7 @@ function renderAnswer(){
   $("p-ans-q").firstChild.textContent=L.q+" · ";
   $("p-ans-place").textContent=p?p.name:"—";
   const pick=$("p-ans-pick");pick.textContent=L.pickBtn;pick.hidden=!!p;
+  const chip=$("p-ans-demo");chip.hidden=LIVE;chip.textContent=L.demoChip;   // demo answers are a simulated storm — say so (C3)
   // "Link copied" must survive the ~1/s re-render from the playback loop (step()→renderPublic()→renderAnswer()) —
   // shareCopiedUntil keeps the confirmation on screen for its full duration regardless of how many times this runs.
   const sh=$("p-share");sh.textContent=Date.now()<shareCopiedUntil?L.copied:L.share;sh.hidden=!p;
@@ -1911,9 +1952,9 @@ async function pollStatus(){
     return;
   }
   if(!failed&&body&&body.place===myPlace){
-    lastLive=body;lastLive._t=Date.now();
+    lastLive=body;lastLive._t=Date.now();lastLive._perf=performance.now();   // both anchors: wall clock for storage, monotonic for this session
     pollBackoff=POLL_MS;pollNotBefore=0;
-    try{localStorage.setItem("bw-last:"+body.place,JSON.stringify({...lastLive,receivedAt:Date.now()}));}catch(e){}
+    try{const {_perf,...keep}=lastLive;localStorage.setItem("bw-last:"+body.place,JSON.stringify({...keep,receivedAt:Date.now()}));}catch(e){}
     renderLive();
   }else if(!failed){
     // response body names a different place than the one requested — drop it rather than show it under the wrong name
@@ -1929,12 +1970,22 @@ async function pollStatus(){
     pollBackoff=Math.min(pollBackoff*2,POLL_BACKOFF_MAX_MS);pollNotBefore=Date.now()+pollBackoff;
   }
 }
+// Time since lastLive arrived. Same session: the monotonic clock (performance.now), immune to the phone's wall clock
+// being changed. Restored from storage (another session): wall clock since receivedAt — and if that's NEGATIVE the
+// clock went backwards since, so the caller treats the answer as stale rather than fresh (M2).
+function liveElapsed(){
+  if(!lastLive)return 0;
+  if(lastLive._perf!=null)return performance.now()-lastLive._perf;
+  return Date.now()-(lastLive._t!=null?lastLive._t:Date.now());
+}
+// the server's clock now, as best the page knows it: the reply's serverNow plus the time elapsed since it arrived
+function serverClock(){return lastLive?lastLive.serverNow+Math.max(0,liveElapsed()):null;}
 function renderLive(){
   if(!lastLive||lastLive.place!==myPlace)return;      // renders only when the cached reply matches the current place
   // extrapolate the server clock forward by real elapsed time since the reply was received — never trust a frozen
   // anchor, or a hung/backed-off poller could leave a stale "Hindi" on screen long past the freshness window.
-  const now=lastLive.serverNow+(Date.now()-(lastLive._t||Date.now()));
-  const stale=lastLive.checkedAt==null||now-lastLive.checkedAt>FRESH_MS||lastLive.updatedAt==null||now-lastLive.updatedAt>FRESH_MS;
+  const el=liveElapsed(),now=serverClock();
+  const stale=el<0||lastLive.checkedAt==null||now-lastLive.checkedAt>FRESH_MS||lastLive.updatedAt==null||now-lastLive.updatedAt>FRESH_MS;
   const v=stale?{answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:lastLive.updatedAt,etaMin:null}:lastLive;
   showAnswer(v,now);
   renderReportRow();
@@ -1947,7 +1998,7 @@ function restoreLast(){
   if(!myPlace)return;
   let s=null;try{s=JSON.parse(localStorage.getItem("bw-last:"+myPlace)||"null");}catch(e){}
   if(!s||s.place!==myPlace)return;
-  lastLive={...s,_t:s.receivedAt};
+  lastLive={...s,_t:s.receivedAt,_perf:null};
   renderLive();
 }
 // re-render on every tick even when the poll itself is skipped (in flight, or backing off) — the band must be able
@@ -2241,6 +2292,8 @@ function dismissCoach(){try{localStorage.setItem("bw-coach","1");}catch(e){}cons
 function setView(v){
   const prevView=VIEW;
   VIEW=v;document.body.dataset.view=v;
+  syncLiveUI();
+  if(LIVE&&v==="public")setPlay(false);                        // the simulated storm never plays under a live answer
   const mw=$("map-wrap");
   if(v==="public"){$("public-map").insertBefore(mw,$("public-map").firstChild);selected=null;}
   else{document.querySelector("main").insertBefore(mw,document.querySelector("aside"));}
@@ -2252,6 +2305,11 @@ function setView(v){
   if(v==="details"&&prevView!==v)pollRecent();                 // only a real transition into details fetches — not the boot call, which already reads v===VIEW (switchSite() covers boot's own fetch)
 }
 function siteKey(k){return k+":"+SITE;}
+// LIVE-dependent chrome that isn't redrawn by renderPublic(): the body flag CSS keys on, and the details banner.
+function syncLiveUI(){
+  document.body.dataset.live=LIVE?"1":"0";
+  $("d-live-banner").hidden=!(LIVE&&VIEW==="details");
+}
 function switchSite(id){
   if(!DATA_ALL[id])id="tv";
   // per-site language is persisted by the menu's change handler; nothing to save here
@@ -2274,7 +2332,7 @@ function switchSite(id){
   applySiteLang();                                    // language menu, forced English, hazard UI
   logEl.innerHTML="";log(`Site: <b>${SITE_CFG.name}</b>`);
   renderBase();renderNoah();resize();resetView();
-  setPlay(!reducedMotion);                            // the story may have ended on the previous site
+  setPlay(!reducedMotion&&!LIVE);                     // the story may have ended on the previous site; never restart it in LIVE
   step(0,true);
   if(VIEW==="public")renderPublic();else refreshCards();
   {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
@@ -2318,7 +2376,8 @@ document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
     if(j<0)return;e.preventDefault();tabs[j].click();tabs[j].focus();
   });
 });
-window.addEventListener("hashchange",()=>{const h=parseHash();if(h.site!==SITE){switchSite(h.site);syncTabs();}if(h.view!==VIEW)setView(h.view);});
+window.addEventListener("hashchange",()=>{const wasLive=LIVE;const h=parseHash();if(h.site!==SITE){switchSite(h.site);syncTabs();}if(h.view!==VIEW)setView(h.view);
+  if(LIVE!==wasLive){setPlay(!reducedMotion&&!LIVE);syncLiveUI();renderPublic();drawMap();drawOverlayCanvas();pollNow();}});
 
 /* ---------- boot ---------- */
 window.addEventListener("resize",resize);
@@ -2342,6 +2401,8 @@ if(VIEW==="public")speed=720;   // the story plays in ~3 real minutes for a resi
 setView(VIEW);switchSite(h0.site);syncTabs();writeHash();
 {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
 if(LIVE)flushPending();   // switchSite() above already called pollNow() for the restored place
+if(LIVE)setPlay(false);   // switchSite() already declined to start it; belt and braces for the first frame
+syncLiveUI();
 log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
 log(`${HOUSEHOLD.length} household units online · LoRaWAN, 10-min uplink (simulated)`);
 log(SITE_CFG.attribution);
