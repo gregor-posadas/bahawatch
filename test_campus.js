@@ -22,7 +22,7 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
     card:DATA.card,noah:[...document.querySelectorAll('#c-noah li')].map(l=>l.textContent),role:document.querySelectorAll('#c-role li').length}));
   assert(!s.hidden&&s.h==="What a partnership looks like","partnership card shown with its heading");
   assert(s.uh==="Proposed units: 8 household water-level units, placed automatically"&&s.units.length===8,"8 proposed units listed");
-  assert(/^BW-XU-01 · .+ · on campus$/.test(s.units[0])&&s.units.slice(1).every(u=>!/on campus/.test(u)),"unit 01, and only unit 01, is marked on campus: "+s.units[0]);
+  assert(/^BW-XU-01 — on campusnear .+, .+$/.test(s.units[0])&&s.units.slice(1).every(u=>/^BW-XU-0\dnear /.test(u)&&!/on campus/.test(u))&&!s.units.some(u=>/ · /.test(u)),"unit 01, and only unit 01, is marked on campus; unit lines are plain (no ' · '): "+s.units[0]);
   assert(s.brgy===s.card.barangays.length&&s.brgy>0&&s.brgyS===(s.brgy===1?"1 barangay":s.brgy+" barangays"),"barangays covered: count, then the list ("+s.brgyS+")");
   assert(s.noah.length===3&&s.noah.every((t,i)=>new RegExp("^"+["5","25","100"][i]+"-year rain: (\\d+%|not available from NOAH|no hazard zone mapped in this area)$").test(t)),"three NOAH lines: "+s.noah.join(" | "));
   assert(s.role===3,"university role: three lines");

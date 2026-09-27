@@ -99,5 +99,47 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   const t0=Date.now();await slow.click('#nat-list a[href="#uplb"]');await ready(slow,"uplb");const dt=Date.now()-t0;
   assert(dt<=3000,`UPLB appears in ${dt} ms on Fast 3G (≤ 3000)`);
   assert(errs.length===0,"no page errors: "+errs.join("; "));
+  // visual pass (spec §7): nothing below 12 px, three weights, sentence case, no emoji icons
+  const TYPE=`()=>{const small=[],weights=new Set(),upper=[];
+    for(const e of document.querySelectorAll('body *')){if(!(e instanceof HTMLElement)||!e.getClientRects().length||e.closest('.sr-only,svg,canvas'))continue;
+      if(![...e.childNodes].some(n=>n.nodeType===3&&n.textContent.trim()))continue;
+      const cs=getComputedStyle(e);if(cs.visibility==="hidden")continue;
+      if(parseFloat(cs.fontSize)<12)small.push((e.id||e.className||e.tagName)+" "+cs.fontSize);
+      weights.add(cs.fontWeight);if(cs.textTransform==="uppercase")upper.push(e.id||e.className||e.tagName);}
+    const emoji=[...document.querySelectorAll('body *:not(script):not(style)')].some(e=>[...e.childNodes].some(n=>n.nodeType===3&&/⚠|️/.test(n.textContent)));
+    return {small:small.slice(0,6),weights:[...weights].sort(),upper:upper.slice(0,6),emoji};}`;
+  for(const [w,h] of [[1280,900],[375,812]])for(const r of ["","#uplb","#uplb/details","#tv","#try"]){
+    const v=await b.newPage({viewport:{width:w,height:h}});
+    await v.addInitScript(()=>{try{localStorage.setItem("bw-asked:uplb","1");localStorage.setItem("bw-asked:tv","1");}catch(e){}});
+    await v.goto(U+r);await v.waitForFunction(()=>document.body.dataset.ready&&document.body.dataset.ready!=="");await v.waitForTimeout(500);
+    const t=await v.evaluate(`(${TYPE})()`);
+    assert(t.small.length===0,`${w}px ${r||"#ph"}: no text below 12 px: ${t.small}`);
+    assert(t.weights.every(x=>["400","600","700"].includes(x)),`${w}px ${r||"#ph"}: only weights 400/600/700: ${t.weights}`);
+    assert(t.upper.length===0&&!t.emoji,`${w}px ${r||"#ph"}: sentence case, no emoji icons: ${t.upper} ${t.emoji}`);
+    await v.close();
+  }
+  // wide screens: the campus page uses the width (spec §6.2)
+  const wide=await b.newPage({viewport:{width:1920,height:1080}});
+  await wide.addInitScript(()=>{try{localStorage.setItem("bw-asked:uplb","1");}catch(e){}});
+  await wide.goto(U+'#uplb');await ready(wide,"uplb");
+  s=await wide.evaluate(()=>document.querySelector('#public .p-inner').getBoundingClientRect().width);
+  assert(s>=1500,"at 1920 px the campus page uses the width (content "+Math.round(s)+" px, was 1120)");
+  await wide.close();
+  // the national map's theme button is visible: a boundary ≥ 3:1, the glyph ≥ 4.5:1, 48 px
+  const tb=await b.newPage({viewport:{width:1280,height:900}});await tb.goto(U);await ready(tb,"ph");
+  for(const theme of ["light","dark"]){await tb.evaluate(t=>setTheme(t,true),theme);
+    s=await tb.evaluate(()=>{const e=document.getElementById('nat-theme'),cs=getComputedStyle(e),r=e.getBoundingClientRect();
+      return {fg:cs.color,bd:cs.borderTopColor,bw:parseFloat(cs.borderTopWidth),page:getComputedStyle(document.body).backgroundColor,fs:parseFloat(cs.fontSize),w:r.width,h:r.height};});
+    assert(s.bw>=1&&ratio(s.bd,s.page)>=3&&ratio(s.fg,s.page)>=4.5&&s.fs>=16&&s.w>=48&&s.h>=48,`${theme}: the national theme button is visible: `+JSON.stringify(s));}
+  await tb.evaluate(()=>setTheme("light",true));await tb.close();
+  // the sea on campus maps: its own colour and a legend entry where the box has sea
+  const sp=await b.newPage({viewport:{width:1280,height:900}});
+  await sp.addInitScript(()=>{try{localStorage.setItem("bw-asked:ctu","1");localStorage.setItem("bw-asked:upd","1");}catch(e){}});
+  await sp.goto(U+'#ctu');await ready(sp,"ctu");
+  s=await sp.evaluate(()=>({pal:mapPal().sea.join(),lg:!document.getElementById('p-lg-sea').hidden,t:document.getElementById('p-lg6').textContent,has:HAS_SEA}));
+  assert(s.has&&s.lg&&s.t==="Sea"&&s.pal==="214,221,222","CTU has sea: the map legend says Sea, drawn in #d6ddde: "+JSON.stringify(s));
+  await sp.goto(U+'#upd');await ready(sp,"upd");
+  assert(await sp.evaluate(()=>!HAS_SEA&&document.getElementById('p-lg-sea').hidden),"UP Diliman has no sea: no Sea legend entry");
+  await sp.close();
   await b.close();
 })();
