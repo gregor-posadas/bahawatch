@@ -10,7 +10,8 @@ const siteCentre = (site) => {
 
 export async function runCron(env, now, fetchImpl = fetch) {
   const DB = env.DB;
-  // 1. rain: refresh what we can, keep the rest
+  // 1. rain: refresh what we can, keep the rest. One statement per site that answered (at most a
+  // handful of sites), never per place, so this never threatens the 50-query cap below.
   const fresh = await fetchRain(Object.keys(PLACES.sites).map(siteCentre), fetchImpl, now);
   for (const [site, r] of fresh) {
     await DB.prepare('INSERT OR REPLACE INTO rain(site,now_mm,next_mm,at) VALUES(?,?,?,?)').bind(site, r.nowMmH, r.nextMmH, r.at).run();
@@ -31,7 +32,13 @@ export async function runCron(env, now, fetchImpl = fetch) {
   // 3. reports: last 60 min, not demo; each phone counts by its latest report per place-area
   const reps = (await DB.prepare('SELECT at, place, lat, lon, answer, device FROM reports WHERE demo=0 AND at > ? ORDER BY at DESC').bind(now - 60 * MIN).all()).results;
 
-  let changed = 0, newest = null, count = 0;
+  // Read every place's current status ONCE (not one SELECT per place - D1's free plan caps a Worker
+  // invocation at 50 queries, and one place-by-place round trip would blow through it well before
+  // reaching all ~50+ places).
+  const statusRows = new Map((await DB.prepare('SELECT place, answer, reason, eta_min, still_there FROM status').all()).results.map((r) => [r.place, r]));
+
+  const changedRows = [], perPlace = {};
+  let count = 0;
   for (const [site, places] of Object.entries(PLACES.sites)) {
     for (const p of places) {
       count++;
@@ -48,31 +55,47 @@ export async function runCron(env, now, fetchImpl = fetch) {
       for (const r of reps) {
         const d = haversineM(p.lat, p.lon, r.lat, r.lon);
         if (d > RULE.REPORT_RADIUS_M) continue;
-        if (r.answer === 'oo' && !still && d <= 300 && now - r.at <= 30 * MIN) still = { ageMin: Math.round((now - r.at) / MIN), distM: Math.round(d) };
+        // Store the report's own timestamp and distance, not an age computed now: an age baked in at
+        // cron time would grow stale between runs and, worse, change on every run purely because time
+        // passed, defeating write-on-change. /status recomputes the age from serverNow when it's read.
+        if (r.answer === 'oo' && !still && d <= 300 && now - r.at <= 30 * MIN) still = { at: r.at, distM: Math.round(d) };
         if (seen.has(r.device)) continue;
         seen.add(r.device);
         if (r.answer === 'oo') { yesPhones++; newestAt = Math.max(newestAt ?? 0, r.at); }
       }
       const v = babahaBa({ now, place: p, sensors, reports: { yesPhones, newestAt }, rain: rainRows.get(site) || null });
-      if (v.updatedAt) newest = Math.max(newest ?? 0, v.updatedAt);
+      perPlace[p.id] = v.updatedAt;
       const reason = JSON.stringify(v.reason), stillJ = still ? JSON.stringify(still) : null;
-      const old = await DB.prepare('SELECT answer, reason, eta_min, still_there FROM status WHERE place=?').bind(p.id).first();
+      const old = statusRows.get(p.id);
       if (!old || old.answer !== v.answer || old.reason !== reason || old.eta_min !== v.etaMin || old.still_there !== stillJ) {
-        await DB.prepare('INSERT OR REPLACE INTO status(place,answer,reason,eta_min,updated_at,still_there,changed_at) VALUES(?,?,?,?,?,?,?)')
-          .bind(p.id, v.answer, reason, v.etaMin, v.updatedAt, stillJ, now).run();
-        changed++;
+        changedRows.push({ place: p.id, answer: v.answer, reason, etaMin: v.etaMin, updatedAt: v.updatedAt, stillThere: stillJ });
       }
     }
   }
-  await DB.prepare('INSERT OR REPLACE INTO heartbeat(id, ran_at, newest_at) VALUES(1,?,?)').bind(now, newest).run();
 
-  // 4. on the hour: roll up the previous hour, apply retention
+  // One statement writes every changed place's status row, however many places changed - not one
+  // INSERT per place. json_each unpacks the bound JSON array; changed_at is the same for every row
+  // in this run so it's bound once, outside the array.
+  if (changedRows.length) {
+    await DB.prepare(`INSERT OR REPLACE INTO status(place,answer,reason,eta_min,updated_at,still_there,changed_at)
+      SELECT json_extract(value,'$.place'), json_extract(value,'$.answer'), json_extract(value,'$.reason'),
+             json_extract(value,'$.etaMin'), json_extract(value,'$.updatedAt'), json_extract(value,'$.stillThere'), ?2
+      FROM json_each(?1)`).bind(JSON.stringify(changedRows), now).run();
+  }
+  const newest = Object.values(perPlace).filter((t) => Number.isFinite(t)).reduce((a, t) => Math.max(a, t), null);
+  await DB.prepare('INSERT OR REPLACE INTO heartbeat(id, ran_at, newest_at, per_place) VALUES(1,?,?,?)').bind(now, newest, JSON.stringify(perPlace)).run();
+
+  // 4. on the hour: roll up the previous hour, apply retention (raw reports only - spec only requires
+  // dropping reports after 30 days; sensor readings are non-personal field data kept for tuning).
   if (new Date(now).getUTCMinutes() < 5) {
     const h1 = now - (now % 3600000), h0 = h1 - 3600000;
     const rows = (await DB.prepare("SELECT place, SUM(answer='oo') AS oo, SUM(answer='hindi') AS hindi, SUM(answer='di_sigurado') AS unsure FROM reports WHERE demo=0 AND at>=? AND at<? GROUP BY place").bind(h0, h1).all()).results;
-    for (const r of rows) await DB.prepare('INSERT OR REPLACE INTO hourly_counts(place,hour,oo,hindi,unsure) VALUES(?,?,?,?,?)').bind(r.place, h0, r.oo, r.hindi, r.unsure).run();
+    if (rows.length) {
+      await DB.prepare(`INSERT OR REPLACE INTO hourly_counts(place,hour,oo,hindi,unsure)
+        SELECT json_extract(value,'$.place'), ?2, json_extract(value,'$.oo'), json_extract(value,'$.hindi'), json_extract(value,'$.unsure')
+        FROM json_each(?1)`).bind(JSON.stringify(rows), h0).run();
+    }
     await DB.prepare('DELETE FROM reports WHERE at < ?').bind(now - 30 * 24 * 3600000).run();
-    await DB.prepare('DELETE FROM readings WHERE at < ?').bind(now - 30 * 24 * 3600000).run();
   }
-  return { places: count, changed };
+  return { places: count, changed: changedRows.length };
 }

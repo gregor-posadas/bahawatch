@@ -56,10 +56,16 @@ export async function handleSubscribe(req, env) {
 export async function handleStatus(req, env, now, placeId) {
   if (!placeById(placeId)) return json({ error: 'unknown place' }, 404, env);
   const s = await env.DB.prepare('SELECT * FROM status WHERE place=?').bind(placeId).first();
-  const hb = await env.DB.prepare('SELECT ran_at, newest_at FROM heartbeat WHERE id=1').first();
+  const hb = await env.DB.prepare('SELECT ran_at, per_place FROM heartbeat WHERE id=1').first();
+  // Per-place freshness: heartbeat.per_place is written every run (even when the verdict itself didn't
+  // change), so this is that place's own newest input, not the max across every place at every site.
+  let perPlace = {}; try { perPlace = hb?.per_place ? JSON.parse(hb.per_place) : {}; } catch {}
+  const updatedAt = Object.prototype.hasOwnProperty.call(perPlace, placeId) ? perPlace[placeId] : null;
+  // still_there stores the report's own timestamp and distance (not an age computed at cron time, which
+  // would go stale between runs); the age shown here is always relative to serverNow.
+  const stillThere = s?.still_there ? (() => { const st = JSON.parse(s.still_there); return { ageMin: Math.round((now - st.at) / 60000), distM: st.distM }; })() : null;
   const body = s
-    ? { place: placeId, answer: s.answer, reason: JSON.parse(s.reason), etaMin: s.eta_min, updatedAt: hb?.newest_at ?? s.updated_at,
-        checkedAt: hb?.ran_at ?? null, serverNow: now, stillThere: s.still_there ? JSON.parse(s.still_there) : null }
+    ? { place: placeId, answer: s.answer, reason: JSON.parse(s.reason), etaMin: s.eta_min, updatedAt, checkedAt: hb?.ran_at ?? null, serverNow: now, stillThere }
     : { place: placeId, answer: 'nodata', reason: { key: 'stale', vars: {} }, etaMin: null, updatedAt: null, checkedAt: hb?.ran_at ?? null, serverNow: now, stillThere: null };
   return json(body, 200, env, { 'cache-control': 'public, max-age=60' });
 }

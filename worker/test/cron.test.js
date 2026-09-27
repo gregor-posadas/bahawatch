@@ -100,9 +100,69 @@ test('on the hour: hourly counts rolled up, reports older than 30 days deleted',
   const hc = await env.DB.prepare('SELECT * FROM hourly_counts WHERE place=?').bind(P.id).first();
   assert.equal(hc.oo, 1);
 });
-test('scheduled handler runs the cron', async () => {
+test('scheduled handler runs the cron to completion, with no live network call', async () => {
   const env = envWith();
-  let ran = false;
-  await worker.scheduled({ scheduledTime: NOW }, env, { waitUntil: (p) => { ran = true; return p; } });
-  assert.ok(ran);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify(
+    Object.keys(PLACES.sites).map(() => ({ hourly: { time: ['2026-09-26T08:00', '2026-09-26T09:00', '2026-09-26T10:00', '2026-09-26T11:00'], precipitation: [0, 0, 0, 0] } }))));
+  try {
+    let waited;
+    await worker.scheduled({ scheduledTime: NOW }, env, { waitUntil: (p) => { waited = p; } });
+    await waited;
+    const hb = await env.DB.prepare('SELECT ran_at FROM heartbeat').first();
+    assert.equal(hb.ran_at, NOW);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+test('readings are kept past 30 days; only raw reports are retention-deleted', async () => {
+  const env = envWith();
+  const HOUR = Date.UTC(2026, 8, 26, 10, 0);
+  await env.DB.prepare('INSERT INTO readings(sensor,at,depth_cm) VALUES(?,?,?)').bind('BW-H01', HOUR - 31 * 24 * 3600000, 2).run();
+  await runCron(env, HOUR, rainOK());
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) AS n FROM readings').first()).n, 1);
+});
+test('per-place freshness: a place with no fresh input of its own stays nodata even when another place just got fresh reports', async () => {
+  const env = envWith();
+  const Q = PLACES.sites.berkeley.find((pl) => pl.kind === 'sensor');
+  for (const d of ['a', 'b', 'c']) await addReport(env, { device: d.repeat(24) });
+  await runCron(env, NOW, rainDown);
+  const sp = await status(env, NOW);
+  assert.equal(sp.answer, 'oo');
+  const sq = await (await handleStatus(new Request('https://api.test/status/x'), env, NOW, Q.id)).json();
+  assert.equal(sq.answer, 'nodata');
+  assert.equal(sq.updatedAt, null);
+});
+test('a still-there report does not force a status rewrite as time passes (age is computed at read time)', async () => {
+  const env = envWith();
+  await addReport(env, { device: 'a'.repeat(24), at: NOW - 5 * 60000, lat: P.lat + 0.001 });
+  await runCron(env, NOW, rainOK());
+  const a = await env.DB.prepare('SELECT changed_at, still_there FROM status WHERE place=?').bind(P.id).first();
+  await runCron(env, NOW + 300000, rainOK());
+  const b = await env.DB.prepare('SELECT changed_at, still_there FROM status WHERE place=?').bind(P.id).first();
+  assert.equal(a.changed_at, b.changed_at);
+  assert.equal(a.still_there, b.still_there);
+  const s1 = await status(env, NOW), s2 = await status(env, NOW + 300000);
+  assert.equal(s1.stillThere.ageMin, 5); assert.equal(s2.stillThere.ageMin, 10);
+});
+test('D1 free-plan query budget: first run (every place changes) stays at or under 50 queries', async () => {
+  const env = envWith();
+  env.DB.resetQueryCount();
+  await runCron(env, NOW, rainOK());
+  assert.ok(env.DB.queryCount <= 50, `used ${env.DB.queryCount} queries`);
+});
+test('D1 free-plan query budget: steady run (nothing changes) stays at or under 50 queries', async () => {
+  const env = envWith();
+  await runCron(env, NOW, rainOK());
+  env.DB.resetQueryCount();
+  await runCron(env, NOW + 300000, rainOK());
+  assert.ok(env.DB.queryCount <= 50, `used ${env.DB.queryCount} queries`);
+});
+test('D1 free-plan query budget: on-the-hour run (rollup + retention) stays at or under 50 queries', async () => {
+  const env = envWith();
+  const HOUR = Date.UTC(2026, 8, 26, 10, 0);
+  await addReport(env, { device: 'a'.repeat(24), at: HOUR - 20 * 60000 });
+  env.DB.resetQueryCount();
+  await runCron(env, HOUR, rainOK());
+  assert.ok(env.DB.queryCount <= 50, `used ${env.DB.queryCount} queries`);
 });
