@@ -27,7 +27,7 @@ class Campus(unittest.TestCase):
         self.assertEqual(sorted(c["fid"] for c in got), [0, 1, 5])
     def test_default_edge_margin(self):
         from model import placement
-        self.assertEqual(placement.EDGE_M, 225.0)
+        self.assertEqual(placement.EDGE_M, 300.0)
     def test_card_uses_land_only_and_keeps_missing_maps(self):
         sea = np.zeros((4, 4), bool); sea[:, 0] = True
         n5 = np.zeros((4, 4), np.uint8); n5[:, 0] = 3; n5[0, 1:] = 1   # the sea's hazard must not count
