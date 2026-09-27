@@ -137,7 +137,7 @@ main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
 #legend .hint{margin-top:10px; font-size:12px; color:var(--ink-2); line-height:1.4; border-top:1px solid var(--line); padding-top:8px}
 #legend .noah-h{font-weight:700; margin-top:12px; font-size:12px}
 .noah-chips{display:flex; gap:2px; margin-top:6px; border:1px solid var(--line); border-radius:999px; padding:2px}
-.noah-chips button{flex:1; font-size:12px; font-weight:600; color:var(--ink-2); border-radius:999px; min-height:26px}
+.noah-chips button{flex:1; font-size:14px; font-weight:600; color:var(--ink-2); border-radius:999px; min-height:26px}
 .noah-chips button.active{background:var(--brand); color:var(--on-brand)}
 .noah-bands{display:flex; gap:2px; margin-top:6px}
 .noah-bands i{height:7px; flex:1; border-radius:3px}
@@ -172,7 +172,7 @@ aside{display:flex; flex-direction:column; min-height:0; overflow-y:auto; paddin
 .sensor .s-top{display:flex; align-items:center; gap:8px}
 .sensor .s-id{font-weight:700; font-size:14px}
 .sensor .s-name{font-size:12px; color:var(--ink-2); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.zoom-unit{font-size:12px; font-weight:600; color:var(--brand); border:1px solid var(--line); border-radius:999px; padding:5px 11px; flex:none; min-height:28px}
+.zoom-unit{font-size:14px; font-weight:600; color:var(--brand); border:1px solid var(--line); border-radius:999px; padding:5px 11px; flex:none; min-height:28px}
 .sensor .s-mid{display:flex; align-items:flex-end; gap:14px; margin-top:10px}
 .sensor .s-level{font-size:31px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.02em; line-height:1}
 .sensor .s-level small{font-size:12px; font-weight:600; color:var(--ink-2)}
@@ -245,7 +245,7 @@ pre#api-json{
 .p-head{display:flex; align-items:center; gap:12px; padding:14px 0 10px; border-bottom:3px solid var(--ink)}
 .p-head img{width:36px; height:36px; display:block}
 .p-head .p-name{font-size:20px; font-weight:700; letter-spacing:-.01em; line-height:1.1}
-.p-head .p-place{font-size:12px; color:var(--ink-2); margin-top:1px}
+.p-head .p-place{font-size:14px; color:var(--ink-2); margin-top:1px}
 .p-tools{margin-left:auto; display:flex; align-items:center; gap:8px}
 .p-tools select{font:inherit; font-size:14px; font-weight:600; color:var(--ink); background:var(--panel); border:1px solid var(--ink); border-radius:4px; padding:6px 8px; min-height:36px; max-width:190px}
 .p-link{font-size:14px; font-weight:600; color:var(--ink); border:1px solid var(--ink); border-radius:4px; padding:6px 12px; min-height:36px; background:var(--panel)}
@@ -291,7 +291,7 @@ pre#api-json{
 .p-ans-pick{margin-top:8px; min-height:48px}
 /* demo (not live): a chip that says the answer comes from a simulated storm — its own paper background, so its
    contrast is the same in every answer state */
-.p-ans-demo{display:inline-block; font-size:12px; font-weight:700; color:var(--ink); background:var(--panel); border:1.5px dashed var(--ink); border-radius:999px; padding:2px 10px; margin-bottom:6px}
+.p-ans-demo{display:inline-block; font-size:14px; font-weight:700; color:var(--ink); background:var(--panel); border:1.5px dashed var(--ink); border-radius:999px; padding:2px 10px; margin-bottom:6px}
 .p-ans-demo[hidden]{display:none}
 /* LIVE simple view: the simulated depth legend and "tap a street" coach never sit under a live answer */
 body[data-live="1"][data-view="public"] .p-maplegend, body[data-live="1"][data-view="public"] .p-coach{display:none}
@@ -340,7 +340,7 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
 .p-col-map{position:sticky; top:12px}
 .p-sec{padding:14px 0 4px}
 .p-sec-h{font-size:14px; font-weight:700; color:var(--ink-2); display:flex; align-items:center; gap:8px; min-height:30px}
-.p-sec-h .p-link{margin-left:auto; font-size:12px; padding:5px 10px; min-height:30px}
+.p-sec-h .p-link{margin-left:auto; font-size:14px; padding:5px 10px; min-height:30px}
 .p-rows{list-style:none; padding:0; margin:6px 0 0}
 .p-row{display:grid; grid-template-columns:24px 1fr auto; column-gap:12px; align-items:center; padding:12px 0; border-top:1px solid var(--line); cursor:pointer; text-align:left; width:100%; min-height:60px}
 .p-row:first-child{border-top:none}
@@ -363,13 +363,13 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
 .p-pick button small{display:block; font-weight:400; color:var(--ink-2); font-size:12px; margin-top:3px; line-height:1.3}
 
 #public-map{margin-top:0}
-/* wider pages (spec §6.2) give .p-body's map column more room than the preview map needs; capped so its auto-fit framing doesn't over-zoom (ruling: Task 3) */
-#public-map #map-wrap{max-width:540px}
 [data-view="public"] #map-wrap{margin:0; height:min(calc(100vh - 160px),640px); min-height:340px; border-radius:6px; border:1px solid var(--ink)}
 [data-view="public"] #legend, [data-view="public"] .zoom-ctl, [data-view="public"] .map-note, [data-view="public"] .map-attr{display:none}
-.p-maplegend{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:var(--ink-2); padding:8px 2px 0}
+.p-maplegend{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:14px; color:var(--ink-2); padding:8px 2px 0}
 .p-maplegend span{display:inline-flex; align-items:center; gap:6px}
 .p-maplegend i{width:20px; height:8px; border-radius:2px; display:inline-block}
+/* fix round 1: .p-maplegend span / #legend .row set display, which otherwise beats the UA [hidden] rule and shows Sea on every campus */
+#p-lg-sea[hidden],#lg-sea[hidden]{display:none}
 /* coach mark inside the map, shown until the first street is chosen */
 .p-coach{position:absolute; left:12px; bottom:12px; z-index:4; max-width:min(78%,360px); font-size:12px; line-height:1.4; color:var(--ink); background:var(--panel); border:1px solid var(--ink); border-radius:6px; padding:8px 11px; pointer-events:none}
 [data-view="details"] .p-coach, .p-coach.off{display:none}
@@ -832,6 +832,7 @@ function initSite(id){
   depth=new Float32Array(N);srcIdx=new Int8Array(N);fillGen=new Int32Array(N);fillDist=new Int32Array(N);fq=new Int32Array(N);
   FS={depth,src:srcIdx,gen:fillGen,dist:fillDist,q:fq,g:0};
   SEA=DATA.sea?unrle(DATA.sea):null;HAS_SEA=!!SEA&&SEA.some(v=>v===1);
+  $("p-lg-sea").hidden=!HAS_SEA;$("lg-sea").hidden=!HAS_SEA;   // per-site, not per-render: renderPublic() only runs for VIEW==="public", so the details legend needs its own toggle here
   BLOCK=DATA.block?unrle(DATA.block):SEA;
   BC=DATA.bc?unrle(DATA.bc):null;
   for(const c of[baseCv,noahCv,floodCv]){c.width=Math.round(W*RES);c.height=Math.round(H*RES);}
@@ -1069,7 +1070,12 @@ function zoomAt(factor,sx,sy){
 function zoomTo(x,y,z){ZOOM.z=Math.max(ZOOM.min,Math.min(ZOOM.max,z));ZOOM.cx=x;ZOOM.cy=y;applyView();drawMap();}
 function fitSensors(){
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-  for(const s of HOUSEHOLD){x0=Math.min(x0,s.x);y0=Math.min(y0,s.y);x1=Math.max(x1,s.x);y1=Math.max(y1,s.y);}
+  const grow=(x,y)=>{if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;};
+  const streets=new Set();
+  for(const s of HOUSEHOLD){grow(s.x,s.y);if(s.street)streets.add(s.street);}
+  // the streets sensors sit on, not just the sensor points — a wide canvas fits its width exactly and shows less
+  // world height as a result, so a fixed padY alone can crop a named street that runs past it (fix round 1)
+  for(const r of DATA.roads)if(streets.has(r.n))for(const p of r.p)grow(p[0],p[1]);
   const padX=210,padY=70;x0-=padX;x1+=padX;y0-=padY;y1+=padY;
   const fit=Math.min(view.w/W,view.h/H);
   const z=Math.min(view.w/(x1-x0),view.h/(y1-y0))/fit;

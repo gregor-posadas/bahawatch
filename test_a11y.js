@@ -118,13 +118,40 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
     assert(t.upper.length===0&&!t.emoji,`${w}px ${r||"#ph"}: sentence case, no emoji icons: ${t.upper} ${t.emoji}`);
     await v.close();
   }
+  // spec §7: 12 px is for credits, timestamps and helper lines only — interactive labels and the map legend are 14 px
+  const twelve=await b.newPage({viewport:{width:1280,height:900}});
+  await twelve.addInitScript(()=>{try{localStorage.setItem("bw-asked:uplb","1");}catch(e){}});
+  await twelve.goto(U+'#uplb');await ready(twelve,"uplb");
+  s=await twelve.evaluate(()=>{
+    const px=sel=>{const e=document.querySelector(sel);return e?parseFloat(getComputedStyle(e).fontSize):null;};
+    return {link:px('.p-sec-h .p-link'),legend:px('.p-maplegend'),demo:px('.p-ans-demo'),place:px('.p-head .p-place')};
+  });
+  assert(Object.values(s).every(v=>v===null||v>=14),"public view: interactive labels and the map legend are 14 px, not 12: "+JSON.stringify(s));
+  await twelve.goto(U+'#uplb/details');await ready(twelve,"uplb");
+  s=await twelve.evaluate(()=>{
+    const px=sel=>{const e=document.querySelector(sel);return e?parseFloat(getComputedStyle(e).fontSize):null;};
+    return {zoomUnit:px('.zoom-unit'),noah:px('.noah-chips button'),hint:px('#legend .hint'),clock:px('.t-clock l')};
+  });
+  assert(s.zoomUnit>=14&&s.noah>=14,"details view: zoom-to-unit and NOAH chips are 14 px, not 12: "+JSON.stringify(s));
+  assert(s.hint===12&&s.clock===12,"credits/timestamps/helper text stays 12 px: "+JSON.stringify(s));
+  await twelve.close();
   // wide screens: the campus page uses the width (spec §6.2)
   const wide=await b.newPage({viewport:{width:1920,height:1080}});
   await wide.addInitScript(()=>{try{localStorage.setItem("bw-asked:uplb","1");}catch(e){}});
   await wide.goto(U+'#uplb');await ready(wide,"uplb");
   s=await wide.evaluate(()=>document.querySelector('#public .p-inner').getBoundingClientRect().width);
   assert(s>=1500,"at 1920 px the campus page uses the width (content "+Math.round(s)+" px, was 1120)");
+  // the map shares that width with the list (spec §6.2's 5:6 columns) — it must not be capped back down to a fixed preview size
+  s=await wide.evaluate(()=>{const pi=document.querySelector('#public .p-inner').getBoundingClientRect().width,mw=document.getElementById('map-wrap').getBoundingClientRect().width;return {pi,mw};});
+  assert(s.mw>=s.pi*0.5,`at 1920 px the simple view's map is at least half the page width (map ${Math.round(s.mw)} px of ${Math.round(s.pi)} px)`);
   await wide.close();
+  // narrow single-column layout: the map fills its column instead of sitting at a leftover fixed width
+  const narrow=await b.newPage({viewport:{width:768,height:1024}});
+  await narrow.addInitScript(()=>{try{localStorage.setItem("bw-asked:uplb","1");}catch(e){}});
+  await narrow.goto(U+'#uplb');await ready(narrow,"uplb");
+  s=await narrow.evaluate(()=>{const col=document.getElementById('public-map').getBoundingClientRect().width,mw=document.getElementById('map-wrap').getBoundingClientRect().width;return {col,mw};});
+  assert(s.mw>=s.col-2,`at 768 px (single column) the map fills its column (map ${Math.round(s.mw)} px of ${Math.round(s.col)} px)`);
+  await narrow.close();
   // the national map's theme button is visible: a boundary ≥ 3:1, the glyph ≥ 4.5:1, 48 px
   const tb=await b.newPage({viewport:{width:1280,height:900}});await tb.goto(U);await ready(tb,"ph");
   for(const theme of ["light","dark"]){await tb.evaluate(t=>setTheme(t,true),theme);
@@ -132,14 +159,21 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
       return {fg:cs.color,bd:cs.borderTopColor,bw:parseFloat(cs.borderTopWidth),page:getComputedStyle(document.body).backgroundColor,fs:parseFloat(cs.fontSize),w:r.width,h:r.height};});
     assert(s.bw>=1&&ratio(s.bd,s.page)>=3&&ratio(s.fg,s.page)>=4.5&&s.fs>=16&&s.w>=48&&s.h>=48,`${theme}: the national theme button is visible: `+JSON.stringify(s));}
   await tb.evaluate(()=>setTheme("light",true));await tb.close();
-  // the sea on campus maps: its own colour and a legend entry where the box has sea
+  // the sea on campus maps: its own colour and a legend entry where the box has sea — checked as rendered, not just the hidden attribute
+  // (fix round 1: .p-maplegend span / #legend .row set display, which used to beat [hidden] and show Sea on every campus regardless of the attribute)
   const sp=await b.newPage({viewport:{width:1280,height:900}});
   await sp.addInitScript(()=>{try{localStorage.setItem("bw-asked:ctu","1");localStorage.setItem("bw-asked:upd","1");}catch(e){}});
   await sp.goto(U+'#ctu');await ready(sp,"ctu");
-  s=await sp.evaluate(()=>({pal:mapPal().sea.join(),lg:!document.getElementById('p-lg-sea').hidden,t:document.getElementById('p-lg6').textContent,has:HAS_SEA}));
-  assert(s.has&&s.lg&&s.t==="Sea"&&s.pal==="214,221,222","CTU has sea: the map legend says Sea, drawn in #d6ddde: "+JSON.stringify(s));
+  s=await sp.evaluate(()=>({pal:mapPal().sea.join(),lg:document.getElementById('p-lg-sea').getClientRects().length>0,t:document.getElementById('p-lg6').textContent,has:HAS_SEA}));
+  assert(s.has&&s.lg&&s.t==="Sea"&&s.pal==="214,221,222","CTU has sea: the map legend renders Sea, drawn in #d6ddde: "+JSON.stringify(s));
+  await sp.goto(U+'#ctu/details');await ready(sp,"ctu");
+  s=await sp.evaluate(()=>({lg:document.getElementById('lg-sea').getClientRects().length>0,t:document.getElementById('lg-sea-t').textContent}));
+  assert(s.lg&&s.t==="Sea","CTU details: the map legend renders Sea: "+JSON.stringify(s));
   await sp.goto(U+'#upd');await ready(sp,"upd");
-  assert(await sp.evaluate(()=>!HAS_SEA&&document.getElementById('p-lg-sea').hidden),"UP Diliman has no sea: no Sea legend entry");
+  s=await sp.evaluate(()=>({has:HAS_SEA,lg:document.getElementById('p-lg-sea').getClientRects().length>0}));
+  assert(!s.has&&!s.lg,"UP Diliman has no sea: no Sea legend entry rendered: "+JSON.stringify(s));
+  await sp.goto(U+'#upd/details');await ready(sp,"upd");
+  assert(!(await sp.evaluate(()=>document.getElementById('lg-sea').getClientRects().length>0)),"UP Diliman details: no Sea legend entry rendered");
   await sp.close();
   await b.close();
 })();
