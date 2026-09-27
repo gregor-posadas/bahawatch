@@ -1,0 +1,7 @@
+{
+  "name": "bahawatch-api",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test --no-warnings test/*.test.js", "deploy": "wrangler deploy" },
+  "devDependencies": { "wrangler": "^4" }
+}
