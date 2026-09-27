@@ -51,17 +51,20 @@ export function bwLoadMapLibre() {
   });
   return bwLib;
 }
-// A map in `container`, resolved at its first `idle` after a tile has arrived; rejected (and removed) on a style error
-// before any tile, or after the time limit with no tile. Tile errors after that are ignored.
+// A map in `container`, resolved once a tile has arrived (at the next `idle`, or at the time limit if `idle` is slow
+// to follow — a still-loading map on a slow connection is not a failed one); rejected (and removed) on a style error
+// before any tile, or if the time limit passes with no tile at all. Tile errors after that are ignored.
 export function bwOpenMap(lib, container, o) {
   return new Promise((res, rej) => {
     let done = false, gotTile = false, map = null, t = 0;
+    const ms = o.timeout || BW_TIMEOUT_MS;
+    const settle = (m) => { if (done) return; done = true; clearTimeout(t); res(m); };
     const fail = (e) => {
       if (done) return; done = true; clearTimeout(t);
       try { if (map) map.remove(); } catch (x) { /* already gone */ }
       rej(e instanceof Error ? e : new Error(String((e && e.error) || e)));
     };
-    t = setTimeout(() => fail(new Error("no tile within " + (o.timeout || BW_TIMEOUT_MS) + " ms")), o.timeout || BW_TIMEOUT_MS);
+    t = setTimeout(() => (gotTile ? settle(map) : fail(new Error("no tile within " + ms + " ms"))), ms);
     try {
       map = new lib.Map({ container, style: bwStyleUrl(o.theme), bounds: o.bounds, fitBoundsOptions: { padding: o.padding ?? 24 },
         minZoom: o.minZoom ?? 3, maxZoom: 17, attributionControl: false, dragRotate: false, pitchWithRotate: false,
@@ -70,6 +73,6 @@ export function bwOpenMap(lib, container, o) {
     map.touchZoomRotate.disableRotation(); map.keyboard.disableRotation();
     map.on("error", (e) => { if (!gotTile && !map.isStyleLoaded()) fail(e); });
     map.on("sourcedata", (e) => { if (e.tile) gotTile = true; });
-    map.on("idle", () => { if (done || !gotTile) return; done = true; clearTimeout(t); res(map); });
+    map.on("idle", () => { if (gotTile) settle(map); });
   });
 }
