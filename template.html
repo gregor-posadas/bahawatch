@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BahaWatch — Teachers Village Flood Monitor</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#232120">
 <style>
 :root{
   /* Mini Motorways paper */
@@ -220,6 +223,7 @@ pre#api-json{
 .p-ans-reason{font-size:16px; margin-top:6px}
 .p-ans-age{font-size:13px; color:var(--ans-ink-2); margin-top:2px; font-variant-numeric:tabular-nums}
 .p-ans-pick{margin-top:8px; min-height:48px}
+.p-share{margin-top:8px; min-height:48px}
 .p-rep{border-top:1px solid var(--line); padding-top:10px}
 .p-rep-q{font-size:16px; font-weight:700}
 .p-rep-btns{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px}
@@ -378,6 +382,7 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
         <div class="p-ans-age" id="p-ans-age"></div>
         <p id="p-ans-announce" class="sr-only" role="status" aria-live="polite"></p>
         <button class="p-link p-ans-pick" id="p-ans-pick" hidden></button>
+        <button class="p-link p-share" id="p-share" hidden></button>
       </section>
       <section class="p-rep" id="p-rep" aria-labelledby="p-rep-q">
         <div class="p-rep-q" id="p-rep-q">May baha ba rito?</div>
@@ -562,6 +567,8 @@ const DATA_ALL=__DATA_ALL__;
 const API_BASE=__API_BASE__;          // reserved for the report-submission worker (Task 6); unused here
 const TURNSTILE_SITEKEY=__TURNSTILE_SITEKEY__;  // reserved for the report widget (Task 6); unused here
 let LIVE=false, lastLive=null;        // live mode (#tv/live): answer comes from the Worker's /status, not the demo playback
+let SHARED_PLACE=null;                // a place carried in by a #p.<site>.<s|b>.<code> share token, consumed once at boot
+let SHARE_TOKEN_SEEN=false;           // true for the one boot that arrived via a share token, even if the place didn't resolve
 let VIEW="public";
 const RES=2.2;
 
@@ -1472,37 +1479,43 @@ const ANS_LANGS={
   reason:{stale:"The newest data is over 20 minutes old.",sensor_now:"Water on {name}: {cm} cm.",sensor_soon:"Water rising on {name}, about {min} min away.",upstream:"Water rising near {name}, about {min} min away.",reports:"{n} neighbours report flooding nearby.",reports_vs_dry_sensor:"Neighbours report flooding; sensor here is dry.",rain_flood_zone:"Heavy rain ({mm} mm/h), and this area floods in a 5- or 25-year storm.",rain_heavy:"Very heavy rain ({mm} mm/h) in a mapped flood area.",reports_few:"Neighbours report flooding nearby ({n}).",sensor_trace:"A little water on {name} ({cm} cm).",clear:"No flood signs from sensors, reports or rain."},
   age:"updated {m} min ago",justNow:"updated just now",pick:"Pick your place to get an answer.",pickBtn:"Pick your place",
   whereQ:"Where are you?",useLoc:"Use my location",pickBrgy:"Pick my barangay",pickSensor:"Pick a street with a sensor",skip:"Skip",
-  locFail:"Couldn't get your location. Pick your barangay instead."},
+  locFail:"Couldn't get your location. Pick your barangay instead.",
+  share:"Share my place",copied:"Link copied"},
  fil:{q:"Babaha ba?",word:{oo:"Oo",baka:"Baka",hindi:"Hindi",nodata:"Walang bagong datos"},
   gloss:{oo:"May baha rito ngayon, o inaasahan sa loob ng isang oras.",baka:"May palatandaan ng baha, pero wala pang nasusukat na tubig.",hindi:"Walang palatandaan ng baha sa susunod na isang oras.",nodata:"Tingnan ulit mamaya."},
   reason:{stale:"Mahigit 20 minuto na ang pinakabagong datos.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Tumataas ang tubig sa {name}, mga {min} minuto pa.",upstream:"Tumataas ang tubig malapit sa {name}, mga {min} minuto pa.",reports:"{n} kapitbahay ang nag-ulat ng baha malapit dito.",reports_vs_dry_sensor:"May nag-ulat ng baha, pero tuyo ang sensor dito.",rain_flood_zone:"Malakas na ulan ({mm} mm/oras), at binabaha ang lugar na ito sa 5- o 25-taong bagyo.",rain_heavy:"Napakalakas na ulan ({mm} mm/oras) sa lugar na may flood map.",reports_few:"May nag-ulat ng baha malapit dito ({n}).",sensor_trace:"Kaunting tubig sa {name} ({cm} cm).",clear:"Walang palatandaan ng baha mula sa sensor, ulat, o ulan."},
   age:"na-update {m} min na ang nakalipas",justNow:"kaka-update lang",pick:"Piliin ang lugar mo para makita ang sagot.",pickBtn:"Piliin ang lugar mo",
   whereQ:"Saan ka?",useLoc:"Gamitin ang lokasyon ko",pickBrgy:"Piliin ang barangay ko",pickSensor:"Piliin ang kalyeng may sensor",skip:"Laktawan",
-  locFail:"Hindi makuha ang lokasyon mo. Piliin na lang ang barangay mo."},
+  locFail:"Hindi makuha ang lokasyon mo. Piliin na lang ang barangay mo.",
+  share:"Ibahagi ang lugar ko",copied:"Nakopya ang link"},
  ceb:{q:"Mobaha ba?",word:{oo:"Oo",baka:"Basin",hindi:"Dili",nodata:"Walay bag-ong datos"},
   gloss:{oo:"Naay baha diri karon, o gipaabot sulod sa usa ka oras.",baka:"Naay timailhan sa baha, pero wala pay nasukod nga tubig.",hindi:"Walay timailhan sa baha sa sunod nga usa ka oras.",nodata:"Tan-awa pag-usab unya."},
   reason:{stale:"Kapin na sa 20 minutos ang pinakabag-ong datos.",sensor_now:"Naay tubig sa {name}: {cm} cm.",sensor_soon:"Nagsaka ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagsaka ang tubig duol sa {name}, mga {min} minutos pa.",reports:"{n} ka silingan ang nagtaho og baha duol diri.",reports_vs_dry_sensor:"Naay nagtaho og baha, pero uga ang sensor diri.",rain_flood_zone:"Kusog nga ulan ({mm} mm/oras), ug mobaha kini nga lugar sa 5- o 25-ka-tuig nga bagyo.",rain_heavy:"Kusog kaayo nga ulan ({mm} mm/oras) sa lugar nga naay flood map.",reports_few:"Naay nagtaho og baha duol diri ({n}).",sensor_trace:"Gamay nga tubig sa {name} ({cm} cm).",clear:"Walay timailhan sa baha gikan sa sensor, taho, o ulan."},
   age:"gi-update {m} min na ang milabay",justNow:"bag-o lang gi-update",pick:"Pilia ang imong lugar aron makita ang tubag.",pickBtn:"Pilia ang imong lugar",
   whereQ:"Asa ka?",useLoc:"Gamita ang akong lokasyon",pickBrgy:"Pilia ang akong barangay",pickSensor:"Pilia ang dalan nga naay sensor",skip:"Laktawi",
-  locFail:"Dili makuha ang imong lokasyon. Pilia na lang ang imong barangay."},
+  locFail:"Dili makuha ang imong lokasyon. Pilia na lang ang imong barangay.",
+  share:"Ipakigbahin ang akong lugar",copied:"Nakopya ang link"},
  ilo:{q:"Aglayus kadi?",word:{oo:"Wen",baka:"Mabalin",hindi:"Saan",nodata:"Awan ti baro a datos"},
   gloss:{oo:"Adda layus ditoy ita, wenno mapakpakadaan iti uneg ti maysa nga oras.",baka:"Adda pagilasinan ti layus, ngem awan pay nasukat a danum.",hindi:"Awan ti pagilasinan ti layus iti sumaruno a maysa nga oras.",nodata:"Kitaen manen no madamdama."},
   reason:{stale:"Nasurok a 20 minuto ti kabaruan a datos.",sensor_now:"Adda danum iti {name}: {cm} cm.",sensor_soon:"Ngumatngato ti danum iti {name}, agarup {min} minuto pay.",upstream:"Ngumatngato ti danum iti asideg ti {name}, agarup {min} minuto pay.",reports:"{n} a kaarruba ti nangipadamag iti layus iti asideg.",reports_vs_dry_sensor:"Adda nangipadamag iti layus, ngem namaga ti sensor ditoy.",rain_flood_zone:"Napigsa a tudo ({mm} mm/oras), ken aglayus daytoy a lugar iti 5- wenno 25-tawen a bagyo.",rain_heavy:"Napigsa unay a tudo ({mm} mm/oras) iti lugar nga adda flood map-na.",reports_few:"Adda nangipadamag iti layus iti asideg ({n}).",sensor_trace:"Bassit a danum iti {name} ({cm} cm).",clear:"Awan ti pagilasinan ti layus manipud iti sensor, padamag, wenno tudo."},
   age:"naipabaro {m} min ti napalabas",justNow:"kaipapabaro",pick:"Pilien ti lugarmo tapno makita ti sungbat.",pickBtn:"Pilien ti lugarmo",
   whereQ:"Sadino ti ayanmo?",useLoc:"Usaren ti lokasionko",pickBrgy:"Pilien ti barangayko",pickSensor:"Pilien ti kalsada nga adda sensorna",skip:"Laktawan",
-  locFail:"Saan a makuha ti lokasionmo. Pilien laengen ti barangaymo."},
+  locFail:"Saan a makuha ti lokasionmo. Pilien laengen ti barangaymo.",
+  share:"Iranud ti lugarko",copied:"Nakopia ti link"},
  hil:{q:"Magabaha bala?",word:{oo:"Huo",baka:"Basi",hindi:"Indi",nodata:"Wala sang bag-o nga datos"},
   gloss:{oo:"May baha diri subong, ukon ginapaabot sa sulod sang isa ka oras.",baka:"May mga tanda sang baha, pero wala pa sang nasukat nga tubig.",hindi:"Wala sang tanda sang baha sa masunod nga isa ka oras.",nodata:"Tan-awa liwat sa ulihi."},
   reason:{stale:"Labaw na sa 20 minutos ang pinakabag-o nga datos.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Nagataas ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagataas ang tubig malapit sa {name}, mga {min} minutos pa.",reports:"{n} ka kaingod ang nag-report sang baha malapit diri.",reports_vs_dry_sensor:"May nag-report sang baha, pero uga ang sensor diri.",rain_flood_zone:"Mabaskog nga ulan ({mm} mm/oras), kag ginabaha ini nga lugar sa 5- ukon 25-ka-tuig nga bagyo.",rain_heavy:"Mabaskog gid nga ulan ({mm} mm/oras) sa lugar nga may flood map.",reports_few:"May nag-report sang baha malapit diri ({n}).",sensor_trace:"Diutay nga tubig sa {name} ({cm} cm).",clear:"Wala sang tanda sang baha halin sa sensor, report, ukon ulan."},
   age:"gin-update {m} min na ang nagligad",justNow:"bag-o lang gin-update",pick:"Pilia ang imo lugar para makita ang sabat.",pickBtn:"Pilia ang imo lugar",
   whereQ:"Diin ka?",useLoc:"Gamita ang akon lokasyon",pickBrgy:"Pilia ang akon barangay",pickSensor:"Pilia ang dalan nga may sensor",skip:"Laktawan",
-  locFail:"Indi makuha ang imo lokasyon. Pilia na lang ang imo barangay."},
+  locFail:"Indi makuha ang imo lokasyon. Pilia na lang ang imo barangay.",
+  share:"Ipaambit ang akon lugar",copied:"Nakopya ang link"},
  pam:{q:"Albugan kaya?",word:{oo:"Wa",baka:"Malyari",hindi:"Ali",nodata:"Alang bayung datos"},
   gloss:{oo:"Atin albug keni ngeni, o aasanan king loob ning metung a oras.",baka:"Atin tanda ning albug, oneng ala pang masukat a danum.",hindi:"Alang tanda ning albug king datang a metung a oras.",nodata:"Lawen mu pasibayu mamaya."},
   reason:{stale:"Mayigit 20 minutu ne ing pekabayung datos.",sensor_now:"Atin danum king {name}: {cm} cm.",sensor_soon:"Sasampa ing danum king {name}, lagyu {min} minutu pa.",upstream:"Sasampa ing danum malapit king {name}, lagyu {min} minutu pa.",reports:"{n} a kapitbale ing mengreport albug malapit keni.",reports_vs_dry_sensor:"Atin mengreport albug, oneng mamalang ing sensor keni.",rain_flood_zone:"Makusug a uran ({mm} mm/oras), at albugan ya ining lugal king 5- o 25-banwang bagyu.",rain_heavy:"Makusug dili a uran ({mm} mm/oras) king lugal a atin flood map.",reports_few:"Atin mengreport albug malapit keni ({n}).",sensor_trace:"Kakaunti a danum king {name} ({cm} cm).",clear:"Alang tanda ning albug manibat king sensor, report, o uran."},
   age:"me-update {m} min ne ing milabas",justNow:"bayu pa mu me-update",pick:"Pilinan me ing lugal mu ban akit me ing sagut.",pickBtn:"Pilinan me ing lugal mu",
   whereQ:"Nokarin ka?",useLoc:"Gamitan me ing lokasyun ku",pickBrgy:"Pilinan me ing barangay ku",pickSensor:"Pilinan me ing dalan a atin sensor",skip:"Laktawan",
-  locFail:"E makuha ing lokasyun mu. Pilinan mu ne mu ing barangay mu."},
+  locFail:"E makuha ing lokasyun mu. Pilinan mu ne mu ing barangay mu.",
+  share:"Ibahagi me ing lugal ku",copied:"Me-kopya ne ing link"},
 };
 const A=()=>SITE_CFG&&SITE_CFG.langs==="en"?ANS_LANGS.en:(ANS_LANGS[LANG]||ANS_LANGS.en);
 const REP_LANGS={
@@ -1566,6 +1579,9 @@ function setPlace(id,viaLocation){
   closeWhere();renderPublic();
   pollNow();
 }
+// Share my place (spec §5): a bare-hash token, e.g. #p.tv.s.BW-H05, that sets the place on any phone with no picking.
+function shareLink(){const p=currentPlace();if(!p)return location.href.split("#")[0];
+  return location.href.split("#")[0]+"#p."+p.id.split(":").join(".");}
 function demoInputs(p){
   const now=BASE.getTime()+tMin*60000;
   const conn=new Map(p.connected.map(c=>[c.sensor,c.travelMin]));
@@ -1604,6 +1620,7 @@ function renderAnswer(){
   $("p-ans-q").firstChild.textContent=L.q+" · ";
   $("p-ans-place").textContent=p?p.name:"—";
   const pick=$("p-ans-pick");pick.textContent=L.pickBtn;pick.hidden=!!p;
+  const sh=$("p-share");sh.textContent=L.share;sh.hidden=!p;
   placeArea();
   if(!p){
     $("p-answer").dataset.answer="nodata";$("p-ans-word").textContent="";$("p-ans-gloss").textContent="";$("p-ans-reason").textContent=L.pick;$("p-ans-age").textContent="";
@@ -1657,6 +1674,15 @@ $("p-where").addEventListener("click",e=>{
   }
 });
 $("p-ans-pick").addEventListener("click",openWhere);
+$("p-share").addEventListener("click",async()=>{
+  const url=shareLink();
+  if(navigator.share){try{await navigator.share({title:"BahaWatch",url});return;}catch(e){}}
+  try{
+    await navigator.clipboard.writeText(url);
+    $("p-share").textContent=A().copied;
+    $("p-ans-announce").textContent=A().copied;   // announce the confirmation through the existing live region (role=status)
+  }catch(e){window.prompt(A().share,url);}   // no share sheet, no clipboard (old browsers): show the link to copy by hand
+});
 
 /* ---------- neighbour reports (spec §4) ---------- */
 const HOLD_MS=10*60000, UNDO_UI_MS=10000;
@@ -1841,6 +1867,17 @@ function renderLive(){
   const v=stale?{answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:lastLive.updatedAt,etaMin:null}:lastLive;
   showAnswer(v,now);
   renderReportRow();
+}
+// Offline: the phone shows its own last answer with its age (spec §5), before any network round trip completes
+// or when there is none. serverNow in the cached reply was true as of receivedAt, so the extrapolation anchor
+// (_t) must be receivedAt, not now — renderLive() already extrapolates forward with Date.now()-_t; setting BOTH
+// serverNow and _t to "now" would extrapolate twice and overstate the age.
+function restoreLast(){
+  if(!myPlace)return;
+  let s=null;try{s=JSON.parse(localStorage.getItem("bw-last:"+myPlace)||"null");}catch(e){}
+  if(!s||s.place!==myPlace)return;
+  lastLive={...s,_t:s.receivedAt};
+  renderLive();
 }
 // re-render on every tick even when the poll itself is skipped (in flight, or backing off) — the band must be able
 // to turn nodata purely from the passage of time, not only from a fresh reply landing.
@@ -2188,6 +2225,8 @@ $("p-theme").addEventListener("click",()=>setTheme(document.documentElement.data
 
 /* ---------- site tabs + hash routing: #<site>[/details] ---------- */
 function parseHash(){
+  const tok=(location.hash||"").match(/^#p\.([a-z]+)\.(s|b)\.([A-Za-z0-9-]+)$/);
+  if(tok&&DATA_ALL[tok[1]]){SHARE_TOKEN_SEEN=true;SHARED_PLACE=tok[1]+":"+tok[2]+":"+tok[3];return {site:tok[1],view:"public"};}
   const m=(location.hash||"").replace(/^#/,"").split("/");
   if(m[0]==="details")m.unshift("tv");                       // pre-tab links: #details → Teachers Village details
   const site=DATA_ALL[m[0]]?m[0]:"tv", view=m[1]==="details"?"details":"public";
@@ -2195,7 +2234,10 @@ function parseHash(){
   return {site,view};
 }
 function writeHash(){const plain=SITE==="tv"&&VIEW==="public"&&!LIVE;
-  history.replaceState(null,"",plain?location.pathname+location.search:"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":""));}
+  const h=plain?"":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
+  history.replaceState(null,"",plain?location.pathname+location.search:h);
+  try{localStorage.setItem("bw-last-hash",h);}catch(e){}   // Add to Home Screen: relaunch (?source=pwa, no hash) restores this
+}
 function syncTabs(){document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=b.dataset.site===SITE;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
 document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
   b.addEventListener("click",()=>{if(b.dataset.site!==SITE){switchSite(b.dataset.site);syncTabs();writeHash();}});
@@ -2209,8 +2251,22 @@ window.addEventListener("hashchange",()=>{const h=parseHash();if(h.site!==SITE){
 
 /* ---------- boot ---------- */
 window.addEventListener("resize",resize);
+// Add to Home Screen relaunch (manifest start_url has ?source=pwa, no hash): restore wherever the person last was.
+if((location.search||"").indexOf("source=pwa")!==-1&&!location.hash){
+  let savedHash=null;try{savedHash=localStorage.getItem("bw-last-hash");}catch(e){}
+  if(savedHash)history.replaceState(null,"",location.pathname+location.search+savedHash);
+}
 const h0=parseHash();
-initSite(h0.site);buildCards();VIEW=h0.view;
+initSite(h0.site);
+if(SHARED_PLACE){
+  if(placesForSite().some(p=>p.id===SHARED_PLACE)){myPlace=SHARED_PLACE;try{localStorage.setItem(siteKey("bw-place"),myPlace);localStorage.setItem(siteKey("bw-asked"),"1");}catch(e){}}
+  else{try{localStorage.removeItem(siteKey("bw-asked"));}catch(e){}}   // unknown/stale share token → fall back to "Saan ka?"
+  SHARED_PLACE=null;
+}
+// Share links/QR codes open LIVE whenever the build has an API to talk to; the published demo (no API_BASE) just sets the place.
+if(SHARE_TOKEN_SEEN){if(API_BASE)LIVE=true;SHARE_TOKEN_SEEN=false;}
+if(LIVE)restoreLast();   // show the phone's own last answer immediately, before any network round trip
+buildCards();VIEW=h0.view;
 if(VIEW==="public")speed=720;   // the story plays in ~3 real minutes for a resident just glancing
 setView(VIEW);switchSite(h0.site);syncTabs();writeHash();
 {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
@@ -2218,6 +2274,7 @@ if(LIVE)flushPending();   // switchSite() above already called pollNow() for the
 log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
 log(`${HOUSEHOLD.length} household units online · LoRaWAN, 10-min uplink (simulated)`);
 log(SITE_CFG.attribution);
+if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 step(0,true);
 requestAnimationFrame(loop);
 </script>
