@@ -27,10 +27,11 @@ import json, sys
 d = json.load(open(sys.argv[1]))
 d["sensors"][3]["oc"] = True                                         # a second "on campus" unit
 d["sensors"][5]["lon"], d["sensors"][5]["lat"] = d["sensors"][4]["lon"], d["sensors"][4]["lat"]   # two units on one spot
+d["sensors"][6]["x"] = 5.0                                          # a unit at the box edge
 json.dump(d, open(sys.argv[2], "w"))
 PY
 if env $FX BW_DATA_DIR=$T/fx/bad python3 -W ignore tools/check_site_data.py zz > $T/bad.log; then fail "the checker passed a broken file"; fi
-grep -q "exactly one unit" $T/bad.log && grep -q "closer than" $T/bad.log || fail "the checker missed a broken rule" $T/bad.log
+grep -q "exactly one unit" $T/bad.log && grep -q "closer than" $T/bad.log && grep -q "from the box edge" $T/bad.log || fail "the checker missed a broken rule" $T/bad.log
 echo "ok   the checker catches a broken file"
 
 # real sites: rebuilding from the same inputs gives the same data (places are added afterwards by build_places.py)

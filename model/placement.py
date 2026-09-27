@@ -6,6 +6,7 @@ W_LOW, W_HAZ, W_WATER = 0.5, 0.3, 0.2
 RADIUS_M = 300.0       # lowness is judged against ground within this distance
 WATER_M = 300.0        # the near-water score falls to 0 here
 STREET_M = 25.0        # a unit's house must be this close to a street
+EDGE_M = 225.0         # and this far inside the 3 km box, so it is not drawn at the map's edge or under the legend
 N_UNITS = 8
 SPACINGS = (300.0, 250.0, 200.0)
 

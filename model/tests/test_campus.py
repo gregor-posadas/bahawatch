@@ -12,8 +12,22 @@ class Campus(unittest.TestCase):
         pts = [dict(fid=0, cx=0, cy=5, x_m=0, y_m=0, oc=False),       # on the sea
                dict(fid=1, cx=3, cy=6, x_m=0, y_m=0, oc=False),       # next to the street (15 m)
                dict(fid=2, cx=3, cy=8, x_m=0, y_m=0, oc=False)]       # 45 m away
-        got = campus.candidates(pts, score, street, sea, 15.0)
+        got = campus.candidates(pts, score, street, sea, 15.0, edge_m=0)
         self.assertEqual([c["fid"] for c in got], [1]); self.assertEqual(got[0]["score"], 63.0)
+    def test_candidates_keep_away_from_the_box_edge(self):
+        """Units at the box edge are drawn at the map's edge, clipped or under the legend (Task 13 screenshots)."""
+        street = np.ones((40, 40), bool); sea = np.zeros((40, 40), bool); score = np.ones((40, 40))
+        pts = [dict(fid=0, cx=20, cy=20, x_m=0, y_m=0, oc=False),     # the middle
+               dict(fid=1, cx=10, cy=20, x_m=0, y_m=0, oc=False),     # cell centre 157.5 m from the left edge: kept
+               dict(fid=2, cx=9, cy=20, x_m=0, y_m=0, oc=False),      # 142.5 m: dropped
+               dict(fid=3, cx=20, cy=2, x_m=0, y_m=0, oc=True),       # 37.5 m from the top: dropped, on campus or not
+               dict(fid=4, cx=30, cy=20, x_m=0, y_m=0, oc=False),     # 142.5 m from the right edge: dropped
+               dict(fid=5, cx=20, cy=29, x_m=0, y_m=0, oc=False)]     # 157.5 m from the bottom: kept
+        got = campus.candidates(pts, score, street, sea, 15.0, edge_m=150)
+        self.assertEqual(sorted(c["fid"] for c in got), [0, 1, 5])
+    def test_default_edge_margin(self):
+        from model import placement
+        self.assertEqual(placement.EDGE_M, 225.0)
     def test_card_uses_land_only_and_keeps_missing_maps(self):
         sea = np.zeros((4, 4), bool); sea[:, 0] = True
         n5 = np.zeros((4, 4), np.uint8); n5[:, 0] = 3; n5[0, 1:] = 1   # the sea's hazard must not count

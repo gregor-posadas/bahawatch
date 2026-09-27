@@ -9,7 +9,7 @@ import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT); sys.path.insert(0, os.path.join(ROOT, "pipeline"))
-from model import grids  # noqa: E402
+from model import grids, placement  # noqa: E402
 import common as C  # noqa: E402
 
 MAX_BYTES = 750_000          # raw; what matters on the wire is MAX_GZ (GitHub Pages serves gzip)
@@ -44,8 +44,11 @@ def check(path, rows):
     ids = [u["id"] for u in units]
     if ids != [f"BW-{sid.upper()}-{k:02d}" for k in range(1, 9)]: errs.append(f"unit ids {ids}")
     if [u.get("oc") for u in units].count(True) != 1 or not units[0].get("oc"): errs.append("exactly one unit, unit 01, must be on campus")
+    m_per_x = metres((b[0], centre[1]), (b[2], centre[1])) / d["W"]; m_per_y = metres((centre[0], b[1]), (centre[0], b[3])) / d["H"]
     for u in units:
         if not u.get("street") or not u.get("brgy"): errs.append(f"{u['id']} has no street or barangay")
+        edge = min(u["x"] * m_per_x, u["y"] * m_per_y, (d["W"] - u["x"]) * m_per_x, (d["H"] - u["y"]) * m_per_y)
+        if edge < placement.EDGE_M - 10: errs.append(f"{u['id']} is {edge:.0f} m from the box edge")
         if sea[u["cy"] * GW + u["cx"]]: errs.append(f"{u['id']} sits on the sea")
     for i, a in enumerate(units):
         for q in units[i + 1:]:
