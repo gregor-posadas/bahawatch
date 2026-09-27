@@ -1903,16 +1903,23 @@ setInterval(()=>{if(document.visibilityState==="visible"){pollStatus();if(LIVE)r
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){pollStatus();if(LIVE)renderLive();pollRecent();}});
 
 /* ---------- details view: neighbours' reports (spec §4 Display) ---------- */
-let recentReports=[], drawnReports=0;
-function lonLatToWorld(lon,lat){const b=DATA.bbox;return {x:(lon-b[0])/(b[2]-b[0])*W,y:(b[3]-lat)/(b[3]-b[1])*H};}
+let recentReports=[], drawnReports=0, recentFetchSite=null;    // recentFetchSite: the site of the request currently in flight, if any
 async function pollRecent(){
   if(!LIVE||VIEW==="public")return;
+  if(recentFetchSite===SITE)return;                            // a request for this same site is already in flight — let it finish, don't double it
+  const reqSite=SITE;
+  recentFetchSite=reqSite;
+  let reports=null;
   try{
-    const r=await fetch(API_BASE+"/recent/"+SITE,{cache:"no-store",signal:timeoutSignal(STATUS_TIMEOUT_MS)});
-    if(!r.ok)throw new Error("recent "+r.status);recentReports=(await r.json()).reports||[];
+    const r=await fetch(API_BASE+"/recent/"+reqSite,{cache:"no-store",signal:timeoutSignal(STATUS_TIMEOUT_MS)});
+    if(!r.ok)throw new Error("recent "+r.status);reports=(await r.json()).reports||[];
   }catch(e){}                                                  // keep the last list; the Worker's own freshness shows in the answer band
+  if(recentFetchSite===reqSite)recentFetchSite=null;           // only clear our own slot — a newer request for a different site may have taken it
+  if(reqSite!==SITE||!LIVE||VIEW==="public")return;            // the site or view changed while this was in flight — the reply is for a place we've left, drop it
+  if(reports)recentReports=reports;
   renderRecent();drawOverlayCanvas();
 }
+function lonLatToWorld(lon,lat){const b=DATA.bbox;return {x:(lon-b[0])/(b[2]-b[0])*W,y:(b[3]-lat)/(b[3]-b[1])*H};}
 function renderRecent(){
   const wrap=$("rep-log-wrap");wrap.hidden=!LIVE;if(!LIVE)return;
   const E=REP_LANGS.en;
@@ -2179,6 +2186,7 @@ const NAV_LANG=(()=>{const nav=(navigator.language||"").toLowerCase();return nav
 /* ---------- view switching: the map canvas moves between the two layouts ---------- */
 function dismissCoach(){try{localStorage.setItem("bw-coach","1");}catch(e){}const c=$("p-coach");if(c)c.className="p-coach off";}
 function setView(v){
+  const prevView=VIEW;
   VIEW=v;document.body.dataset.view=v;
   const mw=$("map-wrap");
   if(v==="public"){$("public-map").insertBefore(mw,$("public-map").firstChild);selected=null;}
@@ -2187,7 +2195,8 @@ function setView(v){
   if(v==="public")renderPublic();else refreshCards();
   writeHash();
   window.scrollTo(0,0);
-  recentReports=[];renderRecent();pollRecent();
+  recentReports=[];renderRecent();
+  if(v==="details"&&prevView!==v)pollRecent();                 // only a real transition into details fetches — not the boot call, which already reads v===VIEW (switchSite() covers boot's own fetch)
 }
 function siteKey(k){return k+":"+SITE;}
 function switchSite(id){
