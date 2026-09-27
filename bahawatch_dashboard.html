@@ -140,6 +140,10 @@ pre#api-json{
 #log-list li{padding:4px 0; border-top:1px solid var(--line)}
 #log-list li:first-child{border-top:none}
 #log-list time{font-variant-numeric:tabular-nums; font-weight:600; color:var(--ink); margin-right:6px}
+#rep-log{list-style:none; padding:0 0 12px; font-size:12px; color:var(--ink-2); max-height:168px; overflow-y:auto}
+#rep-log li{padding:4px 0; border-top:1px solid var(--line)}
+#rep-log li:first-child{border-top:none}
+#rep-log time{font-variant-numeric:tabular-nums; font-weight:600; color:var(--ink); margin-right:6px}
 .foot-note{font-size:11px; color:var(--ink-2); padding:0 0 8px; line-height:1.5}
 
 #timeline{display:flex; align-items:center; gap:16px; padding:12px 22px 16px; flex-wrap:wrap; border-top:1px solid var(--line)}
@@ -524,6 +528,11 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
     <details class="log" open>
       <summary>Event log</summary>
       <ul id="log-list"></ul>
+    </details>
+
+    <details class="log" id="rep-log-wrap" open hidden>
+      <summary>Neighbour reports, last hour (◇ on the map)</summary>
+      <ul id="rep-log"></ul>
     </details>
 
     <p class="foot-note">Proof of concept on real data: OpenStreetMap streets and 17,993 building footprints, Copernicus GLO-30 terrain (conditioned: surface features filtered, streets carved as flow paths), and Project NOAH flood hazard as a reference layer. Each geotagged unit reports water depth at its own location; the model sets a local water surface there (ground + measured depth) and spreads it across the terrain only where topography allows, with a conservative decay away from the observation. No sensor reading, no modeled extent. Sensor readings are simulated — storm response is calibrated per site using its NOAH hazard class and local elevation. Not a forecast; not for emergency use.</p>
@@ -921,6 +930,11 @@ function drawOverlayCanvas(){
     ctx.font="700 14px Helvetica, Arial, sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
     ctx.lineWidth=6;ctx.strokeStyle=P.labelHalo;ctx.strokeText(sl.n,0,-14);
     ctx.fillStyle=P.markerInk;ctx.fillText(sl.n,0,-14);ctx.restore();
+  }
+  drawnReports=0;
+  if(VIEW!=="public"&&LIVE)for(const r of recentReports){
+    const w=lonLatToWorld(r.lon,r.lat);
+    drawReportDiamond(ctx,wx(w.x),wy(w.y),r.answer==="oo"?STATUS_COL.alert:r.answer==="hindi"?STATUS_COL.ok:P.label,P);drawnReports++;
   }
   for(const s of HOUSEHOLD){
     const X=wx(s.x),Y=wy(s.y),col=STATUS_COL[s.status],R=9;
@@ -1820,6 +1834,9 @@ function renderReportRow(){
 const FRESH_MS=20*60000, POLL_MS=60000, POLL_BACKOFF_MAX_MS=5*60000;
 let pollInFlight=false, pollBackoff=POLL_MS, pollNotBefore=0;
 let STATUS_TIMEOUT_MS=15000;   // a `let`, not `const`, so a test can shorten it instead of waiting out a real 15 s
+// a hung connection must never wedge a poller forever — time it out and treat that the same as any other failure.
+function timeoutSignal(ms){return (typeof AbortSignal!=="undefined"&&AbortSignal.timeout)?AbortSignal.timeout(ms)
+  :(()=>{const ac=new AbortController();setTimeout(()=>ac.abort(),ms);return ac.signal;})();}
 // Trigger points for a fetch: place change, boot, the 60 s interval and visibility change (all call this or pollStatus()
 // directly). renderAnswer()/renderLive() never call pollStatus() themselves — they only render — so the ~1/s render
 // loop during demo playback can never itself flood the Worker with requests.
@@ -1836,10 +1853,7 @@ async function pollStatus(){
   pollInFlight=true;
   let body=null,failed=false;
   try{
-    // a hung connection must never wedge pollInFlight forever — time it out and treat that the same as any other failure.
-    const signal=(typeof AbortSignal!=="undefined"&&AbortSignal.timeout)?AbortSignal.timeout(STATUS_TIMEOUT_MS)
-      :(()=>{const ac=new AbortController();setTimeout(()=>ac.abort(),STATUS_TIMEOUT_MS);return ac.signal;})();
-    const r=await fetch(API_BASE+"/status/"+encodeURIComponent(reqPlace),{cache:"no-store",signal});
+    const r=await fetch(API_BASE+"/status/"+encodeURIComponent(reqPlace),{cache:"no-store",signal:timeoutSignal(STATUS_TIMEOUT_MS)});
     if(!r.ok)throw new Error("status "+r.status);
     body=await r.json();
   }catch(e){failed=true;}
@@ -1885,8 +1899,32 @@ function renderLive(){
 }
 // re-render on every tick even when the poll itself is skipped (in flight, or backing off) — the band must be able
 // to turn nodata purely from the passage of time, not only from a fresh reply landing.
-setInterval(()=>{if(document.visibilityState==="visible"){pollStatus();if(LIVE)renderLive();}},POLL_MS);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){pollStatus();if(LIVE)renderLive();}});
+setInterval(()=>{if(document.visibilityState==="visible"){pollStatus();if(LIVE)renderLive();pollRecent();}},POLL_MS);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){pollStatus();if(LIVE)renderLive();pollRecent();}});
+
+/* ---------- details view: neighbours' reports (spec §4 Display) ---------- */
+let recentReports=[], drawnReports=0;
+function lonLatToWorld(lon,lat){const b=DATA.bbox;return {x:(lon-b[0])/(b[2]-b[0])*W,y:(b[3]-lat)/(b[3]-b[1])*H};}
+async function pollRecent(){
+  if(!LIVE||VIEW==="public")return;
+  try{
+    const r=await fetch(API_BASE+"/recent/"+SITE,{cache:"no-store",signal:timeoutSignal(STATUS_TIMEOUT_MS)});
+    if(!r.ok)throw new Error("recent "+r.status);recentReports=(await r.json()).reports||[];
+  }catch(e){}                                                  // keep the last list; the Worker's own freshness shows in the answer band
+  renderRecent();drawOverlayCanvas();
+}
+function renderRecent(){
+  const wrap=$("rep-log-wrap");wrap.hidden=!LIVE;if(!LIVE)return;
+  const E=REP_LANGS.en;
+  $("rep-log").innerHTML=recentReports.length
+    ?recentReports.map(r=>`<li><time>${r.ageMin} min ago</time>${esc(E[r.answer]||r.answer)}</li>`).join("")
+    :"<li>No reports in the last hour.</li>";
+}
+function drawReportDiamond(ctx,X,Y,col,P){            // hollow diamond: a shape no sensor uses
+  const d=()=>{ctx.beginPath();ctx.moveTo(X,Y-8);ctx.lineTo(X+8,Y);ctx.lineTo(X,Y+8);ctx.lineTo(X-8,Y);ctx.closePath();};
+  d();ctx.lineWidth=6;ctx.strokeStyle=P.labelHalo;ctx.stroke();
+  d();ctx.lineWidth=2.5;ctx.strokeStyle=col;ctx.stroke();
+}
 
 function unitLabel(s){return esc(addr(s))+(s.near?`<small>${esc(T().near)} ${esc(shortSt(s.near))}</small>`:"");}
 function rowHTML(s,extraCls){
@@ -2149,6 +2187,7 @@ function setView(v){
   if(v==="public")renderPublic();else refreshCards();
   writeHash();
   window.scrollTo(0,0);
+  recentReports=[];renderRecent();pollRecent();
 }
 function siteKey(k){return k+":"+SITE;}
 function switchSite(id){
@@ -2178,6 +2217,7 @@ function switchSite(id){
   if(VIEW==="public")renderPublic();else refreshCards();
   {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
   pollNow();
+  recentReports=[];renderRecent();pollRecent();
 }
 function applySiteLang(){
   const sel=document.getElementById("p-lang"),lab=document.querySelector('label[for=p-lang]');

@@ -1,5 +1,5 @@
 import { json, safeEqual } from './http.js';
-import { placeById, round3 } from './geo.js';
+import { placeById, round3, PLACES } from './geo.js';
 
 const ANSWERS = new Set(['oo', 'hindi', 'di_sigurado']);
 const DEVICE_RE = /^[a-f0-9]{24}$/;
@@ -68,4 +68,12 @@ export async function handleStatus(req, env, now, placeId) {
     ? { place: placeId, answer: s.answer, reason: JSON.parse(s.reason), etaMin: s.eta_min, updatedAt, checkedAt: hb?.ran_at ?? null, serverNow: now, stillThere }
     : { place: placeId, answer: 'nodata', reason: { key: 'stale', vars: {} }, etaMin: null, updatedAt: null, checkedAt: hb?.ran_at ?? null, serverNow: now, stillThere: null };
   return json(body, 200, env, { 'cache-control': 'public, max-age=60' });
+}
+
+export async function handleRecent(req, env, now, site) {
+  if (!PLACES.sites[site]) return json({ error: 'unknown site' }, 404, env);
+  const rows = (await env.DB.prepare('SELECT lat, lon, answer, at FROM reports WHERE demo=0 AND at>=? AND place LIKE ? ORDER BY at DESC LIMIT 200')
+    .bind(now - 3600000, site + ':%').all()).results;
+  const reports = rows.map((r) => ({ lat: r.lat, lon: r.lon, answer: r.answer, ageMin: Math.round((now - r.at) / 60000) }));
+  return json({ serverNow: now, reports }, 200, env, { 'cache-control': 'public, max-age=60' });
 }
