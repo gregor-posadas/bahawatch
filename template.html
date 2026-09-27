@@ -1539,8 +1539,9 @@ function showAnswer(v,serverNow){
   const m=v.updatedAt!=null?Math.max(0,Math.round((ref-v.updatedAt)/60000)):null;
   $("p-ans-age").textContent=m==null?"":m<1?L.justNow:fill(L.age,{m});
   // announce through the hidden live region only when the answer materially changed — not on every
-  // re-render tick (which would re-speak the whole thing, reason included, every few seconds while playing)
-  const triple=myPlace+"|"+v.answer+"|"+v.reason.key;
+  // re-render tick (which would re-speak the whole thing, reason included, every few seconds while playing).
+  // site/place/answer/reason key it, and language too, so a language switch re-announces once in the new tongue.
+  const triple=SITE+"|"+myPlace+"|"+v.answer+"|"+v.reason.key+"|"+LANG;
   if(triple!==lastAnnounced){
     lastAnnounced=triple;
     $("p-ans-announce").textContent=`${L.word[v.answer]}. ${L.gloss[v.answer]}. ${reasonText}`;
@@ -1556,7 +1557,12 @@ function renderAnswer(){
   $("p-ans-place").textContent=p?p.name:"—";
   const pick=$("p-ans-pick");pick.textContent=L.pickBtn;pick.hidden=!!p;
   placeArea();
-  if(!p){$("p-answer").dataset.answer="nodata";$("p-ans-word").textContent="";$("p-ans-gloss").textContent="";$("p-ans-reason").textContent=L.pick;$("p-ans-age").textContent="";return;}
+  if(!p){
+    $("p-answer").dataset.answer="nodata";$("p-ans-word").textContent="";$("p-ans-gloss").textContent="";$("p-ans-reason").textContent=L.pick;$("p-ans-age").textContent="";
+    const noneKey="none|"+SITE+"|"+LANG;
+    if(noneKey!==lastAnnounced){lastAnnounced=noneKey;$("p-ans-announce").textContent=L.pick;}
+    return;
+  }
   showAnswer(babahaBa(demoInputs(p)));
 }
 /* ---------- "Saan ka?" ---------- */

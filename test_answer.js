@@ -82,6 +82,27 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
   await pg.selectOption('#p-lang','fil');await pg.evaluate(()=>{scenario="typhoon";tMin=495;lastEmit=-999;step(0,true);});
   s=await pg.evaluate(()=>({q:document.getElementById('p-ans-q').textContent,w:document.getElementById('p-ans-word').textContent}));
   assert(/Babaha ba\?/.test(s.q)&&s.w==="Oo","Filipino: Babaha ba? · Oo");
+  // switching language ALONE (place/scenario/tMin unchanged) must re-announce exactly once, in the new language —
+  // the debounce key must include LANG, not just place/answer/reason. fil and ceb both happen to say "Oo", so
+  // pick a language with a visibly different word for "oo" (ilo: "Wen") to make the check unambiguous.
+  s=await pg.evaluate(()=>document.getElementById('p-ans-announce').textContent);
+  const beforeLangSwitch=s;
+  s=await pg.evaluate(()=>{window.__ann=document.getElementById('p-ans-announce');window.__muts=0;window.__mo=new MutationObserver(()=>window.__muts++);window.__mo.observe(window.__ann,{childList:true,characterData:true,subtree:true});});
+  await pg.selectOption('#p-lang','ilo');
+  s=await pg.evaluate(async()=>{await new Promise(r=>setTimeout(r,0));window.__mo.disconnect();return {mutations:window.__muts,text:window.__ann.textContent,ans:document.getElementById('p-answer').dataset.answer};});
+  assert(s.ans==="oo"&&s.mutations===1&&/Wen/.test(s.text)&&!/Oo/.test(s.text)&&s.text!==beforeLangSwitch,"language switch alone (no scenario/tMin change) re-announces exactly once in the new language: "+JSON.stringify(s));
+  // ticking afterwards, still in the new language and the same answer state, must not rewrite it again
+  s=await pg.evaluate(async()=>{
+    const ann=document.getElementById('p-ans-announce');
+    let mutations=0;const mo=new MutationObserver(()=>mutations++);
+    mo.observe(ann,{childList:true,characterData:true,subtree:true});
+    const before=ann.textContent;
+    for(let i=0;i<5;i++){tMin+=1;lastEmit=-999;step(0,true);}
+    await new Promise(r=>setTimeout(r,0));
+    mo.disconnect();
+    return {mutations,unchanged:ann.textContent===before};
+  });
+  assert(s.mutations===0&&s.unchanged,"after a language-only switch, further ticks in the same state do not re-announce: "+JSON.stringify(s));
   // every language has every string
   s=await pg.evaluate(()=>{const need=["q","pick","pickBtn","whereQ","useLoc","pickBrgy","pickSensor","skip","age","justNow","locFail"];const miss=[];for(const k of Object.keys(ANS_LANGS)){const L=ANS_LANGS[k];for(const n of need)if(!L[n])miss.push(k+"."+n);for(const w of ["oo","baka","hindi","nodata"]){if(!L.word[w])miss.push(k+".word."+w);if(!L.gloss[w])miss.push(k+".gloss."+w);}for(const r of ["stale","sensor_now","sensor_soon","upstream","reports","reports_vs_dry_sensor","rain_flood_zone","rain_heavy","reports_few","sensor_trace","clear"])if(!L.reason[r])miss.push(k+".reason."+r);}return miss;});
   assert(s.length===0,"all six languages complete: "+s.join(","));
@@ -99,8 +120,27 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
   await pg.reload();await pg.waitForTimeout(400);
   s=await pg.evaluate(()=>myPlace);
   assert(s==="tv:s:BW-H03","old My street pick migrates to a place");
-  // Berkeley: no barangay choice
+  // place picked on tv, "oo" naming the street — then switch to Berkeley (no stored place there): the announcement
+  // must lose the tv street identifier and become exactly the pick-your-place prompt, not the old site's leftover text.
+  await pg.evaluate(()=>{showAnswer({answer:"oo",reason:{key:"sensor_now",vars:{name:"22 Malingap St",cm:50}},updatedAt:Date.now(),etaMin:0});});
+  s=await pg.evaluate(()=>document.getElementById('p-ans-announce').textContent);
+  assert(/Malingap/.test(s),"setup: announcement names the tv street before switching sites: "+s);
   await pg.click('.site-tabs [data-site="berkeley"]');await pg.waitForTimeout(300);
+  s=await pg.evaluate(()=>({text:document.getElementById('p-ans-announce').textContent,pick:ANS_LANGS.en.pick,place:myPlace}));
+  assert(!/Malingap/.test(s.text)&&s.text===s.pick&&s.place===null,"switching to a no-place site clears the previous site's announcement to the pick-your-place prompt: "+JSON.stringify(s));
+  // ticking on the no-place site must not repeatedly rewrite the pick-your-place announcement
+  s=await pg.evaluate(async()=>{
+    const ann=document.getElementById('p-ans-announce');
+    let mutations=0;const mo=new MutationObserver(()=>mutations++);
+    mo.observe(ann,{childList:true,characterData:true,subtree:true});
+    const before=ann.textContent;
+    for(let i=0;i<5;i++){tMin+=1;lastEmit=-999;step(0,true);}
+    await new Promise(r=>setTimeout(r,0));
+    mo.disconnect();
+    return {mutations,unchanged:ann.textContent===before};
+  });
+  assert(s.mutations===0&&s.unchanged,"on the no-place site, ticking does not repeatedly rewrite the pick-your-place announcement: "+JSON.stringify(s));
+  // Berkeley: no barangay choice
   s=await pg.evaluate(()=>{openWhere();return document.querySelector('#p-where [data-act="brgy"]').hidden;});
   assert(s===true,"Berkeley has no barangay choice");
   // 48 px targets, contrast of the answer word
