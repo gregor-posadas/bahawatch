@@ -343,6 +343,32 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
   .p-tools select{max-width:118px}
   .p-tools .p-link{padding:6px 9px}
 }
+/* "Try reporting" tab: the simple view's answer band inside a phone outline, the map and controls beside it */
+.try-sim{margin:10px 0 0; font-size:14px; font-weight:700; color:var(--ink)}
+.try-sim[hidden],.try-panel[hidden],.p-body[hidden]{display:none}
+body[data-try="1"] .p-status{grid-template-columns:380px minmax(0,1fr)}
+body[data-try="1"] .p-left{border:3px solid var(--ink); border-radius:32px; padding:22px 16px 26px; background:var(--panel); max-width:380px; box-sizing:border-box}
+body[data-try="1"] .p-coach{display:none}
+body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px; border-radius:6px; border:1px solid var(--ink)}
+.try-panel{display:flex; flex-direction:column; gap:12px; min-width:0}
+.try-map{order:1} .try-ctrls{order:2; display:flex; flex-direction:column; gap:8px} .try-why{order:3} .try-log{order:4}
+.try-row{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.try-row button{min-height:48px; padding:0 14px; font-size:15px; font-weight:700; border:1px solid var(--ink); border-radius:4px; background:var(--panel); color:var(--ink)}
+.try-row button[aria-pressed="true"]{background:var(--ink); color:var(--panel)}
+.try-row button:disabled{opacity:.6; cursor:not-allowed}
+.try-l{font-size:14px; font-weight:700; color:var(--ink); margin-right:4px}
+.try-why{font-size:15px; line-height:1.45; color:var(--ink); margin:0}
+.try-log h2{font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); margin:0 0 4px}
+.try-log ul{list-style:none; padding:0; margin:0; font-size:14px; color:var(--ink)}
+.try-log li{padding:3px 0; border-top:1px solid var(--line)}
+.try-log li:first-child{border-top:none}
+.try-full{font-size:13.5px; color:var(--ink-2); margin:0}
+.try-full:empty{display:none}
+@media (max-width:1100px){
+  body[data-try="1"] .p-status{grid-template-columns:1fr}
+  body[data-try="1"] .p-left{justify-self:center; width:100%}
+  .try-ctrls{order:1} .try-why{order:2} .try-map{order:3} .try-log{order:4}
+}
 </style>
 </head>
 <body data-view="public">
@@ -363,7 +389,9 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
   <button role="tab" data-site="diliman" aria-selected="false">UP Diliman</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
+  <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
 </nav>
+  <p class="try-sim" id="try-sim" hidden></p>
   <div class="p-area" id="p-area" role="status" aria-live="polite">
     <h1 class="p-head-line" id="p-headline">—</h1>
     <div class="p-sub" id="p-subline"></div>
@@ -405,6 +433,7 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
         </div>
         <div class="p-rep-msg" id="p-rep-msg" role="status" aria-live="polite"></div>
         <button class="p-link" id="p-rep-undo" hidden></button>
+        <button class="p-link" id="p-try-link" hidden></button>
       </section>
       <div class="p-live-note" id="p-live-note" hidden></div>
       <div id="p-top-area"></div>
@@ -414,6 +443,17 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
       <figcaption class="f-cap" id="p-fig-cap"></figcaption>
       <span class="sr-only" id="p-fig-h"></span>
     </figure>
+    <section class="try-panel" id="try-panel" aria-label="Try reporting" hidden>
+      <div class="try-map" id="try-map"></div>
+      <div class="try-ctrls" id="try-ctrls">
+        <div class="try-row"><button id="try-add-oo"></button><button id="try-add-hindi"></button></div>
+        <div class="try-row" role="group" aria-labelledby="try-sensor-l"><span class="try-l" id="try-sensor-l"></span><button data-cm="0" aria-pressed="true"></button><button data-cm="3" aria-pressed="false"></button><button data-cm="20" aria-pressed="false"></button></div>
+        <div class="try-row"><button id="try-reset"></button></div>
+        <p class="try-full" id="try-full" role="status" aria-live="polite"></p>
+      </div>
+      <p class="try-why" id="try-why"></p>
+      <div class="try-log"><h2 id="try-log-h"></h2><ul id="try-log"></ul></div>
+    </section>
   </div>
   <div class="p-body">
     <div class="p-col-list" id="p-col-list">
@@ -471,6 +511,7 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
   <button role="tab" data-site="diliman" aria-selected="false">UP Diliman</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
+  <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
 </nav>
 <div class="d-live-banner" id="d-live-banner" role="note" hidden>Simulated sensor feed — the answer above is live</div>
 
@@ -581,6 +622,7 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
 const DATA_ALL=__DATA_ALL__;
 const API_BASE=__API_BASE__;          // reserved for the report-submission worker (Task 6); unused here
 const TURNSTILE_SITEKEY=__TURNSTILE_SITEKEY__;  // reserved for the report widget (Task 6); unused here
+let TRY=false;                        // "Try reporting" tab (#try): local phone + pretend neighbours, no network
 let LIVE=false, lastLive=null;        // live mode (#tv/live): answer comes from the Worker's /status, not the demo playback
 let SHARED_PLACE=null;                // a place carried in by a #p.<site>.<s|b>.<code> share token, consumed once at boot
 let SHARE_TOKEN_SEEN=false;           // true for the one boot that arrived via a share token, even if the place didn't resolve
@@ -844,7 +886,7 @@ function fitSensors(){
   const z=Math.min(view.w/(x1-x0),view.h/(y1-y0))/fit;
   zoomTo((x0+x1)/2,(y0+y1)/2,Math.min(z,3.5));
 }
-function resetView(){if(VIEW==="public"&&view.w){fitSensors();return;}ZOOM.z=1;ZOOM.cx=W/2;ZOOM.cy=H/2;applyView();drawMap();}
+function resetView(){if(TRY&&VIEW==="public"){const h=HOUSEHOLD.find(s=>s.id===TRY_SENSOR);if(h&&view.w){zoomTo(h.x,h.y,2.2);return;}}if(VIEW==="public"&&view.w){fitSensors();return;}ZOOM.z=1;ZOOM.cx=W/2;ZOOM.cy=H/2;applyView();drawMap();}
 function resize(){
   const wrap=document.getElementById("map-wrap");
   const dpr=Math.min(window.devicePixelRatio||1,2);
@@ -906,7 +948,7 @@ function drawMap(){
 // status-coloured sensor markers, and whether the picked place's neutral marker was drawn.
 const mapDrawn={flood:false,statusMarkers:0,placeMarker:false};
 window.mapDrawn=mapDrawn;
-const liveSimple=()=>LIVE&&VIEW==="public";
+const liveSimple=()=>(LIVE||TRY)&&VIEW==="public";   // no simulated storm under a live or Try-tab answer
 const STATUS_COL_LIGHT={ok:"#008f68",warn:"#bd7a00",alert:"#d55e00"};
 const STATUS_COL_DARK={ok:"#00b386",warn:"#e69f00",alert:"#e8763a"};
 let STATUS_COL=STATUS_COL_LIGHT;
@@ -961,11 +1003,20 @@ function drawOverlayCanvas(){
     ctx.fillStyle=P.markerInk;ctx.fillText(sl.n,0,-14);ctx.restore();
   }
   drawnReports=0;
-  if(VIEW!=="public"&&LIVE)for(const r of recentReports){
+  const mapReports=TRY?tryReports():(VIEW!=="public"&&LIVE?recentReports:[]);
+  for(const r of mapReports){
     const w=lonLatToWorld(r.lon,r.lat);
     drawReportDiamond(ctx,wx(w.x),wy(w.y),r.answer==="oo"?STATUS_COL.alert:r.answer==="hindi"?STATUS_COL.ok:P.label,P);drawnReports++;
   }
   mapDrawn.statusMarkers=0;mapDrawn.placeMarker=false;
+  if(TRY){                                                      // the Try tab: one pretend sensor, status from the switch
+    const h=HOUSEHOLD.find(s=>s.id===TRY_SENSOR),st=statusOf({depth:tryState.sensorCm/100}),X=wx(h.x),Y=wy(h.y);
+    drawMarker(ctx,X,Y,9*1.45,st,STATUS_COL[st],P,true);mapDrawn.statusMarkers=1;
+    ctx.font="700 12.5px Helvetica, Arial, sans-serif";ctx.textAlign="left";ctx.textBaseline="middle";
+    ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText("22 Malingap",X+22,Y);
+    ctx.fillStyle=P.markerInk;ctx.fillText("22 Malingap",X+22,Y);
+    return;
+  }
   if(liveSimple()){                                             // LIVE simple view: basemap + the picked place only, no simulated status
     const p=currentPlace();
     if(p){const h=p.kind==="sensor"?HOUSEHOLD.find(q=>q.id===p.sensor):null,w=h?{x:h.x,y:h.y}:lonLatToWorld(p.lon,p.lat);
@@ -1570,6 +1621,99 @@ const REP_LANGS={
  pam:{q:"Atin albug keni?",still:"Atin mengreport albug malapit keni. Atyu pa?",oo:"Wa",hindi:"Ali",di_sigurado:"Ali sigurado",thanks:"Salamat, me-record ne.",undo:"Bawian",undone:"Mebawi ne.",fail:"E me-padala, subukan mu pasibayu.",held:"Alang signal. Ipadala mi pamanyulit ning signal.",sending:"Ipadala ne…",demoNote:"Demo — e mipadala.",liveNote:"Lumwal ya keni ing sukad ning sensor potang mag-report no ding unit."},
 };
 const R=()=>SITE_CFG&&SITE_CFG.langs==="en"?REP_LANGS.en:(REP_LANGS[LANG]||REP_LANGS.en);
+// "Try reporting" tab strings. {oo}/{hindi} are the report buttons' own words in the current language.
+const TRY_LANGS={
+ en:{tab:"Try reporting",sim:"Simulation — nothing leaves this page.",addOo:"+ Neighbour says “{oo}”",addHindi:"+ Neighbour says “{hindi}”",sensor:"Sensor at 22 Malingap St:",dry:"dry",reset:"Reset",why:"{n} {phones} say “{oo}” within 1 km · sensor {s} · no rain → {word}",phone1:"phone",phoneN:"phones",cap:"Reports alone can't say “{oo}”; only a sensor can.",logH:"Reports on this map",logNone:"No reports yet.",you:"You",nb:"Neighbour {i}",full:"8 neighbours is the most in this simulation.",link:"Try it in the Try reporting tab →"},
+ fil:{tab:"Subukang mag-ulat",sim:"Simulasyon — walang ipinapadala mula sa pahinang ito.",addOo:"+ Kapitbahay: “{oo}”",addHindi:"+ Kapitbahay: “{hindi}”",sensor:"Sensor sa 22 Malingap St:",dry:"tuyo",reset:"I-reset",why:"{n} {phones} ang nagsabing “{oo}” sa loob ng 1 km · sensor: {s} · walang ulan → {word}",phone1:"telepono",phoneN:"telepono",cap:"Hindi makapagsasabi ng “{oo}” ang mga ulat lang; sensor lang ang makapagsasabi.",logH:"Mga ulat sa mapang ito",logNone:"Wala pang ulat.",you:"Ikaw",nb:"Kapitbahay {i}",full:"Hanggang 8 kapitbahay lang sa simulasyong ito.",link:"Subukan sa tab na Try reporting →"},
+ ceb:{tab:"Sulayi ang pagtaho",sim:"Simulasyon — walay mogawas gikan niining panid.",addOo:"+ Silingan: “{oo}”",addHindi:"+ Silingan: “{hindi}”",sensor:"Sensor sa 22 Malingap St:",dry:"uga",reset:"I-reset",why:"{n} ka {phones} ang miingon og “{oo}” sulod sa 1 km · sensor: {s} · walay ulan → {word}",phone1:"telepono",phoneN:"telepono",cap:"Dili makaingon og “{oo}” ang mga taho ra; sensor ra ang makahimo.",logH:"Mga taho niining mapa",logNone:"Wala pay taho.",you:"Ikaw",nb:"Silingan {i}",full:"Hangtod 8 ka silingan lang niining simulasyon.",link:"Sulayi sa tab nga Try reporting →"},
+ ilo:{tab:"Padasen ti agipadamag",sim:"Simulasion — awan ti rummuar manipud iti daytoy a panid.",addOo:"+ Kaarruba: “{oo}”",addHindi:"+ Kaarruba: “{hindi}”",sensor:"Sensor iti 22 Malingap St:",dry:"namaga",reset:"I-reset",why:"{n} a {phones} ti nangibaga iti “{oo}” iti uneg ti 1 km · sensor: {s} · awan ti tudo → {word}",phone1:"telepono",phoneN:"telepono",cap:"Saan a makaibaga iti “{oo}” dagiti padamag laeng; sensor laeng ti makaibaga.",logH:"Dagiti padamag iti daytoy a mapa",logNone:"Awan pay ti padamag.",you:"Sika",nb:"Kaarruba {i}",full:"Agingga iti 8 a kaarruba laeng iti daytoy a simulasion.",link:"Padasem iti tab a Try reporting →"},
+ hil:{tab:"Tilawi ang pag-report",sim:"Simulasyon — wala sang nagaguwa halin sa sini nga pahina.",addOo:"+ Kaingod: “{oo}”",addHindi:"+ Kaingod: “{hindi}”",sensor:"Sensor sa 22 Malingap St:",dry:"uga",reset:"I-reset",why:"{n} ka {phones} ang nagsiling “{oo}” sa sulod sang 1 km · sensor: {s} · wala sang ulan → {word}",phone1:"telepono",phoneN:"telepono",cap:"Indi makasiling sang “{oo}” ang mga report lang; sensor lang ang makahimo.",logH:"Mga report sa sini nga mapa",logNone:"Wala pa sang report.",you:"Ikaw",nb:"Kaingod {i}",full:"Tubtob 8 ka kaingod lang sa sini nga simulasyon.",link:"Tilawi sa tab nga Try reporting →"},
+ pam:{tab:"Subukan ing pamag-report",sim:"Simulasyun — alang lalwal manibat king pahinang iti.",addOo:"+ Kapitbale: “{oo}”",addHindi:"+ Kapitbale: “{hindi}”",sensor:"Sensor king 22 Malingap St:",dry:"mamala",reset:"I-reset",why:"{n} a {phones} ing mesabing “{oo}” king lub ning 1 km · sensor: {s} · alang uran → {word}",phone1:"telepono",phoneN:"telepono",cap:"E makasabi “{oo}” deng report mu; sensor mu ing makasabi.",logH:"Deng report king mapang iti",logNone:"Ala pang report.",you:"Ika",nb:"Kapitbale {i}",full:"Anggang 8 kapitbale mu king simulasyun a iti.",link:"Subukan mu king tab a Try reporting →"},
+};
+const TL=()=>TRY_LANGS[LANG]||TRY_LANGS.en;
+/* ---------- "Try reporting" tab (spec 2026-09-26-try-reporting-tab §4): one phone, pretend neighbours, one pretend sensor ---------- */
+const TRY_PLACE="tv:s:BW-H03", TRY_SENSOR="BW-H03", TRY_MAX_NEIGHBOURS=8;
+// fixed spots around the place (metres east, north), all within ~300 m, so the tab looks the same every time
+const TRY_SPOTS=[[120,40],[-90,150],[200,-110],[-160,-80],[60,-230],[-240,60],[30,270],[260,160]];
+const TRY_YOU=[-80,70];   // clear of the sensor marker at the tab's zoom
+let tryState={mine:null,neighbours:[],sensorCm:0};
+const tryPlace=()=>PLACES.sites.tv.find(p=>p.id===TRY_PLACE);
+function tryAt(dx,dy){const p=tryPlace();return {lat:p.lat+dy/111320,lon:p.lon+dx/(111320*Math.cos(p.lat*Math.PI/180))};}
+function tryReports(){return [...(tryState.mine?[{who:"you",...tryState.mine}]:[]),...tryState.neighbours.map((n,i)=>({who:"n"+(i+1),...n}))];}
+function tryYes(){return tryReports().filter(r=>r.answer==="oo").length;}   // each pretend phone counts once, by its only report
+function tryInputs(){
+  const now=Date.now(),p=tryPlace(),h=HOUSEHOLD.find(s=>s.id===TRY_SENSOR),reps=tryReports();
+  return {now,place:p,
+    sensors:[{id:TRY_SENSOR,name:addr(h),here:true,distM:0,travelMin:null,depthCm:tryState.sensorCm,rateCmPerHr:0,at:now}],
+    reports:{yesPhones:tryYes(),newestAt:reps.length?Math.max(...reps.map(r=>r.at)):null},
+    rain:{nowMmH:0,nextMmH:0,at:now}};
+}
+function tryRedraw(){renderPublic();drawOverlayCanvas();}
+function tryReport(answer){
+  const at=tryAt(...TRY_YOU);
+  tryState.mine={answer,at:Date.now(),lat:at.lat,lon:at.lon};
+  repMsg(R().thanks,"try");                                     // same 10-second Undo as the live page
+  tryRedraw();
+}
+function tryUndo(){tryState.mine=null;repMsg(R().undone);tryRedraw();}
+function tryAdd(answer){
+  if(tryState.neighbours.length>=TRY_MAX_NEIGHBOURS)return;
+  const [dx,dy]=TRY_SPOTS[tryState.neighbours.length],at=tryAt(dx,dy);
+  tryState.neighbours.push({answer,at:Date.now(),lat:at.lat,lon:at.lon});
+  tryRedraw();
+}
+function trySetSensor(cm){tryState.sensorCm=cm;tryRedraw();}
+function tryReset(){tryState={mine:null,neighbours:[],sensorCm:0};repMsg("");}
+function renderTry(v){
+  const L=TL(),Rr=R(),Aa=A();
+  $("try-sim").textContent=L.sim;
+  $("try-add-oo").textContent=fill(L.addOo,{oo:Rr.oo});
+  $("try-add-hindi").textContent=fill(L.addHindi,{hindi:Rr.hindi});
+  const full=tryState.neighbours.length>=TRY_MAX_NEIGHBOURS;
+  ["try-add-oo","try-add-hindi"].forEach(id=>{$(id).disabled=full;$(id).setAttribute("aria-disabled",full?"true":"false");});
+  $("try-full").textContent=full?L.full:"";
+  $("try-sensor-l").textContent=L.sensor;
+  document.querySelectorAll("#try-ctrls [data-cm]").forEach(b=>{const cm=+b.dataset.cm;b.textContent=cm?cm+" cm":L.dry;b.setAttribute("aria-pressed",cm===tryState.sensorCm?"true":"false");});
+  $("try-reset").textContent=L.reset;
+  const n=tryYes(),s=tryState.sensorCm?tryState.sensorCm+" cm":L.dry;
+  let why=fill(L.why,{n,phones:n===1?L.phone1:L.phoneN,oo:Rr.oo,s,word:Aa.word[v.answer]});
+  if(n>=RULE.REPORTS_YES&&v.answer!=="oo")why+=". "+fill(L.cap,{oo:Rr.oo});
+  $("try-why").textContent=why;
+  $("try-log-h").textContent=L.logH;
+  const reps=tryReports();
+  $("try-log").innerHTML=reps.length
+    ?reps.map(r=>`<li>${esc(r.who==="you"?L.you:fill(L.nb,{i:r.who.slice(1)}))}: ${esc(Rr[r.answer])}</li>`).join("")
+    :`<li>${esc(L.logNone)}</li>`;
+}
+// Where the map canvas lives, the body flag CSS keys on, the panel and label.
+function syncTryUI(){
+  document.body.dataset.try=TRY?"1":"0";
+  $("try-panel").hidden=!TRY;$("try-sim").hidden=!TRY;
+  $("try-panel").setAttribute("aria-label",TL().tab);
+  const mw=$("map-wrap"),home=TRY?$("try-map"):(VIEW==="public"?$("public-map"):null);
+  if(home&&mw.parentElement!==home){home.insertBefore(mw,home.firstChild);}
+  resize();resetView();renderFlood();
+}
+function enterTry(){
+  TRY=true;LIVE=false;
+  if(SITE!=="tv")switchSite("tv");                              // switchSite() keeps the storm stopped and skips "Saan ka?" in TRY
+  if(VIEW!=="public")setView("public");
+  $("p-where").hidden=true;
+  setPlay(false);
+  tryReset();
+  syncTryUI();renderPublic();drawOverlayCanvas();syncTabs();writeHash();
+}
+function exitTry(nextSite){
+  TRY=false;
+  syncTryUI();
+  switchSite(nextSite||SITE);                                    // restores the demo exactly: storm, place, list, map
+  syncTabs();
+}
+function selectTab(key){
+  if(key==="try"){if(!TRY)enterTry();return;}
+  if(TRY){exitTry(key);writeHash();return;}
+  if(key!==SITE){switchSite(key);syncTabs();writeHash();}
+}
 const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(_,k)=>v[k]!=null?v[k]:"");
 const T=()=>SITE_CFG&&SITE_CFG.profile==="path"?Object.assign({},LANGS.en,PATH_EN):LANGS[LANG];
 // depth wording order follows the site's units: "16 in · 40 cm" on a US campus, "40 cm (16 in)" in the Philippines
@@ -1603,7 +1747,7 @@ let myPlace=null;
 let locPlaceId=null;   // the SPECIFIC place chosen via "Use my location" (per site) — GPS may be used for a report at
                         // THAT place without a fresh permission prompt; any manual pick clears it (loadPlace() loads it).
 const placesForSite=()=>PLACES.sites[SITE]||[];
-const currentPlace=()=>placesForSite().find(p=>p.id===myPlace)||null;
+const currentPlace=()=>TRY?tryPlace():placesForSite().find(p=>p.id===myPlace)||null;
 function haversineM(a,b,c,d){const r=x=>x*Math.PI/180,s=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 2*6371000*Math.asin(Math.sqrt(s));}
 function loadPlace(){
   myPlace=null;let v=null;
@@ -1650,11 +1794,11 @@ function showAnswer(v,serverNow){
   // announce through the hidden live region only when the answer materially changed — not on every
   // re-render tick (which would re-speak the whole thing, reason included, every few seconds while playing).
   // site/place/answer/reason key it, and language too, so a language switch re-announces once in the new tongue.
-  const triple=SITE+"|"+myPlace+"|"+v.answer+"|"+v.reason.key+"|"+LANG+"|"+(LIVE?"live":"demo");
+  const triple=SITE+"|"+(TRY?TRY_PLACE:myPlace)+"|"+v.answer+"|"+v.reason.key+"|"+LANG+"|"+(TRY?"try":LIVE?"live":"demo");
   if(triple!==lastAnnounced){
     lastAnnounced=triple;
     // demo: the chip is said first, so a screen-reader user hears it's a simulated storm before the answer
-    $("p-ans-announce").textContent=sentences([LIVE?"":L.demoChip,L.word[v.answer],L.gloss[v.answer],reasonText]);
+    $("p-ans-announce").textContent=sentences([LIVE||TRY?"":L.demoChip,L.word[v.answer],L.gloss[v.answer],reasonText]);
   }
 }
 function placeArea(){
@@ -1666,10 +1810,10 @@ function renderAnswer(){
   $("p-ans-q").firstChild.textContent=L.q+" · ";
   $("p-ans-place").textContent=p?p.name:"—";
   const pick=$("p-ans-pick");pick.textContent=L.pickBtn;pick.hidden=!!p;
-  const chip=$("p-ans-demo");chip.hidden=LIVE;chip.textContent=L.demoChip;   // demo answers are a simulated storm — say so (C3)
+  const chip=$("p-ans-demo");chip.hidden=LIVE||TRY;chip.textContent=L.demoChip;   // demo answers are a simulated storm — say so (C3)
   // "Link copied" must survive the ~1/s re-render from the playback loop (step()→renderPublic()→renderAnswer()) —
   // shareCopiedUntil keeps the confirmation on screen for its full duration regardless of how many times this runs.
-  const sh=$("p-share");sh.textContent=Date.now()<shareCopiedUntil?L.copied:L.share;sh.hidden=!p;
+  const sh=$("p-share");sh.textContent=Date.now()<shareCopiedUntil?L.copied:L.share;sh.hidden=!p||TRY;
   placeArea();
   if(!p){
     $("p-answer").dataset.answer="nodata";$("p-ans-word").textContent="";$("p-ans-gloss").textContent="";$("p-ans-reason").textContent=L.pick;$("p-ans-age").textContent="";
@@ -1679,7 +1823,8 @@ function renderAnswer(){
   }
   // LIVE: render only — this runs on every tick from step() (~1/s), so it must never itself trigger a fetch;
   // pollStatus() is instead kicked off by pollNow() (place change, boot, tab switch) and the interval/visibility hooks below.
-  if(LIVE){if(lastLive&&lastLive.place===p.id)renderLive();else showAnswer({answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:null,etaMin:null});}
+  if(TRY){const v=babahaBa(tryInputs());showAnswer(v,v.updatedAt);renderTry(v);}
+  else if(LIVE){if(lastLive&&lastLive.place===p.id)renderLive();else showAnswer({answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:null,etaMin:null});}
   else showAnswer(babahaBa(demoInputs(p)));
 }
 /* ---------- "Saan ka?" ---------- */
@@ -1836,7 +1981,8 @@ async function sendReport(answer){
   const p=currentPlace();if(!p)return openWhere();
   if(sending)return;
   const L=R();
-  if(!LIVE){repMsg(L.demoNote);return;}             // demo page: nothing is sent, and the message says so
+  if(TRY){tryReport(answer);return;}
+  if(!LIVE){repMsg(L.demoNote);const tl=$("p-try-link");tl.textContent=TL().link;tl.hidden=false;return;}   // demo: nothing sent; point to the Try tab             // demo page: nothing is sent, and the message says so
   sending=true;setRepBtnsBusy(true);
   setRepMsg(L.sending);                             // "sending…" replaces the text only — an active Undo keeps counting down
   let body=null;
@@ -1871,6 +2017,7 @@ async function flushPending(){
 window.addEventListener("online",flushPending);
 $("p-rep").addEventListener("click",e=>{const b=e.target.closest("[data-ans]");if(b)sendReport(b.dataset.ans);});
 $("p-rep-undo").addEventListener("click",async()=>{
+  if(TRY){tryUndo();return;}
   const id=$("p-rep-undo").dataset.id;if(!id)return;
   try{
     const r=await fetch(API_BASE+"/report/"+id+"/undo",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({device:deviceId()})});
@@ -1880,10 +2027,19 @@ $("p-rep-undo").addEventListener("click",async()=>{
 });
 function renderReportRow(){
   const L=R();
-  $("p-rep-q").textContent=lastLive&&lastLive.stillThere?L.still:L.q;
+  const still=TRY?tryState.neighbours.some(n=>n.answer==="oo"):!!(lastLive&&lastLive.stillThere);
+  $("p-rep-q").textContent=still?L.still:L.q;
   document.querySelectorAll("#p-rep [data-ans]").forEach(b=>{b.textContent=L[b.dataset.ans];});
   $("p-rep").hidden=!currentPlace();
+  const tl=$("p-try-link");tl.textContent=TL().link;if(TRY||LIVE)tl.hidden=true;
 }
+
+// Try tab controls (wired here, after $ exists)
+$("try-add-oo").addEventListener("click",()=>tryAdd("oo"));
+$("try-add-hindi").addEventListener("click",()=>tryAdd("hindi"));
+$("try-ctrls").addEventListener("click",e=>{const b=e.target.closest("[data-cm]");if(b)trySetSensor(+b.dataset.cm);});
+$("try-reset").addEventListener("click",()=>{tryReset();tryRedraw();});
+$("p-try-link").addEventListener("click",()=>{selectTab("try");$("p-rep").querySelector("[data-ans]").focus();});
 
 /* ---------- live status (spec §7) ---------- */
 const FRESH_MS=20*60000, POLL_MS=60000, POLL_BACKOFF_MAX_MS=5*60000;
@@ -2221,16 +2377,17 @@ function renderPublic(){
   let seen=false;try{seen=localStorage.getItem("bw-coach")==="1";}catch(e){}
   coach.className="p-coach"+((seen||selected||myStreet)?" off":"");
   $("p-details").textContent=L.details;$("d-simple").textContent=L.simple;
-  $("p-demo").hidden=LIVE;if(!LIVE)$("p-demo").textContent=L.demo;   // the "Demo: … simulated" claim never appears in LIVE
+  $("p-demo").hidden=LIVE||TRY;if(!LIVE&&!TRY)$("p-demo").textContent=L.demo;   // the "Demo: … simulated" claim never appears in LIVE
   $("p-emerg").textContent=L.notEmergency;
   const rv=$("p-review");rv.textContent=REVIEW_TAG[LANG]?L.review+" · "+LANGS.en.review:"";rv.className="p-review"+(REVIEW_TAG[LANG]?" on":"");
   document.documentElement.lang=LANG==="fil"?"fil":LANG==="ceb"?"ceb":LANG==="ilo"?"ilo":LANG==="hil"?"hil":LANG==="pam"?"pam":"en";
   // LIVE: the depth figure, "My street"/"Monitored streets" and the area headline all come from the simulated demo
   // data — never show them next to a live Worker answer. A short line takes their place under the report row.
   document.body.dataset.live=LIVE?"1":"0";
-  $("p-fig").hidden=LIVE;
+  $("p-fig").hidden=LIVE||TRY;
   $("p-col-list").hidden=LIVE;
-  $("p-area").hidden=LIVE;
+  document.querySelector(".p-body").hidden=TRY;
+  $("p-area").hidden=LIVE||TRY;
   const note=$("p-live-note");note.hidden=!LIVE;if(LIVE)note.textContent=R().liveNote;
   renderAnswer();
   renderReportRow();
@@ -2324,10 +2481,10 @@ function switchSite(id){
   applySiteLang();                                    // language menu, forced English, hazard UI
   logEl.innerHTML="";log(`Site: <b>${SITE_CFG.name}</b>`);
   renderBase();renderNoah();resize();resetView();
-  setPlay(!reducedMotion&&!LIVE);                     // the story may have ended on the previous site; never restart it in LIVE
+  setPlay(!reducedMotion&&!LIVE&&!TRY);              // the story may have ended on the previous site; never restart it in LIVE
   step(0,true);
   if(VIEW==="public")renderPublic();else refreshCards();
-  {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
+  {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!TRY&&!myPlace&&!asked)openWhere();}
   pollNow();
   recentReports=[];renderRecent();pollRecent();
 }
@@ -2340,12 +2497,13 @@ function applySiteLang(){
   document.querySelector(".noah-chips").style.display=hz;document.querySelector(".noah-h").style.display=hz;document.querySelector(".noah-lg").style.display=hz;
   document.getElementById("f-nh-wrap").style.display=hz;
 }
-$("p-details").addEventListener("click",()=>setView("details"));
+$("p-details").addEventListener("click",()=>{if(TRY)exitTry();setView("details");});
 $("d-simple").addEventListener("click",()=>setView("public"));
 $("p-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
 
 /* ---------- site tabs + hash routing: #<site>[/details] ---------- */
 function parseHash(){
+  TRY=(location.hash||"")==="#try";if(TRY){LIVE=false;return {site:"tv",view:"public"};}
   const tok=(location.hash||"").match(/^#p\.([a-z]+)\.(s|b)\.([A-Za-z0-9-]+)$/);
   if(tok&&DATA_ALL[tok[1]]){SHARE_TOKEN_SEEN=true;SHARED_PLACE=tok[1]+":"+tok[2]+":"+tok[3];return {site:tok[1],view:"public"};}
   const m=(location.hash||"").replace(/^#/,"").split("/");
@@ -2354,21 +2512,25 @@ function parseHash(){
   LIVE=!!API_BASE&&m.slice(1).includes("live");               // #<site>/live and #<site>/details/live are both live
   return {site,view};
 }
-function writeHash(){const plain=SITE==="tv"&&VIEW==="public"&&!LIVE;
+function writeHash(){if(TRY){history.replaceState(null,"",location.pathname+location.search+"#try");try{localStorage.setItem("bw-last-hash","#try");}catch(e){}return;}
+  const plain=SITE==="tv"&&VIEW==="public"&&!LIVE;
   const h=plain?"":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
   history.replaceState(null,"",plain?location.pathname+location.search:h);
   try{localStorage.setItem("bw-last-hash",h);}catch(e){}   // Add to Home Screen: relaunch (?source=pwa, no hash) restores this
 }
-function syncTabs(){document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=b.dataset.site===SITE;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
+function syncTabs(){document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=TRY?b.dataset.site==="try":b.dataset.site===SITE;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
 document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
-  b.addEventListener("click",()=>{if(b.dataset.site!==SITE){switchSite(b.dataset.site);syncTabs();writeHash();}});
+  b.addEventListener("click",()=>selectTab(b.dataset.site));
   b.addEventListener("keydown",e=>{
     const tabs=[...b.parentElement.querySelectorAll('[role="tab"]')],i=tabs.indexOf(b);
     const j=e.key==="ArrowRight"?(i+1)%tabs.length:e.key==="ArrowLeft"?(i-1+tabs.length)%tabs.length:-1;
     if(j<0)return;e.preventDefault();tabs[j].click();tabs[j].focus();
   });
 });
-window.addEventListener("hashchange",()=>{const wasLive=LIVE;const h=parseHash();if(h.site!==SITE){switchSite(h.site);syncTabs();}if(h.view!==VIEW)setView(h.view);
+window.addEventListener("hashchange",()=>{const wasLive=LIVE,wasTry=TRY;const h=parseHash();
+  if(TRY){if(!wasTry)enterTry();return;}
+  if(wasTry){exitTry(h.site);if(h.view!==VIEW)setView(h.view);writeHash();return;}
+  if(h.site!==SITE){switchSite(h.site);syncTabs();}if(h.view!==VIEW)setView(h.view);
   if(LIVE!==wasLive){setPlay(!reducedMotion&&!LIVE);syncLiveUI();renderPublic();drawMap();drawOverlayCanvas();pollNow();}});
 
 /* ---------- boot ---------- */
@@ -2391,7 +2553,8 @@ if(LIVE)restoreLast();   // show the phone's own last answer immediately, before
 buildCards();VIEW=h0.view;
 if(VIEW==="public")speed=720;   // the story plays in ~3 real minutes for a resident just glancing
 setView(VIEW);switchSite(h0.site);syncTabs();writeHash();
-{let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
+if(TRY)enterTry();
+{let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!TRY&&!myPlace&&!asked)openWhere();}
 if(LIVE)flushPending();   // switchSite() above already called pollNow() for the restored place
 if(LIVE)setPlay(false);   // switchSite() already declined to start it; belt and braces for the first frame
 syncLiveUI();
