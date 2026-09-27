@@ -24,14 +24,18 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
   assert(s.uh==="Proposed units: 8 household water-level units, placed automatically"&&s.units.length===8,"8 proposed units listed");
   assert(/^BW-XU-01 · .+ · on campus$/.test(s.units[0])&&s.units.slice(1).every(u=>!/on campus/.test(u)),"unit 01, and only unit 01, is marked on campus: "+s.units[0]);
   assert(s.brgy===s.card.barangays.length&&s.brgy>0&&s.brgyS===(s.brgy===1?"1 barangay":s.brgy+" barangays"),"barangays covered: count, then the list ("+s.brgyS+")");
-  assert(s.noah.length===3&&s.noah.every((t,i)=>new RegExp("^"+["5","25","100"][i]+"-year rain: (\\d+%|not available from NOAH)$").test(t)),"three NOAH lines: "+s.noah.join(" | "));
+  assert(s.noah.length===3&&s.noah.every((t,i)=>new RegExp("^"+["5","25","100"][i]+"-year rain: (\\d+%|not available from NOAH|no hazard zone mapped in this area)$").test(t)),"three NOAH lines: "+s.noah.join(" | "));
   assert(s.role===3,"university role: three lines");
   s=await pg.evaluate(()=>{DATA.card.noah["100"]=null;syncCampusUI();return document.querySelectorAll('#c-noah li')[2].textContent;});
   assert(s==="100-year rain: not available from NOAH","a missing NOAH period reads 'not available', never 0%");
+  s=await pg.evaluate(()=>{DATA.card.noah["5"]=0;syncCampusUI();return document.querySelectorAll('#c-noah li')[0].textContent;});
+  assert(s==="5-year rain: no hazard zone mapped in this area","a 0 share reads 'no hazard zone mapped', not 0% (the Cebu 5- and 25-year maps have no zone near Cebu City)");
   // details view: bar stays, card goes; Try tab and pilot sites: neither
   await pg.click('#p-details');await pg.waitForTimeout(200);
   s=await pg.evaluate(()=>({bar:!document.querySelector('header + .site-tabs + [data-cbar]').hidden,card:document.getElementById('c-card').hidden}));
   assert(s.bar&&s.card,"details view: the campus bar stays, the card is for the simple view");
+  s=await pg.evaluate(()=>({cards:[...document.querySelectorAll('#house-cards .house-card')].map(c=>Math.round(c.getBoundingClientRect().height)),grid:Math.round(document.getElementById('house-cards').getBoundingClientRect().height)}));
+  assert(s.cards.length===8&&s.cards.every(h=>h>=44)&&s.grid>=4*44,"details view: the eight unit cards are shown, not squeezed to nothing by the side panel (grid "+s.grid+" px)");
   await pg.click('header + .site-tabs [data-site="try"]');await pg.waitForTimeout(300);
   assert(await pg.evaluate(()=>[...document.querySelectorAll('[data-cbar]')].every(b=>b.hidden)&&document.getElementById('c-card').hidden),"Try reporting: no campus bar, no card");
   await pg.click('#public .site-tabs [data-site="tv"]');await pg.waitForTimeout(300);
@@ -44,5 +48,27 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
   await pg.click('#public [data-cbar] .c-back');await ready(pg,"ph");
   assert(await pg.evaluate(()=>ROUTE==="ph"),"'‹ All campuses' returns to the national map");
   assert(errs.length===0,"no page errors: "+errs.join("; "));
+  // one language choice carries across the national map and every campus (25 campuses: nobody should pick it 25 times)
+  {const c2=await b.newContext({viewport:{width:1280,height:900}});await c2.addInitScript(()=>{try{for(const k of ["xu","upd","usc"])localStorage.setItem("bw-asked:"+k,"1");}catch(e){}});
+    const p3=await c2.newPage();await p3.goto(U);await ready(p3,"ph");
+    await p3.selectOption('#nat-lang','fil');
+    await p3.goto(U+'#xu');await ready(p3,"xu");
+    const a1=await p3.evaluate(()=>LANG);
+    await p3.selectOption('#p-lang','ceb');
+    await p3.goto(U+'#upd');await ready(p3,"upd");
+    const a2=await p3.evaluate(()=>LANG);
+    await p3.goto(U);await ready(p3,"ph");
+    const a3=await p3.evaluate(()=>[LANG,document.getElementById('nat-lang').value]);
+    assert(a1==="fil"&&a2==="ceb"&&a3[0]==="ceb"&&a3[1]==="ceb","language chosen on the national map carries to a campus, and a campus choice to the next campus and back ("+[a1,a2,a3].join(" → ")+")");
+    await c2.close();}
+  // OSM names are data, not markup: a street name with HTML must show as text in the cards, the log and the warning
+  {const p2=await ctx.newPage();const fs=require('fs');
+    await p2.route('**/data/usc.json',r=>{const d=JSON.parse(fs.readFileSync('data/usc.json','utf8'));d.sensors.forEach(u=>{u.street='<img id="pwn" src="x">';});r.fulfill({contentType:'application/json',body:JSON.stringify(d)});});
+    await p2.goto(U+'#usc/details');await ready(p2,"usc");
+    await p2.click('[data-sc="typhoon"]');
+    const r=await p2.evaluate(()=>{setPlay(false);for(let t=0;t<=720;t+=10){tMin=t;step(0,true);}
+      return {pwn:document.querySelectorAll('#pwn').length,card:document.querySelector('#house-cards .h-st').textContent,log:document.getElementById('log-list').textContent};});
+    assert(r.pwn===0&&/<img id="pwn"/.test(r.card)&&/<img id="pwn"/.test(r.log),"street names with markup are shown as text, never parsed (cards, log, warning)");
+    await p2.close();}
   await b.close();
 })();

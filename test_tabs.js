@@ -95,11 +95,11 @@ const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else co
   await pg.goto(U+'#tv');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(300);
   s=await pg.evaluate(()=>{const g=HOUSEHOLD.map(h=>h.gElev).sort((a,b)=>a-b);return {ref:HOUSEHOLD[0].gRef,med:g[Math.floor(g.length/2)]};});
   assert(s.ref===s.med,"Teachers Village gRef is its units' median ground height: "+JSON.stringify(s));
-  // a fresh load of a campus must not overwrite that campus's stored language with Teachers Village's
-  await pg.evaluate(()=>{localStorage.setItem("bw-lang:tv","fil");localStorage.setItem("bw-lang:upd","ceb");});
+  // a fresh load of a campus must not overwrite the campuses' stored language (one shared key, bw-lang:ph) with Teachers Village's
+  await pg.evaluate(()=>{localStorage.setItem("bw-lang:tv","fil");localStorage.setItem("bw-lang:ph","ceb");});
   await pg.goto(U+'#upd');await pg.reload();await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(400);   // a real document load, not a hash change
-  s=await pg.evaluate(()=>({lang:LANG,stored:localStorage.getItem("bw-lang:upd")}));
-  assert(s.lang==="ceb"&&s.stored==="ceb","fresh load keeps the campus's own language: "+JSON.stringify(s));
+  s=await pg.evaluate(()=>({lang:LANG,stored:localStorage.getItem("bw-lang:ph"),tv:localStorage.getItem("bw-lang:tv")}));
+  assert(s.lang==="ceb"&&s.stored==="ceb"&&s.tv==="fil","fresh load keeps the campuses' language, and Teachers Village keeps its own: "+JSON.stringify(s));
   assert(errs.length===0,"no page errors: "+errs.join("; "));
   await b.close();
 })();

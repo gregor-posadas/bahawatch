@@ -70,6 +70,11 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   await ph.goto(U+'#xu');await ready(ph,"xu");
   s=await ph.evaluate(()=>({sw:document.documentElement.scrollWidth,small:[...document.querySelectorAll('#public [data-cbar] a, #public [data-cbar] button, #c-card summary')].filter(e=>e.getBoundingClientRect().height<48).map(e=>e.className||e.id)}));
   assert(s.sw<=390&&s.small.length===0,"390 px campus page: no sideways scroll ("+s.sw+"), bar and card controls ≥ 48 px: "+s.small);
+  for(const id of ["xu","ust","upd"]){   // the details view too: long automatic unit names must wrap, not widen the page
+    await ph.goto(U+'#'+id+'/details');await ready(ph,id);
+    const sw=await ph.evaluate(()=>document.documentElement.scrollWidth);
+    assert(sw<=390,`390 px ${id} details view: no sideways scroll (${sw})`);
+  }
   // new strings exist in six languages (non-English marked for native review)
   s=await pg.evaluate(()=>{const miss=[];for(const k of ["en","fil","ceb","ilo","hil","pam"]){for(const n of Object.keys(NAT_LANGS.en))if(NAT_LANGS[k]==null||NAT_LANGS[k][n]==null)miss.push(k+"."+n);if(k!=="en"&&!NAT_LANGS[k]._review)miss.push(k+"._review");}return miss;});
   assert(s.length===0,"national and campus strings in six languages, non-English marked for review: "+s.join(","));
