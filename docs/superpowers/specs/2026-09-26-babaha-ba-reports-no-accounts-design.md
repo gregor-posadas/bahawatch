@@ -83,12 +83,18 @@ constants in one place and tuned later against field data.
   question becomes "May nag-ulat ng baha malapit dito. Nandiyan pa ba?"; the answer counts
   as a report.
 - **Location:** GPS rounded to ~100 m on the phone before sending, else the picked place.
-  The server never receives an exact position.
+  The server never receives an exact position. The phone uses its GPS fix only within
+  1 km of the place being reported (else the place's centre); the server rejects a
+  position more than 2 km from the place.
+  *(Final-review ruling, I3.)*
 - **Different phones without accounts:** a random ID generated on the phone at first
   report and stored there; Cloudflare Turnstile (invisible) on every report; one report per
-  place per 10 minutes per phone.
-- **Retention:** a report counts for 60 minutes in the rule; raw reports are deleted after
-  30 days; anonymous hourly counts per area are kept for model checking.
+  place per 10 minutes per phone — the same answer again is "already recorded"; a different
+  answer replaces that phone's report (latest wins). *(Final-review ruling, I1.)*
+- **Retention:** a report counts for 60 minutes in the rule; the phone's random ID is
+  removed from a report once it stops counting (hourly job, ~61 min); raw reports are
+  deleted after 30 days; anonymous hourly counts per area are kept for model checking.
+  *(Final-review ruling, I4.)*
 - **Display:** the simple view shows counts in words ("3 neighbours report flooding · 12
   min ago"). The details view shows each report as a hollow diamond on the map (a shape no
   sensor uses) and a report log.
@@ -143,7 +149,8 @@ GitHub Pages (static)                 Cloudflare Worker (free tier)
 - **verdict.js:** pure function, no I/O. Input: place facts, sensor series, report counts,
   rain now / next hour, clock. Output: `{answer, reason, updatedAt, eta}`.
 - **places.json:** built by the pipeline. Per place: id, name, kind (sensor street /
-  barangay), centroid, NOAH class, lowness, connected sensors with travel times.
+  barangay), centroid, NOAH class, lowness, sensors inside the place (`inside`, which
+  count as "here"), connected sensors with travel times. *(Final-review ruling, I2.)*
 - **Active places:** sensor streets, barangays within the campus areas, and any place picked
   or reported in the last 24 h.
 - **Rain adapter:** one module that returns rain now / next hour per place; Open-Meteo first,
@@ -151,9 +158,11 @@ GitHub Pages (static)                 Cloudflare Worker (free tier)
 - **Freshness signal:** each cron run writes one heartbeat row (newest input time per data
   source). `/status` combines the stored answer with that heartbeat, so an unchanged answer
   still reports how fresh its inputs are.
-- **Free-tier budget:** status written only when it changes; `/status` served from cache;
-  cron CPU per place is microseconds. Stays within 100k requests/day and 100k D1
-  writes/day at prototype scale.
+- **Free-tier budget:** status written only when it changes; cron CPU per place is
+  microseconds. `/status` is *not* edge-cached (Cloudflare doesn't cache Worker
+  responses), so the page polls once per cron run (at `checkedAt` + 5 min + 0–30 s,
+  never sooner than 60 s): about 12 requests/hour per open tab. Stays within 100k
+  requests/day and 100k D1 writes/day at prototype scale. *(Final-review ruling, I6.)*
 
 **Failure handling:** Worker unreachable or data older than 20 min → "Walang bagong datos";
 report fails → "Hindi naipadala, subukan ulit" with retry; offline report held ≤ 10 min

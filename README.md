@@ -539,9 +539,9 @@ per-unit overrides) · `g_ref` (optional) · `tz`, `utc` · `labels` ·
 ### 6.6 Babaha ba?, reports and no accounts
 
 An answer band above the street board, in the local phrasing everyone already
-uses to ask a neighbour: **Babaha ba dito?** ("Is it flooding here?") →
+uses to ask a neighbour: **Babaha ba?** ("Will it flood?") →
 **Oo** (filled square) / **Baka** (triangle) / **Hindi** (ring circle) /
-**Wala pang datos** ("no data yet", dashed grey box) — the same four shapes
+**Walang bagong datos** ("no fresh data", dashed grey box) — the same four shapes
 used on the map markers, so colour is never the only carrier of meaning
 (§6, Accessibility). A live region announces the answer on every real change
 (place, language, or verdict), not on every re-render.
@@ -570,7 +570,15 @@ wins:
    ≥ `RAIN_ORANGE` (15 mm/h) anywhere hazard-mapped → `baka`.
 7. **1–2 "Oo" reports**, or a trace reading at the local sensor
    (≥ `TRACE_CM`, 1 cm) → `baka`.
-8. Otherwise → `hindi`.
+8. Otherwise → `hindi`: reason `clear` ("No flood signs from sensors, reports
+   or rain.") when a fresh sensor reading was part of the check, or
+   `clear_no_sensor` ("No heavy rain or flood reports nearby. No sensor here
+   yet.") when none was — so a Hindi never claims sensors were checked where
+   there are none.
+
+"The local sensor" is every sensor *inside* the place: a sensor street's own
+unit, or for a barangay every unit standing inside its boundary (`inside` in
+`places.json`); when there are several, the most urgent one decides.
 
 The Worker imports the same module for its cron (`worker/README.md`);
 `build_html.py` inlines it into the page (stripping `export`) so the demo
@@ -580,9 +588,11 @@ the one `RULE` object — `shared/verdict.js` is the source of truth, checked
 against the flowchart above by the table tests in `shared/verdict.test.js`.
 
 **`places.json`.** Every sensor street and barangay the page (and the
-Worker) can answer for, with each place's NOAH flags and which sensors feed
-it. Rebuild after any change to `sites.py`, a `data_<site>.json`, or the
-barangay boundaries:
+Worker) can answer for, with each place's NOAH flags, the sensors inside it
+(`inside`: the place's own sensor for a street; every unit standing inside
+the boundary for a barangay) and the sensors whose water can reach it
+(`connected`, with travel times). Rebuild after any change to `sites.py`, a
+`data_<site>.json`, or the barangay boundaries:
 
 ```bash
 python3 tools/build_places.py     # reads shared/verdict.js's LOOKAHEAD_MIN, never desyncs from it
@@ -603,17 +613,37 @@ polygon isn't flagged for it. Diliman's frame carries 5 barangays.
 
 **Demo vs. live.** `#tv` (no `/live`) stays in demo mode: a locally
 simulated clock and verdict, exactly like the rest of the dashboard, and
-tapping a report button just shows "Demo — not sent." `#tv/live` switches
-the public view to real answers polled from the Worker's `/status/<place>`
-(simple view hides the simulated depth figure, street list and headline and
-shows a note that it's live instead); `#tv/details/live` is the details view
-in live mode, which also draws neighbours' recent reports as hollow diamonds
-on the map and a last-hour text log, from `/recent/<site>`. A build with no
+tapping a report button just shows "Demo — not sent." The demo answer band
+carries a visible **Demo · simulated storm** chip (in the page's language),
+which is also the first thing the screen-reader announcement says.
+`#tv/live` switches the public view to real answers polled from the Worker's
+`/status/<place>`: the simulated playback stops, and the simple view hides
+the simulated depth figure, street list, headline, flood layer, depth legend
+and status-coloured sensor markers — the map keeps only the basemap and a
+neutral marker for the picked place — and shows a note that it's live
+instead. `#tv/details/live` is the details view in live mode: its map, cards
+and log still run on the simulated feed, under a banner saying so ("Simulated
+sensor feed — the answer above is live"), and it also draws neighbours'
+recent reports as hollow diamonds on the map and a last-hour text log, from
+`/recent/<site>`. A build with no
 `BAHAWATCH_API` (the published demo artifact) can't go live at all — `/live`
 is silently dropped from the hash. Ages shown next to "Updated" always come
 from the server's `checkedAt`/`serverNow`, never `Date.now()` on the phone,
 so a phone with a wrong clock still sees a correct "updated 2 min ago"
-(Review Focus #1).
+(Review Focus #1). Within a session the time since the last reply is
+measured on the monotonic clock, so a phone clock changed mid-session can't
+make an old answer look fresh; a cached answer from an earlier session whose
+receive time is in the phone's future is shown as "Walang bagong datos".
+
+**Polling.** Cloudflare does not edge-cache Worker responses (the 60 s
+`Cache-Control` only lets a browser reuse a reply), so every `/status` poll
+runs the Worker. The page therefore polls once per cron run: after a reply,
+the next poll is due at the reply's `checkedAt` + 5 min + a random 0–30 s
+(computed in server time), never sooner than 60 s — about **12 requests an
+hour per open tab** (a failed poll backs off 2 → 4 → 5 min). Coming back to
+the tab polls straight away only if the answer on screen is more than 5
+minutes old. The details view in live mode also fetches `/recent/<site>`
+once a minute.
 
 **The Worker.** `worker/README.md` has the full runbook: one-time Cloudflare
 setup, the six endpoints, what's stored and for how long, and how the
@@ -635,13 +665,20 @@ Worker's calls are cross-origin so they're never intercepted at all.
 
 **What's stored, and for how long.** GPS is rounded to 3 decimal places
 (~100 m) on the phone and again on the server — no exact position, name, or
-phone number is ever stored. A report counts toward the answer for 60
-minutes, then ages out; the same phone can report the same place once per
-10 minutes (a repeat within that window comes back as "already recorded",
-shown as a normal "Thanks, recorded", not an error — Review Focus #5); raw
-report rows are deleted after 30 days, but the hourly Oo/Hindi/Di sigurado
-counts rolled up from them are kept indefinitely, as is the sensor reading
-history (needed later to tune the rule's thresholds). Undo works for 10 s in
+phone number is ever stored. The phone only uses its GPS fix when it is
+within 1 km of the place being reported (otherwise the report is pinned to
+the place's centre — someone answering about a relative's barangay doesn't
+send their own position), and the Worker rejects a position more than 2 km
+from the place. A report counts toward the answer for 60 minutes, then ages
+out. One report per phone per place per 10 minutes: the same answer again
+comes back as "already recorded", shown as a normal "Thanks, recorded", not
+an error (Review Focus #5); a *different* answer (say "Hindi" to "Still
+there?" after that phone's own "Oo") replaces the phone's earlier report —
+latest wins. The phone's random report id is blanked from a report once it
+stops counting (the hourly job, after ~61 minutes), so stored reports aren't
+a per-phone trail. Raw report rows are deleted after 30 days, but the hourly
+Oo/Hindi/Di sigurado counts rolled up from them are kept indefinitely, as is
+the sensor reading history (needed later to tune the rule's thresholds). Undo works for 10 s in
 the page's own UI and up to 15 s server-side. A report made offline (no
 signal when "Oo" was tapped) is held on the phone for up to 10 minutes and
 sent once connectivity returns, or dropped if it doesn't.
