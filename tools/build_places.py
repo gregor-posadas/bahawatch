@@ -1,11 +1,29 @@
 #!/usr/bin/env python3
-"""places.json: every sensor street and barangay the page can answer for, with NOAH flags and
-connected sensors (spec §3, §7). Run from the repo root: python3 tools/build_places.py"""
-import base64, heapq, json, math, os, re, statistics
+"""Places: every sensor street and barangay the page can answer for, with NOAH flags and connected sensors
+(spec §3, §7). Each site's list goes into its own data/<site>.json ("places", fetched with the site) and all of
+them into places.json (the Worker's copy). Run from the repo root after build_data.py: python3 tools/build_places.py"""
+import base64, glob, heapq, json, math, os, re, statistics, sys
 import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA = {"tv": "data.json", "diliman": "data_diliman.json", "berkeley": "data_berkeley.json"}
+sys.path.insert(0, ROOT)
+from model import grids  # noqa: E402
+DATA_DIR = os.environ.get("BW_DATA_DIR", os.path.join(ROOT, "data"))
+CAMPUS_INPUTS = os.environ.get("CAMPUS_INPUTS", os.path.join(ROOT, "inputs", "campuses"))
+
+
+def barangays_path(site):
+    """The site's barangay polygons: sites/<site>/ for the pilots, the pipeline cut for campuses (None if neither)."""
+    for p in (os.path.join(ROOT, "sites", site, "barangays.geojson"), os.path.join(CAMPUS_INPUTS, site, "barangays.geojson")):
+        if os.path.exists(p):
+            return p
+    return None
+
+
+def data_files():
+    """{site: path} for every site file in data/ (the country outline is not a site)."""
+    return {os.path.basename(p)[:-5]: p for p in sorted(glob.glob(os.path.join(DATA_DIR, "*.json")))
+            if os.path.basename(p) != "ph_outline.json"}
 FLOW_SPEED_MS = 0.5          # overland flow along streets, m/s (tunable)
 SPILL_M = 0.10               # water from a sensor spreads to cells no higher than its ground + 10 cm
 NOAH_SHARE = 0.10            # a barangay is flagged for a NOAH zone only when at least this share of its cells sit in it
@@ -57,17 +75,19 @@ def noah_layers(d):
     return layers, hazard
 
 def barangay_cells(d, feature):
-    """Grid cells whose centre falls inside a barangay GeoJSON feature's polygon."""
-    rings = [r for p in polys(feature["geometry"]) for r in p]
-    return [(cy, cx) for cy in range(d["GH"]) for cx in range(d["GW"]) if point_in_poly(*cell_center(d, cx, cy), rings)]
+    """Grid cells whose centre falls inside a barangay GeoJSON feature's polygon (rasterised: fast for the
+    hundred-odd small barangays of a Manila box)."""
+    m = grids.rasterize([(feature["geometry"], 1)], tuple(d["bbox"]), d["GW"], d["GH"])
+    return [(int(cy), int(cx)) for cy, cx in zip(*np.nonzero(m))]
 
 def zone_share(layer, cells):
     """Fraction of `cells` that sit inside a NOAH hazard layer."""
     if not cells: return 0.0
     return sum(1 for cy, cx in cells if layer[cy, cx] >= 1) / len(cells)
 
-def reach(elev, start, cell_m):
-    """Minutes for water to travel from `start` to every cell it can spill into (≤ LOOKAHEAD_MIN)."""
+def reach(elev, start, cell_m, block=None):
+    """Minutes for water to travel from `start` to every cell it can spill into (≤ LOOKAHEAD_MIN), never through
+    a blocked cell (≥ 75 % built, or sea: spec §6.2)."""
     GH, GW = elev.shape; sy, sx = start; top = elev[sy, sx] + SPILL_M
     lim = FLOW_SPEED_MS * LOOKAHEAD_MIN * 60
     dist = {start: 0.0}; pq = [(0.0, start)]
@@ -79,6 +99,7 @@ def reach(elev, start, cell_m):
                 if not (dy or dx): continue
                 ny, nx = y + dy, x + dx
                 if not (0 <= ny < GH and 0 <= nx < GW) or elev[ny, nx] > top: continue
+                if block is not None and block[ny, nx]: continue
                 nd = dd + cell_m * (1.4142 if dy and dx else 1.0)
                 if nd <= lim and nd < dist.get((ny, nx), 1e18):
                     dist[(ny, nx)] = nd; heapq.heappush(pq, (nd, (ny, nx)))
@@ -91,7 +112,8 @@ def build_site(site, d):
     x0, y0, x1, y1 = d["bbox"]
     cell_m = (x1 - x0) * 111320 * math.cos(math.radians((y0 + y1) / 2)) / GW
     gref = statistics.median(s["g"] for s in d["sensors"])
-    reaches = {s["id"]: reach(elev, (s["cy"], s["cx"]), cell_m) for s in d["sensors"]}
+    block = unrle(d["block"], N).reshape(GH, GW).astype(bool) if "block" in d else None
+    reaches = {s["id"]: reach(elev, (s["cy"], s["cx"]), cell_m, block) for s in d["sensors"]}
 
     def place(pid, kind, name, lat, lon, cells, rep, extra):
         # Sensor streets: a small local neighbourhood, so any cell in the zone is enough to flag it.
@@ -114,8 +136,8 @@ def build_site(site, d):
         name = s.get("bld") or ((s.get("hn") + " " if s.get("hn") else "") + s["street"])
         cells = [(y, x) for y in range(s["cy"] - 1, s["cy"] + 2) for x in range(s["cx"] - 1, s["cx"] + 2) if 0 <= y < GH and 0 <= x < GW]
         out.append(place(f"{site}:s:{s['id']}", "sensor", name, s["lat"], s["lon"], cells, (s["cy"], s["cx"]), {"sensor": s["id"], "inside": [s["id"]]}))
-    gj = os.path.join(ROOT, "sites", site, "barangays.geojson")
-    if os.path.exists(gj):
+    gj = barangays_path(site)
+    if gj:
         for f in json.load(open(gj, encoding="utf-8"))["features"]:
             pr = f["properties"]
             cells = barangay_cells(d, f)
@@ -131,14 +153,19 @@ def build_site(site, d):
 
 def main():
     res = {"version": 1, "sensors": {}, "sites": {}}
-    for site, f in DATA.items():
-        d = json.load(open(os.path.join(ROOT, f), encoding="utf-8"))
-        res["sites"][site] = build_site(site, d)
+    for site, f in data_files().items():
+        d = json.load(open(f, encoding="utf-8"))
+        d.pop("places", None)
+        places = build_site(site, d)
+        res["sites"][site] = places
+        d["places"] = places
+        json.dump(d, open(f, "w", encoding="utf-8"), separators=(",", ":"), ensure_ascii=False)
         for s in d["sensors"]:
             name = s.get("bld") or ((s.get("hn") + " " if s.get("hn") else "") + s["street"])
             res["sensors"][s["id"]] = {"site": site, "name": name, "lat": s["lat"], "lon": s["lon"]}
-        print(site, len(res["sites"][site]), "places")
-    json.dump(res, open(os.path.join(ROOT, "places.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+        print(site, len(places), "places", os.path.getsize(f), "bytes")
+    out = os.environ.get("BW_PLACES", os.path.join(ROOT, "places.json"))
+    json.dump(res, open(out, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 
 if __name__ == "__main__":
     main()

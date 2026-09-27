@@ -12,3 +12,7 @@ __pycache__/
 .superpowers/
 node_modules/
 *.log
+# per-campus cuts staged from Gregor's PC (hundreds of MB) — rebuilt with pipeline/run_pc.py, see README §2.5
+inputs/campuses/
+# live-mode page builds made by the tests (served over http with the data files)
+_bw_*.html

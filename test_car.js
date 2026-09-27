@@ -1,11 +1,12 @@
 // Car scale + MMDA passability thresholds. Run: node test_car.js
 const {chromium}=require('playwright');
+const BASE=process.env.BW_BASE||'http://127.0.0.1:8765/';
 const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else console.log("ok  ",m);};
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
   const pg=await b.newPage({viewport:{width:1280,height:900}});
   const errs=[];pg.on('pageerror',e=>errs.push(e.message));
-  await pg.goto('file:///home/claude/work/bahawatch_dashboard.html');await pg.waitForTimeout(400);
+  await pg.goto(BASE+'bahawatch_dashboard.html#tv');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(400);
   const setDepth=async(cm)=>pg.evaluate(cm=>{playing=false;for(const s of HOUSEHOLD){s.depth=0;s.rate=0;s.status="ok";}HOUSEHOLD[6].depth=cm/100;HOUSEHOLD[6].status=statusOf(HOUSEHOLD[6]);computeFlood(0);renderFlood();drawMap();renderPublic();},cm);
   const cap=async()=>pg.$eval('#p-fig-cap',e=>e.textContent);
   const svg=await pg.$eval('#p-figure svg',e=>e.textContent);

@@ -34,6 +34,64 @@ body{
 }
 button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0}
 button:focus-visible, summary:focus-visible, .house-card:focus-visible, #overlay:focus-visible, #scrub:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
+/* routes (body[data-route]): the national map, a site's file loading or failing, and the site itself */
+#nat,#route-loading,#route-fail{display:none}
+body[data-route="ph"] #nat,body[data-route="loading"] #route-loading,body[data-route="fail"] #route-fail{display:block}
+body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-live-banner,main,#timeline){display:none !important}
+/* the national map (#nat): an outline of the Philippines with campus pins, and the same campuses as a list */
+:root{--pin-suc:#385F96; --pin-luc:#CF5921; --pin-pvt:#800000}
+:root[data-theme="dark"]{--pin-suc:#7FA8E0; --pin-luc:#F08A4B; --pin-pvt:#F2F2F2}
+.nat-inner{max-width:1180px; margin:0 auto; padding:14px 16px 28px}
+.nat-top{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px}
+.nat-top .p-tools{margin-left:auto; display:flex; gap:8px; align-items:center}
+.nat-top .p-tools button, .nat-top .p-tools select{min-height:48px; min-width:48px}
+.nat-h{font-size:20px; font-weight:700}
+.nat-intro{max-width:70ch; margin:12px 0 16px; font-size:15px}
+.nat-body{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:24px; align-items:start}
+@media (max-width:820px){.nat-body{grid-template-columns:1fr}}
+.nat-map{position:relative; width:min(100%, calc(76vh * var(--ar,0.6))); margin:0 auto; aspect-ratio:var(--ar,0.6); background:var(--map-bg); border:1px solid var(--ink); border-radius:6px; overflow:hidden}
+#nat-svg{position:absolute; inset:0; width:100%; height:100%}
+#nat-land{fill:var(--panel-2); stroke:var(--ink-2); stroke-width:1; vector-effect:non-scaling-stroke}
+.nat-pins{position:absolute; inset:0}
+.pin,.pin-cluster{position:absolute; transform:translate(-50%,-50%); width:48px; height:48px; display:flex; align-items:center; justify-content:center}
+.pin{color:var(--ink); text-decoration:none}
+.pin-shape{display:inline-block; flex:none; width:16px; height:16px; background:var(--pin); filter:drop-shadow(0 0 1px var(--bg)) drop-shadow(0 0 1px var(--bg))}
+.pin-suc{--pin:var(--pin-suc)} .pin-luc{--pin:var(--pin-luc)} .pin-private{--pin:var(--pin-pvt)}
+.pin-suc .pin-shape, .pin-shape.pin-suc{border-radius:50%}
+.pin-private .pin-shape, .pin-shape.pin-private{clip-path:polygon(50% 0,100% 100%,0 100%); width:18px; height:17px}
+.pin-t{position:absolute; left:34px; top:50%; transform:translateY(-50%); white-space:nowrap; font-size:12px; font-weight:700; color:var(--ink); background:var(--map-bg); padding:0 3px; border-radius:3px; pointer-events:none}
+.pin-cluster span{min-width:32px; height:32px; border-radius:16px; background:var(--ink); color:var(--bg); font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 6px}
+.pin:focus-visible,.pin-cluster:focus-visible,.nat-item:focus-visible,.nat-btn:focus-visible,.nat-q:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
+.nat-btn{min-height:48px; padding:0 14px; border:2px solid var(--ink); border-radius:6px; font-weight:700; margin-top:10px}
+.nat-legend{list-style:none; padding:0; margin:10px 0 0; display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px}
+.nat-legend li{display:flex; align-items:center; gap:6px}
+.nat-ql{display:block; font-weight:700; margin-bottom:6px}
+.nat-q{width:100%; min-height:48px; font:inherit; font-size:16px; padding:0 12px; border:2px solid var(--ink); border-radius:6px; background:var(--panel); color:var(--ink)}
+.nat-count{min-height:1.4em; margin:6px 0; color:var(--ink-2)}
+.nat-g{font-size:15px; font-weight:700; margin:16px 0 4px}
+.nat-ul{list-style:none; padding:0; margin:0}
+.nat-item{display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; min-height:48px; padding:6px 4px; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none}
+.nat-item:hover b{text-decoration:underline}
+.nat-where{flex-basis:100%; padding-left:24px; color:var(--ink-2); font-size:13px}
+.nat-foot{font-size:12px; color:var(--ink-2); margin-top:20px}
+/* campus pages: the bar under the tabs, and the partnership card */
+.c-bar{display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:6px 0}
+[data-view="details"] .c-bar{padding:6px 22px}
+.c-bar[hidden]{display:none}
+.c-back,.c-pick{min-height:48px; display:inline-flex; align-items:center; font-weight:700; font-size:15px}
+.c-back{color:var(--brand)}
+.c-sim{flex-basis:100%; font-size:13px; color:var(--ink); background:var(--warn-bg); border-radius:4px; padding:6px 10px; margin:0}
+.c-card{border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin-top:14px; background:var(--panel)}
+.c-card[hidden]{display:none}
+.c-card h2{font-size:16px; font-weight:700; margin-bottom:4px}
+.c-card h3{font-size:14px; font-weight:700; margin:12px 0 4px}
+.c-card ol,.c-card ul{margin:0; padding-left:20px}
+.c-card li{margin:2px 0}
+.c-card summary{min-height:48px; display:flex; align-items:center; cursor:pointer}
+.c-oc{font-weight:700}
+.route-msg{max-width:640px; margin:0 auto; padding:48px 16px; font-size:16px}
+.route-btn{min-height:48px; padding:0 18px; border:2px solid var(--ink); border-radius:6px; font-weight:700; margin:16px 12px 0 0}
+.route-link{color:var(--brand); display:inline-flex; align-items:center; min-height:48px}
 .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
 h1,h2{font-size:inherit; font-weight:inherit}
 
@@ -114,7 +172,7 @@ aside{display:flex; flex-direction:column; min-height:0; overflow-y:auto; paddin
 .sensor .s-meta{font-size:11.5px; color:var(--ink-2); line-height:1.5}
 .sensor .s-meta b{color:var(--ink); font-weight:600}
 .sensor canvas{width:100%; height:46px; display:block; margin-top:10px}
-.house-grid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:16px}
+.house-grid{flex-shrink:0; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:16px}
 .house-card{background:var(--panel); padding:9px 11px 8px; cursor:pointer; min-height:44px}
 .house-card:hover{background:var(--panel-2)}
 .house-card.selected{box-shadow:inset 0 0 0 2px var(--brand)}
@@ -161,7 +219,7 @@ pre#api-json{
 .speed button.active{background:var(--brand); color:var(--on-brand)}
 
 @media (max-width:900px){
-  main{grid-template-columns:1fr; grid-template-rows:58vh auto}
+  main{grid-template-columns:minmax(0,1fr); grid-template-rows:58vh auto}   /* minmax: long unit names must not widen the page */
   #map-wrap{min-height:360px; margin:12px 14px 0}
   aside{padding:14px; overflow:visible}
   .hdr-right{margin-left:0; width:100%}
@@ -379,6 +437,57 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 </style>
 </head>
 <body data-view="public">
+<section id="nat" aria-labelledby="nat-h">
+ <div class="nat-inner">
+  <div class="nat-top">
+    <img class="nat-logo" id="nat-logo" alt="" width="40" height="40">
+    <div><div class="p-name">BahaWatch</div><h1 class="nat-h" id="nat-h"></h1></div>
+    <div class="p-tools">
+      <label class="sr-only" for="nat-lang">Language</label>
+      <select id="nat-lang"></select>
+      <button id="nat-theme" aria-label="Switch theme">☾</button>
+    </div>
+  </div>
+<nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="ph" aria-selected="true">PhilDev campuses</button>
+  <button role="tab" data-site="tv" aria-selected="false">Teachers Village</button>
+  <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
+  <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+</nav>
+  <p class="nat-intro" id="nat-intro"></p>
+  <div class="nat-body">
+    <div class="nat-mapcol">
+      <div class="nat-map" id="nat-map" role="group" aria-labelledby="nat-map-l" aria-describedby="nat-desc">
+        <svg id="nat-svg" aria-hidden="true" focusable="false" preserveAspectRatio="none"><path id="nat-land"/></svg>
+        <div class="nat-pins" id="nat-pins"></div>
+      </div>
+      <span class="sr-only" id="nat-map-l"></span>
+      <p class="sr-only" id="nat-desc"></p>
+      <button class="nat-btn" id="nat-zoom-out" hidden></button>
+      <ul class="nat-legend" id="nat-legend"></ul>
+    </div>
+    <div class="nat-listcol">
+      <label class="nat-ql" for="nat-q" id="nat-q-l"></label>
+      <input class="nat-q" type="search" id="nat-q" autocomplete="off" aria-describedby="nat-count">
+      <p class="nat-count" id="nat-count" role="status" aria-live="polite"></p>
+      <div id="nat-list"></div>
+      <h2 class="nat-g" id="nat-pilots-h"></h2>
+      <ul class="nat-ul">
+        <li><a class="nat-item" href="#tv"><b>Teachers Village</b><span class="nat-where">Quezon City · pilot, hand-placed units</span></a></li>
+        <li><a class="nat-item" href="#berkeley"><b>UC Berkeley</b><span class="nat-where">California · pilot, the real demo unit</span></a></li>
+        <li><a class="nat-item" href="#try"><b id="nat-try"></b></a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="nat-foot" id="nat-foot"></p>
+ </div>
+</section>
+<section id="route-loading" class="route-msg"><p id="load-msg" role="status" aria-live="polite"></p></section>
+<section id="route-fail" class="route-msg">
+  <p id="fail-msg" role="alert"></p>
+  <button id="load-retry" class="route-btn"></button>
+  <a href="#ph" class="route-link" id="fail-back"></a>
+</section>
 
 <section id="public" aria-label="Flood status">
  <div class="p-inner">
@@ -393,11 +502,15 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     </div>
   </div>
 <nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
-  <button role="tab" data-site="diliman" aria-selected="false">UP Diliman</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
 </nav>
+<div class="c-bar" data-cbar hidden>
+  <a href="#ph" class="c-back"></a><span aria-hidden="true">·</span><button class="c-pick"></button>
+  <p class="c-sim"></p>
+</div>
   <p class="try-sim" id="try-sim" hidden></p>
   <div class="p-area" id="p-area" role="status" aria-live="polite">
     <h1 class="p-head-line" id="p-headline">—</h1>
@@ -441,6 +554,13 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <div class="p-rep-msg" id="p-rep-msg" role="status" aria-live="polite"></div>
         <button class="p-link" id="p-rep-undo" hidden></button>
         <button class="p-link" id="p-try-link" hidden></button>
+      </section>
+      <section class="c-card" id="c-card" aria-labelledby="c-card-h" hidden>
+        <h2 id="c-card-h"></h2>
+        <h3 id="c-units-h"></h3><ol id="c-units"></ol>
+        <h3 id="c-brgy-h"></h3><details id="c-brgy-d"><summary id="c-brgy-s"></summary><ul id="c-brgy"></ul></details>
+        <h3 id="c-noah-h"></h3><ul id="c-noah"></ul>
+        <h3 id="c-role-h"></h3><ul id="c-role"></ul>
       </section>
       <div class="p-live-note" id="p-live-note" hidden></div>
       <div id="p-top-area"></div>
@@ -515,11 +635,15 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   </div>
 </header>
 <nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
-  <button role="tab" data-site="diliman" aria-selected="false">UP Diliman</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
 </nav>
+<div class="c-bar" data-cbar hidden>
+  <a href="#ph" class="c-back"></a><span aria-hidden="true">·</span><button class="c-pick"></button>
+  <p class="c-sim"></p>
+</div>
 <div class="d-live-banner" id="d-live-banner" role="note" hidden>Simulated sensor feed — the answer above is live</div>
 
 <main>
@@ -603,7 +727,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <ul id="rep-log"></ul>
     </details>
 
-    <p class="foot-note">Proof of concept on real data: OpenStreetMap streets and 17,993 building footprints, Copernicus GLO-30 terrain (conditioned: surface features filtered, streets carved as flow paths), and Project NOAH flood hazard as a reference layer. Each geotagged unit reports water depth at its own location; the model sets a local water surface there (ground + measured depth) and spreads it across the terrain only where topography allows, with a conservative decay away from the observation. No sensor reading, no modeled extent. Sensor readings are simulated — storm response is calibrated per site using its NOAH hazard class and local elevation. Not a forecast; not for emergency use.</p>
+    <p class="foot-note">Proof of concept on real data: OpenStreetMap streets, <span id="foot-nb"></span> building footprints, <span id="foot-terrain"></span> terrain (streets carved as flow paths<span id="foot-block">; water goes around cells that are at least 75% built</span>), and Project NOAH flood hazard as a reference layer.<span id="foot-limits"> FABDEM heights can be 1–3 m off in dense cities, and this is a spread from measured points over terrain and buildings, not a hydraulic model.</span> Each geotagged unit reports water depth at its own location; the model sets a local water surface there (ground + measured depth) and spreads it across the terrain only where topography allows, with a conservative decay away from the observation. No sensor reading, no modeled extent. Sensor readings are simulated — storm response is calibrated per site using its NOAH hazard class and local elevation. Not a forecast; not for emergency use.</p>
   </aside>
 </main>
 
@@ -622,11 +746,26 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 "use strict";
 /* =========================================================================
    BahaWatch — Teachers Village on real data
-   DATA: OSM streets/buildings/creeks, Copernicus GLO-30 terrain grid,
+   DATA: OSM streets/creeks, building footprints, FABDEM (USGS 1 m at Berkeley) terrain grid,
    NOAH hazard rasters. Model contract unchanged: flood extents derive ONLY
    from sensor observations, spread across the DEM with distance decay.
    ========================================================================= */
-const DATA_ALL=__DATA_ALL__;
+const CAMPUSES=__CAMPUSES__;          // the PhilDev partner campuses (pipeline/campuses.csv), embedded at build
+const PH_OUTLINE=__PH_OUTLINE__;      // simplified country outline for the national map (data/ph_outline.json)
+const CAMPUS_BY_ID=Object.fromEntries(CAMPUSES.map(c=>[c.id,c]));
+const isCampus=id=>!!CAMPUS_BY_ID[id];
+const PILOTS=["tv","berkeley"];
+const SITE_IDS=new Set([...PILOTS,...CAMPUSES.map(c=>c.id)]);
+const LEGACY_SITES={diliman:"upd"};  // old tabs → where they live now
+const DATA_BASE="data/";             // one file per site, fetched when the site is opened
+const DATA_ALL={};                   // site id → its parsed data file (loadSiteData fills it)
+const dataInflight={};
+function loadSiteData(id){
+  if(DATA_ALL[id])return Promise.resolve(DATA_ALL[id]);
+  if(!dataInflight[id])dataInflight[id]=fetch(DATA_BASE+id+".json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+    .then(d=>{DATA_ALL[id]=d;PLACES.sites[id]=d.places||[];delete dataInflight[id];return d;},e=>{delete dataInflight[id];throw e;});
+  return dataInflight[id];
+}
 const API_BASE=__API_BASE__;          // reserved for the report-submission worker (Task 6); unused here
 const TURNSTILE_SITEKEY=__TURNSTILE_SITEKEY__;  // reserved for the report widget (Task 6); unused here
 let TRY=false;                        // "Try reporting" tab (#try): local phone + pretend neighbours, no network
@@ -639,6 +778,7 @@ const RES=2.2;
 /* Site state — everything below is rebuilt by initSite(id) when a tab changes. */
 let SITE="tv", DATA=null, SITE_CFG=null;
 let W,H,GW,GH,N, elev,NOAH,STREETMASK,BLDS,HOUSEHOLD,SCEN, depth,srcIdx,fillGen,fillDist,fq, eMinD,eMaxD,tLo,tHi, SEG_SAMPLES;
+let BLOCK=null, SEA=null, BC=null;    // per-cell grids: water may not enter / sea / building footprints (Philippine sites)
 let baseCv=document.createElement("canvas"), noahCv=document.createElement("canvas"), floodCv=document.createElement("canvas");
 function b64bytes(s){const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
 function unrle(s){const b=b64bytes(s);const g=new Uint8Array(N);let o=0;for(let i=0;i<b.length;i+=2){g.fill(b[i+1],o,o+b[i]);o+=b[i];}return g;}
@@ -659,7 +799,7 @@ function initSite(id){
   SITE=id; DATA=DATA_ALL[id]; SITE_CFG=DATA.site;
   W=DATA.W;H=DATA.H;GW=DATA.GW;GH=DATA.GH;N=GW*GH;
   elev=(()=>{const v=new Int16Array(b64bytes(DATA.elev).buffer);const f=new Float32Array(N);for(let i=0;i<N;i++)f[i]=v[i]/10;return f;})();
-  NOAH=SITE_CFG.hazard?{"5":unrle(DATA.noah["5"]),"25":unrle(DATA.noah["25"]),"100":unrle(DATA.noah["100"])}:{"5":new Uint8Array(N),"25":new Uint8Array(N),"100":new Uint8Array(N)};
+  NOAH={};for(const k of ["5","25","100"])NOAH[k]=DATA.noah&&DATA.noah[k]?unrle(DATA.noah[k]):new Uint8Array(N);   // a missing NOAH map reads as no hazard
   STREETMASK=unrle(DATA.street);
   BLDS=(()=>{const v=new Uint16Array(b64bytes(DATA.blds).buffer);const a=[];for(let i=0;i<v.length;i+=2)a.push([v[i]/10,v[i+1]/10]);return a;})();
   // storm-response reference: the site's median sensor street elevation (was the constant 56 m)
@@ -677,6 +817,10 @@ function initSite(id){
   });
   SCEN={};for(const k in SITE_CFG.scen)SCEN[k]={label:SITE_CFG.scen[k].label,P:SITE_CFG.scen[k].P,dur:SITE_CFG.scen[k].dur,start:SITE_CFG.scen[k].start};
   depth=new Float32Array(N);srcIdx=new Int8Array(N);fillGen=new Int32Array(N);fillDist=new Int32Array(N);fq=new Int32Array(N);
+  FS={depth,src:srcIdx,gen:fillGen,dist:fillDist,q:fq,g:0};
+  SEA=DATA.sea?unrle(DATA.sea):null;
+  BLOCK=DATA.block?unrle(DATA.block):SEA;
+  BC=DATA.bc?unrle(DATA.bc):null;
   for(const c of[baseCv,noahCv,floodCv]){c.width=Math.round(W*RES);c.height=Math.round(H*RES);}
   eMinD=1e9;eMaxD=-1e9;for(let i=0;i<N;i++){if(elev[i]<eMinD)eMinD=elev[i];if(elev[i]>eMaxD)eMaxD=elev[i];}
   const sorted=Float32Array.from(elev).sort();tLo=sorted[Math.floor(N*0.05)];tHi=sorted[Math.floor(N*0.95)];if(tHi-tLo<1)tHi=tLo+1;
@@ -712,49 +856,23 @@ const SyntheticSensorAPI={
   }
 };
 
-/* ---------- flood model: sensor-seeded terrain fill ---------- */
-const DECAY_PER_CELL=0.010;
-const MAX_STEPS=80;
-let gen=0;
-function computeFlood(t){
-  depth.fill(0);srcIdx.fill(-1);
-  for(const s of HOUSEHOLD){
-    if(s.depth<=0.02)continue;
-    const WSE=s.gElev+s.depth;
-    const cap=s.depth+0.45;   // extrapolate only within the observed depth band
-    gen++;
-    let qh=0,qt=0;
-    const start=s.cy*GW+s.cx;
-    fillGen[start]=gen;fillDist[start]=0;fq[qt++]=start;
-    while(qh<qt){
-      const i=fq[qh++],x=i%GW,y=(i/GW)|0,dstep=fillDist[i];
-      const avail=WSE-DECAY_PER_CELL*dstep;
-      const d=avail-elev[i];
-      if(d<=0.02||d>cap)continue; // dry ground, or far below the observed surface: no claim, no traverse
-      if(d>depth[i]){depth[i]=d;srcIdx[i]=s.idx;}
-      if(dstep>=MAX_STEPS)continue;
-      for(const j of [i-1,i+1,i-GW,i+GW]){
-        if(j<0||j>=N)continue;
-        if((j===i-1&&x===0)||(j===i+1&&x===GW-1))continue;
-        if(fillGen[j]===gen)continue;
-        fillGen[j]=gen;fillDist[j]=dstep+1;fq[qt++]=j;
-      }
-    }
-  }
-}
+/* ---------- flood model: sensor-seeded terrain fill, with buildings and sea as obstacles (shared/flood.js) ---------- */
+/*__FLOOD_JS__*/
+let FS=null;                          // the fill's scratch buffers, sized per site in initSite()
+function computeFlood(t){fillFlood({elev,block:BLOCK,GW,GH},HOUSEHOLD,FS);}
 const depthAtWorld=(x,y)=>(x<0||y<0||x>=W||y>=H)?0:depth[cellAt(x,y)];
 
 /* ---------- map theming ---------- */
 function mapPal(){
   const dark=document.documentElement.dataset.theme==="dark";
   return dark?{
-    bgLo:[36,34,32],bgHi:[50,47,42],street:"#4a4640",casing:"#1c1a18",alley:"#3a3733",
+    bgLo:[36,34,32],bgHi:[50,47,42],sea:[31,52,66],street:"#4a4640",casing:"#1c1a18",alley:"#3a3733",
     house:"rgba(150,141,126,0.8)",creek:"#70c0e0",
     label:"#bfb7aa",labelHalo:"rgba(36,34,32,0.92)",creekLabel:"#8fd3ef",
     bands:["#2e5a7a","#3f93bf","#a7e0f5"],markerFill:"#262421",markerInk:"#f3efe7",select:"#70c0e0",
     noah:["rgba(196,150,230,0.35)","rgba(170,110,215,0.45)","rgba(140,80,200,0.55)"]
   }:{
-    bgLo:[248,242,230],bgHi:[235,226,207],street:"#ffffff",casing:"#dfd4bf",alley:"#f3ecdd",
+    bgLo:[248,242,230],bgHi:[235,226,207],sea:[204,226,238],street:"#ffffff",casing:"#dfd4bf",alley:"#f3ecdd",
     house:"rgba(199,184,154,0.85)",creek:"#7cc4e4",
     label:"#66605a",labelHalo:"rgba(248,242,230,0.92)",creekLabel:"#1f6f9e",
     bands:["#8fc6e2","#2f86c2","#0030a0"],markerFill:"#fffdf8",markerInk:"#232120",select:"#0030a0",
@@ -790,6 +908,7 @@ function renderBase(){
   const tmp=document.createElement("canvas");tmp.width=GW;tmp.height=GH;
   tmp.getContext("2d").putImageData(img,0,0);
   ctx.imageSmoothingEnabled=true;ctx.drawImage(tmp,0,0,W,H);
+  paintSea(ctx,P);
   // roads by class, casing then fill
   const byCls={alley:[],minor:[],mid:[],major:[]};
   for(const r of DATA.roads)byCls[r.c].push(r);
@@ -809,8 +928,17 @@ function renderBase(){
 
 // Public map: a diagram, not a picture. Flat paper, named streets only, no buildings,
 // no terrain tint, no alleys — water is the only colored fill.
+// sea cells as open water under everything else (never flooded: the fill treats them as blocked)
+function paintSea(ctx,P){
+  if(!SEA)return;
+  const img=new ImageData(GW,GH),px=img.data;
+  for(let i=0;i<N;i++)if(SEA[i]){const o=i*4;px[o]=P.sea[0];px[o+1]=P.sea[1];px[o+2]=P.sea[2];px[o+3]=255;}
+  const tmp=document.createElement("canvas");tmp.width=GW;tmp.height=GH;tmp.getContext("2d").putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(tmp,0,0,W,H);ctx.imageSmoothingEnabled=true;
+}
 function renderBaseSimple(ctx,P){
   ctx.fillStyle=`rgb(${P.bgLo[0]},${P.bgLo[1]},${P.bgLo[2]})`;ctx.fillRect(0,0,W,H);
+  paintSea(ctx,P);
   const byCls={alley:[],minor:[],mid:[],major:[]};
   for(const r of DATA.roads)byCls[r.c].push(r);
   strokeWays(ctx,byCls.minor,9,P.casing);
@@ -1167,7 +1295,7 @@ function buildCards(){
     c.innerHTML=`
       <div class="h-top"><span class="shape ok"></span>${hh.id}</div>
       <div class="h-lv"><b class="lv">0</b><small> cm</small></div>
-      <div class="h-st"><span class="h-stat">Normal</span> · ${hh.street}</div>`;
+      <div class="h-st"><span class="h-stat">Normal</span> · ${esc(hh.street)}</div>`;
     c.addEventListener("click",()=>selectSensor(hh));
     c.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();selectSensor(hh);}});
     grid.appendChild(c);hh.el=c;
@@ -1232,7 +1360,8 @@ function log(msg){
 }
 function updateImpact(){
   let floodedB=0,deep=0;
-  for(const b of BLDS)if(depthAtWorld(b[0],b[1])>0.05)floodedB++;
+  if(BC){for(let i=0;i<N;i++)if(BC[i]&&depth[i]>0.05)floodedB+=BC[i];}   // every footprint, even when the dots are a sample
+  else for(const b of BLDS)if(depthAtWorld(b[0],b[1])>0.05)floodedB++;
   for(const s of HOUSEHOLD)if(s.depth>deep)deep=s.depth;
   cutSegs=[];
   for(const p of SEG_SAMPLES){
@@ -1262,7 +1391,7 @@ function updateImpact(){
     bt.innerHTML=`Half-tire or more at ${alerts.length} unit${alerts.length>1?"s":""}: ${alerts.map(s=>s.id).join(", ")}.<small>${SITE_CFG.profile==="path"?"Paths closed; cars must not drive through.":"Not passable to light vehicles (MMDA)."} Evacuation guidance would trigger here in production.</small>`;
   }else if(predict){
     banner.className="warn";
-    bt.innerHTML=`${predict.s.id} · ${predict.s.street} likely to flood in ~${Math.round(predict.eta/5)*5} min.<small>Rate of rise ${Math.round(predict.s.rate*100)} cm/hr — the early-warning window.</small>`;
+    bt.innerHTML=`${predict.s.id} · ${esc(predict.s.street)} likely to flood in ~${Math.round(predict.eta/5)*5} min.<small>Rate of rise ${Math.round(predict.s.rate*100)} cm/hr — the early-warning window.</small>`;
   }else banner.className="";
 }
 
@@ -1384,7 +1513,7 @@ function emitReadings(){
     const st=statusOf(s);
     if(st!==s.status){
       s.status=st;
-      log(`<b>${s.id}</b> → ${STATUS_LABEL[st]} · ${Math.round(s.depth*100)} cm on ${s.street}`);
+      log(`<b>${s.id}</b> → ${STATUS_LABEL[st]} · ${Math.round(s.depth*100)} cm on ${esc(s.street)}`);
     }
   }
   const f=selected||HOUSEHOLD[1];
@@ -1427,8 +1556,8 @@ function setTheme(t,render){
   themeBtn.textContent=t==="dark"?"☀":"☾";
   themeBtn.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");
   themeBtn.setAttribute("aria-pressed",t==="dark"?"true":"false");
-  const pt=document.getElementById("p-theme");if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
-  if(render){renderBase();renderNoah();renderFlood();drawMap();}
+  for(const pt of [document.getElementById("p-theme"),document.getElementById("nat-theme")])if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
+  if(render&&siteBooted){renderBase();renderNoah();renderFlood();drawMap();}   // on the national map no site is drawn yet
 }
 let savedTheme=null;try{savedTheme=localStorage.getItem("bw-theme");}catch(e){}
 setTheme(savedTheme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"),false);
@@ -1694,6 +1823,7 @@ function renderTry(v){
 }
 // Where the map canvas lives, the body flag CSS keys on, the panel and label.
 function syncTryUI(){
+  syncCampusUI();
   document.body.dataset.try=TRY?"1":"0";
   $("try-panel").hidden=!TRY;$("try-sim").hidden=!TRY;
   $("try-panel").setAttribute("aria-label",TL().tab);
@@ -1722,6 +1852,8 @@ function exitTry(nextSite,fromHash){
   syncLiveUI();syncTabs();
 }
 function selectTab(key){
+  if(key==="ph"){location.hash="#ph";return;}
+  if(ROUTE!=="site"||!DATA_ALL[key==="try"?"tv":key]){location.hash="#"+key;return;}   // needs a fetch or leaves the national map: the router does it
   if(key==="try"){if(!TRY)enterTry();return;}
   if(TRY){exitTry(key);writeHash();return;}
   if(key!==SITE){switchSite(key);syncTabs();writeHash();}
@@ -1753,7 +1885,7 @@ const shortSt=n=>n.replace(" Street"," St").replace(" Avenue"," Ave").replace(" 
 const addr=s=>s.bld?s.bld:(s.hn?s.hn+" ":"")+shortSt(s.street);
 
 /*__VERDICT_JS__*/
-const PLACES=__PLACES__;
+const PLACES={version:1,sites:{}};   // each site's places arrive inside its data file
 const DEMO_RAIN_MMH_PER_P=60;          // simulated storm intensity P → mm/h (typhoon peak ≈ 30 mm/h = PAGASA red)
 let myPlace=null;
 let locPlaceId=null;   // the SPECIFIC place chosen via "Use my location" (per site) — GPS may be used for a report at
@@ -2437,14 +2569,16 @@ $("p-pick").addEventListener("click",e=>{
   $("p-my-btn").focus();
   pollNow();
 });
-$("p-lang").addEventListener("change",e=>{LANG=e.target.value;try{localStorage.setItem(siteKey("bw-lang"),LANG);}catch(x){}renderPublic();});
+$("p-lang").addEventListener("change",e=>{LANG=e.target.value;try{localStorage.setItem(langKey(),LANG);}catch(x){}renderPublic();syncCampusUI();});
 const NAV_LANG=(()=>{const nav=(navigator.language||"").toLowerCase();return nav.startsWith("fil")||nav.startsWith("tl")?"fil":nav.startsWith("ceb")?"ceb":nav.startsWith("ilo")?"ilo":nav.startsWith("hil")?"hil":nav.startsWith("pam")?"pam":"en";})();
+// The campuses share one language (the national map's); a pilot site keeps its own, and starts from the shared one.
+const LANG_KEY_PH="bw-lang:ph";
+function langKey(){return CAMPUS_BY_ID[SITE]?LANG_KEY_PH:siteKey("bw-lang");}
+function savedLang(){let v=null;try{v=localStorage.getItem(langKey())||localStorage.getItem(LANG_KEY_PH);}catch(e){}return v&&LANGS[v]?v:null;}
 (function initLang(){
   const sel=$("p-lang");
   for(const k in LANGS){const o=document.createElement("option");o.value=k;o.textContent=LANGS[k].name+REVIEW_TAG[k];sel.appendChild(o);}
-  let saved=null;try{saved=localStorage.getItem(siteKey("bw-lang"));}catch(e){}
-  if(saved&&LANGS[saved])LANG=saved;
-  else LANG=NAV_LANG;
+  LANG=savedLang()||NAV_LANG;
   sel.value=LANG;
   $("p-figure").innerHTML=figureSVG();
 })();
@@ -2454,7 +2588,7 @@ function dismissCoach(){try{localStorage.setItem("bw-coach","1");}catch(e){}cons
 function setView(v){
   const prevView=VIEW;
   VIEW=v;document.body.dataset.view=v;
-  syncLiveUI();
+  syncLiveUI();syncCampusUI();
   if(LIVE&&v==="public")setPlay(false);                        // the simulated storm never plays under a live answer
   const mw=$("map-wrap");
   if(v==="public"){$("public-map").insertBefore(mw,$("public-map").firstChild);selected=null;}
@@ -2488,6 +2622,9 @@ function switchSite(id){
   scenario=keys[1];tMin=0;lastEmit=-999;cutSegs=[];noahSel="off";
   document.querySelectorAll(".noah-chips button").forEach(b=>{b.classList.toggle("active",b.dataset.noah==="off");});
   document.querySelector(".map-attr").textContent=SITE_CFG.attribution;document.getElementById("p-attr").textContent=SITE_CFG.attribution;
+  $("foot-nb").textContent=DATA.nb.toLocaleString()+(DATA.thin>1?" (drawn as a sample: one dot in "+DATA.thin+")":"");
+  $("foot-terrain").textContent=SITE_CFG.terrain||"Copernicus GLO-30";$("foot-block").hidden=!DATA.block;
+  $("foot-limits").hidden=!/FABDEM/.test(SITE_CFG.terrain||"");
   // restore per-site state
   myStreet=null;try{myStreet=localStorage.getItem(siteKey("bw-street"));}catch(e){}
   if(myStreet&&!HOUSEHOLD.some(s=>s.id===myStreet))myStreet=null;
@@ -2500,11 +2637,12 @@ function switchSite(id){
   {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!TRY&&!myPlace&&!asked)openWhere();}
   pollNow();
   recentReports=[];renderRecent();pollRecent();
+  syncCampusUI();markReady(id);
 }
 function applySiteLang(){
   const sel=document.getElementById("p-lang"),lab=document.querySelector('label[for=p-lang]');
   if(SITE_CFG.langs==="en"){LANG="en";sel.value="en";sel.style.display="none";if(lab)lab.style.display="none";}
-  else{sel.style.display="";if(lab)lab.style.display="";let saved=null;try{saved=localStorage.getItem(siteKey("bw-lang"));}catch(e){}LANG=saved&&LANGS[saved]?saved:NAV_LANG;sel.value=LANG;}
+  else{sel.style.display="";if(lab)lab.style.display="";LANG=savedLang()||NAV_LANG;sel.value=LANG;}
   // hazard reference UI exists only where a hazard layer does
   const hz=SITE_CFG.hazard?"":"none";
   document.querySelector(".noah-chips").style.display=hz;document.querySelector(".noah-h").style.display=hz;document.querySelector(".noah-lg").style.display=hz;
@@ -2515,23 +2653,28 @@ $("d-simple").addEventListener("click",()=>setView("public"));
 $("p-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
 
 /* ---------- site tabs + hash routing: #<site>[/details] ---------- */
+/* Routes: "ph" (national map: a plain link, #ph, or anything unknown), "site" (#<site>[/details][/live], #try,
+   #p.<site>.<s|b>.<code>), and while a site file loads or fails, "loading" / "fail". */
 function parseHash(){
-  TRY=(location.hash||"")==="#try";if(TRY){LIVE=false;return {site:"tv",view:"public"};}
-  const tok=(location.hash||"").match(/^#p\.([a-z]+)\.(s|b)\.([A-Za-z0-9-]+)$/);
-  if(tok&&DATA_ALL[tok[1]]){SHARE_TOKEN_SEEN=true;SHARED_PLACE=tok[1]+":"+tok[2]+":"+tok[3];return {site:tok[1],view:"public"};}
-  const m=(location.hash||"").replace(/^#/,"").split("/");
+  const raw=(location.hash||"").replace(/^#/,"");
+  TRY=raw==="try";if(TRY){LIVE=false;return {route:"site",site:"tv",view:"public"};}
+  const tok=raw.match(/^p\.([a-z]+)\.(s|b)\.([A-Za-z0-9-]+)$/);
+  if(tok){const site=LEGACY_SITES[tok[1]]||tok[1];
+    if(SITE_IDS.has(site)){SHARE_TOKEN_SEEN=true;SHARED_PLACE=site+":"+tok[2]+":"+tok[3];return {route:"site",site,view:"public"};}}
+  const m=raw.split("/");
   if(m[0]==="details")m.unshift("tv");                       // pre-tab links: #details → Teachers Village details
-  const site=DATA_ALL[m[0]]?m[0]:"tv", view=m[1]==="details"?"details":"public";
+  if(LEGACY_SITES[m[0]])m[0]=LEGACY_SITES[m[0]];
+  if(!SITE_IDS.has(m[0])){LIVE=false;return {route:"ph"};}
   LIVE=!!API_BASE&&m.slice(1).includes("live");               // #<site>/live and #<site>/details/live are both live
-  return {site,view};
+  return {route:"site",site:m[0],view:m[1]==="details"?"details":"public"};
 }
-function writeHash(){if(TRY){history.replaceState(null,"",location.pathname+location.search+"#try");try{localStorage.setItem("bw-last-hash","#try");}catch(e){}return;}
-  const plain=SITE==="tv"&&VIEW==="public"&&!LIVE;
-  const h=plain?"":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
-  history.replaceState(null,"",plain?location.pathname+location.search:h);
+function writeHash(){
+  const h=ROUTE==="ph"?"":TRY?"#try":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
+  history.replaceState(null,"",h||location.pathname+location.search);
   try{localStorage.setItem("bw-last-hash",h);}catch(e){}   // Add to Home Screen: relaunch (?source=pwa, no hash) restores this
 }
-function syncTabs(){document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=TRY?b.dataset.site==="try":b.dataset.site===SITE;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
+function syncTabs(){const cur=TRY?"try":(ROUTE==="ph"||isCampus(SITE))?"ph":SITE;
+  document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=b.dataset.site===cur;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
 document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
   b.addEventListener("click",()=>selectTab(b.dataset.site));
   b.addEventListener("keydown",e=>{
@@ -2540,11 +2683,169 @@ document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
     if(j<0)return;e.preventDefault();tabs[j].click();tabs[j].focus();
   });
 });
-window.addEventListener("hashchange",()=>{const wasLive=LIVE,wasTry=TRY;const h=parseHash();
-  if(TRY){if(!wasTry)enterTry();return;}
-  if(wasTry){exitTry(h.site,true);if(h.view!==VIEW)setView(h.view);writeHash();return;}
-  if(h.site!==SITE){switchSite(h.site);syncTabs();}if(h.view!==VIEW)setView(h.view);
-  if(LIVE!==wasLive){setPlay(!reducedMotion&&!LIVE);syncLiveUI();renderPublic();drawMap();drawOverlayCanvas();pollNow();}});
+/* Strings for the national map, campus pages and loading (six languages; non-English entries are English copies
+   marked _review for native-speaker review, as in earlier rounds). */
+const NAT_EN={loading:"Loading {name}…",fail:"{name} didn't load. Check your connection.",retry:"Try again",back:"‹ All campuses",
+  title:"PhilDev partner campuses",
+  intro:"Choose a campus to see what a BahaWatch partnership would look like there: eight household water-level units, the barangays they cover, and the flood hazard around the campus.",
+  mapL:"Map of PhilDev partner campuses",
+  desc:"Map of the Philippines with {n} PhilDev partner campuses: {luzon} in Luzon, {visayas} in Visayas, {mindanao} in Mindanao. The list below has the same campuses.",
+  search:"Find a campus",count0:"No campus matches “{q}”.",count1:"1 campus matches.",countN:"{n} campuses match.",
+  groups:{Luzon:"Luzon",Visayas:"Visayas",Mindanao:"Mindanao"},
+  types:{SUC:"State university or college",LUC:"Local university or college",Private:"Private"},
+  shapes:{SUC:"circle",LUC:"square",Private:"triangle"},
+  cluster:"{n} campuses: {names}. Zoom in",zoomOut:"‹ Whole country",pilots:"Pilot sites",tryLink:"Try reporting",
+  change:"Change campus (now {name})",
+  sim:"Simulation: sensor readings are simulated; unit spots are proposals. Terrain: FABDEM (30 m). Not a forecast; not for emergency use.",
+  cardH:"What a partnership looks like",unitsH:"Proposed units: {n} household water-level units, placed automatically",onCampus:"on campus",
+  brgyH:"Barangays covered",brgy1:"1 barangay",brgyN:"{n} barangays",
+  noahH:"NOAH flood hazard in this area (share of the land in a hazard zone)",noahRp:"{rp}-year rain",noahNA:"not available from NOAH",noah0:"no hazard zone mapped in this area",
+  roleH:"University role",role:["Students install and look after the units with residents.","Faculty check the data.","The campus hosts one unit and the local dashboard."],
+  foot:"Campus list: PhilDev partners across the Philippines (PhilDev Starter Pack). Map: PSA/NAMRIA administrative boundaries via OCHA HDX (CC BY-IGO), simplified. Main campuses are shown where a university has several."};
+const NAT_LANGS={en:NAT_EN,fil:Object.assign({_review:true},NAT_EN),ceb:Object.assign({_review:true},NAT_EN),
+  ilo:Object.assign({_review:true},NAT_EN),hil:Object.assign({_review:true},NAT_EN),pam:Object.assign({_review:true},NAT_EN)};
+const NL=()=>NAT_LANGS[LANG]||NAT_EN;
+const siteLabel=id=>CAMPUS_BY_ID[id]?CAMPUS_BY_ID[id].short:{tv:"Teachers Village",berkeley:"UC Berkeley"}[id]||id;
+/* ---------- the national map: PhilDev partner campuses ---------- */
+const K_LAT=Math.cos(12.5*Math.PI/180);
+const natProj=(lon,lat)=>[(lon-116)*K_LAT*100,(22-lat)*100];   // equirectangular; 100 units per degree of latitude
+const NAT={vb:null,full:null,built:false};
+const norm=s=>String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();   // "banos" finds "Baños"
+const pinLabel=c=>`${c.short}: ${c.name}, ${c.city}, ${c.province}. ${NL().types[c.type]}.`;
+function natInit(){
+  if(NAT.built)return;NAT.built=true;
+  let d="",x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const poly of PH_OUTLINE.coordinates)for(const ring of poly){
+    ring.forEach(([lo,la],k)=>{const [x,y]=natProj(lo,la);d+=(k?"L":"M")+x.toFixed(1)+" "+y.toFixed(1);x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y);});d+="Z";}
+  $("nat-land").setAttribute("d",d);
+  NAT.full=[x0-20,y0-20,x1-x0+40,y1-y0+40];NAT.vb=NAT.full;
+  $("nat-map").style.setProperty("--ar",(NAT.full[2]/NAT.full[3]).toFixed(4));
+  $("nat-logo").src=document.querySelector(".p-head img").src;
+  const sel=$("nat-lang");sel.innerHTML=$("p-lang").innerHTML;
+  sel.addEventListener("change",()=>{LANG=sel.value;try{localStorage.setItem(LANG_KEY_PH,LANG);}catch(e){}natRender();});
+  $("nat-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
+  $("nat-q").addEventListener("input",natList);
+  $("nat-pins").addEventListener("click",e=>{const c=e.target.closest(".pin-cluster");if(c)natZoomTo(c.dataset.ids.split(","));});
+  $("nat-zoom-out").addEventListener("click",()=>{natSetView(NAT.full);const f=$("nat-pins").querySelector("a,button");if(f)f.focus();});
+  window.addEventListener("resize",()=>{if(ROUTE==="ph")natPins();});
+}
+function natSetView(vb){NAT.vb=vb;$("nat-svg").setAttribute("viewBox",vb.join(" "));$("nat-zoom-out").hidden=vb===NAT.full;natPins();}
+// Pins closer than one tap target (48 px) become a numbered cluster that zooms in; DOM order follows the list.
+function natPins(){
+  const vb=NAT.vb,R=48/(($("nat-map").clientWidth||480)/vb[2]),L=NL(),groups=[];
+  for(const c of CAMPUSES){
+    const p=natProj(c.lon,c.lat);
+    if(p[0]<vb[0]||p[0]>vb[0]+vb[2]||p[1]<vb[1]||p[1]>vb[1]+vb[3])continue;
+    const g=groups.find(g=>Math.hypot(g.p[0]-p[0],g.p[1]-p[1])<R);
+    if(g)g.m.push(c);else groups.push({p,m:[c]});
+  }
+  $("nat-pins").innerHTML=groups.map(g=>{
+    const pos=`style="left:${((g.p[0]-vb[0])/vb[2]*100).toFixed(3)}%;top:${((g.p[1]-vb[1])/vb[3]*100).toFixed(3)}%"`;
+    if(g.m.length===1){const c=g.m[0];return `<a class="pin pin-${c.type.toLowerCase()}" href="#${c.id}" ${pos} aria-label="${esc(pinLabel(c))}"><span class="pin-shape" aria-hidden="true"></span><span class="pin-t" aria-hidden="true">${esc(c.short)}</span></a>`;}
+    return `<button class="pin-cluster" data-ids="${g.m.map(c=>c.id).join(",")}" ${pos} aria-label="${esc(fill(L.cluster,{n:g.m.length,names:g.m.map(c=>c.short).join(", ")}))}"><span aria-hidden="true">${g.m.length}</span></button>`;
+  }).join("");
+}
+function natZoomTo(ids){
+  const ps=ids.map(id=>natProj(CAMPUS_BY_ID[id].lon,CAMPUS_BY_ID[id].lat)),xs=ps.map(p=>p[0]),ys=ps.map(p=>p[1]),ar=NAT.full[2]/NAT.full[3];
+  let w=Math.max(Math.max(...xs)-Math.min(...xs),1.2)*1.8,h=Math.max(Math.max(...ys)-Math.min(...ys),1.2)*1.8;
+  if(w/h<ar)w=h*ar;else h=w/ar;
+  const cx=(Math.max(...xs)+Math.min(...xs))/2,cy=(Math.max(...ys)+Math.min(...ys))/2;
+  natSetView([cx-w/2,cy-h/2,w,h]);
+  const f=$("nat-pins").querySelector("a,button");if(f)f.focus();
+}
+let natAnnounceT=null,natLastQ="";
+function natList(){
+  const q=$("nat-q").value,n=norm(q.trim()),L=NL();
+  const ms=n?CAMPUSES.filter(c=>[c.name,c.short,c.city,c.province,c.id].some(f=>norm(f).includes(n))):CAMPUSES;
+  let html="";
+  for(const g of ["Luzon","Visayas","Mindanao"]){
+    const all=CAMPUSES.filter(c=>c.group===g).length,cs=ms.filter(c=>c.group===g);
+    if(!cs.length)continue;
+    html+=`<h2 class="nat-g" data-group="${g}" data-n="${all}">${esc(L.groups[g])} (${all})</h2><ul class="nat-ul">`+cs.map(c=>
+      `<li><a class="nat-item" href="#${c.id}"><span class="pin-shape pin-${c.type.toLowerCase()}" aria-hidden="true"></span><b>${esc(c.short)}</b><span>${esc(c.name)}</span><span class="nat-where">${esc(c.city)}, ${esc(c.province)} · ${esc(L.types[c.type])}</span></a></li>`).join("")+"</ul>";
+  }
+  $("nat-list").innerHTML=html||`<p>${esc(fill(L.count0,{q}))}</p>`;
+  clearTimeout(natAnnounceT);                         // announce once the typing pauses, and only when the query changed
+  natAnnounceT=setTimeout(()=>{if(q===natLastQ)return;natLastQ=q;
+    $("nat-count").textContent=!n?"":ms.length===0?fill(L.count0,{q}):ms.length===1?L.count1:fill(L.countN,{n:ms.length});},400);
+}
+function natRender(){
+  natInit();
+  const L=NL(),cnt=g=>CAMPUSES.filter(c=>c.group===g).length;
+  $("nat-lang").value=LANG;
+  $("nat-h").textContent=L.title;$("nat-intro").textContent=L.intro;$("nat-map-l").textContent=L.mapL;
+  $("nat-desc").textContent=fill(L.desc,{n:CAMPUSES.length,luzon:cnt("Luzon"),visayas:cnt("Visayas"),mindanao:cnt("Mindanao")});
+  $("nat-legend").innerHTML=["SUC","LUC","Private"].map(t=>`<li><span class="pin-shape pin-${t.toLowerCase()}" aria-hidden="true"></span>${esc(L.types[t])} (${esc(L.shapes[t])})</li>`).join("");
+  $("nat-q-l").textContent=L.search;$("nat-zoom-out").textContent=L.zoomOut;$("nat-pilots-h").textContent=L.pilots;$("nat-try").textContent=L.tryLink;$("nat-foot").textContent=L.foot;
+  document.title="BahaWatch — "+L.title;
+  natSetView(NAT.vb);natList();
+}
+let natFocusSearch=false;             // the campus bar's "▾" opens the national list with the search box focused
+function natEnter(){let saved=null;try{saved=localStorage.getItem(LANG_KEY_PH);}catch(e){}if(saved&&LANGS[saved])LANG=saved;natRender();
+  if(natFocusSearch){natFocusSearch=false;$("nat-q").focus();}}
+// Campus pages: the "‹ All campuses · <campus> ▾" bar with the simulation label, and the partnership card (spec §3.2).
+function syncCampusUI(){
+  const c=CAMPUS_BY_ID[SITE],L=NL(),on=!!c&&!TRY;
+  document.querySelectorAll("[data-cbar]").forEach(bar=>{
+    bar.hidden=!on;if(!on)return;
+    bar.querySelector(".c-back").textContent=L.back;
+    const p=bar.querySelector(".c-pick");p.textContent=c.short+" ▾";p.setAttribute("aria-label",fill(L.change,{name:c.name}));
+    bar.querySelector(".c-sim").textContent=L.sim;
+  });
+  const card=$("c-card"),D=DATA&&DATA.card;
+  card.hidden=!on||!D||VIEW!=="public";if(card.hidden)return;
+  $("c-card-h").textContent=L.cardH;
+  $("c-units-h").textContent=fill(L.unitsH,{n:D.units.length});
+  $("c-units").innerHTML=D.units.map(u=>`<li><b>${esc(u.id)}</b> · ${esc(u.name)}${u.oc?` · <span class="c-oc">${esc(L.onCampus)}</span>`:""}</li>`).join("");
+  $("c-brgy-h").textContent=L.brgyH;
+  $("c-brgy-s").textContent=fill(D.barangays.length===1?L.brgy1:L.brgyN,{n:D.barangays.length});
+  $("c-brgy").innerHTML=D.barangays.map(b=>`<li>${esc(b)}</li>`).join("");
+  $("c-noah-h").textContent=L.noahH;
+  $("c-noah").innerHTML=["5","25","100"].map(rp=>{const v=D.noah[rp];return `<li>${esc(fill(L.noahRp,{rp}))}: ${v==null?esc(L.noahNA):v===0?esc(L.noah0):v<0.005?"&lt;1%":Math.round(v*100)+"%"}</li>`;}).join("");
+  $("c-role-h").textContent=L.roleH;$("c-role").innerHTML=L.role.map(r=>`<li>${esc(r)}</li>`).join("");
+}
+document.addEventListener("click",e=>{if(e.target.closest(".c-pick")){natFocusSearch=true;location.hash="#ph";}});
+
+let ROUTE=null, siteBooted=false, navSeq=0, lastNav=null;
+function showRoute(r){ROUTE=r;document.body.dataset.route=r;}
+function markReady(id){document.body.dataset.ready=id;}        // tests and timings wait for this
+// The router: every navigation (boot, hash change, Try again) comes through here. A newer navigation wins over one
+// whose data file is still loading.
+function go(h,ctx){
+  const seq=++navSeq;lastNav={h,ctx};
+  const want=h.want||(h.want={TRY,LIVE});   // what parseHash() set for this link (kept on h, so Try again reuses it)
+  if(h.route==="ph"){
+    if(siteBooted){if(ctx.wasTry)exitTry(SITE,true);setPlay(false);}
+    showRoute("ph");natEnter();syncTabs();writeHash();markReady("ph");
+    return Promise.resolve();
+  }
+  if(!DATA_ALL[h.site]&&siteBooted){TRY=ctx.wasTry;LIVE=ctx.wasLive;}   // until the new file arrives, the page still shows the old site
+  if(!DATA_ALL[h.site]){$("load-msg").textContent=fill(NL().loading,{name:siteLabel(h.site)});showRoute("loading");document.body.dataset.ready="";}
+  return loadSiteData(h.site).then(()=>{
+    if(seq!==navSeq)return;
+    TRY=want.TRY;LIVE=want.LIVE;
+    const from=ROUTE;showRoute("site");
+    if(!siteBooted){siteBooted=true;bootSite(h);}
+    else applySiteHash(h,Object.assign({},ctx,{from}));
+    markReady(h.site);
+  },()=>{
+    if(seq!==navSeq)return;
+    const L=NL();$("fail-msg").textContent=fill(L.fail,{name:siteLabel(h.site)});$("load-retry").textContent=L.retry;$("fail-back").textContent=L.back;
+    showRoute("fail");document.body.dataset.ready="fail";$("load-retry").focus();
+  });
+}
+// A hash change while a site is already booted (was the hashchange handler).
+function applySiteHash(h,ctx){
+  if(TRY){if(!ctx.wasTry)enterTry();else if(ctx.from!=="site")resize();syncTabs();return;}
+  if(ctx.wasTry){exitTry(h.site,true);if(h.view!==VIEW)setView(h.view);writeHash();return;}
+  if(h.site!==SITE)switchSite(h.site);
+  if(h.view!==VIEW)setView(h.view);
+  if(ctx.from!=="site"){resize();setPlay(!reducedMotion&&!LIVE);}
+  if(LIVE!==ctx.wasLive){setPlay(!reducedMotion&&!LIVE);syncLiveUI();renderPublic();drawMap();drawOverlayCanvas();pollNow();}
+  syncTabs();writeHash();
+}
+window.addEventListener("hashchange",()=>{const ctx={wasLive:LIVE,wasTry:TRY};go(parseHash(),ctx);});
+$("load-retry").addEventListener("click",()=>{if(lastNav)go(lastNav.h,lastNav.ctx);});
 
 /* ---------- boot ---------- */
 window.addEventListener("resize",resize);
@@ -2553,7 +2854,8 @@ if((location.search||"").indexOf("source=pwa")!==-1&&!location.hash){
   let savedHash=null;try{savedHash=localStorage.getItem("bw-last-hash");}catch(e){}
   if(savedHash)history.replaceState(null,"",location.pathname+location.search+savedHash);
 }
-const h0=parseHash();
+// The first site opened boots the whole site UI (was top-level code; runs once, after that site's data has arrived).
+function bootSite(h0){
 initSite(h0.site);
 if(SHARED_PLACE){
   if(placesForSite().some(p=>p.id===SHARED_PLACE)){myPlace=SHARED_PLACE;try{localStorage.setItem(siteKey("bw-place"),myPlace);localStorage.setItem(siteKey("bw-asked"),"1");}catch(e){}}
@@ -2574,9 +2876,11 @@ syncLiveUI();
 log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
 log(`${HOUSEHOLD.length} household units online · LoRaWAN, 10-min uplink (simulated)`);
 log(SITE_CFG.attribution);
-if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 step(0,true);
 requestAnimationFrame(loop);
+}
+if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+go(parseHash(),{wasLive:false,wasTry:false});
 </script>
 </body>
 </html>

@@ -1,10 +1,9 @@
 import json, math, os, re, sys, unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P = json.load(open(os.path.join(ROOT, "places.json"), encoding="utf-8"))
-DATA = {"tv": "data.json", "diliman": "data_diliman.json", "berkeley": "data_berkeley.json"}
-
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_places as BP  # noqa: E402  (helper functions reused, not duplicated, by the tests below)
+DATA = BP.data_files()      # {site: path} for every data/<site>.json
 
 def rule_lookahead_min():
     """RULE.LOOKAHEAD_MIN as defined in shared/verdict.js — the one place rule constants live."""
@@ -21,7 +20,7 @@ def hav(a, b, c, d):
 class Places(unittest.TestCase):
     def test_every_sensor_has_a_sensor_place(self):
         for site, f in DATA.items():
-            ids = {s["id"] for s in json.load(open(os.path.join(ROOT, f)))["sensors"]}
+            ids = {s["id"] for s in json.load(open(f))["sensors"]}
             got = {p["sensor"] for p in P["sites"][site] if p["kind"] == "sensor"}
             self.assertEqual(ids, got, site)
     def test_ids_and_fields(self):
@@ -38,7 +37,7 @@ class Places(unittest.TestCase):
     def test_barangays_only_in_philippine_sites(self):
         kinds = lambda s: {p["kind"] for p in P["sites"][s]}
         self.assertIn("b", {p["id"].split(":")[1] for p in P["sites"]["tv"]})
-        self.assertIn("b", {p["id"].split(":")[1] for p in P["sites"]["diliman"]})
+        self.assertIn("b", {p["id"].split(":")[1] for p in P["sites"]["upd"]})
         self.assertEqual(kinds("berkeley"), {"sensor"})
     def test_noah_flags(self):
         self.assertFalse(any(p["noahMapped"] for p in P["sites"]["berkeley"]))
@@ -65,10 +64,10 @@ class Places(unittest.TestCase):
                     self.assertTrue(p["noah25"], (site, p["id"]))
     def test_barangay_noah_flags_match_share_threshold(self):
         for site, f in DATA.items():
-            gj = os.path.join(ROOT, "sites", site, "barangays.geojson")
-            if not os.path.exists(gj):
+            gj = BP.barangays_path(site)
+            if not gj:
                 continue
-            d = json.load(open(os.path.join(ROOT, f), encoding="utf-8"))
+            d = json.load(open(f, encoding="utf-8"))
             noah, hazard = BP.noah_layers(d)
             feats = {feat["properties"]["pcode"]: feat for feat in json.load(open(gj, encoding="utf-8"))["features"]}
             for p in P["sites"][site]:
@@ -84,12 +83,11 @@ class Places(unittest.TestCase):
 
     def test_barangay_inside_sensors(self):
         # I2: every barangay lists the same-site sensors whose point lies inside its polygon
-        upc = next(p for p in P["sites"]["diliman"] if p["kind"] == "barangay" and p["name"] == "U.P. Campus")
-        self.assertEqual(sorted(upc["inside"]), ["BW-D02", "BW-D04", "BW-D08"])
+        self.assertTrue(any(p["kind"] == "barangay" and p["name"] == "U.P. Campus" for p in P["sites"]["upd"]))
         for site, f in DATA.items():
-            gj = os.path.join(ROOT, "sites", site, "barangays.geojson")
-            feats = {feat["properties"]["pcode"]: feat for feat in json.load(open(gj, encoding="utf-8"))["features"]} if os.path.exists(gj) else {}
-            d = json.load(open(os.path.join(ROOT, f), encoding="utf-8"))
+            gj = BP.barangays_path(site)
+            feats = {feat["properties"]["pcode"]: feat for feat in json.load(open(gj, encoding="utf-8"))["features"]} if gj else {}
+            d = json.load(open(f, encoding="utf-8"))
             for p in P["sites"][site]:
                 self.assertIn("inside", p, (site, p["id"]))
                 if p["kind"] == "sensor":
@@ -100,6 +98,21 @@ class Places(unittest.TestCase):
                 self.assertEqual(sorted(p["inside"]), want, (site, p["id"]))
                 for sid in p["inside"]:
                     self.assertEqual(P["sensors"][sid]["site"], site)
+
+    def test_every_site_file_carries_its_own_places(self):
+        self.assertEqual(set(DATA), set(P["sites"]))
+        self.assertEqual(len(DATA), 27)                   # 25 campuses and the two pilots
+        for site, f in DATA.items():
+            self.assertEqual(json.load(open(f, encoding="utf-8"))["places"], P["sites"][site], site)
+
+class Reach(unittest.TestCase):
+    def test_water_never_travels_through_a_blocked_cell(self):
+        import numpy as np
+        elev = np.zeros((9, 9), np.float32); block = np.zeros((9, 9), bool); block[:, 4] = True
+        r = BP.reach(elev, (4, 1), 15.0, block)
+        self.assertTrue((4, 3) in r and not any(x >= 4 for _, x in r))
+        block[4, 4] = False                               # a street through the wall
+        self.assertIn((4, 7), BP.reach(elev, (4, 1), 15.0, block))
 
 if __name__ == "__main__":
     unittest.main()

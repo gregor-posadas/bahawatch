@@ -1,11 +1,12 @@
 // Browser tests for the public view: fixed figure placement and whole-street highlight. Run: node test_public.js
 const {chromium}=require('playwright');
+const BASE=process.env.BW_BASE||'http://127.0.0.1:8765/';
 const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else console.log("ok  ",m);};
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
   const pg=await b.newPage({viewport:{width:1280,height:900}});
   const errs=[];pg.on('pageerror',e=>errs.push(e.message));
-  await pg.goto('file:///home/claude/work/bahawatch_dashboard.html');await pg.waitForTimeout(400);
+  await pg.goto(BASE+'bahawatch_dashboard.html#tv');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(400);
   const setAll=async(cm)=>pg.evaluate(cm=>{playing=false;for(const s of HOUSEHOLD){s.depth=cm/100;s.rate=0;s.status=statusOf(s);}computeFlood(0);renderFlood();drawMap();renderPublic();},cm);
   const figBox=async()=>pg.$eval('#p-figure svg',e=>{const r=e.getBoundingClientRect();return [Math.round(r.left),Math.round(r.top)];});
   // 1. figure placement is independent of the sentence length

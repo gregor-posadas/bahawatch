@@ -1,11 +1,12 @@
 const {chromium}=require('playwright');
+const BASE=process.env.BW_BASE||'http://127.0.0.1:8765/';
 const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else console.log("ok  ",m);};
-const U='file:///home/claude/work/bahawatch_dashboard.html';
+const U=BASE+'bahawatch_dashboard.html#tv';
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
   const ctx=await b.newContext({viewport:{width:1280,height:900}});
   const pg=await ctx.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
-  await pg.goto(U);await pg.waitForTimeout(400);
+  await pg.goto(U);await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(400);
   // first visit: "Saan ka?" shows with four choices
   let s=await pg.evaluate(()=>({open:!document.getElementById('p-where').hidden,btns:[...document.querySelectorAll('#p-where button')].map(b=>b.dataset.act)}));
   assert(s.open&&s.btns.join()==="loc,brgy,sensor,skip","first visit opens Saan ka? with four choices: "+s.btns);
@@ -15,8 +16,8 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
   // baseline sizes for the area line while it's still at the top (no place chosen) — used below to check it shrinks
   const topArea=await pg.evaluate(()=>({hlSize:parseFloat(getComputedStyle(document.getElementById('p-headline')).fontSize),updSize:parseFloat(getComputedStyle(document.getElementById('p-updated')).fontSize)}));
   // places are embedded
-  s=await pg.evaluate(()=>({n:PLACES.sites.tv.length,b:PLACES.sites.tv.some(p=>p.kind==="barangay"),berk:PLACES.sites.berkeley.every(p=>p.kind==="sensor")}));
-  assert(s.n>=18&&s.b&&s.berk,"places.json embedded with barangays for Philippine sites only");
+  s=await pg.evaluate(()=>loadSiteData("berkeley").then(()=>({n:PLACES.sites.tv.length,b:PLACES.sites.tv.some(p=>p.kind==="barangay"),berk:PLACES.sites.berkeley.every(p=>p.kind==="sensor")})));
+  assert(s.n>=18&&s.b&&s.berk,"each site's places arrive with its data file; barangays for Philippine sites only");
   // pick a sensor street, storm peak -> Oo with square shape, reason names the street
   await pg.evaluate(()=>{setPlace("tv:s:BW-H07");playing=false;scenario="typhoon";tMin=495;lastEmit=-999;step(0,true);});
   s=await pg.evaluate(()=>({ans:document.getElementById('p-answer').dataset.answer,word:document.getElementById('p-ans-word').textContent,
@@ -123,16 +124,16 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
   assert(s.all.en==="Demo · simulated storm"&&s.all.fil==="Demo · kunwaring bagyo"&&s.all.ceb==="Demo · simulated nga bagyo"&&s.all.ilo==="Demo · simulated a bagyo"&&s.all.hil==="Demo · simulated nga bagyo"&&s.all.pam==="Demo · simulated a bagyu","demo chip strings, six languages: "+JSON.stringify(s.all));
   assert(s.ann.startsWith("Demo · simulated storm"),"the hidden announcement starts with the chip text: "+s.ann);
   assert(!/\.\s*\./.test(s.ann),"m1: no doubled full stop in the announcement: "+s.ann);
-  // I2: a sensor inside a barangay counts as "here" in the demo too — U.P. Campus (Diliman) with BW-D02 at 30 cm is Oo
-  s=await pg.evaluate(()=>{
-    switchSite("diliman");playing=false;scenario="clear";
-    const p=PLACES.sites.diliman.find(q=>q.kind==="barangay"&&q.name==="U.P. Campus");
+  // I2: a sensor inside a barangay counts as "here" in the demo too — on the UP Diliman campus, a barangay with a unit inside at 30 cm is Oo
+  s=await pg.evaluate(()=>loadSiteData("upd").then(()=>{
+    switchSite("upd");playing=false;scenario="clear";
+    const p=PLACES.sites.upd.find(q=>q.kind==="barangay"&&q.inside.length);
     for(const h of HOUSEHOLD){h.depth=0;h.rate=0;}
-    HOUSEHOLD.find(h=>h.id==="BW-D02").depth=0.30;
+    HOUSEHOLD.find(h=>h.id===p.inside[0]).depth=0.30;
     const v=babahaBa(demoInputs(p));
     switchSite("tv");
     return v;
-  });
+  }));
   assert(s.answer==="oo"&&s.reason.key==="sensor_now","demo: inside sensor at 30 cm makes the barangay Oo (not Hindi): "+JSON.stringify(s));
   // barangay pick
   await pg.evaluate(()=>{const b=PLACES.sites.tv.find(p=>p.kind==="barangay");setPlace(b.id);});
@@ -153,7 +154,7 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
   await pg.evaluate(()=>{showAnswer({answer:"oo",reason:{key:"sensor_now",vars:{name:"22 Malingap St",cm:50}},updatedAt:Date.now(),etaMin:0});});
   s=await pg.evaluate(()=>document.getElementById('p-ans-announce').textContent);
   assert(/Malingap/.test(s),"setup: announcement names the tv street before switching sites: "+s);
-  await pg.click('.site-tabs [data-site="berkeley"]');await pg.waitForTimeout(300);
+  await pg.click('#public .site-tabs [data-site="berkeley"]');await pg.waitForTimeout(300);
   s=await pg.evaluate(()=>({text:document.getElementById('p-ans-announce').textContent,pick:ANS_LANGS.en.pick,place:myPlace}));
   assert(!/Malingap/.test(s.text)&&s.text===s.pick&&s.place===null,"switching to a no-place site clears the previous site's announcement to the pick-your-place prompt: "+JSON.stringify(s));
   // ticking on the no-place site must not repeatedly rewrite the pick-your-place announcement
