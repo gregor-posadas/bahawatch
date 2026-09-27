@@ -222,7 +222,7 @@ pre#api-json{
 .p-rep-btns button{min-height:48px; font-size:16px; font-weight:700; border:1px solid var(--ink); border-radius:4px; background:var(--panel)}
 .p-rep-btns button:hover{background:var(--panel-2)}
 .p-rep-msg{font-size:14px; margin-top:6px; min-height:1.4em}
-#p-rep-undo{min-height:44px; margin-top:4px}
+#p-rep-undo{min-height:48px; margin-top:4px}
 /* the area line (headline/sub/updated) lives inside #p-area, which JS relocates between #p-top-area
    (no place chosen — full size, matches the pre-answer-band look) and #p-bottom-area (place chosen —
    "a smaller line under the list", per spec §6, still carrying its severity colour via .p-area.tier-*) */
@@ -243,6 +243,9 @@ pre#api-json{
 .p-where-list{display:grid; gap:6px; max-height:40vh; overflow-y:auto}
 .p-where-list[hidden]{display:none}
 .p-fig{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:580px}
+.p-fig[hidden]{display:none}
+.p-live-note{font-size:14.5px; color:var(--ink-2); line-height:1.4; padding-top:2px}
+body[data-live="1"] .p-body{grid-template-columns:1fr}
 .p-fig svg{width:580px; height:auto; display:block}
 .p-fig .f-cap{font-size:13px; font-weight:600; text-align:center; line-height:1.3}
 .p-fig .f-cap small{display:block; font-weight:400; color:var(--ink-2); font-size:12px}
@@ -380,16 +383,17 @@ pre#api-json{
         <div class="p-rep-msg" id="p-rep-msg" role="status" aria-live="polite"></div>
         <button class="p-link" id="p-rep-undo" hidden></button>
       </section>
+      <div class="p-live-note" id="p-live-note" hidden></div>
       <div id="p-top-area"></div>
     </div>
-    <figure class="p-fig">
+    <figure class="p-fig" id="p-fig">
       <div id="p-figure"></div>
       <figcaption class="f-cap" id="p-fig-cap"></figcaption>
       <span class="sr-only" id="p-fig-h"></span>
     </figure>
   </div>
   <div class="p-body">
-    <div class="p-col-list">
+    <div class="p-col-list" id="p-col-list">
       <div class="p-sec">
         <div class="p-sec-h"><h2 id="p-my-h">My street</h2><button class="p-link" id="p-my-btn" aria-controls="p-pick">Choose my street</button></div>
         <div id="p-my"></div>
@@ -1488,12 +1492,12 @@ const ANS_LANGS={
 };
 const A=()=>SITE_CFG&&SITE_CFG.langs==="en"?ANS_LANGS.en:(ANS_LANGS[LANG]||ANS_LANGS.en);
 const REP_LANGS={
- en:{q:"Is there flooding here?",still:"Someone reported flooding nearby. Is it still there?",oo:"Yes",hindi:"No",di_sigurado:"Not sure",thanks:"Thanks, recorded.",undo:"Undo",undone:"Removed.",fail:"Couldn't send. Try again.",held:"No signal. We'll send it when you're back online."},
- fil:{q:"May baha ba rito?",still:"May nag-ulat ng baha malapit dito. Nandiyan pa ba?",oo:"Oo",hindi:"Hindi",di_sigurado:"Hindi sigurado",thanks:"Salamat, naitala.",undo:"Bawiin",undone:"Binawi na.",fail:"Hindi naipadala, subukan ulit.",held:"Walang signal. Ipapadala namin pagbalik ng signal."},
- ceb:{q:"Naay baha diri?",still:"Naay nagtaho og baha duol diri. Naa pa ba?",oo:"Oo",hindi:"Dili",di_sigurado:"Dili sigurado",thanks:"Salamat, natala na.",undo:"Bawia",undone:"Gibawi na.",fail:"Wala napadala, sulayi pag-usab.",held:"Walay signal. Ipadala namo inig balik sa signal."},
- ilo:{q:"Adda kadi layus ditoy?",still:"Adda nangipadamag iti layus iti asideg. Adda pay laeng kadi?",oo:"Wen",hindi:"Saan",di_sigurado:"Saan a sigurado",thanks:"Agyamanak, naitala.",undo:"Ibabawi",undone:"Naibabawin.",fail:"Saan a naipatulod, padasem manen.",held:"Awan ti signal. Ipatulodmi no agsubli ti signal."},
- hil:{q:"May baha bala diri?",still:"May nag-report sang baha malapit diri. Yara pa bala?",oo:"Huo",hindi:"Indi",di_sigurado:"Indi sigurado",thanks:"Salamat, natala na.",undo:"Bawia",undone:"Ginbawi na.",fail:"Wala napadala, tilawi liwat.",held:"Wala sang signal. Ipadala namon kon magbalik ang signal."},
- pam:{q:"Atin albug keni?",still:"Atin mengreport albug malapit keni. Atyu pa?",oo:"Wa",hindi:"Ali",di_sigurado:"Ali sigurado",thanks:"Salamat, me-record ne.",undo:"Bawian",undone:"Mebawi ne.",fail:"E me-padala, subukan mu pasibayu.",held:"Alang signal. Ipadala mi pamanyulit ning signal."},
+ en:{q:"Is there flooding here?",still:"Someone reported flooding nearby. Is it still there?",oo:"Yes",hindi:"No",di_sigurado:"Not sure",thanks:"Thanks, recorded.",undo:"Undo",undone:"Removed.",fail:"Couldn't send. Try again.",held:"No signal. We'll send it when you're back online.",sending:"Sending…",demoNote:"Demo — not sent.",liveNote:"Sensor readings will appear here once units report."},
+ fil:{q:"May baha ba rito?",still:"May nag-ulat ng baha malapit dito. Nandiyan pa ba?",oo:"Oo",hindi:"Hindi",di_sigurado:"Hindi sigurado",thanks:"Salamat, naitala.",undo:"Bawiin",undone:"Binawi na.",fail:"Hindi naipadala, subukan ulit.",held:"Walang signal. Ipapadala namin pagbalik ng signal.",sending:"Ipinapadala…",demoNote:"Demo — hindi ipinadala.",liveNote:"Lalabas dito ang sukat ng sensor kapag nag-ulat na ang mga unit."},
+ ceb:{q:"Naay baha diri?",still:"Naay nagtaho og baha duol diri. Naa pa ba?",oo:"Oo",hindi:"Dili",di_sigurado:"Dili sigurado",thanks:"Salamat, natala na.",undo:"Bawia",undone:"Gibawi na.",fail:"Wala napadala, sulayi pag-usab.",held:"Walay signal. Ipadala namo inig balik sa signal.",sending:"Gipadala…",demoNote:"Demo — wala gipadala.",liveNote:"Makita dinhi ang sukod sa sensor inig report na sa mga unit."},
+ ilo:{q:"Adda kadi layus ditoy?",still:"Adda nangipadamag iti layus iti asideg. Adda pay laeng kadi?",oo:"Wen",hindi:"Saan",di_sigurado:"Saan a sigurado",thanks:"Agyamanak, naitala.",undo:"Ibabawi",undone:"Naibabawin.",fail:"Saan a naipatulod, padasem manen.",held:"Awan ti signal. Ipatulodmi no agsubli ti signal.",sending:"Ipatpatulod…",demoNote:"Demo — saan a naipatulod.",liveNote:"Agparang ditoy dagiti rukod ti sensor no agipadamag dagiti unit."},
+ hil:{q:"May baha bala diri?",still:"May nag-report sang baha malapit diri. Yara pa bala?",oo:"Huo",hindi:"Indi",di_sigurado:"Indi sigurado",thanks:"Salamat, natala na.",undo:"Bawia",undone:"Ginbawi na.",fail:"Wala napadala, tilawi liwat.",held:"Wala sang signal. Ipadala namon kon magbalik ang signal.",sending:"Ginapadala…",demoNote:"Demo — wala ginpadala.",liveNote:"Makita diri ang sukat sang sensor kon mag-report na ang mga unit."},
+ pam:{q:"Atin albug keni?",still:"Atin mengreport albug malapit keni. Atyu pa?",oo:"Wa",hindi:"Ali",di_sigurado:"Ali sigurado",thanks:"Salamat, me-record ne.",undo:"Bawian",undone:"Mebawi ne.",fail:"E me-padala, subukan mu pasibayu.",held:"Alang signal. Ipadala mi pamanyulit ning signal.",sending:"Ipadala ne…",demoNote:"Demo — e mipadala.",liveNote:"Lumwal ya keni ing sukad ning sensor potang mag-report no ding unit."},
 };
 const R=()=>SITE_CFG&&SITE_CFG.langs==="en"?REP_LANGS.en:(REP_LANGS[LANG]||REP_LANGS.en);
 const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(_,k)=>v[k]!=null?v[k]:"");
@@ -1526,6 +1530,8 @@ const addr=s=>s.bld?s.bld:(s.hn?s.hn+" ":"")+shortSt(s.street);
 const PLACES=__PLACES__;
 const DEMO_RAIN_MMH_PER_P=60;          // simulated storm intensity P → mm/h (typhoon peak ≈ 30 mm/h = PAGASA red)
 let myPlace=null;
+let usedMyLocation=false;   // true once the person has picked "Use my location" in this browser — GPS may be used for reports without a fresh permission prompt
+try{usedMyLocation=localStorage.getItem("bw-used-loc")==="1";}catch(e){}
 const placesForSite=()=>PLACES.sites[SITE]||[];
 const currentPlace=()=>placesForSite().find(p=>p.id===myPlace)||null;
 function haversineM(a,b,c,d){const r=x=>x*Math.PI/180,s=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 2*6371000*Math.asin(Math.sqrt(s));}
@@ -1541,6 +1547,7 @@ function setPlace(id){
   const p=currentPlace();
   if(p&&p.kind==="sensor"){myStreet=p.sensor;try{localStorage.setItem(siteKey("bw-street"),p.sensor);}catch(e){}}
   closeWhere();renderPublic();
+  pollNow();
 }
 function demoInputs(p){
   const now=BASE.getTime()+tMin*60000;
@@ -1587,7 +1594,9 @@ function renderAnswer(){
     if(noneKey!==lastAnnounced){lastAnnounced=noneKey;$("p-ans-announce").textContent=L.pick;}
     return;
   }
-  if(LIVE){if(lastLive&&lastLive.place===p.id)renderLive();else{showAnswer({answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:null,etaMin:null});pollStatus();}}
+  // LIVE: render only — this runs on every tick from step() (~1/s), so it must never itself trigger a fetch;
+  // pollStatus() is instead kicked off by pollNow() (place change, boot, tab switch) and the interval/visibility hooks below.
+  if(LIVE){if(lastLive&&lastLive.place===p.id)renderLive();else showAnswer({answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:null,etaMin:null});}
   else showAnswer(babahaBa(demoInputs(p)));
 }
 /* ---------- "Saan ka?" ---------- */
@@ -1625,7 +1634,9 @@ $("p-where").addEventListener("click",e=>{
   else if(act==="sensor")listPlaces("sensor");
   else if(act==="loc"){
     if(!navigator.geolocation){$("p-ans-reason").textContent=A().locFail;return listPlaces("barangay");}
-    navigator.geolocation.getCurrentPosition(pos=>{const p=nearestPlace(pos.coords.latitude,pos.coords.longitude);if(p)setPlace(p.id);else listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");},
+    navigator.geolocation.getCurrentPosition(pos=>{
+        usedMyLocation=true;try{localStorage.setItem("bw-used-loc","1");}catch(e){}
+        const p=nearestPlace(pos.coords.latitude,pos.coords.longitude);if(p)setPlace(p.id);else listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");},
       ()=>{$("p-ans-reason").textContent=A().locFail;listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");},{timeout:8000,maximumAge:600000});
   }
 });
@@ -1633,6 +1644,7 @@ $("p-ans-pick").addEventListener("click",openWhere);
 
 /* ---------- neighbour reports (spec §4) ---------- */
 const HOLD_MS=10*60000, UNDO_UI_MS=10000;
+let TURNSTILE_TIMEOUT_MS=15000;   // a `let`, not `const`, so a test can shorten it instead of waiting out a real 15 s
 function deviceId(){
   let d=null;try{d=localStorage.getItem("bw-device");}catch(e){}
   if(!/^[a-f0-9]{24}$/.test(d||"")){const a=new Uint8Array(12);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");try{localStorage.setItem("bw-device",d);}catch(e){}}
@@ -1645,22 +1657,43 @@ function loadTurnstile(){
 }
 async function turnstileToken(){
   const ts=await loadTurnstile();
-  return new Promise((res,rej)=>{const el=document.createElement("div");el.className="sr-only";document.body.appendChild(el);
-    ts.render(el,{sitekey:TURNSTILE_SITEKEY,appearance:"interaction-only",callback:t=>{res(t);setTimeout(()=>el.remove(),0);},"error-callback":()=>{el.remove();rej(new Error("turnstile"));}});});
+  return new Promise((res,rej)=>{
+    // not sr-only: an invisible ("interaction-only") widget normally stays 0×0, but if Cloudflare decides it needs
+    // interaction it resizes itself — a visually/AT-hidden container would make that challenge impossible to complete.
+    const el=document.createElement("div");el.style.cssText="position:fixed;left:8px;bottom:8px;z-index:9999;";
+    document.body.appendChild(el);
+    let done=false,id=null;
+    const finish=(fn,arg)=>{if(done)return;done=true;clearTimeout(timer);try{if(id!=null)ts.remove(id);}catch(e){}el.remove();fn(arg);};
+    const timer=setTimeout(()=>finish(rej,new Error("turnstile timeout")),TURNSTILE_TIMEOUT_MS);
+    id=ts.render(el,{sitekey:TURNSTILE_SITEKEY,appearance:"interaction-only",
+      callback:t=>finish(res,t),
+      "error-callback":()=>finish(rej,new Error("turnstile error")),
+      "expired-callback":()=>finish(rej,new Error("turnstile expired")),
+      "timeout-callback":()=>finish(rej,new Error("turnstile timeout-cb"))});
+  });
 }
 const round3=x=>Math.round(x*1000)/1000;
-function where(p){
+// GPS use is gated: only when permission is already granted, or the person reached this place via "Use my location"
+// in this browser — otherwise a report is sent at the picked place's centre with no permission prompt mid-tap.
+async function canUseGPS(){
+  if(usedMyLocation)return true;
+  if(!navigator.permissions||!navigator.permissions.query)return false;
+  try{const st=await navigator.permissions.query({name:"geolocation"});return st.state==="granted";}catch(e){return false;}
+}
+async function where(p){
+  const centre={lat:round3(p.lat),lon:round3(p.lon)};
+  if(!navigator.geolocation||!(await canUseGPS()))return centre;
   return new Promise(res=>{
-    const centre={lat:round3(p.lat),lon:round3(p.lon)};
-    if(!navigator.geolocation)return res(centre);
     navigator.geolocation.getCurrentPosition(pos=>res({lat:round3(pos.coords.latitude),lon:round3(pos.coords.longitude)}),()=>res(centre),{timeout:5000,maximumAge:600000});
   });
 }
 let undoTimer=null;
-function repMsg(t,undoId){
-  $("p-rep-msg").textContent=t;const u=$("p-rep-undo");u.textContent=R().undo;u.hidden=!undoId;u.dataset.id=undoId||"";
+function setRepMsg(t){$("p-rep-msg").textContent=t;}          // message text only — never touches a still-valid Undo
+function setUndo(undoId){
+  const u=$("p-rep-undo");u.textContent=R().undo;u.hidden=!undoId;u.dataset.id=undoId||"";
   clearTimeout(undoTimer);if(undoId)undoTimer=setTimeout(()=>{u.hidden=true;},UNDO_UI_MS);
 }
+function repMsg(t,undoId){setRepMsg(t);setUndo(undoId);}
 async function postReport(body){
   const token=await turnstileToken();
   const r=await fetch(API_BASE+"/report",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...body,token})});
@@ -1668,32 +1701,54 @@ async function postReport(body){
   if(r.status===429)return 0;                      // already recorded: a double tap or a re-send
   throw new Error("report "+r.status);
 }
+function setRepBtnsBusy(v){
+  document.querySelectorAll("#p-rep [data-ans]").forEach(b=>{b.disabled=v;b.setAttribute("aria-disabled",v?"true":"false");});
+}
+// One send in flight at a time, shared by a fresh tap AND the offline queue's flush — otherwise a tap that lands
+// while a queued report is flushing (or two taps close together) can fire two POSTs and race on the Undo state.
+let sending=false;
 async function sendReport(answer){
   const p=currentPlace();if(!p)return openWhere();
+  if(sending)return;
   const L=R();
-  if(!LIVE){repMsg(L.thanks);return;}              // demo page: acknowledged on the phone only
-  const pos=await where(p);
-  const body={place:p.id,answer,lat:pos.lat,lon:pos.lon,device:deviceId(),demo:false};
-  if(!navigator.onLine){try{localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body}));}catch(e){}repMsg(L.held);return;}
-  try{const id=await postReport(body);repMsg(L.thanks,id||null);}
-  catch(e){try{localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body}));}catch(x){}repMsg(L.fail);}
+  if(!LIVE){repMsg(L.demoNote);return;}             // demo page: nothing is sent, and the message says so
+  sending=true;setRepBtnsBusy(true);
+  setRepMsg(L.sending);                             // "sending…" replaces the text only — an active Undo keeps counting down
+  let body=null;
+  try{
+    const pos=await where(p);
+    body={place:p.id,answer,lat:pos.lat,lon:pos.lon,device:deviceId(),demo:false};
+    if(!navigator.onLine){try{localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body}));}catch(e){}repMsg(L.held);return;}
+    const id=await postReport(body);
+    if(id)repMsg(L.thanks,id);
+    else if($("p-rep-undo").hidden)repMsg(L.thanks);   // 429 (already recorded), and no still-valid Undo to preserve
+    else setRepMsg(L.thanks);                          // 429, but a prior tap's Undo is still valid — never clear it
+  }catch(e){
+    if(body){try{localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body}));}catch(x){}}
+    repMsg(L.fail);
+  }finally{
+    sending=false;setRepBtnsBusy(false);
+  }
 }
-let flushing=false;   // guards against the online event and an explicit call racing on the same pending report
 async function flushPending(){
-  if(flushing)return;
+  if(sending)return;
   let p=null;try{p=JSON.parse(localStorage.getItem("bw-pending")||"null");}catch(e){}
   if(!p)return;
   if(Date.now()-p.madeAt>HOLD_MS){try{localStorage.removeItem("bw-pending");}catch(e){}return;}
-  flushing=true;
-  try{await postReport(p.body);try{localStorage.removeItem("bw-pending");}catch(e){}repMsg(R().thanks);}catch(e){}
-  finally{flushing=false;}
+  sending=true;
+  try{await postReport(p.body);try{localStorage.removeItem("bw-pending");}catch(e){}repMsg(R().thanks);}
+  catch(e){repMsg(R().fail);}
+  finally{sending=false;}
 }
 window.addEventListener("online",flushPending);
 $("p-rep").addEventListener("click",e=>{const b=e.target.closest("[data-ans]");if(b)sendReport(b.dataset.ans);});
 $("p-rep-undo").addEventListener("click",async()=>{
   const id=$("p-rep-undo").dataset.id;if(!id)return;
-  try{await fetch(API_BASE+"/report/"+id+"/undo",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({device:deviceId()})});}catch(e){}
-  repMsg(R().undone);
+  try{
+    const r=await fetch(API_BASE+"/report/"+id+"/undo",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({device:deviceId()})});
+    if(!r.ok)throw new Error("undo "+r.status);
+    repMsg(R().undone);
+  }catch(e){repMsg(R().fail);}
 });
 function renderReportRow(){
   const L=R();
@@ -1703,22 +1758,55 @@ function renderReportRow(){
 }
 
 /* ---------- live status (spec §7) ---------- */
-const FRESH_MS=20*60000, POLL_MS=60000;
+const FRESH_MS=20*60000, POLL_MS=60000, POLL_BACKOFF_MAX_MS=5*60000;
+let pollInFlight=false, pollBackoff=POLL_MS, pollNotBefore=0;
+// Trigger points for a fetch: place change, boot, the 60 s interval and visibility change (all call this or pollStatus()
+// directly). renderAnswer()/renderLive() never call pollStatus() themselves — they only render — so the ~1/s render
+// loop during demo playback can never itself flood the Worker with requests.
+function pollNow(){
+  if(!LIVE)return;
+  if(!(lastLive&&lastLive.place===myPlace)){lastLive=null;showAnswer({answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:null,etaMin:null});renderReportRow();}
+  pollBackoff=POLL_MS;pollNotBefore=0;
+  pollStatus();
+}
 async function pollStatus(){
-  if(!LIVE||!myPlace)return;
+  if(!LIVE||!myPlace||pollInFlight)return;
+  if(Date.now()<pollNotBefore)return;               // respect the backoff window after a recent failure
+  const reqPlace=myPlace;
+  pollInFlight=true;
+  let body=null,failed=false;
   try{
-    const r=await fetch(API_BASE+"/status/"+encodeURIComponent(myPlace),{cache:"no-store"});
+    const r=await fetch(API_BASE+"/status/"+encodeURIComponent(reqPlace),{cache:"no-store"});
     if(!r.ok)throw new Error("status "+r.status);
-    lastLive=await r.json();
-    try{localStorage.setItem("bw-last:"+myPlace,JSON.stringify({...lastLive,receivedAt:Date.now()}));}catch(e){}
-  }catch(e){
-    if(lastLive)lastLive={...lastLive,serverNow:lastLive.serverNow+(Date.now()-(lastLive._t||Date.now()))};
+    body=await r.json();
+  }catch(e){failed=true;}
+  pollInFlight=false;
+  if(reqPlace!==myPlace){                            // the person moved to a different place while this was in flight
+    if(!failed)pollStatus();                          // re-poll for wherever they are now; never show this reply
+    return;
   }
-  if(lastLive)lastLive._t=Date.now();
-  renderLive();
+  if(!failed&&body&&body.place===myPlace){
+    lastLive=body;lastLive._t=Date.now();
+    pollBackoff=POLL_MS;pollNotBefore=0;
+    try{localStorage.setItem("bw-last:"+body.place,JSON.stringify({...lastLive,receivedAt:Date.now()}));}catch(e){}
+    renderLive();
+  }else if(!failed){
+    // response body names a different place than the one requested — drop it rather than show it under the wrong name
+  }else{
+    if(lastLive&&lastLive.place===myPlace){
+      lastLive={...lastLive,serverNow:lastLive.serverNow+(Date.now()-(lastLive._t||Date.now()))};
+      lastLive._t=Date.now();
+      renderLive();
+    }else{
+      lastLive=null;
+      showAnswer({answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:null,etaMin:null});
+      renderReportRow();
+    }
+    pollBackoff=Math.min(pollBackoff*2,POLL_BACKOFF_MAX_MS);pollNotBefore=Date.now()+pollBackoff;
+  }
 }
 function renderLive(){
-  if(!lastLive)return;
+  if(!lastLive||lastLive.place!==myPlace)return;      // renders only when the cached reply matches the current place
   const stale=lastLive.checkedAt==null||lastLive.serverNow-lastLive.checkedAt>FRESH_MS||lastLive.updatedAt==null||lastLive.serverNow-lastLive.updatedAt>FRESH_MS;
   const v=stale?{answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:lastLive.updatedAt,etaMin:null}:lastLive;
   showAnswer(v,lastLive.serverNow);
@@ -1919,9 +2007,17 @@ function renderPublic(){
   let seen=false;try{seen=localStorage.getItem("bw-coach")==="1";}catch(e){}
   coach.className="p-coach"+((seen||selected||myStreet)?" off":"");
   $("p-details").textContent=L.details;$("d-simple").textContent=L.simple;
-  $("p-demo").textContent=L.demo;$("p-emerg").textContent=L.notEmergency;
+  $("p-demo").hidden=LIVE;if(!LIVE)$("p-demo").textContent=L.demo;   // the "Demo: … simulated" claim never appears in LIVE
+  $("p-emerg").textContent=L.notEmergency;
   const rv=$("p-review");rv.textContent=REVIEW_TAG[LANG]?L.review+" · "+LANGS.en.review:"";rv.className="p-review"+(REVIEW_TAG[LANG]?" on":"");
   document.documentElement.lang=LANG==="fil"?"fil":LANG==="ceb"?"ceb":LANG==="ilo"?"ilo":LANG==="hil"?"hil":LANG==="pam"?"pam":"en";
+  // LIVE: the depth figure, "My street"/"Monitored streets" and the area headline all come from the simulated demo
+  // data — never show them next to a live Worker answer. A short line takes their place under the report row.
+  document.body.dataset.live=LIVE?"1":"0";
+  $("p-fig").hidden=LIVE;
+  $("p-col-list").hidden=LIVE;
+  $("p-area").hidden=LIVE;
+  const note=$("p-live-note");note.hidden=!LIVE;if(LIVE)note.textContent=R().liveNote;
   renderAnswer();
   renderReportRow();
 }
@@ -1954,6 +2050,7 @@ $("p-pick").addEventListener("click",e=>{
   pickMode=false;$("p-pick").style.display="none";
   const s=HOUSEHOLD.find(h=>h.id===myStreet);selectSensor(s);zoomTo(s.x,s.y,2.8);renderPublic();
   $("p-my-btn").focus();
+  pollNow();
 });
 $("p-lang").addEventListener("change",e=>{LANG=e.target.value;try{localStorage.setItem(siteKey("bw-lang"),LANG);}catch(x){}renderPublic();});
 const NAV_LANG=(()=>{const nav=(navigator.language||"").toLowerCase();return nav.startsWith("fil")||nav.startsWith("tl")?"fil":nav.startsWith("ceb")?"ceb":nav.startsWith("ilo")?"ilo":nav.startsWith("hil")?"hil":nav.startsWith("pam")?"pam":"en";})();
@@ -2006,6 +2103,7 @@ function switchSite(id){
   step(0,true);
   if(VIEW==="public")renderPublic();else refreshCards();
   {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
+  pollNow();
 }
 function applySiteLang(){
   const sel=document.getElementById("p-lang"),lab=document.querySelector('label[for=p-lang]');
@@ -2048,7 +2146,7 @@ initSite(h0.site);buildCards();VIEW=h0.view;
 if(VIEW==="public")speed=720;   // the story plays in ~3 real minutes for a resident just glancing
 setView(VIEW);switchSite(h0.site);syncTabs();writeHash();
 {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
-if(LIVE){flushPending();pollStatus();}
+if(LIVE)flushPending();   // switchSite() above already called pollNow() for the restored place
 log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
 log(`${HOUSEHOLD.length} household units online · LoRaWAN, 10-min uplink (simulated)`);
 log(SITE_CFG.attribution);
