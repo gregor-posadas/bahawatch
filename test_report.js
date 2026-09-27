@@ -80,15 +80,28 @@ const U='file:///tmp/bw_live_test.html#tv/live';
     assert(cachedAns==="hindi","bw-last:<new place> is keyed and written with the new place's own body, never the old one's: "+cachedAns);
   }
   {
-    await pg.evaluate(()=>{myPlace="tv:s:BW-H01";lastLive=null;});
-    delayPlace="tv:s:BW-H01";delayAbort=true;             // this time the stale in-flight request ends in failure, not a late success
+    // keep a REAL cached H01 answer (never null) so the failure branch is actually exercised, not vacuously skipped
+    await pg.evaluate((SN)=>{myPlace="tv:s:BW-H01";lastLive={place:"tv:s:BW-H01",answer:"baka",reason:{key:"rain_flood_zone",vars:{mm:9}},etaMin:null,updatedAt:SN-3*60000,checkedAt:SN-60000,serverNow:SN,stillThere:null,_t:Date.now()};},SN);
+    await pg.evaluate(()=>{try{localStorage.removeItem("bw-last:tv:s:BW-H02");}catch(e){}});   // isolate from block 1's own write above
+    delayPlace="tv:s:BW-H01";delayAbort=true;             // the stale in-flight request for the place being LEFT ends in failure, not a late success
     const inFlight=pg.evaluate(()=>pollStatus());
     await pg.waitForTimeout(150);
-    await pg.evaluate(()=>{myPlace="tv:s:BW-H02";});
-    const release=delayResolve;delayPlace=null;if(release)release();
-    await inFlight;await pg.waitForTimeout(300);
-    let s2=await pg.evaluate(()=>document.getElementById('p-answer').dataset.answer);
-    assert(s2==="hindi","band still shows the new place's answer when the stale in-flight request fails instead of resolving: "+s2);
+    await pg.evaluate(()=>{myPlace="tv:s:BW-H02";});      // the person switches away from H01 while its request is still pending
+    delayPlace="tv:s:BW-H02";                             // also hold H02's own automatic follow-up poll, so the moment in between is observable
+    const releaseH01=delayResolve;
+    releaseH01();                                         // let the stale H01 reply fail
+    await inFlight;
+    await pg.waitForTimeout(150);                         // give the automatic H02 re-poll time to reach the route handler and start waiting
+    let mid=await pg.evaluate(()=>({ans:document.getElementById('p-answer').dataset.answer,cached:localStorage.getItem("bw-last:tv:s:BW-H02")}));
+    assert(mid.ans==="nodata","a stale in-flight request that FAILS for an abandoned place must never leave that place's old answer (baka) on screen: "+mid.ans);
+    assert(!mid.cached,"bw-last:<new place> is never written with the abandoned place's body while its own poll is still pending: "+mid.cached);
+    const releaseH02=delayResolve;delayPlace=null;delayAbort=false;
+    releaseH02();                                         // let the prompt follow-up poll for the CURRENT place (H02) resolve
+    await pg.waitForTimeout(300);
+    let after=await pg.evaluate(()=>({ans:document.getElementById('p-answer').dataset.answer,cached:localStorage.getItem("bw-last:tv:s:BW-H02")}));
+    assert(after.ans==="hindi","the abandoned place's failure triggers an immediate poll for the CURRENT place, without waiting for the 60 s interval: "+after.ans);
+    const cachedAns2=after.cached&&JSON.parse(after.cached).answer;
+    assert(cachedAns2==="hindi","the prompt follow-up poll writes bw-last:<new place> with the new place's OWN body: "+cachedAns2);
   }
   delayPlace=null;delayResolve=null;delayAbort=false;
   await pg.evaluate(()=>{myPlace="tv:s:BW-H01";pollNow();});await pg.waitForTimeout(300);   // restore state for the rest of this test
@@ -255,6 +268,121 @@ const U='file:///tmp/bw_live_test.html#tv/live';
     const P7=await pgF.evaluate(()=>currentPlace());
     assert(posted7.length===1&&posted7[0].lat===Math.round(P7.lat*1000)/1000&&posted7[0].lon===Math.round(P7.lon*1000)/1000,
       "report sent at the place centre with no GPS prompt mid-tap");
+    await pgF.close();
+  }
+
+  // Finding B: a tap during a background flush must not be silently dropped and credited as the flushed report —
+  // flushPending uses the same busy state as a fresh tap (buttons disabled + "Sending…" message while it runs).
+  {
+    const pgF=await ctx.newPage();
+    await pgF.addInitScript(()=>{window.turnstile={render:(el,o)=>{window.__turnstileCbB=o.callback;return "wB";},remove(){}};});   // a slow Turnstile stub: never calls back on its own
+    let postedB=[];
+    await pgF.route('https://api.test.local/**',async r=>{
+      const u=r.request().url(),m=r.request().method();
+      if(m==="POST"&&/\/report$/.test(u)){postedB.push(1);return r.fulfill({status:201,contentType:'application/json',body:JSON.stringify({id:70})});}
+      if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
+      return r.fulfill({status:404,body:'{}'});
+    });
+    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.evaluate(()=>localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body:{place:"tv:s:BW-H01",answer:"oo",lat:1,lon:1,device:"d".repeat(24),demo:false}})));
+    const flushDone=pgF.evaluate(()=>flushPending());
+    await pgF.waitForTimeout(80);   // flushPending has started and is awaiting the (stubbed, slow) Turnstile token
+    let midB=await pgF.evaluate(()=>{const b=document.querySelector('#p-rep [data-ans="oo"]');return {disabled:b.disabled,ariaD:b.getAttribute('aria-disabled'),msg:document.getElementById('p-rep-msg').textContent};});
+    assert(midB.disabled&&midB.ariaD==="true","report buttons are disabled while a background flush is sending: "+JSON.stringify(midB));
+    assert(/Sending|Ipinapadala/.test(midB.msg),"a 'sending' message shows during a background flush, not silence, so a tap during it is never mistaken for having landed: "+midB.msg);
+    await pgF.evaluate(()=>{if(window.__turnstileCbB)window.__turnstileCbB("tok-b");});   // the slow Turnstile widget finally calls back
+    await flushDone;await pgF.waitForTimeout(300);
+    let afterB=await pgF.evaluate(()=>{const b=document.querySelector('#p-rep [data-ans="oo"]');return {disabled:b.disabled,ariaD:b.getAttribute('aria-disabled')};});
+    assert(!afterB.disabled&&afterB.ariaD==="false","buttons re-enable once the background flush completes");
+    assert(postedB.length===1,"the queued report is sent exactly once during the flush: "+postedB.length);
+    await pgF.evaluate(()=>{try{localStorage.removeItem("bw-pending");}catch(e){}});
+    await pgF.close();
+  }
+
+  // Finding C: a /status fetch that never responds must not wedge pollInFlight forever, and the live answer must
+  // turn nodata purely from the passage of time, never from a frozen serverNow anchor.
+  {
+    // part 1: a hung /status request times out (treated as a failure) instead of leaving pollInFlight true forever
+    const pgF=await ctx.newPage();
+    let hangCount=0;
+    await pgF.route('https://api.test.local/**',async r=>{
+      const u=r.request().url();
+      if(/\/status\//.test(u)){hangCount++;return new Promise(()=>{});}   // never resolves, aborts or fulfills — a hung connection
+      return r.fulfill({status:404,body:'{}'});
+    });
+    await pgF.goto(U);await pgF.waitForTimeout(300);
+    await pgF.evaluate(()=>{playing=false;});
+    // isolate from whatever boot's own (still-hung, real-15s-default) request left behind, then shorten the timeout for this test
+    await pgF.evaluate(()=>{pollInFlight=false;pollNotBefore=0;pollBackoff=POLL_MS;});
+    await pgF.evaluate(()=>{try{STATUS_TIMEOUT_MS=50;}catch(e){}});   // a `let` post-fix; pre-fix this variable doesn't exist yet
+    hangCount=0;
+    pgF.evaluate(()=>{pollStatus();});                 // fire-and-forget: pre-fix, this fetch call never resolves at all
+    await pgF.waitForTimeout(200);
+    let midC=await pgF.evaluate(()=>({inFlight:pollInFlight,notBefore:pollNotBefore}));
+    assert(hangCount>=1,"the test's own poll actually reached the (hung) route: "+hangCount);
+    assert(!midC.inFlight,"a hung /status fetch times out instead of leaving pollInFlight true forever");
+    assert(midC.notBefore>0,"a timeout is treated as a failure — backoff applies, it's not treated as still-fresh");
+    await pgF.evaluate(()=>{pollNotBefore=0;});        // don't wait out the real backoff in a test
+    pgF.evaluate(()=>{pollStatus();});
+    await pgF.waitForTimeout(200);
+    assert(hangCount>=2,"after the timeout clears pollInFlight, a later call to pollStatus() can start a new request: "+hangCount);
+    await pgF.close();
+  }
+  {
+    // part 2: renderLive() must extrapolate serverNow forward by real elapsed time, not trust a frozen anchor —
+    // so the band turns nodata once 20 minutes actually pass, even with no new successful poll in between.
+    const pgF=await ctx.newPage();
+    await pgF.route('https://api.test.local/**',async r=>{
+      const u=r.request().url();
+      if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
+      return r.fulfill({status:404,body:'{}'});
+    });
+    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.evaluate(()=>{playing=false;});
+    await pgF.evaluate(()=>pollStatus());await pgF.waitForTimeout(200);
+    let before=await pgF.evaluate(()=>document.getElementById('p-answer').dataset.answer);
+    assert(before==="baka","a fresh live reply shows its answer before any clock manipulation: "+before);
+    await pgF.evaluate(()=>{const real=Date.now();Date.now=()=>real+21*60000;});   // fast-forward the phone's clock by 21 minutes
+    await pgF.evaluate(()=>renderLive());await pgF.waitForTimeout(50);
+    let after=await pgF.evaluate(()=>document.getElementById('p-answer').dataset.answer);
+    assert(after==="nodata","20 minutes actually passing turns the band nodata purely from the clock, even with no new successful poll: "+after);
+    await pgF.close();
+  }
+
+  // Finding D (7 revisited): "Use my location" ties the GPS-without-prompt allowance to the SPECIFIC place it
+  // resolved to. A later MANUAL pick must clear that, so if the OS permission has since reverted to "prompt",
+  // reporting at the new place never triggers a GPS prompt mid-tap.
+  {
+    const pgF=await ctx.newPage();
+    let postedD=[];
+    await pgF.route('https://api.test.local/**',async r=>{
+      const u=r.request().url(),m=r.request().method();
+      if(m==="POST"&&/\/report$/.test(u)){postedD.push(JSON.parse(r.request().postData()));return r.fulfill({status:201,contentType:'application/json',body:JSON.stringify({id:91})});}
+      if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
+      return r.fulfill({status:404,body:'{}'});
+    });
+    await pgF.goto(U);await pgF.waitForTimeout(500);
+    // "Use my location" resolves to BW-H01 (already the current place) via a real GPS fix
+    const H01ll=await pgF.evaluate(()=>{const p=placesForSite().find(x=>x.id==="tv:s:BW-H01");return {lat:p.lat,lon:p.lon};});
+    await pgF.evaluate(({lat,lon})=>{navigator.geolocation.getCurrentPosition=(ok)=>ok({coords:{latitude:lat,longitude:lon}});},H01ll);
+    await pgF.evaluate(()=>openWhere());
+    await pgF.click('#p-where [data-act="loc"]');
+    await pgF.waitForTimeout(200);
+    // now a MANUAL pick of a different place — this must clear the location-derived allowance
+    // ("Use my location" above closed the panel via setPlace()'s closeWhere(), so reopen it first)
+    await pgF.evaluate(()=>{openWhere();listPlaces("sensor");});
+    await pgF.click('#p-where-list [data-place="tv:s:BW-H02"]');
+    await pgF.waitForTimeout(200);
+    const placeD=await pgF.evaluate(()=>myPlace);
+    assert(placeD==="tv:s:BW-H02","the manual pick after 'Use my location' actually took effect: "+placeD);
+    // permission is "prompt" (the default, ungranted — no context.grantPermissions call was ever made)
+    await pgF.evaluate(()=>{navigator.geolocation.getCurrentPosition=(ok)=>{window.__gpsCalledD=true;ok({coords:{latitude:1,longitude:1}});};});
+    await pgF.click('#p-rep [data-ans="oo"]');await pgF.waitForTimeout(400);
+    const gpsCalledD=await pgF.evaluate(()=>!!window.__gpsCalledD);
+    assert(!gpsCalledD,"a later manual pick clears the earlier 'Use my location' allowance — no GPS prompt mid-tap at the new place: "+gpsCalledD);
+    const P_D=await pgF.evaluate(()=>currentPlace());
+    assert(postedD.length===1&&postedD[0].place==="tv:s:BW-H02"&&postedD[0].lat===Math.round(P_D.lat*1000)/1000&&postedD[0].lon===Math.round(P_D.lon*1000)/1000,
+      "reported at the manually-picked place's centre, with no GPS prompt: "+JSON.stringify(postedD));
     await pgF.close();
   }
 

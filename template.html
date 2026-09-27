@@ -1530,8 +1530,8 @@ const addr=s=>s.bld?s.bld:(s.hn?s.hn+" ":"")+shortSt(s.street);
 const PLACES=__PLACES__;
 const DEMO_RAIN_MMH_PER_P=60;          // simulated storm intensity P → mm/h (typhoon peak ≈ 30 mm/h = PAGASA red)
 let myPlace=null;
-let usedMyLocation=false;   // true once the person has picked "Use my location" in this browser — GPS may be used for reports without a fresh permission prompt
-try{usedMyLocation=localStorage.getItem("bw-used-loc")==="1";}catch(e){}
+let locPlaceId=null;   // the SPECIFIC place chosen via "Use my location" (per site) — GPS may be used for a report at
+                        // THAT place without a fresh permission prompt; any manual pick clears it (loadPlace() loads it).
 const placesForSite=()=>PLACES.sites[SITE]||[];
 const currentPlace=()=>placesForSite().find(p=>p.id===myPlace)||null;
 function haversineM(a,b,c,d){const r=x=>x*Math.PI/180,s=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 2*6371000*Math.asin(Math.sqrt(s));}
@@ -1541,9 +1541,12 @@ function loadPlace(){
   if(!v){let st=null;try{st=localStorage.getItem(siteKey("bw-street"));}catch(e){}if(st)v=SITE+":s:"+st;}   // migrate old My street picks
   if(v&&placesForSite().some(p=>p.id===v))myPlace=v;
   else if(v){try{localStorage.removeItem(siteKey("bw-asked"));}catch(e){}}   // stored place no longer exists → ask again
+  locPlaceId=null;try{locPlaceId=localStorage.getItem(siteKey("bw-loc-place"));}catch(e){}
 }
-function setPlace(id){
+function setPlace(id,viaLocation){
   myPlace=id;try{localStorage.setItem(siteKey("bw-place"),id);}catch(e){}
+  if(viaLocation){locPlaceId=id;try{localStorage.setItem(siteKey("bw-loc-place"),id);}catch(e){}}
+  else{locPlaceId=null;try{localStorage.removeItem(siteKey("bw-loc-place"));}catch(e){}}   // any manual pick clears the location-derived allowance
   const p=currentPlace();
   if(p&&p.kind==="sensor"){myStreet=p.sensor;try{localStorage.setItem(siteKey("bw-street"),p.sensor);}catch(e){}}
   closeWhere();renderPublic();
@@ -1635,8 +1638,7 @@ $("p-where").addEventListener("click",e=>{
   else if(act==="loc"){
     if(!navigator.geolocation){$("p-ans-reason").textContent=A().locFail;return listPlaces("barangay");}
     navigator.geolocation.getCurrentPosition(pos=>{
-        usedMyLocation=true;try{localStorage.setItem("bw-used-loc","1");}catch(e){}
-        const p=nearestPlace(pos.coords.latitude,pos.coords.longitude);if(p)setPlace(p.id);else listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");},
+        const p=nearestPlace(pos.coords.latitude,pos.coords.longitude);if(p)setPlace(p.id,true);else listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");},
       ()=>{$("p-ans-reason").textContent=A().locFail;listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");},{timeout:8000,maximumAge:600000});
   }
 });
@@ -1676,7 +1678,7 @@ const round3=x=>Math.round(x*1000)/1000;
 // GPS use is gated: only when permission is already granted, or the person reached this place via "Use my location"
 // in this browser — otherwise a report is sent at the picked place's centre with no permission prompt mid-tap.
 async function canUseGPS(){
-  if(usedMyLocation)return true;
+  if(locPlaceId&&myPlace===locPlaceId)return true;
   if(!navigator.permissions||!navigator.permissions.query)return false;
   try{const st=await navigator.permissions.query({name:"geolocation"});return st.state==="granted";}catch(e){return false;}
 }
@@ -1735,10 +1737,12 @@ async function flushPending(){
   let p=null;try{p=JSON.parse(localStorage.getItem("bw-pending")||"null");}catch(e){}
   if(!p)return;
   if(Date.now()-p.madeAt>HOLD_MS){try{localStorage.removeItem("bw-pending");}catch(e){}return;}
-  sending=true;
+  // same busy state as a fresh tap: otherwise a tap that lands while this queued report is flushing is silently
+  // dropped, and "Thanks, recorded." would end up showing for the FLUSHED report instead of the person's own tap.
+  sending=true;setRepBtnsBusy(true);setRepMsg(R().sending);
   try{await postReport(p.body);try{localStorage.removeItem("bw-pending");}catch(e){}repMsg(R().thanks);}
   catch(e){repMsg(R().fail);}
-  finally{sending=false;}
+  finally{sending=false;setRepBtnsBusy(false);}
 }
 window.addEventListener("online",flushPending);
 $("p-rep").addEventListener("click",e=>{const b=e.target.closest("[data-ans]");if(b)sendReport(b.dataset.ans);});
@@ -1760,6 +1764,7 @@ function renderReportRow(){
 /* ---------- live status (spec §7) ---------- */
 const FRESH_MS=20*60000, POLL_MS=60000, POLL_BACKOFF_MAX_MS=5*60000;
 let pollInFlight=false, pollBackoff=POLL_MS, pollNotBefore=0;
+let STATUS_TIMEOUT_MS=15000;   // a `let`, not `const`, so a test can shorten it instead of waiting out a real 15 s
 // Trigger points for a fetch: place change, boot, the 60 s interval and visibility change (all call this or pollStatus()
 // directly). renderAnswer()/renderLive() never call pollStatus() themselves — they only render — so the ~1/s render
 // loop during demo playback can never itself flood the Worker with requests.
@@ -1776,13 +1781,22 @@ async function pollStatus(){
   pollInFlight=true;
   let body=null,failed=false;
   try{
-    const r=await fetch(API_BASE+"/status/"+encodeURIComponent(reqPlace),{cache:"no-store"});
+    // a hung connection must never wedge pollInFlight forever — time it out and treat that the same as any other failure.
+    const signal=(typeof AbortSignal!=="undefined"&&AbortSignal.timeout)?AbortSignal.timeout(STATUS_TIMEOUT_MS)
+      :(()=>{const ac=new AbortController();setTimeout(()=>ac.abort(),STATUS_TIMEOUT_MS);return ac.signal;})();
+    const r=await fetch(API_BASE+"/status/"+encodeURIComponent(reqPlace),{cache:"no-store",signal});
     if(!r.ok)throw new Error("status "+r.status);
     body=await r.json();
   }catch(e){failed=true;}
   pollInFlight=false;
-  if(reqPlace!==myPlace){                            // the person moved to a different place while this was in flight
-    if(!failed)pollStatus();                          // re-poll for wherever they are now; never show this reply
+  if(reqPlace!==myPlace){                            // the person moved to a different place while this was in flight — never show this reply
+    if(!(lastLive&&lastLive.place===myPlace)){
+      lastLive=null;
+      showAnswer({answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:null,etaMin:null});
+      renderReportRow();
+    }
+    pollBackoff=POLL_MS;pollNotBefore=0;              // this is effectively the pollNow() that setPlace() tried to fire while the old request was in flight
+    pollStatus();                                     // try the place they're on now, right away — never wait for the 60 s interval
     return;
   }
   if(!failed&&body&&body.place===myPlace){
@@ -1793,11 +1807,10 @@ async function pollStatus(){
   }else if(!failed){
     // response body names a different place than the one requested — drop it rather than show it under the wrong name
   }else{
-    if(lastLive&&lastLive.place===myPlace){
-      lastLive={...lastLive,serverNow:lastLive.serverNow+(Date.now()-(lastLive._t||Date.now()))};
-      lastLive._t=Date.now();
-      renderLive();
-    }else{
+    // no fresh reply — re-render the still-cached one if any; renderLive() itself extrapolates its clock forward,
+    // so nothing needs updating here beyond the backoff below.
+    if(lastLive&&lastLive.place===myPlace)renderLive();
+    else{
       lastLive=null;
       showAnswer({answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:null,etaMin:null});
       renderReportRow();
@@ -1807,13 +1820,18 @@ async function pollStatus(){
 }
 function renderLive(){
   if(!lastLive||lastLive.place!==myPlace)return;      // renders only when the cached reply matches the current place
-  const stale=lastLive.checkedAt==null||lastLive.serverNow-lastLive.checkedAt>FRESH_MS||lastLive.updatedAt==null||lastLive.serverNow-lastLive.updatedAt>FRESH_MS;
+  // extrapolate the server clock forward by real elapsed time since the reply was received — never trust a frozen
+  // anchor, or a hung/backed-off poller could leave a stale "Hindi" on screen long past the freshness window.
+  const now=lastLive.serverNow+(Date.now()-(lastLive._t||Date.now()));
+  const stale=lastLive.checkedAt==null||now-lastLive.checkedAt>FRESH_MS||lastLive.updatedAt==null||now-lastLive.updatedAt>FRESH_MS;
   const v=stale?{answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:lastLive.updatedAt,etaMin:null}:lastLive;
-  showAnswer(v,lastLive.serverNow);
+  showAnswer(v,now);
   renderReportRow();
 }
-setInterval(()=>{if(document.visibilityState==="visible")pollStatus();},POLL_MS);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pollStatus();});
+// re-render on every tick even when the poll itself is skipped (in flight, or backing off) — the band must be able
+// to turn nodata purely from the passage of time, not only from a fresh reply landing.
+setInterval(()=>{if(document.visibilityState==="visible"){pollStatus();if(LIVE)renderLive();}},POLL_MS);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){pollStatus();if(LIVE)renderLive();}});
 
 function unitLabel(s){return esc(addr(s))+(s.near?`<small>${esc(T().near)} ${esc(shortSt(s.near))}</small>`:"");}
 function rowHTML(s,extraCls){
@@ -2047,6 +2065,7 @@ $("p-pick").addEventListener("click",e=>{
   const b=e.target.closest("[data-pick]");if(!b)return;
   myStreet=b.dataset.pick;try{localStorage.setItem(siteKey("bw-street"),myStreet);}catch(x){}
   myPlace=SITE+":s:"+myStreet;try{localStorage.setItem(siteKey("bw-place"),myPlace);}catch(x){}
+  locPlaceId=null;try{localStorage.removeItem(siteKey("bw-loc-place"));}catch(x){}   // a manual pick clears the location-derived allowance
   pickMode=false;$("p-pick").style.display="none";
   const s=HOUSEHOLD.find(h=>h.id===myStreet);selectSensor(s);zoomTo(s.x,s.y,2.8);renderPublic();
   $("p-my-btn").focus();
