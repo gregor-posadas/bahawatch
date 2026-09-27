@@ -99,13 +99,37 @@ def box_buildings(tmp_dir, key):
 
 
 # ---------------------------------------------------------------- NOAH hazard
-def _inner_shapefile(zbytes):
+def _inner_zip(outer, name):
+    """A province zip inside a download zip, opened as a stream: only that province is decompressed."""
+    return zipfile.ZipFile(outer.open(name))
+
+
+def _shp_stem(z):
+    shp = [n for n in z.namelist() if n.lower().endswith(".shp")]
+    return shp[0][:-4] if shp else None          # an empty province zip (e.g. Tawi-Tawi 100-yr) has none
+
+
+def _inner_shapefile(z, stem):
     import shapefile
-    z = zipfile.ZipFile(io.BytesIO(zbytes))
-    shp = [n for n in z.namelist() if n.lower().endswith(".shp")][0]
-    stem = shp[:-4]
     return shapefile.Reader(shp=io.BytesIO(z.read(stem + ".shp")), shx=io.BytesIO(z.read(stem + ".shx")),
                             dbf=io.BytesIO(z.read(stem + ".dbf")))
+
+
+def noah_index(zip_paths):
+    """{download zip name: {province zip: [x0, y0, x1, y1] or None}} from each map's 100-byte shapefile header.
+    Reading every header takes minutes on the PC, so run_pc.py saves this once and the clip reuses it."""
+    import struct
+    idx = {}
+    for zp in sorted(zip_paths):
+        outer = zipfile.ZipFile(zp)
+        d = idx.setdefault(os.path.basename(zp), {})
+        for name in sorted(outer.namelist()):
+            if not name.lower().endswith(".zip"):
+                continue
+            inner = _inner_zip(outer, name)
+            stem = _shp_stem(inner)
+            d[name] = None if stem is None else list(struct.unpack("<4d", inner.open(stem + ".shp").read(100)[36:68]))
+    return idx
 
 
 def _polygonal(g):
@@ -113,7 +137,7 @@ def _polygonal(g):
     return shapely.union_all(parts) if parts else None
 
 
-def noah_for_boxes(zip_paths, boxes, margin_m=MARGIN_M):
+def noah_for_boxes(zip_paths, boxes, margin_m=MARGIN_M, index=None):
     """{box: {"5"|"25"|"100": [Feature(Var, src)] or None}}. None means no NOAH map for that return period covers the
     box (shown as "not available"); an empty list means maps cover it and none of it is hazard.
     A province zip that appears in two downloads under the same name is read once; two different maps of one
@@ -123,6 +147,7 @@ def noah_for_boxes(zip_paths, boxes, margin_m=MARGIN_M):
     seen = set()
     for zp in sorted(zip_paths):
         outer = zipfile.ZipFile(zp)
+        zi = (index or {}).get(os.path.basename(zp))
         for name in sorted(outer.namelist()):
             if not name.lower().endswith(".zip"):
                 continue
@@ -131,7 +156,15 @@ def noah_for_boxes(zip_paths, boxes, margin_m=MARGIN_M):
             if key in seen:
                 continue
             seen.add(key)
-            rd = _inner_shapefile(outer.read(name))
+            if zi is not None and name in zi:             # the index says where this map is: skip it unless it touches a box
+                bb = zi[name]
+                if bb is None or not any(overlaps(tuple(bb), b) for b in big.values()):
+                    continue
+            inner = _inner_zip(outer, name)
+            stem = _shp_stem(inner)
+            if stem is None:
+                continue
+            rd = _inner_shapefile(inner, stem)
             hit = [k for k, b in big.items() if overlaps(tuple(rd.bbox), b)]
             if not hit:
                 continue

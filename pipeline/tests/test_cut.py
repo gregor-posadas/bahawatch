@@ -66,6 +66,25 @@ class Noah(unittest.TestCase):
             x0, y0, x1, y1 = shape(f["geometry"]).bounds
             self.assertTrue(x0 >= g[0] - 1e-6 and x1 <= g[2] + 1e-6 and y0 >= g[1] - 1e-6 and y1 <= g[3] + 1e-6)
 
+class NoahIndex(unittest.TestCase):
+    """Reading 284 province maps' headers takes ~150 s on the PC, so the bounding boxes are indexed once and the
+    clip step opens only the provinces that touch a box."""
+    @classmethod
+    def setUpClass(cls):
+        d = write_noah(tempfile.mkdtemp())
+        cls.zips = sorted(os.path.join(d, f) for f in os.listdir(d))
+    def test_index_has_each_province_bbox_and_marks_empty_ones(self):
+        idx = cut.noah_index(self.zips)
+        self.assertEqual(idx["100yr-A-001.zip"]["100yr/TawiTawi.zip"], None)
+        x0, y0, x1, y1 = idx["5yr-A-001.zip"]["5yr/MetroManila.zip"]
+        self.assertEqual((round(x0, 2), round(y0, 3), round(x1, 2), round(y1, 2)), (121.04, 14.63, 121.11, 14.71))
+    def test_clip_with_the_index_matches_clip_without(self):
+        boxes = {"upd": UPD, "cebu": CEBU}
+        self.assertEqual(cut.noah_for_boxes(self.zips, boxes, index=cut.noah_index(self.zips)), cut.noah_for_boxes(self.zips, boxes))
+    def test_empty_province_zip_is_skipped(self):
+        got = cut.noah_for_boxes(self.zips, {"upd": UPD})
+        self.assertIsNone(got["upd"]["100"])
+
 class Admin(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

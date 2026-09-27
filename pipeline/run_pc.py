@@ -171,7 +171,16 @@ def cmd_cut(a):
     step("osm", "osm.geojson", ways)
 
     def noah(todo):
-        got = cut.noah_for_boxes(inp["noah"], todo)
+        if out.exists("_noah_index.json"):
+            index = json.load(open(out.path("_noah_index.json"), encoding="utf-8"))
+        else:                                        # once: every province map's extent (minutes on the PC)
+            t = time.time()
+            index = cut.noah_index(inp["noah"])
+            out.json(index, "_noah_index.json")
+            out.log(f"cut noah index: {sum(len(v) for v in index.values())} province maps in {time.time() - t:.0f} s")
+            if a.index_only:
+                return "index only"
+        got = cut.noah_for_boxes(inp["noah"], todo, index=index)
         for k in todo:
             for rp, fs in got[k].items():
                 if fs is not None:
@@ -208,6 +217,7 @@ def main(argv=None):
     p.add_argument("--only", default=None, help="cut: comma-separated box ids")
     p.add_argument("--tmp", default=None, help="cut: scratch folder for the buildings scan (outside --out)")
     p.add_argument("--tolerance", type=float, default=0.01, help="cut: country outline simplification, degrees")
+    p.add_argument("--index-only", action="store_true", help="cut: stop after writing the NOAH index (it takes one whole call)")
     a = p.parse_args(argv)
     {"find": cmd_find, "cut": cmd_cut}[a.cmd](a)
 

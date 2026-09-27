@@ -110,6 +110,7 @@ def write_noah(folder):
     open(os.path.join(folder, "5yr-A-001.zip"), "wb").write(_zip_bytes(five))
     open(os.path.join(folder, "5yr-B-001.zip"), "wb").write(_zip_bytes(five))          # the duplicated download
     open(os.path.join(folder, "25yr-A-001.zip"), "wb").write(_zip_bytes({"25yr/Cebu.zip": _zip_bytes(cebu)}))
+    open(os.path.join(folder, "100yr-A-001.zip"), "wb").write(_zip_bytes({"100yr/TawiTawi.zip": _zip_bytes({})}))   # an empty province, as in the real download
     return folder
 
 

@@ -68,6 +68,10 @@ class EndToEnd(unittest.TestCase):
         b = json.load(open(os.path.join(self.out, "upd", "buildings.geojson")))["features"]
         self.assertEqual(len(b), 2)
 
+    def test_noah_index_saved_once(self):
+        idx = json.load(open(os.path.join(self.out, "_noah_index.json")))
+        self.assertIn("5yr/MetroManila.zip", idx["5yr-A-001.zip"])
+
     def test_second_run_keeps_everything(self):
         self.assertEqual(self.cut2.returncode, 0, self.cut2.stderr)
         self.assertIn("kept all", self.cut2.stdout)
@@ -79,7 +83,7 @@ class EndToEnd(unittest.TestCase):
 
     def test_log_has_a_line_per_step(self):
         log = open(os.path.join(self.out, "pipeline_log.txt"), encoding="utf-8").read()
-        for s in ("find:", "cut outline:", "cut terrain:", "cut buildings:", "cut osm:", "cut noah:", "cut barangays:", "cut outline (country):"):
+        for s in ("find:", "cut outline:", "cut terrain:", "cut buildings:", "cut osm:", "cut noah index:", "cut noah:", "cut barangays:", "cut outline (country):"):
             self.assertIn(s, log)
 
     def test_manual_centre_becomes_a_point_outline(self):
