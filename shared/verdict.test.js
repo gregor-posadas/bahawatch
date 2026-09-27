@@ -88,6 +88,14 @@ test('nothing going on -> hindi clear', () => {
   const v = run({ sensors: [sensor()] });
   assert.equal(v.answer, 'hindi'); assert.equal(v.reason.key, 'clear'); assert.equal(v.etaMin, null);
 });
+test('I9: nothing going on and no fresh sensor input -> hindi clear_no_sensor (no sensor at all, or only a stale one)', () => {
+  const a = run({ sensors: [] });
+  assert.equal(a.answer, 'hindi'); assert.equal(a.reason.key, 'clear_no_sensor'); assert.deepEqual(a.reason.vars, {});
+  const b = run({ sensors: [sensor({ at: NOW - 25 * MIN })] });
+  assert.equal(b.answer, 'hindi'); assert.equal(b.reason.key, 'clear_no_sensor');
+  const c = run({ sensors: [sensor({ here: false, distM: 700, travelMin: null })] });
+  assert.equal(c.answer, 'hindi'); assert.equal(c.reason.key, 'clear');
+});
 test('eta rounds to 5 min, never below 5', () => {
   assert.equal(run({ sensors: [sensor({ depthCm: 4.9, rateCmPerHr: 60 })] }).etaMin, 5);
   assert.equal(run({ sensors: [sensor({ depthCm: 1, rateCmPerHr: 10 })] }).etaMin, 25);

@@ -216,3 +216,13 @@ test('m4: a hung Open-Meteo request times out; the run still completes and write
   await runCron({ ...env, RAIN_TIMEOUT_MS: 50 }, NOW, hung);
   assert.equal((await env.DB.prepare('SELECT ran_at FROM heartbeat').first()).ran_at, NOW);
 });
+test("I9: a place with no sensor reporting says 'clear_no_sensor', not 'clear'; with a fresh reading, 'clear'", async () => {
+  const env = envWith();
+  await runCron(env, NOW, rainOK());
+  const a = await status(env);
+  assert.equal(a.answer, 'hindi'); assert.equal(a.reason.key, 'clear_no_sensor');
+  await env.DB.prepare('INSERT INTO readings(sensor,at,depth_cm) VALUES(?,?,?)').bind('BW-H01', NOW + 4 * 60000, 0).run();
+  await runCron(env, NOW + 5 * 60000, rainOK());
+  const b = await status(env, NOW + 5 * 60000);
+  assert.equal(b.answer, 'hindi'); assert.equal(b.reason.key, 'clear');
+});

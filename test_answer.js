@@ -104,8 +104,14 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
   });
   assert(s.mutations===0&&s.unchanged,"after a language-only switch, further ticks in the same state do not re-announce: "+JSON.stringify(s));
   // every language has every string
-  s=await pg.evaluate(()=>{const need=["q","pick","pickBtn","whereQ","useLoc","pickBrgy","pickSensor","skip","age","justNow","locFail"];const miss=[];for(const k of Object.keys(ANS_LANGS)){const L=ANS_LANGS[k];for(const n of need)if(!L[n])miss.push(k+"."+n);for(const w of ["oo","baka","hindi","nodata"]){if(!L.word[w])miss.push(k+".word."+w);if(!L.gloss[w])miss.push(k+".gloss."+w);}for(const r of ["stale","sensor_now","sensor_soon","upstream","reports","reports_vs_dry_sensor","rain_flood_zone","rain_heavy","reports_few","sensor_trace","clear"])if(!L.reason[r])miss.push(k+".reason."+r);}return miss;});
+  s=await pg.evaluate(()=>{const need=["q","pick","pickBtn","whereQ","useLoc","pickBrgy","pickSensor","skip","age","justNow","locFail"];const miss=[];for(const k of Object.keys(ANS_LANGS)){const L=ANS_LANGS[k];for(const n of need)if(!L[n])miss.push(k+"."+n);for(const w of ["oo","baka","hindi","nodata"]){if(!L.word[w])miss.push(k+".word."+w);if(!L.gloss[w])miss.push(k+".gloss."+w);}for(const r of ["stale","sensor_now","sensor_soon","upstream","reports","reports_vs_dry_sensor","rain_flood_zone","rain_heavy","reports_few","sensor_trace","clear","clear_no_sensor"])if(!L.reason[r])miss.push(k+".reason."+r);}return miss;});
   assert(s.length===0,"all six languages complete: "+s.join(","));
+  // I9: the no-sensor Hindi reason has its own exact wording in every language
+  s=await pg.evaluate(()=>Object.fromEntries(Object.keys(ANS_LANGS).map(k=>[k,ANS_LANGS[k].reason.clear_no_sensor])));
+  assert(s.en==="No heavy rain or flood reports nearby. No sensor here yet."&&s.fil==="Walang malakas na ulan o ulat ng baha sa malapit. Wala pang sensor dito."
+    &&s.ceb==="Walay kusog nga ulan o taho sa baha duol diri. Wala pay sensor diri."&&s.ilo==="Awan ti napigsa a tudo wenno damag ti layus iti asideg. Awan pay ti sensor ditoy."
+    &&s.hil==="Wala sang mabaskog nga ulan ukon report sang baha malapit diri. Wala pa sang sensor diri."&&s.pam==="Alang makusog a uran o report ning albug malapit keni. Ala pang sensor keni.",
+    "clear_no_sensor strings, six languages: "+JSON.stringify(s));
   // barangay pick
   await pg.evaluate(()=>{const b=PLACES.sites.tv.find(p=>p.kind==="barangay");setPlace(b.id);});
   s=await pg.evaluate(()=>({place:document.getElementById('p-ans-place').textContent,id:myPlace}));

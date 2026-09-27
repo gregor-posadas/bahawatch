@@ -51,5 +51,6 @@ export function babahaBa(x) {
   }
   if (yes >= 1) return out('baka', 'reports_few', { n: yes });
   if (here && here.depthCm >= RULE.TRACE_CM) return out('baka', 'sensor_trace', { name: here.name, cm: Math.round(here.depthCm) });
-  return out('hindi', 'clear');
+  // "No sign" means less with no sensor to look at: say so, rather than claim sensors were checked.
+  return out('hindi', live.length ? 'clear' : 'clear_no_sensor');
 }
