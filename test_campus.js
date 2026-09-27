@@ -68,6 +68,18 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
     assert(d1.lang==="en"&&d1.tr===null,"back to English: <html lang=en>, and Chrome may translate again: "+JSON.stringify(d1));
     assert(a1==="fil"&&a2==="ceb"&&a3[0]==="ceb"&&a3[1]==="ceb","language chosen on the national map carries to a campus, and a campus choice to the next campus and back ("+[a1,a2,a3].join(" → ")+")");
     await c2.close();}
+  // a fresh visitor whose browser is set to Filipino, deep-linking straight into a campus's details view (no saved
+  // language, no visit to the national map or the simple view first): <html lang>/translate must still be right
+  {const c3=await b.newContext({viewport:{width:1280,height:900},locale:'fil-PH'});await c3.addInitScript(()=>{try{localStorage.setItem("bw-asked:xu","1");}catch(e){}});
+    const p5=await c3.newPage();await p5.goto(U+'#xu/details');await ready(p5,"xu");
+    const d2=await p5.evaluate(()=>({lang:document.documentElement.lang,tr:document.documentElement.getAttribute("translate"),LANG}));
+    assert(d2.lang==="fil"&&d2.tr==="no"&&d2.LANG==="fil","boot straight into a campus's details view with a Filipino browser: <html lang=fil translate=no>: "+JSON.stringify(d2));
+    await c3.close();}
+  {const c4=await b.newContext({viewport:{width:1280,height:900}});await c4.addInitScript(()=>{try{localStorage.setItem("bw-asked:xu","1");}catch(e){}});
+    const p6=await c4.newPage();await p6.goto(U+'#xu/details');await ready(p6,"xu");
+    const d3=await p6.evaluate(()=>({lang:document.documentElement.lang,tr:document.documentElement.getAttribute("translate")}));
+    assert(d3.lang==="en"&&d3.tr===null,"boot straight into a campus's details view with an English browser: <html lang=en>, no translate attribute: "+JSON.stringify(d3));
+    await c4.close();}
   // OSM names are data, not markup: a street name with HTML must show as text in the cards, the log and the warning
   {const p2=await ctx.newPage();const fs=require('fs');
     await p2.route('**/data/usc.json',r=>{const d=JSON.parse(fs.readFileSync('data/usc.json','utf8'));d.sensors.forEach(u=>{u.street='<img id="pwn" src="x">';});r.fulfill({contentType:'application/json',body:JSON.stringify(d)});});

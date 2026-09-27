@@ -2761,6 +2761,7 @@ function applySiteLang(){
   const hz=SITE_CFG.hazard?"":"none";
   document.querySelector(".noah-chips").style.display=hz;document.querySelector(".noah-h").style.display=hz;document.querySelector(".noah-lg").style.display=hz;
   document.getElementById("f-nh-wrap").style.display=hz;
+  syncDocLang();                                       // switchSite() runs for every VIEW (public or details), boot included
 }
 $("p-details").addEventListener("click",()=>{if(TRY)exitTry();setView("details");});
 $("d-simple").addEventListener("click",()=>setView("public"));
