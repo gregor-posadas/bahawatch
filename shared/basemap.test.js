@@ -28,6 +28,10 @@ test('a point joins the first cluster whose first point is near', () => {
   const g = bwCluster([{ id: 'a', x: 0, y: 0 }, { id: 'b', x: 50, y: 0 }, { id: 'c', x: 25, y: 0 }], 36);
   assert.deepEqual(g.map((x) => x.ids), [['a', 'c'], ['b']]);
 });
+test('clusters whose centres end up closer than the radius merge, so no two overlap', () => {
+  const g = bwCluster([{ id: 'a', x: 0, y: 0 }, { id: 'b', x: 40, y: 0 }, { id: 'c', x: 20, y: 0 }], 36);
+  assert.deepEqual(g, [{ x: 20, y: 0, ids: ['a', 'c', 'b'] }]);
+});
 test("coverage is the box's span over the view's shorter side", () => {
   assert.equal(bwCoverage({ x0: 0, y0: 0, x1: 400, y1: 300 }, 800, 400), 1);
   assert.ok(bwCoverage({ x0: 10, y0: 10, x1: 110, y1: 60 }, 800, 400) < 0.9);

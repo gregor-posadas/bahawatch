@@ -44,19 +44,37 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 /* the sea: a grey blue kept ΔE2000 ≥ 15 from the flood blues, the NOAH purples and the creek blue (plan ruling 2) */
 :root{--sea:#d6ddde} :root[data-theme="dark"]{--sea:#1f2c35}
 .sea-sw{display:inline-block; flex:none; width:18px; height:10px; background:var(--sea); border:1px solid var(--ink-2); border-radius:2px; vertical-align:middle}
-.nat-inner{max-width:1180px; margin:0 auto; padding:14px 16px 28px}
+.nat-inner{margin:0; padding:14px 24px 16px}
 .nat-top{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px}
 .nat-top .p-tools{margin-left:auto; display:flex; gap:8px; align-items:center}
 .nat-top .p-tools button, .nat-top .p-tools select{min-height:48px; min-width:48px}
 #nat-theme{border:1px solid var(--ink); border-radius:4px; background:var(--panel); color:var(--ink); font-size:16px}
 .nat-h{font-size:20px; font-weight:700}
-.nat-intro{max-width:70ch; margin:12px 0 16px; font-size:16px}
-.nat-body{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:24px; align-items:start}
-@media (max-width:820px){.nat-body{grid-template-columns:1fr}}
-.nat-map{position:relative; width:min(100%, calc(76vh * var(--ar,0.6))); margin:0 auto; aspect-ratio:var(--ar,0.6); background:var(--map-bg); border:1px solid var(--ink); border-radius:6px; overflow:hidden}
+/* split pane (page pattern): the list on the left, the map filling the rest */
+.nat-body{display:grid; grid-template-columns:360px minmax(0,1fr); gap:24px; margin-top:12px}
+.nat-listcol,.nat-mapcol{min-width:0}
+.nat-intro{max-width:72ch; margin:0 0 16px; font-size:16px}
+.nat-map{position:relative; width:100%; height:calc(100dvh - 160px); min-height:420px; background:var(--sea); border:1px solid var(--ink); border-radius:6px; overflow:hidden}
+@media (min-width:900px){
+  body[data-route="ph"]{overflow:hidden}
+  #nat .nat-inner{height:100dvh; display:flex; flex-direction:column}
+  #nat .nat-body{flex:1; min-height:0}
+  #nat .nat-listcol{overflow-y:auto; min-height:0; padding-right:8px}
+  #nat .nat-mapcol{display:flex; flex-direction:column; min-height:0}
+  #nat .nat-map{flex:1; height:auto; min-height:0}
+}
+@media (max-width:899px){
+  .nat-body{grid-template-columns:1fr}
+  .nat-mapcol{order:-1}
+  .nat-map{height:60vh; min-height:300px}
+}
 #nat-svg{position:absolute; inset:0; width:100%; height:100%}
-#nat-land{fill:var(--panel-2); stroke:var(--ink-2); stroke-width:1; vector-effect:non-scaling-stroke}
-.nat-pins{position:absolute; inset:0}
+#nat-land{fill:var(--map-bg); stroke:var(--ink-2); stroke-width:1; vector-effect:non-scaling-stroke}
+#nat-gl{position:absolute; inset:0; opacity:0; transition:opacity .3s}
+body[data-natgl="1"] #nat-gl{opacity:1}
+body[data-natgl="1"] #nat-svg{visibility:hidden}
+.nat-pins{position:absolute; inset:0; pointer-events:none; z-index:2}
+.nat-pins > *{pointer-events:auto}
 .pin,.pin-cluster{position:absolute; transform:translate(-50%,-50%); width:48px; height:48px; display:flex; align-items:center; justify-content:center}
 .pin{color:var(--ink); text-decoration:none}
 .pin-shape{display:inline-block; flex:none; width:16px; height:16px; background:var(--pin); filter:drop-shadow(0 0 1px var(--bg)) drop-shadow(0 0 1px var(--bg))}
@@ -65,19 +83,35 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .pin-private .pin-shape, .pin-shape.pin-private{clip-path:polygon(50% 0,100% 100%,0 100%); width:18px; height:17px}
 .pin-t{position:absolute; left:34px; top:50%; transform:translateY(-50%); white-space:nowrap; font-size:12px; font-weight:700; color:var(--ink); background:var(--map-bg); padding:0 3px; border-radius:3px; pointer-events:none}
 .pin-cluster span{min-width:32px; height:32px; border-radius:16px; background:var(--ink); color:var(--bg); font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 6px}
-.pin:focus-visible,.pin-cluster:focus-visible,.nat-item:focus-visible,.nat-btn:focus-visible,.nat-q:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
-.nat-btn{min-height:48px; padding:0 14px; border:2px solid var(--ink); border-radius:6px; font-weight:700; margin-top:10px}
-.nat-legend{list-style:none; padding:0; margin:10px 0 0; display:flex; flex-wrap:wrap; gap:6px 16px; font-size:14px}
+/* a ring around the chosen (ink) or hovered (brand) pin; not an outline on the shape, which the triangle's clip-path would cut off */
+.pin-sel::before,.pin-hl::before{content:""; position:absolute; inset:7px; border:3px solid var(--ink); border-radius:50%; pointer-events:none}
+.pin-hl::before{border-color:var(--brand)}
+.pin-sel .pin-t,.pin-hl .pin-t{left:44px}
+.pin:focus-visible,.pin-cluster:focus-visible,.nat-item:focus-visible,.nat-btn:focus-visible,.nat-q:focus-visible,.nat-zoom button:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
+.nat-box{position:absolute; z-index:1; border:2px dashed var(--ink); pointer-events:none}
+.nat-box[hidden]{display:none}
+.nat-zoom{position:absolute; top:12px; right:12px; z-index:3; display:flex; flex-direction:column; gap:4px}
+.nat-zoom button{width:48px; height:48px; border:1px solid var(--ink); border-radius:6px; background:var(--panel); color:var(--ink); font-size:20px; font-weight:700}
+.nat-btn{min-height:48px; padding:0 14px; border:2px solid var(--ink); border-radius:6px; font-weight:700; background:var(--panel); color:var(--ink); display:inline-flex; align-items:center; text-decoration:none}
+.nat-open{position:absolute; right:12px; bottom:12px; z-index:3}
+.nat-open[hidden]{display:none}
+.nat-legend{position:absolute; left:12px; bottom:44px; z-index:3; list-style:none; margin:0; padding:6px 10px; display:flex; flex-wrap:wrap; gap:4px 14px; font-size:14px; background:var(--panel); border:1px solid var(--line); border-radius:6px; max-width:calc(100% - 96px)}
 .nat-legend li{display:flex; align-items:center; gap:6px}
+@media (max-width:899px){.nat-legend{top:12px; bottom:auto}}   /* it wraps here and the credits take two lines: keep them apart */
+.nat-credit{position:absolute; left:12px; bottom:10px; z-index:3; margin:0; font-size:12px; color:var(--ink-2); background:var(--panel); padding:2px 6px; border-radius:4px}
+.nat-note{margin:8px 0 0; color:var(--ink)}
+.nat-note[hidden]{display:none}
 .nat-ql{display:block; font-weight:700; margin-bottom:6px}
 .nat-q{width:100%; min-height:48px; font:inherit; font-size:16px; padding:0 12px; border:2px solid var(--ink); border-radius:6px; background:var(--panel); color:var(--ink)}
 .nat-count{min-height:1.4em; margin:6px 0; color:var(--ink-2)}
 .nat-g{font-size:16px; font-weight:700; margin:16px 0 4px}
 .nat-ul{list-style:none; padding:0; margin:0}
-.nat-item{display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; min-height:48px; padding:6px 4px; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none}
-.nat-item:hover b{text-decoration:underline}
-.nat-where{flex-basis:100%; padding-left:24px; color:var(--ink-2); font-size:14px}
+.nat-item{display:grid; grid-template-columns:24px 1fr; align-items:center; column-gap:8px; min-height:48px; padding:6px 4px; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none; font-size:16px}
+.nat-item .pin-shape{justify-self:center}
+.nat-item:hover .nat-name b{text-decoration:underline}
+.nat-where{grid-column:2; color:var(--ink-2); font-size:14px}
 .nat-foot{font-size:12px; color:var(--ink-2); margin-top:20px}
+@media (prefers-reduced-motion: reduce){#nat-gl{transition:none}}
 /* campus pages: the bar under the tabs, and the partnership card */
 .c-bar{display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:6px 0}
 [data-view="details"] .c-bar{padding:6px 22px}
@@ -465,32 +499,31 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
 </nav>
-  <p class="nat-intro" id="nat-intro"></p>
   <div class="nat-body">
-    <div class="nat-mapcol">
-      <div class="nat-map" id="nat-map" role="group" aria-labelledby="nat-map-l" aria-describedby="nat-desc">
-        <svg id="nat-svg" aria-hidden="true" focusable="false" preserveAspectRatio="none"><path id="nat-land"/></svg>
-        <div class="nat-pins" id="nat-pins"></div>
-      </div>
-      <span class="sr-only" id="nat-map-l"></span>
-      <p class="sr-only" id="nat-desc"></p>
-      <button class="nat-btn" id="nat-zoom-out" hidden></button>
-      <ul class="nat-legend" id="nat-legend"></ul>
-    </div>
     <div class="nat-listcol">
+      <p class="nat-intro" id="nat-intro"></p>
       <label class="nat-ql" for="nat-q" id="nat-q-l"></label>
       <input class="nat-q" type="search" id="nat-q" autocomplete="off" aria-describedby="nat-count">
       <p class="nat-count" id="nat-count" role="status" aria-live="polite"></p>
       <div id="nat-list"></div>
-      <h2 class="nat-g" id="nat-pilots-h"></h2>
-      <ul class="nat-ul">
-        <li><a class="nat-item" href="#tv"><b>Teachers Village</b><span class="nat-where">Quezon City · pilot, hand-placed units</span></a></li>
-        <li><a class="nat-item" href="#berkeley"><b>UC Berkeley</b><span class="nat-where">California · pilot, the real demo unit</span></a></li>
-        <li><a class="nat-item" href="#try"><b id="nat-try"></b></a></li>
-      </ul>
+      <p class="nat-foot" id="nat-foot"></p>
+    </div>
+    <div class="nat-mapcol">
+      <div class="nat-map" id="nat-map" role="group" aria-labelledby="nat-map-l" aria-describedby="nat-desc">
+        <svg id="nat-svg" aria-hidden="true" focusable="false" preserveAspectRatio="none"><path id="nat-land"/></svg>
+        <div id="nat-gl"></div>
+        <div class="nat-box" id="nat-box" hidden></div>
+        <div class="nat-pins" id="nat-pins"></div>
+        <div class="nat-zoom"><button id="nat-zin">+</button><button id="nat-zout">−</button><button id="nat-home">⌂</button></div>
+        <ul class="nat-legend" id="nat-legend"></ul>
+        <p class="nat-credit" id="nat-credit"></p>
+        <a class="nat-btn nat-open" id="nat-open" hidden></a>
+      </div>
+      <p class="nat-note" id="nat-note" role="status" hidden></p>
+      <span class="sr-only" id="nat-map-l"></span>
+      <p class="sr-only" id="nat-desc"></p>
     </div>
   </div>
-  <p class="nat-foot" id="nat-foot"></p>
  </div>
 </section>
 <section id="route-loading" class="route-msg"><p id="load-msg" role="status" aria-live="polite"></p></section>
@@ -1618,6 +1651,7 @@ function loop(now){
 const themeBtn=document.getElementById("theme-toggle");
 function setTheme(t,render){
   document.documentElement.dataset.theme=t;
+  if(render)bwThemeChanged(t);        // not on the boot call: the map code below hasn't run yet (NATGL would be in its TDZ)
   STATUS_COL=t==="dark"?STATUS_COL_DARK:STATUS_COL_LIGHT;
   try{localStorage.setItem("bw-theme",t);}catch(e){}
   themeBtn.textContent=t==="dark"?"☀":"☾";
@@ -2818,7 +2852,7 @@ document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
 });
 /* Strings for the national map, campus pages and loading: i18n/nat.json (English, and five languages drafted by
    Claude and marked _review for native-speaker review). */
-const NAT_LANGS={"en":{"loading":"Loading {name}…","fail":"{name} didn't load. Check your connection.","retry":"Try again","back":"‹ All campuses","title":"PhilDev partner campuses","intro":"Choose a campus to see what a BahaWatch partnership would look like there: eight household water-level units, the barangays they cover, and the flood hazard around the campus.","mapL":"Map of PhilDev partner campuses","desc":"Map of the Philippines with {n} PhilDev partner campuses: {luzon} in Luzon, {visayas} in Visayas, {mindanao} in Mindanao. The campus list has the same campuses.","search":"Find a campus","count0":"No campus matches “{q}”.","count1":"1 campus matches.","countN":"{n} campuses match.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"State university or college","LUC":"Local university or college","Private":"Private"},"typesShort":{"SUC":"State","LUC":"Local","Private":"Private"},"shapes":{"SUC":"circle","LUC":"square","Private":"triangle"},"cluster":"{n} campuses: {names}. Zoom in","zoomOut":"‹ Whole country","pilots":"Pilot sites","tryLink":"Try reporting","zin":"Zoom in","zout":"Zoom out","home":"Show the whole country","open":"Open {short}","mapNote":"Detailed map needs an internet connection.","sea":"Sea","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Whole country","backFlood":"Back to the flood map","simArea":"Simulated area","change":"Change campus (now {name})","sim":"Simulation: sensor readings are simulated; unit spots are proposals. Terrain: FABDEM (30 m). Not a forecast; not for emergency use.","cardH":"What a partnership looks like","unitsH":"Proposed units: {n} household water-level units, placed automatically","onCampus":"on campus","brgyH":"Barangays covered","brgy1":"1 barangay","brgyN":"{n} barangays","noahH":"NOAH flood hazard in this area (share of the land in a hazard zone)","noahRp":"{rp}-year rain","noahNA":"not available from NOAH","noah0":"no hazard zone mapped in this area","roleH":"University role","role":["Students install and look after the units with residents.","Faculty check the data.","The campus hosts one unit and the local dashboard."],"foot":"Campus list: PhilDev partners across the Philippines (PhilDev Starter Pack). Map: PSA/NAMRIA administrative boundaries via OCHA HDX (CC BY-IGO), simplified. Main campuses are shown where a university has several."},"fil":{"_review":true,"loading":"Nilo-load ang {name}…","fail":"Hindi na-load ang {name}. Tingnan ang iyong koneksyon.","retry":"Subukan muli","back":"‹ Lahat ng kampus","title":"Mga kampus na katuwang ng PhilDev","intro":"Pumili ng kampus para makita kung ano ang magiging hitsura ng pakikipagtulungan sa BahaWatch doon: walong water-level unit sa mga bahay, ang mga barangay na saklaw nila, at ang panganib ng baha sa paligid ng kampus.","mapL":"Mapa ng mga kampus na katuwang ng PhilDev","desc":"Mapa ng Pilipinas na may {n} kampus na katuwang ng PhilDev: {luzon} sa Luzon, {visayas} sa Visayas, {mindanao} sa Mindanao. Nasa listahan ng kampus ang parehong mga kampus.","search":"Maghanap ng kampus","count0":"Walang kampus na tugma sa “{q}”.","count1":"1 kampus ang tugma.","countN":"{n} kampus ang tugma.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad o kolehiyo ng estado","LUC":"Lokal na unibersidad o kolehiyo","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"shapes":{"SUC":"bilog","LUC":"parisukat","Private":"tatsulok"},"cluster":"{n} kampus: {names}. I-zoom in","zoomOut":"‹ Buong bansa","pilots":"Mga pilot site","tryLink":"Subukang mag-ulat","zin":"Palakihin","zout":"Paliitin","home":"Ipakita ang buong bansa","open":"Buksan ang {short}","mapNote":"Kailangan ng internet para sa detalyadong mapa.","sea":"Dagat","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Buong bansa","backFlood":"Bumalik sa mapa ng baha","simArea":"Lugar ng simulasyon","change":"Palitan ang kampus (ngayon: {name})","sim":"Simulasyon: kunwari lamang ang mga reading ng sensor; mungkahi lamang ang mga puwesto ng unit. Terrain: FABDEM (30 m). Hindi ito forecast; hindi para sa emergency.","cardH":"Ganito ang isang pakikipagtulungan","unitsH":"Mga mungkahing unit: {n} water-level unit sa mga bahay, awtomatikong inilagay","onCampus":"nasa kampus","brgyH":"Mga barangay na saklaw","brgy1":"1 barangay","brgyN":"{n} barangay","noahH":"Panganib ng baha ayon sa NOAH sa lugar na ito (bahagi ng lupa na nasa hazard zone)","noahRp":"{rp}-taong ulan","noahNA":"walang datos mula sa NOAH","noah0":"walang naka-mapang hazard zone sa lugar na ito","roleH":"Papel ng unibersidad","role":["Ang mga estudyante ang nagkakabit at nag-aalaga ng mga unit kasama ang mga residente.","Sinusuri ng mga guro ang datos.","Ang kampus ang may hawak ng isang unit at ng lokal na dashboard."],"foot":"Listahan ng kampus: mga katuwang ng PhilDev sa buong Pilipinas (PhilDev Starter Pack). Mapa: mga hangganang administratibo ng PSA/NAMRIA mula sa OCHA HDX (CC BY-IGO), pinasimple. Ipinapakita ang pangunahing kampus kung may ilang kampus ang unibersidad."},"ceb":{"_review":true,"loading":"Gikarga ang {name}…","fail":"Wala makarga ang {name}. Susiha ang imong koneksyon.","retry":"Sulayi pag-usab","back":"‹ Tanang kampus","title":"Mga kampus nga kauban sa PhilDev","intro":"Pagpili og kampus aron makita kon unsa ang dagway sa pakigtambayayong sa BahaWatch didto: walo ka water-level unit sa mga balay, ang mga barangay nga ilang nasakpan, ug ang peligro sa baha palibot sa kampus.","mapL":"Mapa sa mga kampus nga kauban sa PhilDev","desc":"Mapa sa Pilipinas nga adunay {n} ka kampus nga kauban sa PhilDev: {luzon} sa Luzon, {visayas} sa Visayas, {mindanao} sa Mindanao. Anaa sa lista sa kampus ang samang mga kampus.","search":"Pangitaa ang kampus","count0":"Walay kampus nga mohaom sa “{q}”.","count1":"1 ka kampus ang mohaom.","countN":"{n} ka kampus ang mohaom.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad o kolehiyo sa estado","LUC":"Lokal nga unibersidad o kolehiyo","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"shapes":{"SUC":"lingin","LUC":"kwadrado","Private":"trayanggulo"},"cluster":"{n} ka kampus: {names}. I-zoom in","zoomOut":"‹ Tibuok nasod","pilots":"Mga pilot site","tryLink":"Sulayi ang pagreport","zin":"Padakua","zout":"Pagamya","home":"Ipakita ang tibuok nasod","open":"Ablihi ang {short}","mapNote":"Kinahanglan og internet alang sa detalyado nga mapa.","sea":"Dagat","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Tibuok nasod","backFlood":"Balik sa mapa sa baha","simArea":"Dapit sa simulasyon","change":"Usba ang kampus (karon: {name})","sim":"Simulasyon: dili tinuod ang mga basa sa sensor; sugyot lamang ang mga dapit sa unit. Terrain: FABDEM (30 m). Dili kini forecast; dili para sa emerhensya.","cardH":"Ingon niini ang usa ka pakigtambayayong","unitsH":"Gisugyot nga mga unit: {n} ka water-level unit sa mga balay, awtomatikong gibutang","onCampus":"sulod sa kampus","brgyH":"Mga barangay nga nasakpan","brgy1":"1 ka barangay","brgyN":"{n} ka barangay","noahH":"Peligro sa baha sumala sa NOAH niini nga dapit (bahin sa yuta nga anaa sa hazard zone)","noahRp":"{rp}-ka-tuig nga ulan","noahNA":"walay datos gikan sa NOAH","noah0":"walay hazard zone nga namapa niini nga dapit","roleH":"Papel sa unibersidad","role":["Ang mga estudyante ang mobutang ug moatiman sa mga unit uban sa mga residente.","Ang mga magtutudlo ang mosusi sa datos.","Ang kampus ang magkupot og usa ka unit ug sa lokal nga dashboard."],"foot":"Lista sa kampus: mga kauban sa PhilDev sa tibuok Pilipinas (PhilDev Starter Pack). Mapa: mga utlanan sa administrasyon gikan sa PSA/NAMRIA pinaagi sa OCHA HDX (CC BY-IGO), gipasimple. Gipakita ang main campus kon daghan og kampus ang unibersidad."},"ilo":{"_review":true,"loading":"Ikarkarga ti {name}…","fail":"Saan a naikarga ti {name}. Kitaem ti koneksionmo.","retry":"Padasen manen","back":"‹ Amin a kampus","title":"Dagiti kampus a kadua ti PhilDev","intro":"Mangpili iti kampus tapno makitam no kasano ti panagtitinnulong iti BahaWatch sadiay: walo a water-level unit kadagiti balay, dagiti barangay a sakupenda, ken ti peggad ti layus iti aglawlaw ti kampus.","mapL":"Mapa dagiti kampus a kadua ti PhilDev","desc":"Mapa ti Filipinas nga addaan iti {n} a kampus a kadua ti PhilDev: {luzon} idiay Luzon, {visayas} idiay Visayas, {mindanao} idiay Mindanao. Adda iti listaan ti kampus dagiti isu met laeng a kampus.","search":"Agbiruk iti kampus","count0":"Awan ti kampus a maitunos iti “{q}”.","count1":"1 a kampus ti maitunos.","countN":"{n} a kampus ti maitunos.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad wenno kolehio ti estado","LUC":"Lokal nga unibersidad wenno kolehio","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"shapes":{"SUC":"nagbukel","LUC":"kuadrado","Private":"trianggulo"},"cluster":"{n} a kampus: {names}. I-zoom in","zoomOut":"‹ Intero a pagilian","pilots":"Dagiti pilot site","tryLink":"Padasen ti agireport","zin":"Padakkelen","zout":"Pabassiten","home":"Ipakita ti intero a pagilian","open":"Luktan ti {short}","mapNote":"Masapul ti internet para iti detalyado a mapa.","sea":"Baybay","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Intero a pagilian","backFlood":"Agsubli iti mapa ti layus","simArea":"Lugar ti simulasion","change":"Sukatan ti kampus (ita: {name})","sim":"Simulasion: saan a pudno dagiti basa ti sensor; singasing laeng dagiti lugar ti unit. Terrain: FABDEM (30 m). Saan daytoy a forecast; saan a para iti emerhensia.","cardH":"Kastoy ti maysa a panagtitinnulong","unitsH":"Dagiti maisingasing a unit: {n} a water-level unit kadagiti balay, awtomatiko a naikabil","onCampus":"adda iti kampus","brgyH":"Dagiti barangay a nasakupan","brgy1":"1 a barangay","brgyN":"{n} a barangay","noahH":"Peggad ti layus segun iti NOAH iti daytoy a lugar (paset ti daga nga adda iti hazard zone)","noahRp":"{rp}-a-tawen a tudo","noahNA":"awan ti datos manipud iti NOAH","noah0":"awan ti hazard zone a namapa iti daytoy a lugar","roleH":"Akem ti unibersidad","role":["Dagiti estudiante ti mangikabil ken mangaywan kadagiti unit a kadua dagiti residente.","Dagiti mannursuro ti mangsukimat iti datos.","Ti kampus ti mangtengngel iti maysa a unit ken ti lokal a dashboard."],"foot":"Listaan dagiti kampus: dagiti kadua ti PhilDev iti intero a Filipinas (PhilDev Starter Pack). Mapa: dagiti administratibo a beddeng ti PSA/NAMRIA manipud iti OCHA HDX (CC BY-IGO), napasimple. Maipakita ti kangrunaan a kampus no adu ti kampus ti unibersidad."},"hil":{"_review":true,"loading":"Ginakarga ang {name}…","fail":"Wala makarga ang {name}. Tan-awa ang imo koneksyon.","retry":"Tilawi liwat","back":"‹ Tanan nga kampus","title":"Mga kampus nga kaupod sang PhilDev","intro":"Magpili sang kampus agod makita kon ano ang itsura sang pagbinuligay sa BahaWatch didto: walo ka water-level unit sa mga balay, ang mga barangay nga ila nasakop, kag ang katalagman sang baha sa palibot sang kampus.","mapL":"Mapa sang mga kampus nga kaupod sang PhilDev","desc":"Mapa sang Pilipinas nga may {n} ka kampus nga kaupod sang PhilDev: {luzon} sa Luzon, {visayas} sa Visayas, {mindanao} sa Mindanao. Ara sa listahan sang kampus ang amo man nga mga kampus.","search":"Mangita sang kampus","count0":"Wala sing kampus nga nagapareho sa “{q}”.","count1":"1 ka kampus ang nagapareho.","countN":"{n} ka kampus ang nagapareho.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad ukon kolehiyo sang estado","LUC":"Lokal nga unibersidad ukon kolehiyo","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"shapes":{"SUC":"lingin","LUC":"kwadrado","Private":"tatsulok"},"cluster":"{n} ka kampus: {names}. I-zoom in","zoomOut":"‹ Bug-os nga pungsod","pilots":"Mga pilot site","tryLink":"Tilawi ang pagreport","zin":"Padakua","zout":"Pagamya","home":"Ipakita ang bug-os nga pungsod","open":"Buksi ang {short}","mapNote":"Kinahanglan ang internet para sa detalyado nga mapa.","sea":"Dagat","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Bug-os nga pungsod","backFlood":"Balik sa mapa sang baha","simArea":"Lugar sang simulasyon","change":"Ilisan ang kampus (subong: {name})","sim":"Simulasyon: indi matuod ang mga basa sang sensor; panugda lang ang mga lugar sang unit. Terrain: FABDEM (30 m). Indi ini forecast; indi para sa emerhensya.","cardH":"Amo ini ang isa ka pagbinuligay","unitsH":"Ginapanugda nga mga unit: {n} ka water-level unit sa mga balay, awtomatiko nga ginbutang","onCampus":"sa sulod sang kampus","brgyH":"Mga barangay nga nasakop","brgy1":"1 ka barangay","brgyN":"{n} ka barangay","noahH":"Katalagman sang baha suno sa NOAH sa sini nga lugar (bahin sang duta nga ara sa hazard zone)","noahRp":"{rp}-ka-tuig nga ulan","noahNA":"wala sing datos halin sa NOAH","noah0":"wala sing hazard zone nga namapa sa sini nga lugar","roleH":"Papel sang unibersidad","role":["Ang mga estudyante ang magabutang kag magaatipan sang mga unit upod ang mga residente.","Ang mga manunudlo ang magausisa sang datos.","Ang kampus ang magauyat sang isa ka unit kag sang lokal nga dashboard."],"foot":"Listahan sang kampus: mga kaupod sang PhilDev sa bug-os nga Pilipinas (PhilDev Starter Pack). Mapa: mga administratibo nga dulunan halin sa PSA/NAMRIA paagi sa OCHA HDX (CC BY-IGO), ginpasimple. Ginapakita ang main campus kon madamo ang kampus sang unibersidad."},"pam":{"_review":true,"loading":"Iloload ya ing {name}…","fail":"E melyari ing pamag-load king {name}. Lawan me ing koneksyun mu.","retry":"Subukan ya pasibayu","back":"‹ Deng eganagang kampus","title":"Deng kampus a kayabe ning PhilDev","intro":"Mamili kang kampus ban akit mu nung makananu ing pamikiabe king BahaWatch karin: walung water-level unit kareng bale, deng barangay a sasakupan da, ampo ing panganib ning albug king palibut ning kampus.","mapL":"Mapa da reng kampus a kayabe ning PhilDev","desc":"Mapa ning Filipinas a atin {n} a kampus a kayabe ning PhilDev: {luzon} king Luzon, {visayas} king Visayas, {mindanao} king Mindanao. Atyu king listaan da reng kampus deng pareung kampus.","search":"Manintun kang kampus","count0":"Alang kampus a tutugma king “{q}”.","count1":"1 a kampus ing tutugma.","countN":"{n} a kampus ing tutugma.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad o kolehiyu ning estadu","LUC":"Lokal a unibersidad o kolehiyu","Private":"Pribadu"},"typesShort":{"SUC":"Estadu","LUC":"Lokal","Private":"Pribadu"},"shapes":{"SUC":"bilug","LUC":"kwadradu","Private":"tatsulok"},"cluster":"{n} a kampus: {names}. I-zoom in","zoomOut":"‹ Sablang bansa","pilots":"Deng pilot site","tryLink":"Subukan ing pamag-report","zin":"Palagwan","zout":"Paditak","home":"Ipakit ing sablang bansa","open":"Buksan ya ing {short}","mapNote":"Kailangan ing internet para king detalyadung mapa.","sea":"Dayat","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Sablang bansa","backFlood":"Mibalik king mapa ning albug","simArea":"Lugal ning simulasyun","change":"Sukatan ya ing kampus (ngeni: {name})","sim":"Simulasyun: e tutu deng basa ning sensor; mungkai mu deng lugal ning unit. Terrain: FABDEM (30 m). E ini forecast; e para king emerhensya.","cardH":"Makanini ing metung a pamikiabe","unitsH":"Deng mungkaing unit: {n} a water-level unit kareng bale, awtomatikung mikabit","onCampus":"keng kampus","brgyH":"Deng barangay a sasakupan","brgy1":"1 a barangay","brgyN":"{n} a barangay","noahH":"Panganib ning albug agpang king NOAH keng lugal a iti (bage ning gabun a atyu king hazard zone)","noahRp":"{rp}-banuang uran","noahNA":"alang datos manibat king NOAH","noah0":"alang hazard zone a mipamapa keng lugal a iti","roleH":"Papel ning unibersidad","role":["Deng estudyanti ing mangabit at mangalaga kareng unit kayabe da reng residenti.","Deng maestru ing manyusi king datos.","Ing kampus ing mamyalaga king metung a unit ampo king lokal a dashboard."],"foot":"Listaan da reng kampus: deng kayabe ning PhilDev king sablang Filipinas (PhilDev Starter Pack). Mapa: deng administratibung hanggan ning PSA/NAMRIA manibat king OCHA HDX (CC BY-IGO), pepasimple. Ipakit ya ing main campus nung dakal ya kampus ing unibersidad."}};
+const NAT_LANGS={"en":{"loading":"Loading {name}…","fail":"{name} didn't load. Check your connection.","retry":"Try again","back":"‹ All campuses","title":"PhilDev partner campuses","intro":"Choose a campus to see what a BahaWatch partnership would look like there: eight household water-level units, the barangays they cover, and the flood hazard around the campus.","mapL":"Map of PhilDev partner campuses","desc":"Map of the Philippines with {n} PhilDev partner campuses: {luzon} in Luzon, {visayas} in Visayas, {mindanao} in Mindanao. The campus list has the same campuses.","search":"Find a campus","count0":"No campus matches “{q}”.","count1":"1 campus matches.","countN":"{n} campuses match.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"State university or college","LUC":"Local university or college","Private":"Private"},"typesShort":{"SUC":"State","LUC":"Local","Private":"Private"},"cluster":"{n} campuses: {names}. Zoom in","zin":"Zoom in","zout":"Zoom out","home":"Show the whole country","open":"Open {short}","mapNote":"Detailed map needs an internet connection.","sea":"Sea","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Whole country","backFlood":"Back to the flood map","simArea":"Simulated area","change":"Change campus (now {name})","sim":"Simulation: sensor readings are simulated; unit spots are proposals. Terrain: FABDEM (30 m). Not a forecast; not for emergency use.","cardH":"What a partnership looks like","unitsH":"Proposed units: {n} household water-level units, placed automatically","onCampus":"on campus","brgyH":"Barangays covered","brgy1":"1 barangay","brgyN":"{n} barangays","noahH":"NOAH flood hazard in this area (share of the land in a hazard zone)","noahRp":"{rp}-year rain","noahNA":"not available from NOAH","noah0":"no hazard zone mapped in this area","roleH":"University role","role":["Students install and look after the units with residents.","Faculty check the data.","The campus hosts one unit and the local dashboard."],"foot":"Campus list: PhilDev partners across the Philippines (PhilDev Starter Pack). Map: PSA/NAMRIA administrative boundaries via OCHA HDX (CC BY-IGO), simplified. Main campuses are shown where a university has several."},"fil":{"_review":true,"loading":"Nilo-load ang {name}…","fail":"Hindi na-load ang {name}. Tingnan ang iyong koneksyon.","retry":"Subukan muli","back":"‹ Lahat ng kampus","title":"Mga kampus na katuwang ng PhilDev","intro":"Pumili ng kampus para makita kung ano ang magiging hitsura ng pakikipagtulungan sa BahaWatch doon: walong water-level unit sa mga bahay, ang mga barangay na saklaw nila, at ang panganib ng baha sa paligid ng kampus.","mapL":"Mapa ng mga kampus na katuwang ng PhilDev","desc":"Mapa ng Pilipinas na may {n} kampus na katuwang ng PhilDev: {luzon} sa Luzon, {visayas} sa Visayas, {mindanao} sa Mindanao. Nasa listahan ng kampus ang parehong mga kampus.","search":"Maghanap ng kampus","count0":"Walang kampus na tugma sa “{q}”.","count1":"1 kampus ang tugma.","countN":"{n} kampus ang tugma.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad o kolehiyo ng estado","LUC":"Lokal na unibersidad o kolehiyo","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"cluster":"{n} kampus: {names}. I-zoom in","zin":"Palakihin","zout":"Paliitin","home":"Ipakita ang buong bansa","open":"Buksan ang {short}","mapNote":"Kailangan ng internet para sa detalyadong mapa.","sea":"Dagat","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Buong bansa","backFlood":"Bumalik sa mapa ng baha","simArea":"Lugar ng simulasyon","change":"Palitan ang kampus (ngayon: {name})","sim":"Simulasyon: kunwari lamang ang mga reading ng sensor; mungkahi lamang ang mga puwesto ng unit. Terrain: FABDEM (30 m). Hindi ito forecast; hindi para sa emergency.","cardH":"Ganito ang isang pakikipagtulungan","unitsH":"Mga mungkahing unit: {n} water-level unit sa mga bahay, awtomatikong inilagay","onCampus":"nasa kampus","brgyH":"Mga barangay na saklaw","brgy1":"1 barangay","brgyN":"{n} barangay","noahH":"Panganib ng baha ayon sa NOAH sa lugar na ito (bahagi ng lupa na nasa hazard zone)","noahRp":"{rp}-taong ulan","noahNA":"walang datos mula sa NOAH","noah0":"walang naka-mapang hazard zone sa lugar na ito","roleH":"Papel ng unibersidad","role":["Ang mga estudyante ang nagkakabit at nag-aalaga ng mga unit kasama ang mga residente.","Sinusuri ng mga guro ang datos.","Ang kampus ang may hawak ng isang unit at ng lokal na dashboard."],"foot":"Listahan ng kampus: mga katuwang ng PhilDev sa buong Pilipinas (PhilDev Starter Pack). Mapa: mga hangganang administratibo ng PSA/NAMRIA mula sa OCHA HDX (CC BY-IGO), pinasimple. Ipinapakita ang pangunahing kampus kung may ilang kampus ang unibersidad."},"ceb":{"_review":true,"loading":"Gikarga ang {name}…","fail":"Wala makarga ang {name}. Susiha ang imong koneksyon.","retry":"Sulayi pag-usab","back":"‹ Tanang kampus","title":"Mga kampus nga kauban sa PhilDev","intro":"Pagpili og kampus aron makita kon unsa ang dagway sa pakigtambayayong sa BahaWatch didto: walo ka water-level unit sa mga balay, ang mga barangay nga ilang nasakpan, ug ang peligro sa baha palibot sa kampus.","mapL":"Mapa sa mga kampus nga kauban sa PhilDev","desc":"Mapa sa Pilipinas nga adunay {n} ka kampus nga kauban sa PhilDev: {luzon} sa Luzon, {visayas} sa Visayas, {mindanao} sa Mindanao. Anaa sa lista sa kampus ang samang mga kampus.","search":"Pangitaa ang kampus","count0":"Walay kampus nga mohaom sa “{q}”.","count1":"1 ka kampus ang mohaom.","countN":"{n} ka kampus ang mohaom.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad o kolehiyo sa estado","LUC":"Lokal nga unibersidad o kolehiyo","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"cluster":"{n} ka kampus: {names}. I-zoom in","zin":"Padakua","zout":"Pagamya","home":"Ipakita ang tibuok nasod","open":"Ablihi ang {short}","mapNote":"Kinahanglan og internet alang sa detalyado nga mapa.","sea":"Dagat","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Tibuok nasod","backFlood":"Balik sa mapa sa baha","simArea":"Dapit sa simulasyon","change":"Usba ang kampus (karon: {name})","sim":"Simulasyon: dili tinuod ang mga basa sa sensor; sugyot lamang ang mga dapit sa unit. Terrain: FABDEM (30 m). Dili kini forecast; dili para sa emerhensya.","cardH":"Ingon niini ang usa ka pakigtambayayong","unitsH":"Gisugyot nga mga unit: {n} ka water-level unit sa mga balay, awtomatikong gibutang","onCampus":"sulod sa kampus","brgyH":"Mga barangay nga nasakpan","brgy1":"1 ka barangay","brgyN":"{n} ka barangay","noahH":"Peligro sa baha sumala sa NOAH niini nga dapit (bahin sa yuta nga anaa sa hazard zone)","noahRp":"{rp}-ka-tuig nga ulan","noahNA":"walay datos gikan sa NOAH","noah0":"walay hazard zone nga namapa niini nga dapit","roleH":"Papel sa unibersidad","role":["Ang mga estudyante ang mobutang ug moatiman sa mga unit uban sa mga residente.","Ang mga magtutudlo ang mosusi sa datos.","Ang kampus ang magkupot og usa ka unit ug sa lokal nga dashboard."],"foot":"Lista sa kampus: mga kauban sa PhilDev sa tibuok Pilipinas (PhilDev Starter Pack). Mapa: mga utlanan sa administrasyon gikan sa PSA/NAMRIA pinaagi sa OCHA HDX (CC BY-IGO), gipasimple. Gipakita ang main campus kon daghan og kampus ang unibersidad."},"ilo":{"_review":true,"loading":"Ikarkarga ti {name}…","fail":"Saan a naikarga ti {name}. Kitaem ti koneksionmo.","retry":"Padasen manen","back":"‹ Amin a kampus","title":"Dagiti kampus a kadua ti PhilDev","intro":"Mangpili iti kampus tapno makitam no kasano ti panagtitinnulong iti BahaWatch sadiay: walo a water-level unit kadagiti balay, dagiti barangay a sakupenda, ken ti peggad ti layus iti aglawlaw ti kampus.","mapL":"Mapa dagiti kampus a kadua ti PhilDev","desc":"Mapa ti Filipinas nga addaan iti {n} a kampus a kadua ti PhilDev: {luzon} idiay Luzon, {visayas} idiay Visayas, {mindanao} idiay Mindanao. Adda iti listaan ti kampus dagiti isu met laeng a kampus.","search":"Agbiruk iti kampus","count0":"Awan ti kampus a maitunos iti “{q}”.","count1":"1 a kampus ti maitunos.","countN":"{n} a kampus ti maitunos.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad wenno kolehio ti estado","LUC":"Lokal nga unibersidad wenno kolehio","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"cluster":"{n} a kampus: {names}. I-zoom in","zin":"Padakkelen","zout":"Pabassiten","home":"Ipakita ti intero a pagilian","open":"Luktan ti {short}","mapNote":"Masapul ti internet para iti detalyado a mapa.","sea":"Baybay","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Intero a pagilian","backFlood":"Agsubli iti mapa ti layus","simArea":"Lugar ti simulasion","change":"Sukatan ti kampus (ita: {name})","sim":"Simulasion: saan a pudno dagiti basa ti sensor; singasing laeng dagiti lugar ti unit. Terrain: FABDEM (30 m). Saan daytoy a forecast; saan a para iti emerhensia.","cardH":"Kastoy ti maysa a panagtitinnulong","unitsH":"Dagiti maisingasing a unit: {n} a water-level unit kadagiti balay, awtomatiko a naikabil","onCampus":"adda iti kampus","brgyH":"Dagiti barangay a nasakupan","brgy1":"1 a barangay","brgyN":"{n} a barangay","noahH":"Peggad ti layus segun iti NOAH iti daytoy a lugar (paset ti daga nga adda iti hazard zone)","noahRp":"{rp}-a-tawen a tudo","noahNA":"awan ti datos manipud iti NOAH","noah0":"awan ti hazard zone a namapa iti daytoy a lugar","roleH":"Akem ti unibersidad","role":["Dagiti estudiante ti mangikabil ken mangaywan kadagiti unit a kadua dagiti residente.","Dagiti mannursuro ti mangsukimat iti datos.","Ti kampus ti mangtengngel iti maysa a unit ken ti lokal a dashboard."],"foot":"Listaan dagiti kampus: dagiti kadua ti PhilDev iti intero a Filipinas (PhilDev Starter Pack). Mapa: dagiti administratibo a beddeng ti PSA/NAMRIA manipud iti OCHA HDX (CC BY-IGO), napasimple. Maipakita ti kangrunaan a kampus no adu ti kampus ti unibersidad."},"hil":{"_review":true,"loading":"Ginakarga ang {name}…","fail":"Wala makarga ang {name}. Tan-awa ang imo koneksyon.","retry":"Tilawi liwat","back":"‹ Tanan nga kampus","title":"Mga kampus nga kaupod sang PhilDev","intro":"Magpili sang kampus agod makita kon ano ang itsura sang pagbinuligay sa BahaWatch didto: walo ka water-level unit sa mga balay, ang mga barangay nga ila nasakop, kag ang katalagman sang baha sa palibot sang kampus.","mapL":"Mapa sang mga kampus nga kaupod sang PhilDev","desc":"Mapa sang Pilipinas nga may {n} ka kampus nga kaupod sang PhilDev: {luzon} sa Luzon, {visayas} sa Visayas, {mindanao} sa Mindanao. Ara sa listahan sang kampus ang amo man nga mga kampus.","search":"Mangita sang kampus","count0":"Wala sing kampus nga nagapareho sa “{q}”.","count1":"1 ka kampus ang nagapareho.","countN":"{n} ka kampus ang nagapareho.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad ukon kolehiyo sang estado","LUC":"Lokal nga unibersidad ukon kolehiyo","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"cluster":"{n} ka kampus: {names}. I-zoom in","zin":"Padakua","zout":"Pagamya","home":"Ipakita ang bug-os nga pungsod","open":"Buksi ang {short}","mapNote":"Kinahanglan ang internet para sa detalyado nga mapa.","sea":"Dagat","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Bug-os nga pungsod","backFlood":"Balik sa mapa sang baha","simArea":"Lugar sang simulasyon","change":"Ilisan ang kampus (subong: {name})","sim":"Simulasyon: indi matuod ang mga basa sang sensor; panugda lang ang mga lugar sang unit. Terrain: FABDEM (30 m). Indi ini forecast; indi para sa emerhensya.","cardH":"Amo ini ang isa ka pagbinuligay","unitsH":"Ginapanugda nga mga unit: {n} ka water-level unit sa mga balay, awtomatiko nga ginbutang","onCampus":"sa sulod sang kampus","brgyH":"Mga barangay nga nasakop","brgy1":"1 ka barangay","brgyN":"{n} ka barangay","noahH":"Katalagman sang baha suno sa NOAH sa sini nga lugar (bahin sang duta nga ara sa hazard zone)","noahRp":"{rp}-ka-tuig nga ulan","noahNA":"wala sing datos halin sa NOAH","noah0":"wala sing hazard zone nga namapa sa sini nga lugar","roleH":"Papel sang unibersidad","role":["Ang mga estudyante ang magabutang kag magaatipan sang mga unit upod ang mga residente.","Ang mga manunudlo ang magausisa sang datos.","Ang kampus ang magauyat sang isa ka unit kag sang lokal nga dashboard."],"foot":"Listahan sang kampus: mga kaupod sang PhilDev sa bug-os nga Pilipinas (PhilDev Starter Pack). Mapa: mga administratibo nga dulunan halin sa PSA/NAMRIA paagi sa OCHA HDX (CC BY-IGO), ginpasimple. Ginapakita ang main campus kon madamo ang kampus sang unibersidad."},"pam":{"_review":true,"loading":"Iloload ya ing {name}…","fail":"E melyari ing pamag-load king {name}. Lawan me ing koneksyun mu.","retry":"Subukan ya pasibayu","back":"‹ Deng eganagang kampus","title":"Deng kampus a kayabe ning PhilDev","intro":"Mamili kang kampus ban akit mu nung makananu ing pamikiabe king BahaWatch karin: walung water-level unit kareng bale, deng barangay a sasakupan da, ampo ing panganib ning albug king palibut ning kampus.","mapL":"Mapa da reng kampus a kayabe ning PhilDev","desc":"Mapa ning Filipinas a atin {n} a kampus a kayabe ning PhilDev: {luzon} king Luzon, {visayas} king Visayas, {mindanao} king Mindanao. Atyu king listaan da reng kampus deng pareung kampus.","search":"Manintun kang kampus","count0":"Alang kampus a tutugma king “{q}”.","count1":"1 a kampus ing tutugma.","countN":"{n} a kampus ing tutugma.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad o kolehiyu ning estadu","LUC":"Lokal a unibersidad o kolehiyu","Private":"Pribadu"},"typesShort":{"SUC":"Estadu","LUC":"Lokal","Private":"Pribadu"},"cluster":"{n} a kampus: {names}. I-zoom in","zin":"Palagwan","zout":"Paditak","home":"Ipakit ing sablang bansa","open":"Buksan ya ing {short}","mapNote":"Kailangan ing internet para king detalyadung mapa.","sea":"Dayat","credit":"© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre","wholeCountry":"Sablang bansa","backFlood":"Mibalik king mapa ning albug","simArea":"Lugal ning simulasyun","change":"Sukatan ya ing kampus (ngeni: {name})","sim":"Simulasyun: e tutu deng basa ning sensor; mungkai mu deng lugal ning unit. Terrain: FABDEM (30 m). E ini forecast; e para king emerhensya.","cardH":"Makanini ing metung a pamikiabe","unitsH":"Deng mungkaing unit: {n} a water-level unit kareng bale, awtomatikung mikabit","onCampus":"keng kampus","brgyH":"Deng barangay a sasakupan","brgy1":"1 a barangay","brgyN":"{n} a barangay","noahH":"Panganib ning albug agpang king NOAH keng lugal a iti (bage ning gabun a atyu king hazard zone)","noahRp":"{rp}-banuang uran","noahNA":"alang datos manibat king NOAH","noah0":"alang hazard zone a mipamapa keng lugal a iti","roleH":"Papel ning unibersidad","role":["Deng estudyanti ing mangabit at mangalaga kareng unit kayabe da reng residenti.","Deng maestru ing manyusi king datos.","Ing kampus ing mamyalaga king metung a unit ampo king lokal a dashboard."],"foot":"Listaan da reng kampus: deng kayabe ning PhilDev king sablang Filipinas (PhilDev Starter Pack). Mapa: deng administratibung hanggan ning PSA/NAMRIA manibat king OCHA HDX (CC BY-IGO), pepasimple. Ipakit ya ing main campus nung dakal ya kampus ing unibersidad."}};
 const NAT_EN=NAT_LANGS.en;
 const NL=()=>NAT_LANGS[LANG]||NAT_EN;
 const siteLabel=id=>CAMPUS_BY_ID[id]?CAMPUS_BY_ID[id].short:{tv:"Teachers Village",berkeley:"UC Berkeley"}[id]||id;
@@ -2831,14 +2865,25 @@ const BW_TIMEOUT_MS = 8000;
 const BW_M_PER_DEG_LAT = 110640;                      // pipeline/common.py's constants
 const BW_BOX_HALF_M = 1500;
 
-// Screen points closer than r px become one cluster, in list order; its position is the members' mean.
+// Screen points closer than r px become one cluster, in list order; its position is the members' mean. Moving to the
+// mean can bring two clusters' centres within r of each other (one would cover the other), so those merge until none do.
 function bwCluster(pts, r) {
   const gs = [];
   for (const p of pts) {
     const g = gs.find((g) => Math.hypot(g.x0 - p.x, g.y0 - p.y) < r);
     if (g) { g.ids.push(p.id); g.sx += p.x; g.sy += p.y; } else gs.push({ x0: p.x, y0: p.y, sx: p.x, sy: p.y, ids: [p.id] });
   }
-  return gs.map((g) => ({ x: g.sx / g.ids.length, y: g.sy / g.ids.length, ids: g.ids }));
+  const at = (g) => [g.sx / g.ids.length, g.sy / g.ids.length];
+  for (let i = 0; i < gs.length; i++) {
+    for (let j = i + 1; j < gs.length; j++) {
+      const [ax, ay] = at(gs[i]), [bx, by] = at(gs[j]);
+      if (Math.hypot(ax - bx, ay - by) < r) {
+        gs[i].ids.push(...gs[j].ids); gs[i].sx += gs[j].sx; gs[i].sy += gs[j].sy; gs.splice(j, 1);
+        i = -1; break;                                        // the merged centre moved: check every pair again
+      }
+    }
+  }
+  return gs.map((g) => { const [x, y] = at(g); return { x, y, ids: g.ids }; });
 }
 // How much of the view's shorter side the box (in px) spans: 1 = it fills it. The country view hands back at ≥ 0.9.
 function bwCoverage(b, w, h) {
@@ -2902,51 +2947,164 @@ function bwOpenMap(lib, container, o) {
 }
 
 /* ---------- the national map: PhilDev partner campuses ---------- */
+// The outline (SVG, drawn first, always) and, when it loads, the vector basemap (spec §4). Pins, clusters and the chosen
+// campus's box are our HTML overlay, placed through natPx(): the vector map's projection when it is up, the outline's
+// viewBox otherwise (plan ruling 4).
 const K_LAT=Math.cos(12.5*Math.PI/180);
-const natProj=(lon,lat)=>[(lon-116)*K_LAT*100,(22-lat)*100];   // equirectangular; 100 units per degree of latitude
-const NAT={vb:null,full:null,built:false};
+const natProj=(lon,lat)=>[(lon-116)*K_LAT*100,(22-lat)*100];   // outline units; 100 per degree of latitude
+const NAT={vb:null,full:null,built:false,sel:null,hl:null,anim:0};
+const NATGL={map:null,state:"none",theme:null};                // none → loading → on | off (the outline stays)
+let PH_PATH="",PH_BOUNDS=null;
+const curTheme=()=>document.documentElement.dataset.theme==="dark"?"dark":"light";
+const natDur=ms=>reducedMotion?0:ms;
 const norm=s=>String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();   // "banos" finds "Baños"
 const pinLabel=c=>`${c.short}: ${c.name}, ${c.city}, ${c.province}. ${NL().types[c.type]}.`;
+function phOutline(){
+  if(PH_PATH)return;
+  let d="",lo0=1e9,la0=1e9,lo1=-1e9,la1=-1e9;
+  for(const poly of PH_OUTLINE.coordinates)for(const ring of poly){
+    ring.forEach(([lo,la],k)=>{const [x,y]=natProj(lo,la);d+=(k?"L":"M")+x.toFixed(1)+" "+y.toFixed(1);
+      lo0=Math.min(lo0,lo);lo1=Math.max(lo1,lo);la0=Math.min(la0,la);la1=Math.max(la1,la);});d+="Z";}
+  PH_PATH=d;PH_BOUNDS=[[lo0,la0],[lo1,la1]];
+}
+function phVB(){const [[lo0,la0],[lo1,la1]]=PH_BOUNDS,[x0,y0]=natProj(lo0,la1),[x1,y1]=natProj(lo1,la0);return [x0-20,y0-20,x1-x0+40,y1-y0+40];}
+const natBox=()=>$("nat-map");
+function natFull(){const m=natBox();return bwFitVB(phVB(),m.clientWidth||600,m.clientHeight||600);}
+function natClamp(vb){const f=NAT.full;if(vb[2]>=f[2])return f.slice();
+  return [Math.max(f[0],Math.min(f[0]+f[2]-vb[2],vb[0])),Math.max(f[1],Math.min(f[1]+f[3]-vb[3],vb[1])),vb[2],vb[3]];}
+// screen px inside #nat-map for a longitude/latitude, in whichever map is showing
+function natPx(lon,lat){
+  if(NATGL.state==="on"){const p=NATGL.map.project([lon,lat]);return [p.x,p.y];}
+  const [x,y]=natProj(lon,lat),vb=NAT.vb,m=natBox();return [(x-vb[0])/vb[2]*m.clientWidth,(y-vb[1])/vb[3]*m.clientHeight];
+}
+const natBusy=()=>NAT.anim!==0||(NATGL.state==="on"&&NATGL.map.isMoving());
 function natInit(){
   if(NAT.built)return;NAT.built=true;
-  let d="",x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-  for(const poly of PH_OUTLINE.coordinates)for(const ring of poly){
-    ring.forEach(([lo,la],k)=>{const [x,y]=natProj(lo,la);d+=(k?"L":"M")+x.toFixed(1)+" "+y.toFixed(1);x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y);});d+="Z";}
-  $("nat-land").setAttribute("d",d);
-  NAT.full=[x0-20,y0-20,x1-x0+40,y1-y0+40];NAT.vb=NAT.full;
-  $("nat-map").style.setProperty("--ar",(NAT.full[2]/NAT.full[3]).toFixed(4));
+  phOutline();$("nat-land").setAttribute("d",PH_PATH);
   $("nat-logo").src=document.querySelector(".p-head img").src;
   const sel=$("nat-lang");sel.innerHTML=$("p-lang").innerHTML;
   sel.addEventListener("change",()=>{LANG=sel.value;try{localStorage.setItem(LANG_KEY_PH,LANG);}catch(e){}natRender();});
   $("nat-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
   $("nat-q").addEventListener("input",natList);
-  $("nat-pins").addEventListener("click",e=>{const c=e.target.closest(".pin-cluster");if(c)natZoomTo(c.dataset.ids.split(","));});
-  $("nat-zoom-out").addEventListener("click",()=>{natSetView(NAT.full);const f=$("nat-pins").querySelector("a,button");if(f)f.focus();});
-  window.addEventListener("resize",()=>{if(ROUTE==="ph")natPins();});
+  $("nat-pins").addEventListener("click",natPinClick);
+  $("nat-list").addEventListener("click",natRowClick);
+  for(const [ev,on] of [["pointerover",1],["focusin",1],["pointerout",0],["focusout",0]])
+    $("nat-list").addEventListener(ev,e=>{const a=on&&e.target.closest(".nat-item");natHighlight(a?a.dataset.id:null);});
+  $("nat-zin").addEventListener("click",()=>natZoomBy(1.5));
+  $("nat-zout").addEventListener("click",()=>natZoomBy(1/1.5));
+  $("nat-home").addEventListener("click",natHome);
+  natBox().addEventListener("wheel",natWheel,{passive:false});
+  window.addEventListener("resize",()=>{if(ROUTE==="ph")natResize();});
+  // the box also changes size without a window resize (the note taking its line under the map)
+  if(window.ResizeObserver)new ResizeObserver(()=>{if(ROUTE==="ph")natResize();}).observe(natBox());
 }
-function natSetView(vb){NAT.vb=vb;$("nat-svg").setAttribute("viewBox",vb.join(" "));$("nat-zoom-out").hidden=vb===NAT.full;natPins();}
-// Pins closer than one tap target (48 px) become a numbered cluster that zooms in; DOM order follows the list.
+function natSetView(vb){NAT.vb=vb;$("nat-svg").setAttribute("viewBox",vb.join(" "));natPins();}
+function natAnimateTo(to){
+  cancelAnimationFrame(NAT.anim);NAT.anim=0;
+  const from=NAT.vb.slice(),t0=performance.now(),d=natDur(300);
+  if(!d){natSetView(to);return;}
+  const step=now=>{const k=Math.min(1,(now-t0)/d),e=1-Math.pow(1-k,3);natSetView(from.map((v,i)=>v+(to[i]-v)*e));
+    NAT.anim=k<1?requestAnimationFrame(step):0;};
+  NAT.anim=requestAnimationFrame(step);
+}
+function natZoomBy(f){
+  if(NATGL.state==="on"){if(f>1)NATGL.map.zoomIn({duration:natDur(300)});else NATGL.map.zoomOut({duration:natDur(300)});return;}
+  const [x,y,w,h]=NAT.vb,nw=w/f,nh=h/f;natAnimateTo(natClamp([x+(w-nw)/2,y+(h-nh)/2,nw,nh]));
+}
+function natHome(){if(NATGL.state==="on")NATGL.map.fitBounds(PH_BOUNDS,{padding:24,duration:natDur(600)});else natAnimateTo(NAT.full);}
+function natWheel(e){
+  if(NATGL.state==="on")return;                            // the vector map zooms itself
+  e.preventDefault();
+  const r=natBox().getBoundingClientRect(),px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height,f=Math.exp(-e.deltaY*0.0016);
+  const [x,y,w,h]=NAT.vb,nw=w/f,nh=h/f;
+  natSetView(natClamp([x+px*w-px*nw,y+py*h-py*nh,nw,nh]));
+}
+function natResize(){
+  if(!NAT.built)return;
+  const m=natBox();NAT.full=natFull();
+  NAT.vb=NAT.vb?natClamp(bwFitVB(NAT.vb,m.clientWidth,m.clientHeight)):NAT.full.slice();
+  $("nat-svg").setAttribute("viewBox",NAT.vb.join(" "));
+  if(NATGL.state==="on")NATGL.map.resize();
+  natPins();
+}
+const pinHTML=(c,cls)=>`<a class="pin pin-${c.type.toLowerCase()}${cls||""}" href="#${c.id}" data-id="${c.id}" aria-label="${esc(pinLabel(c))}"><span class="pin-shape" aria-hidden="true"></span><span class="pin-t" aria-hidden="true">${esc(c.short)}</span></a>`;
+const clusterHTML=ids=>`<button class="pin-cluster" data-ids="${ids.join(",")}" aria-label="${esc(fill(NL().cluster,{n:ids.length,names:ids.map(id=>CAMPUS_BY_ID[id].short).join(", ")}))}"><span aria-hidden="true">${ids.length}</span></button>`;
+// Pins closer than 36 px become a numbered cluster; DOM order follows the list; focus survives a redraw.
 function natPins(){
-  const vb=NAT.vb,R=48/(($("nat-map").clientWidth||480)/vb[2]),L=NL(),groups=[];
-  for(const c of CAMPUSES){
-    const p=natProj(c.lon,c.lat);
-    if(p[0]<vb[0]||p[0]>vb[0]+vb[2]||p[1]<vb[1]||p[1]>vb[1]+vb[3])continue;
-    const g=groups.find(g=>Math.hypot(g.p[0]-p[0],g.p[1]-p[1])<R);
-    if(g)g.m.push(c);else groups.push({p,m:[c]});
-  }
-  $("nat-pins").innerHTML=groups.map(g=>{
-    const pos=`style="left:${((g.p[0]-vb[0])/vb[2]*100).toFixed(3)}%;top:${((g.p[1]-vb[1])/vb[3]*100).toFixed(3)}%"`;
-    if(g.m.length===1){const c=g.m[0];return `<a class="pin pin-${c.type.toLowerCase()}" href="#${c.id}" ${pos} aria-label="${esc(pinLabel(c))}"><span class="pin-shape" aria-hidden="true"></span><span class="pin-t" aria-hidden="true">${esc(c.short)}</span></a>`;}
-    return `<button class="pin-cluster" data-ids="${g.m.map(c=>c.id).join(",")}" ${pos} aria-label="${esc(fill(L.cluster,{n:g.m.length,names:g.m.map(c=>c.short).join(", ")}))}"><span aria-hidden="true">${g.m.length}</span></button>`;
+  if(!NAT.built||!NAT.vb)return;
+  const m=natBox(),w=m.clientWidth,h=m.clientHeight,a=document.activeElement;
+  const keep=a&&a.closest&&a.closest("#nat-pins")?(a.dataset.id||a.dataset.ids):null;
+  const pts=CAMPUSES.map(c=>{const [x,y]=natPx(c.lon,c.lat);return {id:c.id,x,y};}).filter(p=>p.x>=-24&&p.x<=w+24&&p.y>=-24&&p.y<=h+24);
+  $("nat-pins").innerHTML=bwCluster(pts,36).map(g=>{
+    const html=g.ids.length===1?pinHTML(CAMPUS_BY_ID[g.ids[0]],(NAT.sel===g.ids[0]?" pin-sel":"")+(NAT.hl===g.ids[0]?" pin-hl":"")):clusterHTML(g.ids);
+    return html.replace(/^<(a|button) /,`<$1 style="left:${g.x.toFixed(1)}px;top:${g.y.toFixed(1)}px" `);
   }).join("");
+  if(keep){const f=[...$("nat-pins").children].find(e=>(e.dataset.id||e.dataset.ids)===keep);if(f)f.focus({preventScroll:true});}
+  natBoxPlace();
+}
+let natPinsF=0;
+const natPinsSoon=()=>{if(!natPinsF)natPinsF=requestAnimationFrame(()=>{natPinsF=0;natPins();});};
+function natBoxPlace(){
+  const b=$("nat-box");if(!NAT.sel){b.hidden=true;return;}
+  const c=CAMPUS_BY_ID[NAT.sel],[[w0,s0],[e0,n0]]=bwCampusBox(c.lat,c.lon),[x0,y0]=natPx(w0,n0),[x1,y1]=natPx(e0,s0);
+  const bw=Math.max(x1-x0,12),bh=Math.max(y1-y0,12),cx=(x0+x1)/2,cy=(y0+y1)/2;
+  Object.assign(b.style,{left:(cx-bw/2)+"px",top:(cy-bh/2)+"px",width:bw+"px",height:bh+"px"});b.hidden=false;
+}
+// Only a class toggle: rebuilding the pins here would remove the pin that focus is moving to (focusout fires first).
+function natHighlight(id){if(NAT.hl===id)return;NAT.hl=id;for(const p of $("nat-pins").querySelectorAll(".pin"))p.classList.toggle("pin-hl",p.dataset.id===id);}
+function natFocusFirstPin(){const f=$("nat-pins").querySelector("a,button");if(f)f.focus({preventScroll:true});}
+function natPinClick(e){
+  const cl=e.target.closest(".pin-cluster");if(cl){natZoomTo(cl.dataset.ids.split(","));return;}
+  const p=e.target.closest(".pin");if(p){e.preventDefault();natSelect(p.dataset.id);}
+}
+function natRowClick(e){
+  const a=e.target.closest(".nat-item");if(!a)return;
+  if(!matchMedia("(min-width:900px)").matches)return;          // narrow: the map is above, off-screen; open the campus
+  e.preventDefault();natSelect(a.dataset.id);
 }
 function natZoomTo(ids){
-  const ps=ids.map(id=>natProj(CAMPUS_BY_ID[id].lon,CAMPUS_BY_ID[id].lat)),xs=ps.map(p=>p[0]),ys=ps.map(p=>p[1]),ar=NAT.full[2]/NAT.full[3];
-  let w=Math.max(Math.max(...xs)-Math.min(...xs),1.2)*1.8,h=Math.max(Math.max(...ys)-Math.min(...ys),1.2)*1.8;
-  if(w/h<ar)w=h*ar;else h=w/ar;
+  const cs=ids.map(id=>CAMPUS_BY_ID[id]),lo=cs.map(c=>c.lon),la=cs.map(c=>c.lat);
+  if(NATGL.state==="on"){
+    NATGL.map.once("moveend",()=>{natPins();natFocusFirstPin();});    // first: with no motion, fitBounds ends the move at once
+    NATGL.map.fitBounds([[Math.min(...lo),Math.min(...la)],[Math.max(...lo),Math.max(...la)]],{padding:80,maxZoom:12,duration:natDur(600)});return;
+  }
+  const ps=cs.map(c=>natProj(c.lon,c.lat)),xs=ps.map(p=>p[0]),ys=ps.map(p=>p[1]);
+  const w=Math.max(Math.max(...xs)-Math.min(...xs),1.2)*1.8,h=Math.max(Math.max(...ys)-Math.min(...ys),1.2)*1.8;
   const cx=(Math.max(...xs)+Math.min(...xs))/2,cy=(Math.max(...ys)+Math.min(...ys))/2;
-  natSetView([cx-w/2,cy-h/2,w,h]);
-  const f=$("nat-pins").querySelector("a,button");if(f)f.focus();
+  natAnimateTo(natClamp(bwFitVB([cx-w/2,cy-h/2,w,h],natBox().clientWidth,natBox().clientHeight)));
+  setTimeout(natFocusFirstPin,natDur(300)+20);
+}
+// Choose a campus on the map: fly to it, outline its 3 km box, offer "Open <short>" (spec §4.2).
+function natSelect(id){
+  const c=CAMPUS_BY_ID[id];NAT.sel=id;
+  const b=bwCampusBox(c.lat,c.lon);
+  if(NATGL.state==="on")NATGL.map.fitBounds(b,{padding:60,maxZoom:15,duration:natDur(1200)});
+  else{const [x0,y0]=natProj(b[0][0],b[1][1]),[x1,y1]=natProj(b[1][0],b[0][1]),p=(x1-x0)*6,W=natBox().clientWidth;
+    let vb=bwFitVB([x0-p,y0-p,x1-x0+2*p,y1-y0+2*p],W,natBox().clientHeight);
+    // zoom in further until the nearest other campus is 48 px away, so the chosen pin isn't folded into a cluster
+    const [cx,cy]=natProj(c.lon,c.lat),near=Math.min(...CAMPUSES.filter(o=>o!==c).map(o=>{const [x,y]=natProj(o.lon,o.lat);return Math.hypot(x-cx,y-cy);}));
+    const k=Math.max(Math.min(1,near*W/vb[2]/48),(x1-x0)*1.5/vb[2]);      // never so far that the box overflows the view
+    if(k<1)vb=[vb[0]+vb[2]*(1-k)/2,vb[1]+vb[3]*(1-k)/2,vb[2]*k,vb[3]*k];
+    natAnimateTo(natClamp(vb));}
+  const o=$("nat-open");o.href="#"+id;o.textContent=fill(NL().open,{short:c.short});o.hidden=false;
+  natPins();o.focus({preventScroll:true});
+}
+// The vector basemap: tried once per visit; on any failure the outline stays, with the note (spec §4.3).
+function natGLStart(){
+  if(NATGL.state!=="none")return;NATGL.state="loading";
+  const th=curTheme();
+  bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("nat-gl"),{bounds:PH_BOUNDS,theme:th,reduced:reducedMotion,padding:24,minZoom:3}))
+    .then(map=>{NATGL.map=map;NATGL.state="on";NATGL.theme=th;document.body.dataset.natgl="1";
+      if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme()));NATGL.theme=curTheme();}   // switched while it loaded
+      map.on("move",natPinsSoon);map.on("resize",natPinsSoon);
+      if(NAT.sel){const c=CAMPUS_BY_ID[NAT.sel];map.fitBounds(bwCampusBox(c.lat,c.lon),{padding:60,maxZoom:15,duration:0});}
+      natPins();},
+      ()=>{NATGL.state="off";const n=$("nat-note");n.textContent=NL().mapNote;n.hidden=false;});
+}
+// A theme switch restyles the vector maps; our overlays are untouched.
+function bwThemeChanged(t){
+  if(NATGL.state==="on"&&NATGL.theme!==t){NATGL.map.setStyle(bwStyleUrl(t));NATGL.theme=t;}
+  if(typeof countryThemeChanged==="function")countryThemeChanged(t);
 }
 let natAnnounceT=null,natLastQ="";
 function natList(){
@@ -2957,7 +3115,7 @@ function natList(){
     const all=CAMPUSES.filter(c=>c.group===g).length,cs=ms.filter(c=>c.group===g);
     if(!cs.length)continue;
     html+=`<h2 class="nat-g" data-group="${g}" data-n="${all}">${esc(L.groups[g])} (${all})</h2><ul class="nat-ul">`+cs.map(c=>
-      `<li><a class="nat-item" href="#${c.id}"><span class="pin-shape pin-${c.type.toLowerCase()}" aria-hidden="true"></span><b>${esc(c.short)}</b><span>${esc(c.name)}</span><span class="nat-where">${esc(c.city)}, ${esc(c.province)} · ${esc(L.types[c.type])}</span></a></li>`).join("")+"</ul>";
+      `<li><a class="nat-item" href="#${c.id}" data-id="${c.id}" aria-label="${esc(pinLabel(c))}"><span class="pin-shape pin-${c.type.toLowerCase()}" aria-hidden="true"></span><span class="nat-name"><b>${esc(c.short)}</b> ${esc(c.name)}</span><span class="nat-where">${esc(c.city)}, ${esc(c.province)}</span></a></li>`).join("")+"</ul>";
   }
   $("nat-list").innerHTML=html||`<p>${esc(fill(L.count0,{q}))}</p>`;
   clearTimeout(natAnnounceT);                         // announce once the typing pauses, and only when the query changed
@@ -2970,10 +3128,14 @@ function natRender(){
   $("nat-lang").value=LANG;syncDocLang();
   $("nat-h").textContent=L.title;$("nat-intro").textContent=L.intro;$("nat-map-l").textContent=L.mapL;
   $("nat-desc").textContent=fill(L.desc,{n:CAMPUSES.length,luzon:cnt("Luzon"),visayas:cnt("Visayas"),mindanao:cnt("Mindanao")});
-  $("nat-legend").innerHTML=["SUC","LUC","Private"].map(t=>`<li><span class="pin-shape pin-${t.toLowerCase()}" aria-hidden="true"></span>${esc(L.types[t])} (${esc(L.shapes[t])})</li>`).join("");
-  $("nat-q-l").textContent=L.search;$("nat-zoom-out").textContent=L.zoomOut;$("nat-pilots-h").textContent=L.pilots;$("nat-try").textContent=L.tryLink;$("nat-foot").textContent=L.foot;
+  $("nat-legend").innerHTML=["SUC","LUC","Private"].map(t=>`<li><span class="pin-shape pin-${t.toLowerCase()}" aria-hidden="true"></span>${esc(L.typesShort[t])}</li>`).join("")+
+    `<li><span class="sea-sw" aria-hidden="true"></span>${esc(L.sea)}</li>`;
+  $("nat-credit").textContent=L.credit;
+  for(const [id,k] of [["nat-zin","zin"],["nat-zout","zout"],["nat-home","home"]]){$(id).setAttribute("aria-label",L[k]);$(id).title=L[k];}
+  $("nat-q-l").textContent=L.search;$("nat-foot").textContent=L.foot;$("nat-note").textContent=L.mapNote;
+  if(NAT.sel)$("nat-open").textContent=fill(L.open,{short:CAMPUS_BY_ID[NAT.sel].short});
   document.title="BahaWatch — "+L.title;
-  natSetView(NAT.vb);natList();
+  natResize();natList();natGLStart();
 }
 let natFocusSearch=false;             // the campus bar's "▾" opens the national list with the search box focused
 function natEnter(){let saved=null;try{saved=localStorage.getItem(LANG_KEY_PH);}catch(e){}if(saved&&LANGS[saved])LANG=saved;natRender();

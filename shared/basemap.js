@@ -7,14 +7,25 @@ export const BW_TIMEOUT_MS = 8000;
 export const BW_M_PER_DEG_LAT = 110640;                      // pipeline/common.py's constants
 export const BW_BOX_HALF_M = 1500;
 
-// Screen points closer than r px become one cluster, in list order; its position is the members' mean.
+// Screen points closer than r px become one cluster, in list order; its position is the members' mean. Moving to the
+// mean can bring two clusters' centres within r of each other (one would cover the other), so those merge until none do.
 export function bwCluster(pts, r) {
   const gs = [];
   for (const p of pts) {
     const g = gs.find((g) => Math.hypot(g.x0 - p.x, g.y0 - p.y) < r);
     if (g) { g.ids.push(p.id); g.sx += p.x; g.sy += p.y; } else gs.push({ x0: p.x, y0: p.y, sx: p.x, sy: p.y, ids: [p.id] });
   }
-  return gs.map((g) => ({ x: g.sx / g.ids.length, y: g.sy / g.ids.length, ids: g.ids }));
+  const at = (g) => [g.sx / g.ids.length, g.sy / g.ids.length];
+  for (let i = 0; i < gs.length; i++) {
+    for (let j = i + 1; j < gs.length; j++) {
+      const [ax, ay] = at(gs[i]), [bx, by] = at(gs[j]);
+      if (Math.hypot(ax - bx, ay - by) < r) {
+        gs[i].ids.push(...gs[j].ids); gs[i].sx += gs[j].sx; gs[i].sy += gs[j].sy; gs.splice(j, 1);
+        i = -1; break;                                        // the merged centre moved: check every pair again
+      }
+    }
+  }
+  return gs.map((g) => { const [x, y] = at(g); return { x, y, ids: g.ids }; });
 }
 // How much of the view's shorter side the box (in px) spans: 1 = it fills it. The country view hands back at ≥ 0.9.
 export function bwCoverage(b, w, h) {

@@ -23,6 +23,9 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   await pg.goto(U);await ready(pg,"ph");
   await pg.click('#nat-theme');await pg.click('#nat-theme');
   assert(errs.length===0&&await pg.evaluate(()=>document.documentElement.dataset.theme==="light"),"the theme button works on the national map before any site is opened");
+  // wide screens: the national tab is one screen; only the campus list scrolls (spec §4.1)
+  const one=await pg.evaluate(()=>{const l=document.querySelector('#nat .nat-listcol'),cs=getComputedStyle(l);return {page:document.scrollingElement.scrollHeight,vh:innerHeight,list:l.scrollHeight>l.clientHeight,ov:cs.overflowY};});
+  assert(one.page<=one.vh+1&&one.list&&one.ov==="auto","1280 px national tab: the page doesn't scroll, the campus list does: "+JSON.stringify(one));
   // keyboard: the search box, the list and the pins are reachable with Tab, and focus is visible
   await pg.focus('#nat-q');await pg.keyboard.press('Tab');
   let s=await pg.evaluate(()=>({cls:document.activeElement.className,ol:getComputedStyle(document.activeElement).outlineStyle}));
@@ -43,7 +46,7 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
     const pairs=await pg.evaluate(`(${TEXT})('#nat *')`);
     const bad=pairs.map(p=>({...p,r:ratio(p.fg,p.bg)})).filter(p=>p.r<4.5);
     assert(pairs.length>40&&bad.length===0,`${theme}: national view text contrast ≥ 4.5:1 (${pairs.length} elements): `+bad.slice(0,4).map(p=>p.id+" "+p.r.toFixed(2)).join(", "));
-    const pins=await pg.evaluate(()=>({map:getComputedStyle(document.getElementById('nat-map')).backgroundColor,
+    const pins=await pg.evaluate(()=>({map:getComputedStyle(document.getElementById('nat-land')).fill,
       c:["suc","luc","private"].map(t=>{const e=document.querySelector('#nat-legend .pin-'+t);return getComputedStyle(e).backgroundColor;})}));
     const low=pins.c.map(c=>ratio(c,pins.map));
     assert(low.every(r=>r>=3),`${theme}: pin colours ≥ 3:1 against the map: ${low.map(r=>r.toFixed(1))}`);
@@ -96,7 +99,8 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   const cdp=await slow.context().newCDPSession(slow);
   await cdp.send('Network.enable');
   await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:562.5,downloadThroughput:1.6*1024*1024/8*0.9,uploadThroughput:750*1024/8*0.9});
-  const t0=Date.now();await slow.click('#nat-list a[href="#uplb"]');await ready(slow,"uplb");const dt=Date.now()-t0;
+  await slow.click('#nat-list a[href="#uplb"]');     // at 1280 px a list row flies the map to the campus; "Open UPLB" opens it
+  const t0=Date.now();await slow.click('#nat-open');await ready(slow,"uplb");const dt=Date.now()-t0;
   assert(dt<=3000,`UPLB appears in ${dt} ms on Fast 3G (≤ 3000)`);
   assert(errs.length===0,"no page errors: "+errs.join("; "));
   // visual pass (spec §7): nothing below 12 px, three weights, sentence case, no emoji icons
