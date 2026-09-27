@@ -1,7 +1,17 @@
-import json, math, os, unittest
+import json, math, os, re, sys, unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P = json.load(open(os.path.join(ROOT, "places.json"), encoding="utf-8"))
 DATA = {"tv": "data.json", "diliman": "data_diliman.json", "berkeley": "data_berkeley.json"}
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import build_places as BP  # noqa: E402  (helper functions reused, not duplicated, by the tests below)
+
+def rule_lookahead_min():
+    """RULE.LOOKAHEAD_MIN as defined in shared/verdict.js — the one place rule constants live."""
+    text = open(os.path.join(ROOT, "shared", "verdict.js"), encoding="utf-8").read()
+    m = re.search(r"LOOKAHEAD_MIN:\s*(\d+)", text)
+    assert m, "LOOKAHEAD_MIN not found in shared/verdict.js"
+    return int(m.group(1))
 
 def hav(a, b, c, d):
     r = math.radians
@@ -42,6 +52,35 @@ class Places(unittest.TestCase):
                 if p["kind"] == "sensor":
                     s = P["sensors"][p["sensor"]]
                     self.assertLess(hav(p["lat"], p["lon"], s["lat"], s["lon"]), 1.0)
+    def test_travel_min_within_rule_lookahead(self):
+        limit = rule_lookahead_min()
+        for site, places in P["sites"].items():
+            for p in places:
+                for c in p["connected"]:
+                    self.assertLessEqual(c["travelMin"], limit, (site, p["id"], c))
+    def test_noah5_implies_noah25(self):
+        for site, places in P["sites"].items():
+            for p in places:
+                if p["noah5"]:
+                    self.assertTrue(p["noah25"], (site, p["id"]))
+    def test_barangay_noah_flags_match_share_threshold(self):
+        for site, f in DATA.items():
+            gj = os.path.join(ROOT, "sites", site, "barangays.geojson")
+            if not os.path.exists(gj):
+                continue
+            d = json.load(open(os.path.join(ROOT, f), encoding="utf-8"))
+            noah, hazard = BP.noah_layers(d)
+            feats = {feat["properties"]["pcode"]: feat for feat in json.load(open(gj, encoding="utf-8"))["features"]}
+            for p in P["sites"][site]:
+                if p["kind"] != "barangay":
+                    continue
+                pcode = p["id"].split(":")[2]
+                feat = feats.get(pcode)
+                self.assertIsNotNone(feat, (site, p["id"]))
+                cells = BP.barangay_cells(d, feat)
+                for k, key in (("5", "noah5"), ("25", "noah25")):
+                    share = BP.zone_share(noah[k], cells)
+                    self.assertEqual(p[key], share >= BP.NOAH_SHARE, (site, p["id"], k, share))
 
 if __name__ == "__main__":
     unittest.main()
