@@ -1005,9 +1005,11 @@ function drawPlaceMarker(ctx,X,Y,P,name){
   ctx.beginPath();ctx.arc(X,Y,9,0,7);ctx.lineWidth=7;ctx.strokeStyle=P.markerFill;ctx.stroke();
   ctx.fillStyle=P.markerInk;ctx.fill();
   ctx.beginPath();ctx.arc(X,Y,3.5,0,7);ctx.fillStyle=P.markerFill;ctx.fill();
-  ctx.font="700 12.5px Helvetica, Arial, sans-serif";ctx.textAlign="left";ctx.textBaseline="middle";
-  ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(name,X+18,Y);
-  ctx.fillStyle=P.markerInk;ctx.fillText(name,X+18,Y);
+  ctx.font="700 12.5px Helvetica, Arial, sans-serif";ctx.textBaseline="middle";
+  const left=X+18+ctx.measureText(name).width>view.w-8;       // near the right edge: label on the left, never clipped
+  ctx.textAlign=left?"right":"left";const lx=left?X-18:X+18;
+  ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(name,lx,Y);
+  ctx.fillStyle=P.markerInk;ctx.fillText(name,lx,Y);
 }
 /* ---------- pan / zoom interaction ---------- */
 const tip=document.getElementById("map-tooltip");
