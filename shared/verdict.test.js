@@ -100,3 +100,15 @@ test('eta rounds to 5 min, never below 5', () => {
   assert.equal(run({ sensors: [sensor({ depthCm: 4.9, rateCmPerHr: 60 })] }).etaMin, 5);
   assert.equal(run({ sensors: [sensor({ depthCm: 1, rateCmPerHr: 10 })] }).etaMin, 25);
 });
+test('I2: several sensors inside a place: the wettest decides (not whichever is listed first)', () => {
+  const dry = sensor({ id: 'S1', name: 'Dry St', depthCm: 0 });
+  const wet = sensor({ id: 'S2', name: 'Wet St', depthCm: 30, distM: 900 });
+  const a = run({ sensors: [dry, wet] });
+  assert.equal(a.answer, 'oo'); assert.equal(a.reason.key, 'sensor_now'); assert.equal(a.reason.vars.name, 'Wet St');
+  const trace = sensor({ id: 'S3', name: 'Trace St', depthCm: 2 });
+  const b = run({ sensors: [dry, trace] });
+  assert.equal(b.answer, 'baka'); assert.equal(b.reason.key, 'sensor_trace'); assert.equal(b.reason.vars.name, 'Trace St');
+  const rising = sensor({ id: 'S4', name: 'Rising St', depthCm: 3, rateCmPerHr: 6 });
+  const c = run({ sensors: [trace, rising] });
+  assert.equal(c.answer, 'oo'); assert.equal(c.reason.key, 'sensor_soon'); assert.equal(c.reason.vars.name, 'Rising St');
+});

@@ -24,7 +24,13 @@ export function babahaBa(x) {
   if (updatedAt === null || !fresh(updatedAt)) return out('nodata', 'stale');
 
   const live = sensors.filter((s) => fresh(s.at));
-  const here = live.find((s) => s.here);
+  // A place can have several sensors "here" (a barangay with sensors inside it): the most urgent one decides -
+  // soonest to reach WET_CM, then the deepest - never just whichever happens to be listed first.
+  const here = live.filter((s) => s.here).reduce((a, s) => {
+    if (!a) return s;
+    const ta = minutesToWet(a), ts = minutesToWet(s);
+    return ts < ta || (ts === ta && s.depthCm > a.depthCm) ? s : a;
+  }, null);
   if (here) {
     if (here.depthCm >= RULE.WET_CM) return out('oo', 'sensor_now', { name: here.name, cm: Math.round(here.depthCm) });
     const t = minutesToWet(here);

@@ -82,5 +82,24 @@ class Places(unittest.TestCase):
                     share = BP.zone_share(noah[k], cells)
                     self.assertEqual(p[key], share >= BP.NOAH_SHARE, (site, p["id"], k, share))
 
+    def test_barangay_inside_sensors(self):
+        # I2: every barangay lists the same-site sensors whose point lies inside its polygon
+        upc = next(p for p in P["sites"]["diliman"] if p["kind"] == "barangay" and p["name"] == "U.P. Campus")
+        self.assertEqual(sorted(upc["inside"]), ["BW-D02", "BW-D04", "BW-D08"])
+        for site, f in DATA.items():
+            gj = os.path.join(ROOT, "sites", site, "barangays.geojson")
+            feats = {feat["properties"]["pcode"]: feat for feat in json.load(open(gj, encoding="utf-8"))["features"]} if os.path.exists(gj) else {}
+            d = json.load(open(os.path.join(ROOT, f), encoding="utf-8"))
+            for p in P["sites"][site]:
+                self.assertIn("inside", p, (site, p["id"]))
+                if p["kind"] == "sensor":
+                    self.assertEqual(p["inside"], [p["sensor"]], (site, p["id"]))
+                    continue
+                rings = [r for poly in BP.polys(feats[p["id"].split(":")[2]]["geometry"]) for r in poly]
+                want = sorted(s["id"] for s in d["sensors"] if BP.point_in_poly(s["lat"], s["lon"], rings))
+                self.assertEqual(sorted(p["inside"]), want, (site, p["id"]))
+                for sid in p["inside"]:
+                    self.assertEqual(P["sensors"][sid]["site"], site)
+
 if __name__ == "__main__":
     unittest.main()

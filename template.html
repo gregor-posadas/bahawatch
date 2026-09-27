@@ -1586,7 +1586,7 @@ function shareLink(){const p=currentPlace();if(!p)return location.href.split("#"
 function demoInputs(p){
   const now=BASE.getTime()+tMin*60000;
   const conn=new Map(p.connected.map(c=>[c.sensor,c.travelMin]));
-  const sensors=HOUSEHOLD.map(s=>({id:s.id,name:addr(s),here:p.kind==="sensor"&&p.sensor===s.id,distM:haversineM(p.lat,p.lon,s.lat,s.lon),
+  const sensors=HOUSEHOLD.map(s=>({id:s.id,name:addr(s),here:(p.inside||[]).includes(s.id)||(p.kind==="sensor"&&p.sensor===s.id),distM:haversineM(p.lat,p.lon,s.lat,s.lon),
     travelMin:conn.has(s.id)?conn.get(s.id):null,depthCm:s.depth*100,rateCmPerHr:s.rate*100,at:now}));
   const P=SCEN[scenario].P;
   const rain={nowMmH:P*pulse(tMin,0)*DEMO_RAIN_MMH_PER_P,nextMmH:P*pulse(tMin+60,0)*DEMO_RAIN_MMH_PER_P,at:now};

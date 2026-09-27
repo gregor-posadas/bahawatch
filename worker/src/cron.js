@@ -49,7 +49,7 @@ export async function runCron(env, now, fetchImpl = fetch) {
       for (const [id, l] of latest) {
         const s = PLACES.sensors[id]; if (!s) continue;
         const distM = haversineM(p.lat, p.lon, s.lat, s.lon);
-        const here = p.kind === 'sensor' && p.sensor === id;
+        const here = (p.inside || []).includes(id) || (p.kind === 'sensor' && p.sensor === id);   // inside the place = here
         if (!here && !conn.has(id) && distM > RULE.REPORT_RADIUS_M) continue;
         sensors.push({ id, name: s.name, here, distM, travelMin: conn.has(id) ? conn.get(id) : null, depthCm: l.depthCm, rateCmPerHr: l.rateCmPerHr, at: l.at });
       }

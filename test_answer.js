@@ -112,6 +112,17 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
     &&s.ceb==="Walay kusog nga ulan o taho sa baha duol diri. Wala pay sensor diri."&&s.ilo==="Awan ti napigsa a tudo wenno damag ti layus iti asideg. Awan pay ti sensor ditoy."
     &&s.hil==="Wala sang mabaskog nga ulan ukon report sang baha malapit diri. Wala pa sang sensor diri."&&s.pam==="Alang makusog a uran o report ning albug malapit keni. Ala pang sensor keni.",
     "clear_no_sensor strings, six languages: "+JSON.stringify(s));
+  // I2: a sensor inside a barangay counts as "here" in the demo too — U.P. Campus (Diliman) with BW-D02 at 30 cm is Oo
+  s=await pg.evaluate(()=>{
+    switchSite("diliman");playing=false;scenario="clear";
+    const p=PLACES.sites.diliman.find(q=>q.kind==="barangay"&&q.name==="U.P. Campus");
+    for(const h of HOUSEHOLD){h.depth=0;h.rate=0;}
+    HOUSEHOLD.find(h=>h.id==="BW-D02").depth=0.30;
+    const v=babahaBa(demoInputs(p));
+    switchSite("tv");
+    return v;
+  });
+  assert(s.answer==="oo"&&s.reason.key==="sensor_now","demo: inside sensor at 30 cm makes the barangay Oo (not Hindi): "+JSON.stringify(s));
   // barangay pick
   await pg.evaluate(()=>{const b=PLACES.sites.tv.find(p=>p.kind==="barangay");setPlace(b.id);});
   s=await pg.evaluate(()=>({place:document.getElementById('p-ans-place').textContent,id:myPlace}));

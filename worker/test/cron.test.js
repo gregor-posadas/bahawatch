@@ -226,3 +226,11 @@ test("I9: a place with no sensor reporting says 'clear_no_sensor', not 'clear'; 
   const b = await status(env, NOW + 5 * 60000);
   assert.equal(b.answer, 'hindi'); assert.equal(b.reason.key, 'clear');
 });
+test('I2: a sensor inside a barangay counts as here: U.P. Campus answers Oo when BW-D02 reads 30 cm', async () => {
+  const env = envWith();
+  const upc = PLACES.sites.diliman.find((pl) => pl.kind === 'barangay' && pl.name === 'U.P. Campus');
+  await env.DB.prepare('INSERT INTO readings(sensor,at,depth_cm) VALUES(?,?,?)').bind('BW-D02', NOW - 60000, 30).run();
+  await runCron(env, NOW, rainOK());
+  const s = await (await handleStatus(new Request('https://api.test/status/x'), env, NOW, upc.id)).json();
+  assert.equal(s.answer, 'oo'); assert.equal(s.reason.key, 'sensor_now');
+});

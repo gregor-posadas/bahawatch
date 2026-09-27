@@ -113,7 +113,7 @@ def build_site(site, d):
     for s in d["sensors"]:
         name = s.get("bld") or ((s.get("hn") + " " if s.get("hn") else "") + s["street"])
         cells = [(y, x) for y in range(s["cy"] - 1, s["cy"] + 2) for x in range(s["cx"] - 1, s["cx"] + 2) if 0 <= y < GH and 0 <= x < GW]
-        out.append(place(f"{site}:s:{s['id']}", "sensor", name, s["lat"], s["lon"], cells, (s["cy"], s["cx"]), {"sensor": s["id"]}))
+        out.append(place(f"{site}:s:{s['id']}", "sensor", name, s["lat"], s["lon"], cells, (s["cy"], s["cx"]), {"sensor": s["id"], "inside": [s["id"]]}))
     gj = os.path.join(ROOT, "sites", site, "barangays.geojson")
     if os.path.exists(gj):
         for f in json.load(open(gj, encoding="utf-8"))["features"]:
@@ -122,7 +122,11 @@ def build_site(site, d):
             if not cells: continue
             st = [c for c in cells if street[c]] or cells
             rep = min(st, key=lambda c: elev[c])
-            out.append(place(f"{site}:b:{pr['pcode']}", "barangay", pr["name"], pr["lat"], pr["lon"], cells, rep, {"muni": pr["muni"]}))
+            # Sensors standing inside the barangay answer for it directly ("here"), whether or not their water
+            # would reach the barangay's lowest street cell (`connected` only covers that one cell).
+            rings = [r for p in polys(f["geometry"]) for r in p]
+            inside = sorted(x["id"] for x in d["sensors"] if point_in_poly(x["lat"], x["lon"], rings))
+            out.append(place(f"{site}:b:{pr['pcode']}", "barangay", pr["name"], pr["lat"], pr["lon"], cells, rep, {"muni": pr["muni"], "inside": inside}))
     return out
 
 def main():
