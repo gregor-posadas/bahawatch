@@ -1,6 +1,7 @@
 # BahaWatch: handoff for a new chat
 
-Last updated: 2026-09-27 (Sunday), after plan Task 7 of 13 (27 site data files built).
+Last updated: 2026-09-27 (Sunday), after plan Task 13 of 13: the branch is built, reviewed and fixed, and waits for
+Gregor's review before it is merged into `main`.
 Kept at `docs/superpowers/handoff/BahaWatch_Handoff.md` in the repo and as `claude/BahaWatch_Handoff.md` in the
 "Berkeley PhD" Project. It is refreshed at milestones (after plan Tasks 5, 7 and 13) and whenever work stops mid-plan.
 
@@ -18,9 +19,9 @@ Kept at `docs/superpowers/handoff/BahaWatch_Handoff.md` in the repo and as `clau
 
 > Continue BahaWatch from the handoff document `claude/BahaWatch_Handoff.md` in this Project (read it first, all
 > of it). Restore the repo from the attached `bahawatch.bundle` into `/home/claude/work` on branch
-> `phildev-campuses`, then continue executing `docs/superpowers/plans/2026-09-27-philippines-phildev-campuses.md`
-> natively (superpowers:executing-plans) from the first task not marked done in the handoff's progress table,
-> checking `git log` too. Don't redo finished tasks. Ask me only what the plan says to ask.
+> `phildev-campuses`. All 13 plan tasks are done. [Say one: "I reviewed it; merge it into main
+> (superpowers:finishing-a-development-branch), re-bundle, and give me the PowerShell commands." — or — "Change
+> these things first: …"] Answers to the open questions in §3: [LLCC pin / size budget / HDX licence].
 
 **What the new chat should do first:**
 
@@ -102,12 +103,25 @@ Points 1–3 are live, and so is the "Try reporting" tab. **Point 4 is in progre
 | 5 | **Run on Gregor's PC**; choose outlines; fill centres; bring the cuts in | **done** — cuts for 25 campuses + tv in `inputs/campuses/` (and `…\campuses\_stage_cuts.zip` on the PC) |
 | 6 | Model: grids, placement, card | **done** (a3ac853) |
 | 7 | Build the 27 site data files | **done** (b82391c) — `data/*.json` for 27 sites, `data/ph_outline.json`, `places.json` |
-| 8 | Page: one site file at a time, router, old links, test server | not started |
-| 9 | Page: shared flood fill, obstacles, sea, counts | not started |
-| 10 | Page: national map and campus list | not started |
-| 11 | Page: campus bar, simulation label, card, service worker | not started |
-| 12 | Accessibility, speed and size checks | not started |
-| 13 | Docs, QR codes, screenshots, final review, build report PDF, demo, bundle | not started |
+| 8 | Page: one site file at a time, router, old links, test server | **done** (9fb002a) |
+| 9 | Page: shared flood fill, obstacles, sea, counts | **done** (b87a88d) |
+| 10 | Page: national map and campus list | **done** (b9af59e) |
+| 11 | Page: campus bar, simulation label, card, service worker | **done** (d42d8fa) |
+| 12 | Accessibility, speed and size checks | **done** (e99ad3c) |
+| 13 | Docs, QR codes, screenshots, final review, build report PDF, demo, bundle | **done** (8a8873c … f7eec65, plus the handoff commit) |
+
+**What is left, in order:**
+1. Gregor reviews: the build report PDF (`BahaWatch_PhilDev-Campuses_Build_Report_2026-09-27.pdf`), the private demo
+   (updated to version 25; open `#xu` there to check a campus loads), and the open questions below.
+2. On his go-ahead: merge `phildev-campuses` into `main` with superpowers:finishing-a-development-branch, re-bundle
+   (`git bundle create /mnt/user-data/outputs/bahawatch.bundle main`), send it, and give him the PowerShell pull/push
+   commands (§2). GitHub Pages then serves the national map at the plain link.
+
+**Open questions for Gregor:**
+- **LLCC's location:** the Wikipedia point 10.29297 N, 123.95040 E (not in OSM). A Google Maps pin fixes it (re-cut one box).
+- **Size budget:** the spec says ≤ 450 KB raw per site file; the build uses ≤ 250 KB gzipped (≤ 750,000 raw). Confirm, or amend the spec.
+- **PSA/NAMRIA licence:** HDX refused automated requests, so `DATA-LICENSE.md` says "as stated on the HDX page, to confirm".
+  Check https://data.humdata.org/dataset/cod-ab-phl before the push.
 
 **Rulings made during execution (Task 5):**
 - PC steps run in the foreground, because background jobs die when a call ends. `cut` ran in groups of 3–5 boxes.
@@ -121,6 +135,19 @@ Points 1–3 are live, and so is the "Try reporting" tab. **Point 4 is in progre
 - **File size is measured on the wire:** ≤ 250 KB gzipped, and ≤ 750,000 bytes raw. Dense Manila boxes are over the spec's 450 KB raw even without building dots. Building dots are thinned to fit.
 - **Units 02–08 are kept off campus.** CLSU, UP Diliman and UPLB had several units on campus.
 - **The country outline** was simplified to 33 KB (tolerance 0.02°).
+
+**Task 13 and final-review rulings and fixes:**
+- **Units stay ≥ 300 m inside the 3 km box** (the screenshots showed units clipped at the map edge or under the legend or
+  credits); `check_site_data.py` enforces it. All 25 campuses were rebuilt; spacing is still 300 m everywhere.
+- **The final reviewer (fresh, most capable model) found 0 Critical and 4 Important; all fixed test-first:** no sideways
+  scroll at 390 px in campus details; one shared language for the national map and all campuses (`bw-lang:ph`; the pilots
+  keep their own); OSM street names escaped in cards, log and warning; the Cebu 0 % NOAH shares now read "no hazard zone
+  mapped in this area" (checked on the PC: the Cebu 5-/25-yr maps have no zone near Metro Cebu).
+- **Own finding, also on the live site:** the details view's eight unit cards were squeezed to 2 px by the side panel; fixed.
+- **Deferred minors from the final review:** no sea legend entry; `test_obstacles` sea check runs on sites without sea;
+  two spec §7.1 checks missing from the checker (both hold today); where-dialog unfocused after Try → All campuses →
+  Teachers Village; `md_to_pdf.py` hard-codes its cwd.
+- **Copernicus row kept in `DATA-LICENSE.md`** for the two old GeoTIFFs still in the repo.
 
 **Before these:** The plan's own rulings are listed in the plan: synthetic fixtures,
 dark pin colours, `#nat-count` as the national status region, and the Task 7/8 allowances.
@@ -223,13 +250,16 @@ plp ptc pup qcu sti udm umak ust upd uplb ctu usc llcc mcc upc msuiit ustp xu`.
 - Worker: `cd worker && node --test --no-warnings test/*.test.js`.
 - Places: `python3 tools/test_places.py`.
 - Build: `./test_build.sh`.
-- Page suites: from Task 8, `./test_pages.sh` runs every `test_*.js` over `http://127.0.0.1:8765/`. Before Task 8, `node test_x.js`
-  opens `file://`.
+- Page suites: `./test_pages.sh` runs every `test_*.js` (16 suites) over `http://127.0.0.1:8765/`; `./test_pages.sh test_x.js` runs one.
+- Pipeline: `cd pipeline && python3 -W ignore -m unittest discover -s tests -t .` (35); model: `python3 -W ignore -m unittest discover -s model/tests -t .` (20).
+- Site checks: `python3 -W ignore tools/check_site_data.py [ids]`. README §2.5 is the campus pipeline runbook.
 - Failures print `FAIL` at the start of a line.
 
 **Gregor's PC (desktop app workspace).**
 - Linux, 3.9 GB RAM, 2 cores, Python 3.10; pip works.
-- Up to 180 s per `device_bash` call, so run long steps with `setsid nohup … &` and poll.
+- Up to 180 s per `device_bash` call, and background jobs are killed when a call ends: run each step in the foreground
+  (`timeout 170`), in groups of boxes with `--only`.
+- `device_commit_files` can deliver an older cached copy when a staged path is reused: stage under a fresh name, then `mv -f`.
 - At most 400 MB per staged file.
 - Inputs in `Nationwide Update`:
   - `bahawatch-data/fabdem`: 109 FABDEM V1-2 tiles;
@@ -271,3 +301,4 @@ plp ptc pup qcu sti udm umak ust upd uplb ctu usc llcc mcc upc msuiit ustp xu`.
 - BahaWatch_Babaha-ba_Spec / Plan / Build_Report_2026-09-26.pdf
 - BahaWatch_Try-Reporting_Spec / Plan_2026-09-26.pdf
 - BahaWatch_PhilDev-Campuses_Spec / Plan_2026-09-27.pdf
+- BahaWatch_PhilDev-Campuses_Build_Report_2026-09-27.pdf
