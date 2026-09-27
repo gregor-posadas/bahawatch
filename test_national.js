@@ -21,7 +21,7 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
   assert(s.labels&&s.text,"each pin has a visible short label and a full spoken label (name, place, type)");
   assert(s.clusters.length>=1&&s.clusters.every(c=>/^\d+ campuses: .+Zoom in$/.test(c)),"crowded Metro Manila pins become a cluster that says how many and which: "+s.clusters[0]);
   assert(s.legend.join("|")==="State university or college (circle)|Local university or college (square)|Private (triangle)","legend says the pin shapes in words");
-  assert(s.desc==="Map of the Philippines with 25 PhilDev partner campuses: 17 in Luzon, 5 in Visayas, 3 in Mindanao. The list below has the same campuses.","screen-reader description of the map");
+  assert(s.desc==="Map of the Philippines with 25 PhilDev partner campuses: 17 in Luzon, 5 in Visayas, 3 in Mindanao. The campus list has the same campuses.","screen-reader description of the map");
   assert(s.tabs.join()==="ph*,tv,berkeley,try"&&/PhilDev partner campuses/.test(s.title),"tab row with 'PhilDev campuses' selected; page title");
   s=await pg.evaluate(()=>[...document.querySelectorAll('#nat-list h2')].map(h=>h.dataset.group+h.dataset.n+":"+h.nextElementSibling.children.length));
   assert(s.join()==="Luzon17:17,Visayas5:5,Mindanao3:3","list grouped Luzon 17 · Visayas 5 · Mindanao 3: "+s);

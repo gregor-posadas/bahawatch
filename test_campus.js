@@ -52,13 +52,20 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
   {const c2=await b.newContext({viewport:{width:1280,height:900}});await c2.addInitScript(()=>{try{for(const k of ["xu","upd","usc"])localStorage.setItem("bw-asked:"+k,"1");}catch(e){}});
     const p3=await c2.newPage();await p3.goto(U);await ready(p3,"ph");
     await p3.selectOption('#nat-lang','fil');
+    const d0=await p3.evaluate(()=>({lang:document.documentElement.lang,tr:document.documentElement.getAttribute("translate"),h:document.getElementById("nat-q-l").textContent}));
+    assert(d0.lang==="fil"&&d0.tr==="no"&&d0.h==="Maghanap ng kampus","Filipino on the national map: <html lang=fil translate=no>, search label in Filipino: "+JSON.stringify(d0));
     await p3.goto(U+'#xu');await ready(p3,"xu");
+    const card=await p3.evaluate(()=>({h:document.getElementById("c-card-h").textContent,fil:NAT_LANGS.fil.cardH,en:NAT_LANGS.en.cardH}));
+    assert(card.h===card.fil&&card.h!==card.en,"the partnership card is in Filipino: "+card.h);
     const a1=await p3.evaluate(()=>LANG);
     await p3.selectOption('#p-lang','ceb');
     await p3.goto(U+'#upd');await ready(p3,"upd");
     const a2=await p3.evaluate(()=>LANG);
     await p3.goto(U);await ready(p3,"ph");
     const a3=await p3.evaluate(()=>[LANG,document.getElementById('nat-lang').value]);
+    await p3.selectOption('#nat-lang','en');
+    const d1=await p3.evaluate(()=>({lang:document.documentElement.lang,tr:document.documentElement.getAttribute("translate")}));
+    assert(d1.lang==="en"&&d1.tr===null,"back to English: <html lang=en>, and Chrome may translate again: "+JSON.stringify(d1));
     assert(a1==="fil"&&a2==="ceb"&&a3[0]==="ceb"&&a3[1]==="ceb","language chosen on the national map carries to a campus, and a campus choice to the next campus and back ("+[a1,a2,a3].join(" → ")+")");
     await c2.close();}
   // OSM names are data, not markup: a street name with HTML must show as text in the cards, the log and the warning

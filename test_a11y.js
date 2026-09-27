@@ -78,6 +78,11 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   // new strings exist in six languages (non-English marked for native review)
   s=await pg.evaluate(()=>{const miss=[];for(const k of ["en","fil","ceb","ilo","hil","pam"]){for(const n of Object.keys(NAT_LANGS.en))if(NAT_LANGS[k]==null||NAT_LANGS[k][n]==null)miss.push(k+"."+n);if(k!=="en"&&!NAT_LANGS[k]._review)miss.push(k+"._review");}return miss;});
   assert(s.length===0,"national and campus strings in six languages, non-English marked for review: "+s.join(","));
+  s=await pg.evaluate(()=>{const SAME_OK=new Set(["groups.Luzon","groups.Visayas","groups.Mindanao","credit","brgy1"]),same=[];
+    const walk=(en,xx,path)=>{for(const k of Object.keys(en)){const p=path?path+"."+k:k;
+      if(en[k]&&typeof en[k]==="object")walk(en[k],xx[k],p);else if(xx[k]===en[k]&&!SAME_OK.has(p))same.push(p);}};
+    for(const k of ["fil","ceb","ilo","hil","pam"])walk(NAT_LANGS.en,NAT_LANGS[k],"");return same;});
+  assert(s.length===0,"every national and campus string is translated, not an English copy: "+s.slice(0,8).join(", "));
   // size: the opening page is small; site files stay within budget
   const html=fs.readFileSync(path.join(__dirname,'bahawatch_dashboard.html'));
   const gz=zlib.gzipSync(html).length;

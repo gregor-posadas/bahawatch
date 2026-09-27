@@ -14,9 +14,10 @@ verdict, flood = strip("shared/verdict.js"), strip("shared/flood.js")
 api_base = os.environ.get("BAHAWATCH_API", "")
 sitekey = os.environ.get("TURNSTILE_SITEKEY", "")
 outline = open("data/ph_outline.json", encoding="utf-8").read()
-for ph in ("__CAMPUSES__", "__PH_OUTLINE__", "/*__VERDICT_JS__*/", "/*__FLOOD_JS__*/", "__API_BASE__", "__TURNSTILE_SITEKEY__"):
+nat_i18n = json.dumps(json.load(open("i18n/nat.json", encoding="utf-8")), ensure_ascii=False, separators=(",", ":"))
+for ph in ("__CAMPUSES__", "__PH_OUTLINE__", "__NAT_I18N__", "/*__VERDICT_JS__*/", "/*__FLOOD_JS__*/", "__API_BASE__", "__TURNSTILE_SITEKEY__"):
     assert ph in tpl, f"template.html is missing {ph}"
-out = (tpl.replace("__CAMPUSES__", json.dumps(campuses, ensure_ascii=False, separators=(",", ":"))).replace("__PH_OUTLINE__", outline)
+out = (tpl.replace("__CAMPUSES__", json.dumps(campuses, ensure_ascii=False, separators=(",", ":"))).replace("__PH_OUTLINE__", outline).replace("__NAT_I18N__", nat_i18n)
           .replace("/*__VERDICT_JS__*/", verdict).replace("/*__FLOOD_JS__*/", flood)
           .replace("__API_BASE__", json.dumps(api_base)).replace("__TURNSTILE_SITEKEY__", json.dumps(sitekey)))
 dest = os.environ.get("OUT", "bahawatch_dashboard.html")
