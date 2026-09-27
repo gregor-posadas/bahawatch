@@ -24,7 +24,7 @@ test('3 phones say oo within 1 km -> oo; demo reports and repeats from one phone
   await addReport(env, { device: 'd'.repeat(24) });
   await runCron(env, NOW + 300000, rainOK());
   const s = await status(env, NOW + 300000);
-  assert.equal(s.answer, 'oo'); assert.deepEqual(s.reason, { key: 'reports', vars: { n: 3 } });
+  assert.equal(s.answer, 'baka'); assert.deepEqual(s.reason, { key: 'reports', vars: { n: 3 } });   // reports alone cap at Baka
 });
 test("a phone's latest report wins: 'hindi' to Still there? stops it counting", async () => {
   const env = envWith();
@@ -128,7 +128,7 @@ test('per-place freshness: a place with no fresh input of its own stays nodata e
   for (const d of ['a', 'b', 'c']) await addReport(env, { device: d.repeat(24) });
   await runCron(env, NOW, rainDown);
   const sp = await status(env, NOW);
-  assert.equal(sp.answer, 'oo');
+  assert.equal(sp.answer, 'baka');   // 3 reports alone: Baka (reports-only cap)
   const sq = await (await handleStatus(new Request('https://api.test/status/x'), env, NOW, Q.id)).json();
   assert.equal(sq.answer, 'nodata');
   assert.equal(sq.updatedAt, null);

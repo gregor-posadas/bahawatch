@@ -57,8 +57,9 @@ Checks run top to bottom; the first match wins.
 2. **Sensors.** A sensor here reads ≥ 5 cm, or will reach 5 cm within 60 min at its
    current rate, or water from a connected sensor arrives within 60 min → **Oo**.
 3. **Reports.** 3 or more "Yes" reports from different phones within 1 km in the last
-   hour → **Oo**, unless a sensor within 500 m is dry and steady → **Baka**
-   ("Neighbours report flooding; sensor here is dry").
+   hour → **Baka** ("N neighbours report flooding"), or **Baka** with "Neighbours report
+   flooding; sensor here is dry" when a sensor within 500 m is dry and steady. Reports
+   alone never say **Oo** (spam protection, decided 2026-09-26); only check 2 does.
 4. **Conditions.** Any of: PAGASA yellow rain or heavier (≥ 7.5 mm/h, now or next hour)
    and the place is in NOAH's 5- or 25-year flood zone; orange or red rain (≥ 15 mm/h)
    anywhere NOAH-mapped; 1–2 "Yes" reports nearby; a sensor here showing 1–4 cm → **Baka**.

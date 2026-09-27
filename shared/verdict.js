@@ -24,17 +24,14 @@ export function babahaBa(x) {
   if (updatedAt === null || !fresh(updatedAt)) return out('nodata', 'stale');
 
   const live = sensors.filter((s) => fresh(s.at));
-  // A place can have several sensors "here" (a barangay with sensors inside it): the most urgent one decides -
-  // soonest to reach WET_CM, then the deepest - never just whichever happens to be listed first.
-  const here = live.filter((s) => s.here).reduce((a, s) => {
-    if (!a) return s;
-    const ta = minutesToWet(a), ts = minutesToWet(s);
-    return ts < ta || (ts === ta && s.depthCm > a.depthCm) ? s : a;
-  }, null);
-  if (here) {
-    if (here.depthCm >= RULE.WET_CM) return out('oo', 'sensor_now', { name: here.name, cm: Math.round(here.depthCm) });
-    const t = minutesToWet(here);
-    if (t <= RULE.LOOKAHEAD_MIN) return out('oo', 'sensor_soon', { name: here.name, min: roundEta(t) }, roundEta(t));
+  // A place can have several sensors "here" (a barangay with sensors inside it). Each test looks at the sensor
+  // that matters for it: wet now -> the deepest; wet soon -> the soonest to reach WET_CM; trace -> the deepest.
+  const hereS = live.filter((s) => s.here);
+  const deepest = hereS.reduce((a, s) => (!a || s.depthCm > a.depthCm ? s : a), null);
+  if (deepest && deepest.depthCm >= RULE.WET_CM) return out('oo', 'sensor_now', { name: deepest.name, cm: Math.round(deepest.depthCm) });
+  const soonest = hereS.reduce((a, s) => { const t = minutesToWet(s); return !a || t < a.t ? { s, t } : a; }, null);
+  if (soonest && soonest.t <= RULE.LOOKAHEAD_MIN) {
+    return out('oo', 'sensor_soon', { name: soonest.s.name, min: roundEta(soonest.t) }, roundEta(soonest.t));
   }
   let best = null;
   for (const s of live) {
@@ -46,8 +43,9 @@ export function babahaBa(x) {
 
   const yes = reports.yesPhones || 0;
   if (yes >= RULE.REPORTS_YES) {
+    // Reports alone never say "Oo" (anyone can make new phone ids): 3+ phones is Baka, with the count in the reason.
     const dry = live.some((s) => s.distM <= RULE.DRY_SENSOR_M && s.depthCm < RULE.TRACE_CM && !(s.rateCmPerHr > 0));
-    return dry ? out('baka', 'reports_vs_dry_sensor', { n: yes }) : out('oo', 'reports', { n: yes });
+    return out('baka', dry ? 'reports_vs_dry_sensor' : 'reports', { n: yes });
   }
 
   if (rain && fresh(rain.at)) {
@@ -56,7 +54,7 @@ export function babahaBa(x) {
     if (mm >= RULE.RAIN_ORANGE && place.noahMapped) return out('baka', 'rain_heavy', { mm: Math.round(mm) });
   }
   if (yes >= 1) return out('baka', 'reports_few', { n: yes });
-  if (here && here.depthCm >= RULE.TRACE_CM) return out('baka', 'sensor_trace', { name: here.name, cm: Math.round(here.depthCm) });
+  if (deepest && deepest.depthCm >= RULE.TRACE_CM) return out('baka', 'sensor_trace', { name: deepest.name, cm: Math.round(deepest.depthCm) });
   // "No sign" means less with no sensor to look at: say so, rather than claim sensors were checked.
   return out('hindi', live.length ? 'clear' : 'clear_no_sensor');
 }

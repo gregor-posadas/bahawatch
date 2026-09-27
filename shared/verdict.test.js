@@ -51,18 +51,34 @@ test('stale sensor (25 min) is ignored when rain is fresh', () => {
   assert.equal(v.answer, 'hindi');
 });
 
-test('reports: 3 phones -> oo; 2 phones -> baka reports_few', () => {
-  const a = run({ reports: { yesPhones: 3, newestAt: NOW - MIN } });
-  assert.equal(a.answer, 'oo'); assert.equal(a.reason.key, 'reports'); assert.deepEqual(a.reason.vars, { n: 3 });
+test('reports alone cap at baka: 3, 5 and 8 phones -> baka reports; 2 -> baka reports_few', () => {
+  for (const n of [3, 5, 8]) {
+    const v = run({ reports: { yesPhones: n, newestAt: NOW - MIN } });
+    assert.equal(v.answer, 'baka'); assert.equal(v.reason.key, 'reports'); assert.deepEqual(v.reason.vars, { n });
+  }
   const b = run({ reports: { yesPhones: 2, newestAt: NOW - MIN } });
   assert.equal(b.answer, 'baka'); assert.equal(b.reason.key, 'reports_few');
 });
-test('reports vs dry sensor: dry+steady within 500 m -> baka; at 600 m or rising -> oo', () => {
+test('reports vs dry sensor: dry+steady within 500 m -> baka reports_vs_dry_sensor; at 600 m or rising -> baka reports', () => {
   const rep = { yesPhones: 3, newestAt: NOW - MIN };
   const dry = (o) => sensor({ id: 'S3', here: false, distM: 400, depthCm: 0, rateCmPerHr: 0, ...o });
-  assert.equal(run({ reports: rep, sensors: [dry()] }).reason.key, 'reports_vs_dry_sensor');
-  assert.equal(run({ reports: rep, sensors: [dry({ distM: 600 })] }).answer, 'oo');
-  assert.equal(run({ reports: rep, sensors: [dry({ rateCmPerHr: 0.5 })] }).answer, 'oo');
+  const a = run({ reports: rep, sensors: [dry()] });
+  assert.equal(a.answer, 'baka'); assert.equal(a.reason.key, 'reports_vs_dry_sensor');
+  assert.equal(run({ reports: rep, sensors: [dry({ distM: 600 })] }).reason.key, 'reports');
+  assert.equal(run({ reports: rep, sensors: [dry({ rateCmPerHr: 0.5 })] }).reason.key, 'reports');
+  assert.equal(run({ reports: rep, sensors: [dry({ distM: 600 })] }).answer, 'baka');
+});
+test('only a sensor makes oo: wet sensor here plus 5 reports -> oo sensor_now', () => {
+  const v = run({ reports: { yesPhones: 5, newestAt: NOW - MIN }, sensors: [sensor({ depthCm: 20 })] });
+  assert.equal(v.answer, 'oo'); assert.equal(v.reason.key, 'sensor_now');
+});
+test('several sensors here: a slowly rising dry one never hides a 4 cm trace on another', () => {
+  const slow = sensor({ id: 'S1', name: 'Slow St', depthCm: 0, rateCmPerHr: 0.1 });
+  const trace = sensor({ id: 'S2', name: 'Trace St', depthCm: 4, rateCmPerHr: 0 });
+  for (const order of [[slow, trace], [trace, slow]]) {
+    const v = run({ sensors: order });
+    assert.equal(v.answer, 'baka'); assert.equal(v.reason.key, 'sensor_trace'); assert.equal(v.reason.vars.name, 'Trace St');
+  }
 });
 
 test('rain: yellow in 5/25-yr zone -> baka; 7.4 -> hindi; yellow in 100-yr-only area -> hindi', () => {

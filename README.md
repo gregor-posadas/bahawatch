@@ -564,8 +564,9 @@ wins:
 4. **upstream sensor** wet-or-soon plus its travel time to here, within the
    same 60-min look-ahead → `oo`.
 5. **`REPORTS_YES`** (3) distinct phones reporting "Oo" within `REPORT_RADIUS_M`
-   (1 km) in the last hour → `oo`, unless a sensor within `DRY_SENSOR_M`
-   (500 m) is dry with no rise — then `baka` (reports vs. a dry sensor nearby).
+   (1 km) in the last hour → `baka` with reason `reports` ("N neighbours report
+   flooding"), or `reports_vs_dry_sensor` when a sensor within `DRY_SENSOR_M`
+   (500 m) is dry with no rise. Reports alone never produce `oo`; only a sensor does.
 6. **rain** ≥ `RAIN_YELLOW` (7.5 mm/h) in a NOAH 5- or 25-year zone, or
    ≥ `RAIN_ORANGE` (15 mm/h) anywhere hazard-mapped → `baka`.
 7. **1–2 "Oo" reports**, or a trace reading at the local sensor

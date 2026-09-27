@@ -61,7 +61,7 @@ ol.words b{font-weight:700}
 <div class="chart">
 <svg viewBox="0 0 880 900" role="img" aria-labelledby="t d">
   <title id="t">Babaha ba? decision flowchart</title>
-  <desc id="d">Start every five minutes for each place. If the newest input is older than twenty minutes, answer "Walang bagong datos". Otherwise, if a sensor here reads at least 5 cm, will within 60 minutes, or water from a connected sensor arrives within 60 minutes, answer Oo. Otherwise, if three or more Yes reports from different phones came in within 1 km in the last hour: answer Baka if a sensor within 500 m is dry and steady, otherwise Oo. Otherwise, if heavy rain meets a NOAH flood zone, orange or red rain falls in any mapped area, one or two Yes reports arrived, or a sensor shows 1 to 4 cm, answer Baka. Otherwise answer Hindi. Every answer shows one reason line and how old its data is.</desc>
+  <desc id="d">Start every five minutes for each place. If the newest input is older than twenty minutes, answer "Walang bagong datos". Otherwise, if a sensor here reads at least 5 cm, will within 60 minutes, or water from a connected sensor arrives within 60 minutes, answer Oo. Otherwise, if three or more Yes reports from different phones came in within 1 km in the last hour: answer Baka (reports alone never say Oo; the reason says how many, or that a nearby sensor is dry). Otherwise, if heavy rain meets a NOAH flood zone, orange or red rain falls in any mapped area, one or two Yes reports arrived, or a sensor shows 1 to 4 cm, answer Baka. Otherwise answer Hindi. Every answer shows one reason line and how old its data is.</desc>
   <defs>
     <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 Z" fill="var(--ink)"/>
@@ -111,22 +111,14 @@ ol.words b{font-weight:700}
   <rect class="q" x="40" y="348" width="400" height="58" rx="4"/>
   <text class="qt" x="58" y="373"><tspan class="qb">3 or more "Yes" reports in the last hour?</tspan></text>
   <text class="sm" x="58" y="393">From different phones, within 1 km</text>
-  <line class="ln" x1="240" y1="406" x2="240" y2="446" marker-end="url(#ah)"/>
+  <path class="ln" d="M240 406 V494 H548" marker-end="url(#ah)"/>
   <text class="yl" x="250" y="430">YES</text>
+  <text class="sm" x="258" y="462">Reports alone never say Oo (spam protection).</text>
+  <text class="sm" x="258" y="480">Reason: how many, or a dry sensor nearby.</text>
   <!-- NO path around the left -->
   <path class="ln" d="M40 377 H20 V560 H38" marker-end="url(#ah)"/>
   <text class="yl" x="27" y="446">NO</text>
 
-  <!-- Q3b dry sensor -->
-  <rect class="q" x="80" y="448" width="360" height="58" rx="4"/>
-  <text class="qt" x="98" y="473"><tspan class="qb">Is a sensor within 500 m dry and steady?</tspan></text>
-  <text class="sm" x="98" y="493">A dry sensor outranks reports</text>
-  <!-- no -> up to Oo -->
-  <path class="ln" d="M440 470 H500 V300 H548" marker-end="url(#ah)"/>
-  <text class="yl" x="452" y="463">NO</text>
-  <!-- yes -> Baka -->
-  <line class="ln" x1="440" y1="494" x2="548" y2="494" marker-end="url(#ah)"/>
-  <text class="yl" x="476" y="487">YES</text>
 
   <!-- Q4 conditions -->
   <text class="num" x="40" y="540">CHECK 4 · CONDITIONS</text>
@@ -190,7 +182,7 @@ ol.words b{font-weight:700}
 <ol class="words">
   <li>If the newest sensor reading, report or rain figure is <b>more than 20 minutes old</b>, say <b>Walang bagong datos</b> (no fresh data). Stop.</li>
   <li>If a <b>sensor here reads 5 cm or more</b>, will reach 5 cm within 60 minutes at its current rate, or water from a <b>connected sensor</b> will arrive within 60 minutes, say <b>Oo</b>.</li>
-  <li>If <b>3 or more "Yes" reports</b> came from different phones within 1 km in the last hour: say <b>Baka</b> if a sensor within 500 m is dry and steady, otherwise say <b>Oo</b>.</li>
+  <li>If <b>3 or more "Yes" reports</b> came from different phones within 1 km in the last hour: say <b>Baka</b>. Reports alone never say <b>Oo</b>; only a sensor can.</li>
   <li>If <b>heavy rain meets a flood-prone place</b>, orange or red rain falls anywhere NOAH has mapped, 1–2 "Yes" reports came in, or a sensor shows 1–4 cm, say <b>Baka</b>.</li>
   <li>Otherwise, say <b>Hindi</b>.</li>
 </ol>
