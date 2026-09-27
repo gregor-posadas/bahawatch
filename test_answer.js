@@ -12,15 +12,40 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
   await pg.click('#p-where [data-act="skip"]');await pg.waitForTimeout(100);
   s=await pg.evaluate(()=>({open:!document.getElementById('p-where').hidden,top:document.getElementById('p-top-area').contains(document.getElementById('p-area')),pick:!document.getElementById('p-ans-pick').hidden}));
   assert(!s.open&&s.top&&s.pick,"skip: area status on top and a Pick your place button");
+  // baseline sizes for the area line while it's still at the top (no place chosen) — used below to check it shrinks
+  const topArea=await pg.evaluate(()=>({hlSize:parseFloat(getComputedStyle(document.getElementById('p-headline')).fontSize),updSize:parseFloat(getComputedStyle(document.getElementById('p-updated')).fontSize)}));
   // places are embedded
   s=await pg.evaluate(()=>({n:PLACES.sites.tv.length,b:PLACES.sites.tv.some(p=>p.kind==="barangay"),berk:PLACES.sites.berkeley.every(p=>p.kind==="sensor")}));
   assert(s.n>=18&&s.b&&s.berk,"places.json embedded with barangays for Philippine sites only");
   // pick a sensor street, storm peak -> Oo with square shape, reason names the street
   await pg.evaluate(()=>{setPlace("tv:s:BW-H07");playing=false;scenario="typhoon";tMin=495;lastEmit=-999;step(0,true);});
-  s=await pg.evaluate(()=>({ans:document.getElementById('p-answer').dataset.answer,word:document.getElementById('p-ans-word').textContent,shape:getComputedStyle(document.getElementById('p-ans-shape')).borderRadius,reason:document.getElementById('p-ans-reason').textContent,live:document.querySelector('#p-answer [role=status]').getAttribute('aria-live'),bottom:document.getElementById('p-bottom-area').contains(document.getElementById('p-area'))}));
+  s=await pg.evaluate(()=>{
+    const live=document.querySelector('#p-answer [role=status]');
+    return {ans:document.getElementById('p-answer').dataset.answer,word:document.getElementById('p-ans-word').textContent,
+      shape:getComputedStyle(document.getElementById('p-ans-shape')).borderRadius,
+      reason:document.getElementById('p-ans-reason').textContent,
+      live:live.getAttribute('aria-live'),
+      reasonInLive:live.contains(document.getElementById('p-ans-reason')),
+      ageInLive:live.contains(document.getElementById('p-ans-age')),
+      bottom:document.getElementById('p-bottom-area').contains(document.getElementById('p-area'))};
+  });
   assert(s.ans==="oo"&&s.shape==="3px"&&/Mayaman/.test(s.reason),"storm peak on Mayaman: Oo, square shape, reason naming the street: "+s.reason);
-  assert(s.live==="polite","answer announced through a polite live region");
+  assert(s.live==="polite"&&s.reasonInLive&&!s.ageInLive,"live region covers word+gloss+reason but excludes the age line (which shouldn't re-announce every minute): "+JSON.stringify(s));
   assert(s.bottom,"with a place chosen, the area headline moves under the list");
+  // area headline/sub/updated keep their severity styling (colour + hierarchy) once moved under the list, just smaller
+  s=await pg.evaluate(()=>{
+    const toRGB=v=>{const d=document.createElement('span');d.style.color=v;document.body.appendChild(d);const c=getComputedStyle(d).color;d.remove();return c;};
+    const alertRGB=toRGB(getComputedStyle(document.documentElement).getPropertyValue('--alert').trim());
+    const ink2RGB=toRGB(getComputedStyle(document.documentElement).getPropertyValue('--ink-2').trim());
+    const hl=document.getElementById('p-headline'),upd=document.getElementById('p-updated');
+    return {tier:document.getElementById('p-area').className,hlColor:getComputedStyle(hl).color,alertRGB,
+      updColor:getComputedStyle(upd).color,ink2RGB,
+      hlSize:parseFloat(getComputedStyle(hl).fontSize),updSize:parseFloat(getComputedStyle(upd).fontSize)};
+  });
+  assert(/tier-alert/.test(s.tier),"the tier class travels onto #p-area so its styling holds wherever it lives: "+s.tier);
+  assert(s.hlColor===s.alertRGB,"headline keeps its --alert severity colour once moved under the list: "+s.hlColor+" vs "+s.alertRGB);
+  assert(s.updColor===s.ink2RGB,"updated line keeps its --ink-2 colour once moved under the list: "+s.updColor+" vs "+s.ink2RGB);
+  assert(s.hlSize<topArea.hlSize&&s.updSize<=topArea.updSize,`area line is visibly smaller under the list than at the top: headline ${s.hlSize}px vs ${topArea.hlSize}px, updated ${s.updSize}px vs ${topArea.updSize}px`);
   // dry day -> Hindi
   await pg.evaluate(()=>{scenario="clear";tMin=100;lastEmit=-999;step(0,true);});
   s=await pg.evaluate(()=>document.getElementById('p-answer').dataset.answer);
@@ -56,6 +81,37 @@ const U='file:///home/claude/work/bahawatch_dashboard.html';
   // 48 px targets, contrast of the answer word
   s=await pg.evaluate(()=>[...document.querySelectorAll('#p-where button')].filter(b=>!b.hidden).every(b=>b.getBoundingClientRect().height>=48));
   assert(s,"Saan ka? buttons are at least 48 px tall");
+  // WCAG contrast (>=4.5:1) for every text element in the answer band, in every state, in both themes —
+  // computed from actual rendered colours (getComputedStyle), not hard-coded hex guesses.
+  const checkAnswerContrast=()=>pg.evaluate(()=>{
+    const toRGBArr=c=>c.match(/[\d.]+/g).map(Number).slice(0,3);
+    const relLum=([r,g,b])=>{const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);};return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b);};
+    const contrast=(c1,c2)=>{const l1=relLum(toRGBArr(c1)),l2=relLum(toRGBArr(c2));const hi=Math.max(l1,l2),lo=Math.min(l1,l2);return (hi+0.05)/(lo+0.05);};
+    const alpha=c=>{const m=c.match(/^rgba?\(([^)]+)\)$/);if(!m)return 1;const p=m[1].split(",").map(Number);return p.length>3?p[3]:1;};
+    const effectiveBg=el=>{let e=el;while(e){const bg=getComputedStyle(e).backgroundColor;if(alpha(bg)>0)return bg;e=e.parentElement;}return getComputedStyle(document.body).backgroundColor;};
+    const states=["oo","baka","hindi","nodata"];
+    const ids=["p-ans-q","p-ans-place","p-ans-word","p-ans-gloss","p-ans-reason","p-ans-age","p-ans-pick"];
+    const box=document.getElementById("p-answer"),pick=document.getElementById("p-ans-pick");
+    const origAnswer=box.dataset.answer,origPickHidden=pick.hidden;
+    pick.hidden=false;
+    const fails=[];
+    for(const st of states){
+      box.dataset.answer=st;
+      for(const id of ids){
+        const el=document.getElementById(id);
+        const ratio=contrast(getComputedStyle(el).color,effectiveBg(el));
+        if(ratio<4.5)fails.push(`${st}/${id}=${ratio.toFixed(2)}`);
+      }
+    }
+    box.dataset.answer=origAnswer;pick.hidden=origPickHidden;
+    return fails;
+  });
+  await pg.evaluate(()=>setTheme("light",true));
+  let failsLight=await checkAnswerContrast();
+  assert(failsLight.length===0,"light theme: every answer-band text element is >=4.5:1 in every state: "+failsLight.join(", "));
+  await pg.evaluate(()=>setTheme("dark",true));
+  let failsDark=await checkAnswerContrast();
+  assert(failsDark.length===0,"dark theme: every answer-band text element is >=4.5:1 in every state: "+failsDark.join(", "));
   assert(errs.length===0,"no page errors: "+errs.join("; "));
   await b.close();
 })();

@@ -194,16 +194,13 @@ pre#api-json{
 /* sentence column flexes, figure column is fixed at the right edge — the figure never moves with sentence length */
 .p-status{display:grid; grid-template-columns:minmax(0,1fr) 580px; gap:12px 40px; align-items:start; padding:14px 0 12px; border-bottom:1px solid var(--line)}
 .p-status > div:first-child{max-width:620px}
-.p-status .p-head-line{font-size:38px; font-weight:700; letter-spacing:-.02em; line-height:1.12}
-.p-status .p-sub{font-size:19px; color:var(--ink); margin-top:10px; line-height:1.4}
-.p-status .p-upd{font-size:13px; color:var(--ink-2); margin-top:10px; font-variant-numeric:tabular-nums}
 .p-left{display:flex; flex-direction:column; gap:10px}
 .p-answer{border:2px solid var(--line); border-radius:6px; padding:12px 16px}
 .p-answer[data-answer="oo"]{border-color:var(--alert); background:var(--alert-bg)}
 .p-answer[data-answer="baka"]{border-color:var(--warn); background:var(--warn-bg)}
 .p-answer[data-answer="hindi"]{border-color:var(--ok)}
 .p-answer[data-answer="nodata"]{border-style:dashed; border-color:var(--ink-2); background:var(--panel-2)}
-.p-ans-q{font-size:14px; font-weight:700; color:var(--ink-2)}
+.p-ans-q{font-size:14px; font-weight:700; color:var(--ans-ink-2)}
 .p-ans-row{display:flex; align-items:center; gap:12px; margin-top:4px; flex-wrap:wrap}
 .p-ans-shape{width:26px; height:26px; flex:none}
 .p-answer[data-answer="oo"] .p-ans-shape{background:var(--alert); border-radius:3px; outline:1.5px solid var(--ink); outline-offset:-1.5px}
@@ -217,10 +214,19 @@ pre#api-json{
 .p-answer[data-answer="nodata"] .p-ans-word{color:var(--ink-2); font-size:24px}
 .p-ans-gloss{font-size:15px; color:var(--ink)}
 .p-ans-reason{font-size:16px; margin-top:6px}
-.p-ans-age{font-size:13px; color:var(--ink-2); margin-top:2px; font-variant-numeric:tabular-nums}
+.p-ans-age{font-size:13px; color:var(--ans-ink-2); margin-top:2px; font-variant-numeric:tabular-nums}
 .p-ans-pick{margin-top:8px; min-height:48px}
-.p-area .p-head-line{font-size:22px}
+/* the area line (headline/sub/updated) lives inside #p-area, which JS relocates between #p-top-area
+   (no place chosen — full size, matches the pre-answer-band look) and #p-bottom-area (place chosen —
+   "a smaller line under the list", per spec §6, still carrying its severity colour via .p-area.tier-*) */
+.p-area .p-head-line{font-size:22px; font-weight:700; letter-spacing:-.02em; line-height:1.12}
+.p-area .p-sub{font-size:15px; color:var(--ink); margin-top:6px; line-height:1.4}
+.p-area .p-upd{font-size:12px; color:var(--ink-2); margin-top:4px; font-variant-numeric:tabular-nums}
 #p-top-area .p-area .p-head-line{font-size:30px}
+#p-top-area .p-area .p-sub{font-size:19px; margin-top:10px}
+#p-top-area .p-area .p-upd{font-size:13px; margin-top:10px}
+.p-area.tier-warn .p-head-line{color:var(--warn-ink)}
+.p-area.tier-alert .p-head-line{color:var(--alert)}
 .p-where{position:fixed; inset:auto 0 0 0; z-index:20; background:var(--panel); border-top:3px solid var(--ink); padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px)); display:grid; gap:8px; max-width:560px; margin:0 auto; box-shadow:0 -6px 24px rgba(0,0,0,.18)}
 .p-where[hidden]{display:none}
 .p-where h2{font-size:22px; margin:0 0 4px}
@@ -229,8 +235,6 @@ pre#api-json{
 .p-where .p-where-skip{border-color:transparent; color:var(--ink-2); font-weight:400}
 .p-where-list{display:grid; gap:6px; max-height:40vh; overflow-y:auto}
 .p-where-list[hidden]{display:none}
-.p-status.tier-warn .p-head-line{color:var(--warn-ink)}
-.p-status.tier-alert .p-head-line{color:var(--alert)}
 .p-fig{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:580px}
 .p-fig svg{width:580px; height:auto; display:block}
 .p-fig .f-cap{font-size:13px; font-weight:600; text-align:center; line-height:1.3}
@@ -278,8 +282,8 @@ pre#api-json{
 .p-foot b{color:var(--ink); font-weight:600}
 .p-foot .p-attr{text-align:right}
 
-:root{--warn-ink:#8a5800; --alert-ink:#8a3600; --ok-ink:#00694f; --water-fig:#2f86c2; --fig-ink:#232120}
-:root[data-theme="dark"]{--warn-ink:#f2b035; --alert-ink:#ffb27a; --ok-ink:#00b386; --water-fig:#5eb4dc; --fig-ink:#f3efe7}
+:root{--warn-ink:#8a5800; --alert-ink:#8a3600; --ok-ink:#00694f; --ans-ink-2:#5c5751; --water-fig:#2f86c2; --fig-ink:#232120}
+:root[data-theme="dark"]{--warn-ink:#f2b035; --alert-ink:#ffb27a; --ok-ink:#00b386; --ans-ink-2:#b8b0a6; --water-fig:#5eb4dc; --fig-ink:#f3efe7}
 
 @media (max-width:1100px){
   .p-status{grid-template-columns:1fr; gap:10px 0}
@@ -296,8 +300,8 @@ pre#api-json{
 }
 @media (max-width:560px){
   .p-status{grid-template-columns:1fr; gap:10px 0; padding:16px 0 14px}
-  .p-status .p-head-line{font-size:26px}
-  .p-status .p-sub{font-size:15px; margin-top:6px}
+  #p-top-area .p-area .p-head-line{font-size:26px}
+  #p-top-area .p-area .p-sub{font-size:15px; margin-top:6px}
   .p-fig{min-width:0; justify-self:center}
   .p-fig svg{width:min(100%,360px)}
   .p-fig .f-cap{font-size:12.5px}
@@ -349,12 +353,14 @@ pre#api-json{
     <div class="p-left">
       <section class="p-answer" id="p-answer" data-answer="nodata" aria-labelledby="p-ans-q">
         <div class="p-ans-q" id="p-ans-q">Babaha ba? · <span id="p-ans-place">—</span></div>
-        <div class="p-ans-row" role="status" aria-live="polite" aria-atomic="true">
-          <span class="p-ans-shape" id="p-ans-shape" aria-hidden="true"></span>
-          <span class="p-ans-word" id="p-ans-word">—</span>
-          <span class="p-ans-gloss" id="p-ans-gloss"></span>
+        <div class="p-ans-live" role="status" aria-live="polite" aria-atomic="true">
+          <div class="p-ans-row">
+            <span class="p-ans-shape" id="p-ans-shape" aria-hidden="true"></span>
+            <span class="p-ans-word" id="p-ans-word">—</span>
+            <span class="p-ans-gloss" id="p-ans-gloss"></span>
+          </div>
+          <div class="p-ans-reason" id="p-ans-reason"></div>
         </div>
-        <div class="p-ans-reason" id="p-ans-reason"></div>
         <div class="p-ans-age" id="p-ans-age"></div>
         <button class="p-link p-ans-pick" id="p-ans-pick" hidden></button>
       </section>
@@ -1814,6 +1820,7 @@ function renderPublic(){
   else if(wet.length){cls="tier-warn";head=L.wet(wet.length);sub=L.wetPass;}
   else{head=L.none;sub=L.allPass;}
   st.className="p-status "+cls;
+  $("p-area").className="p-area "+cls;                // the tier class travels with #p-area, which JS relocates
   $("p-headline").textContent=head;$("p-subline").textContent=sub;
   $("p-updated").textContent=L.updated(clockStr(tMin))+" · "+L.sim;
   const mine=HOUSEHOLD.find(s=>s.id===myStreet);
