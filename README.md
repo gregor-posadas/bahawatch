@@ -43,6 +43,7 @@ The file has **two views**:
 | `build_data.py` | Preprocessing pipeline: raw open data → one `data_<site>.json`. `SITE=berkeley python3 build_data.py`. Re-run only when inputs, the map frame, or sensor sites change. Road ways keep their OSM `name` (used for whole-street highlighting). |
 | `test_build.sh` | Build regression: rebuilds Teachers Village and asserts it is unchanged, then builds and sanity-checks the two campuses. |
 | `test_init.js`, `test_tabs.js`, `test_sites.js`, `test_figure.js`, `test_public.js`, `test_car.js` | Playwright browser tests: site state rebuild and switching, tab bar and `#site/view` routing, per-site wording/units/language rules, sensor siting per site, depth figure, public view, car scale. `node test_<name>.js` after `build_html.py`. |
+| `test_answer.js`, `test_report.js`, `test_recent.js`, `test_noaccount.js` | Playwright browser tests for §6.6: the Babaha ba? answer band (touch targets, contrast, live-region announcements), one-tap reports (Undo, offline hold, the demo page's no-network path, 429 shown as success), the details-view `/recent` report map and log (including a stale reply after switching sites), and the no-account features (share-link confirmation surviving playback re-renders). `node test_<name>.js` after `build_html.py`. |
 | `build_html.py` | Injects the three data files into `template.html` → `bahawatch_dashboard.html`. Run after any edit to either. |
 | `logo.png` | BahaWatch logo (embedded in the HTML as a data URI). |
 | `README.md` | This file. |
@@ -532,6 +533,121 @@ the campus.
 per-unit overrides) · `g_ref` (optional) · `tz`, `utc` · `labels` ·
 `road_class` · `creek_tags` · `profile` · `langs` · `units` · `scen` ·
 `emergency` · `attribution`.
+
+---
+
+## 6.6 Babaha ba?, reports and no accounts
+
+An answer band above the street board, in the local phrasing everyone already
+uses to ask a neighbour: **Babaha ba dito?** ("Is it flooding here?") →
+**Oo** (filled square) / **Baka** (triangle) / **Hindi** (ring circle) /
+**Wala pang datos** ("no data yet", dashed grey box) — the same four shapes
+used on the map markers, so colour is never the only carrier of meaning
+(§6, Accessibility). A live region announces the answer on every real change
+(place, language, or verdict), not on every re-render.
+
+**The rule.** One pure function, `babahaBa()` in `shared/verdict.js` — no
+network, no clock, no DOM — decides the answer from whatever inputs are
+fresh (sensors, neighbour reports, rain), in this order, first match wins:
+
+1. **stale** → `nodata` if the newest of every input is more than
+   `FRESH_MIN` (20 min) old. The page must never show "Hindi" on stale data.
+2. **sensor here, wet now** (≥ `WET_CM`, 5 cm) → `oo`.
+3. **sensor here, wet soon** (rising to 5 cm within `LOOKAHEAD_MIN`, 60 min)
+   → `oo`, with an ETA rounded to 5 min.
+4. **upstream sensor** wet-or-soon plus its travel time to here, within the
+   same 60-min look-ahead → `oo`.
+5. **`REPORTS_YES`** (3) distinct phones reporting "Oo" within `REPORT_RADIUS_M`
+   (1 km) in the last hour → `oo`, unless a sensor within `DRY_SENSOR_M`
+   (500 m) is dry with no rise — then `baka` (reports vs. a dry sensor nearby).
+6. **rain** ≥ `RAIN_YELLOW` (7.5 mm/h) in a NOAH 5- or 25-year zone, or
+   ≥ `RAIN_ORANGE` (15 mm/h) anywhere hazard-mapped → `baka`.
+7. **1–2 "Oo" reports**, or a trace reading at the local sensor
+   (≥ `TRACE_CM`, 1 cm) → `baka`.
+8. Otherwise → `hindi`.
+
+The Worker imports the same module for its cron (`worker/README.md`);
+`build_html.py` inlines it into the page (stripping `export`) so the demo
+build's simulated verdicts and the live build's server verdicts are the same
+code, not two implementations kept in sync by hand. Every constant lives in
+the one `RULE` object — `shared/verdict.js` is the source of truth; there is
+no separate flowchart diagram in this repo, only the decision order above
+and the table tests in `shared/verdict.test.js`.
+
+**`places.json`.** Every sensor street and barangay the page (and the
+Worker) can answer for, with each place's NOAH flags and which sensors feed
+it. Rebuild after any change to `sites.py`, a `data_<site>.json`, or the
+barangay boundaries:
+
+```bash
+python3 tools/build_places.py     # reads shared/verdict.js's LOOKAHEAD_MIN, never desyncs from it
+```
+
+Barangay polygons come from the PSA/NAMRIA admin-4 boundaries and are
+extracted separately, on the machine that has the source shapefile (not part
+of the normal rebuild — the boundary file isn't checked in):
+
+```bash
+python3 tools/extract_barangays.py <phl_admin_boundaries.zip> <outdir>   # → sites/<site>/barangays.geojson
+```
+
+A barangay is flagged for a NOAH hazard zone once at least `NOAH_SHARE`
+(10 %) of its grid cells sit inside that zone (`build_places.py`) — not a
+single flooded cell, so a barangay that just clips the edge of a hazard
+polygon isn't flagged for it. Diliman's frame carries 5 barangays.
+
+**Demo vs. live.** `#tv` (no `/live`) stays in demo mode: a locally
+simulated clock and verdict, exactly like the rest of the dashboard, and
+tapping a report button just shows "Demo — not sent." `#tv/live` switches
+the public view to real answers polled from the Worker's `/status/<place>`
+(simple view hides the simulated depth figure, street list and headline and
+shows a note that it's live instead); `#tv/details/live` is the details view
+in live mode, which also draws neighbours' recent reports as hollow diamonds
+on the map and a last-hour text log, from `/recent/<site>`. A build with no
+`BAHAWATCH_API` (the published demo artifact) can't go live at all — `/live`
+is silently dropped from the hash. Ages shown next to "Updated" always come
+from the server's `checkedAt`/`serverNow`, never `Date.now()` on the phone,
+so a phone with a wrong clock still sees a correct "updated 2 min ago"
+(Review Focus #1).
+
+**The Worker.** `worker/README.md` has the full runbook: one-time Cloudflare
+setup, the six endpoints, what's stored and for how long, and how the
+5-minute cron stays within D1 Free's 50-query cap.
+
+**Share links and QR.** A share token is a bare hash, `#p.<site>.<s|b>.<code>`
+(e.g. `#p.tv.s.BW-H05`) — opening it sets that place with no picker, and
+opens straight into live mode when the build has an API to talk to (the
+published demo just sets the place). `qr/<site>/` holds one PNG per place
+encoding its share URL; `qr/index.csv` lists all 51 places with their place
+id, name, URL and PNG path (`tools/make_qr.py`). Add to Home Screen
+(`manifest.webmanifest`, `sw.js`) launches at `bahawatch_dashboard.html?source=pwa`,
+which restores whichever site/view/place the person last had open, from
+`localStorage`, rather than always opening to Teachers Village; the service
+worker caches the page shell for offline opening (showing the last answer
+with its age) but is network-first and never caches API responses — a
+same-origin GET is refreshed from the network whenever possible, and the
+Worker's calls are cross-origin so they're never intercepted at all.
+
+**What's stored, and for how long.** GPS is rounded to 3 decimal places
+(~100 m) on the phone and again on the server — no exact position, name, or
+phone number is ever stored. A report counts toward the answer for 60
+minutes, then ages out; the same phone can report the same place once per
+10 minutes (a repeat within that window comes back as "already recorded",
+shown as a normal "Thanks, recorded", not an error — Review Focus #5); raw
+report rows are deleted after 30 days, but the hourly Oo/Hindi/Di sigurado
+counts rolled up from them are kept indefinitely, as is the sensor reading
+history (needed later to tune the rule's thresholds). Undo works for 10 s in
+the page's own UI and up to 15 s server-side. A report made offline (no
+signal when "Oo" was tapped) is held on the phone for up to 10 minutes and
+sent once connectivity returns, or dropped if it doesn't.
+
+**Language review flags.** Cebuano, Ilokano, Hiligaynon and Kapampangan
+carry the existing `REVIEW_TAG` notice (§6) because they were drafted
+without a native speaker. The new report/live strings added for this
+feature (report buttons, "Thanks, recorded", Undo, "Still there?", the live
+note, the neighbour-reports log) are covered by the same tables and the
+same flag — they still need that native-speaker pass before the flag comes
+off, same as the rest of each language's table.
 
 ---
 
