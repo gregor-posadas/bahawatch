@@ -622,8 +622,9 @@ and the UCPD emergency line.
 sites write "40 cm (16 in)". The figure keeps both rulers everywhere.
 
 **Languages.** `langs: "all"` shows the six-language menu; `langs: "en"`
-(Berkeley) forces English and hides the menu. Each site remembers its own
-language.
+(Berkeley) forces English and hides the menu. The national map and the 25
+campuses share one language (`bw-lang:ph`); Teachers Village and Berkeley
+remember their own, starting from the shared one.
 
 **Hazard layer.** Berkeley has no public campus-scale flood hazard layer, so
 its `noah` entry is `None`; the NOAH chips, heading and per-unit NOAH class
