@@ -192,11 +192,43 @@ pre#api-json{
 
 /* status band: sentence on the left, depth figure on the right */
 /* sentence column flexes, figure column is fixed at the right edge — the figure never moves with sentence length */
-.p-status{display:grid; grid-template-columns:minmax(0,1fr) 580px; gap:12px 40px; align-items:center; padding:14px 0 12px; border-bottom:1px solid var(--line)}
+.p-status{display:grid; grid-template-columns:minmax(0,1fr) 580px; gap:12px 40px; align-items:start; padding:14px 0 12px; border-bottom:1px solid var(--line)}
 .p-status > div:first-child{max-width:620px}
 .p-status .p-head-line{font-size:38px; font-weight:700; letter-spacing:-.02em; line-height:1.12}
 .p-status .p-sub{font-size:19px; color:var(--ink); margin-top:10px; line-height:1.4}
 .p-status .p-upd{font-size:13px; color:var(--ink-2); margin-top:10px; font-variant-numeric:tabular-nums}
+.p-left{display:flex; flex-direction:column; gap:10px}
+.p-answer{border:2px solid var(--line); border-radius:6px; padding:12px 16px}
+.p-answer[data-answer="oo"]{border-color:var(--alert); background:var(--alert-bg)}
+.p-answer[data-answer="baka"]{border-color:var(--warn); background:var(--warn-bg)}
+.p-answer[data-answer="hindi"]{border-color:var(--ok)}
+.p-answer[data-answer="nodata"]{border-style:dashed; border-color:var(--ink-2); background:var(--panel-2)}
+.p-ans-q{font-size:14px; font-weight:700; color:var(--ink-2)}
+.p-ans-row{display:flex; align-items:center; gap:12px; margin-top:4px; flex-wrap:wrap}
+.p-ans-shape{width:26px; height:26px; flex:none}
+.p-answer[data-answer="oo"] .p-ans-shape{background:var(--alert); border-radius:3px; outline:1.5px solid var(--ink); outline-offset:-1.5px}
+.p-answer[data-answer="baka"] .p-ans-shape{background:var(--warn); clip-path:polygon(50% 0,100% 100%,0 100%)}
+.p-answer[data-answer="hindi"] .p-ans-shape{border:5px solid var(--ok); border-radius:50%; background:var(--marker-fill)}
+.p-answer[data-answer="nodata"] .p-ans-shape{border:3px dashed var(--ink-2); border-radius:3px}
+.p-ans-word{font-size:36px; font-weight:700; letter-spacing:-.01em; line-height:1.05}
+.p-answer[data-answer="oo"] .p-ans-word{color:var(--alert-ink)}
+.p-answer[data-answer="baka"] .p-ans-word{color:var(--warn-ink)}
+.p-answer[data-answer="hindi"] .p-ans-word{color:var(--ok-ink)}
+.p-answer[data-answer="nodata"] .p-ans-word{color:var(--ink-2); font-size:24px}
+.p-ans-gloss{font-size:15px; color:var(--ink)}
+.p-ans-reason{font-size:16px; margin-top:6px}
+.p-ans-age{font-size:13px; color:var(--ink-2); margin-top:2px; font-variant-numeric:tabular-nums}
+.p-ans-pick{margin-top:8px; min-height:48px}
+.p-area .p-head-line{font-size:22px}
+#p-top-area .p-area .p-head-line{font-size:30px}
+.p-where{position:fixed; inset:auto 0 0 0; z-index:20; background:var(--panel); border-top:3px solid var(--ink); padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px)); display:grid; gap:8px; max-width:560px; margin:0 auto; box-shadow:0 -6px 24px rgba(0,0,0,.18)}
+.p-where[hidden]{display:none}
+.p-where h2{font-size:22px; margin:0 0 4px}
+.p-where button{min-height:48px; font-size:16px; font-weight:600; border:1px solid var(--ink); border-radius:4px; background:var(--panel); text-align:left; padding:10px 14px}
+.p-where button:hover{background:var(--panel-2)}
+.p-where .p-where-skip{border-color:transparent; color:var(--ink-2); font-weight:400}
+.p-where-list{display:grid; gap:6px; max-height:40vh; overflow-y:auto}
+.p-where-list[hidden]{display:none}
 .p-status.tier-warn .p-head-line{color:var(--warn-ink)}
 .p-status.tier-alert .p-head-line{color:var(--alert)}
 .p-fig{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:580px}
@@ -246,8 +278,8 @@ pre#api-json{
 .p-foot b{color:var(--ink); font-weight:600}
 .p-foot .p-attr{text-align:right}
 
-:root{--warn-ink:#8a5800; --water-fig:#2f86c2; --fig-ink:#232120}
-:root[data-theme="dark"]{--warn-ink:#f2b035; --water-fig:#5eb4dc; --fig-ink:#f3efe7}
+:root{--warn-ink:#8a5800; --alert-ink:#8a3600; --ok-ink:#00694f; --water-fig:#2f86c2; --fig-ink:#232120}
+:root[data-theme="dark"]{--warn-ink:#f2b035; --alert-ink:#ffb27a; --ok-ink:#00b386; --water-fig:#5eb4dc; --fig-ink:#f3efe7}
 
 @media (max-width:1100px){
   .p-status{grid-template-columns:1fr; gap:10px 0}
@@ -299,12 +331,35 @@ pre#api-json{
   <button role="tab" data-site="diliman" aria-selected="false">UP Diliman</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
 </nav>
+  <div class="p-area" id="p-area" role="status" aria-live="polite">
+    <h1 class="p-head-line" id="p-headline">—</h1>
+    <div class="p-sub" id="p-subline"></div>
+    <div class="p-upd" id="p-updated"></div>
+  </div>
+  <div class="p-where" id="p-where" role="dialog" aria-modal="false" aria-labelledby="p-where-q" hidden>
+    <h2 id="p-where-q">Saan ka?</h2>
+    <button data-act="loc"></button>
+    <button data-act="brgy"></button>
+    <button data-act="sensor"></button>
+    <button data-act="skip" class="p-where-skip"></button>
+    <div class="p-where-list" id="p-where-list" hidden></div>
+  </div>
   <div class="p-review" id="p-review"></div>
   <div class="p-status" id="p-status">
-    <div role="status" aria-live="polite">
-      <h1 class="p-head-line" id="p-headline">—</h1>
-      <div class="p-sub" id="p-subline"></div>
-      <div class="p-upd" id="p-updated"></div>
+    <div class="p-left">
+      <section class="p-answer" id="p-answer" data-answer="nodata" aria-labelledby="p-ans-q">
+        <div class="p-ans-q" id="p-ans-q">Babaha ba? · <span id="p-ans-place">—</span></div>
+        <div class="p-ans-row" role="status" aria-live="polite" aria-atomic="true">
+          <span class="p-ans-shape" id="p-ans-shape" aria-hidden="true"></span>
+          <span class="p-ans-word" id="p-ans-word">—</span>
+          <span class="p-ans-gloss" id="p-ans-gloss"></span>
+        </div>
+        <div class="p-ans-reason" id="p-ans-reason"></div>
+        <div class="p-ans-age" id="p-ans-age"></div>
+        <button class="p-link p-ans-pick" id="p-ans-pick" hidden></button>
+      </section>
+      <div id="p-rep-slot"></div>
+      <div id="p-top-area"></div>
     </div>
     <figure class="p-fig">
       <div id="p-figure"></div>
@@ -323,6 +378,7 @@ pre#api-json{
         <div class="p-sec-h"><h2 id="p-all-h">Monitored streets</h2></div>
         <div class="p-rows" id="p-all"></div>
       </div>
+      <div id="p-bottom-area"></div>
     </div>
     <div class="p-col-map">
       <div class="p-sec">
@@ -469,6 +525,8 @@ pre#api-json{
    from sensor observations, spread across the DEM with distance decay.
    ========================================================================= */
 const DATA_ALL=__DATA_ALL__;
+const API_BASE=__API_BASE__;          // reserved for the report-submission worker (Task 6); unused here
+const TURNSTILE_SITEKEY=__TURNSTILE_SITEKEY__;  // reserved for the report widget (Task 6); unused here
 let VIEW="public";
 const RES=2.2;
 
@@ -517,6 +575,7 @@ function initSite(id){
   eMinD=1e9;eMaxD=-1e9;for(let i=0;i<N;i++){if(elev[i]<eMinD)eMinD=elev[i];if(elev[i]>eMaxD)eMaxD=elev[i];}
   const sorted=Float32Array.from(elev).sort();tLo=sorted[Math.floor(N*0.05)];tHi=sorted[Math.floor(N*0.95)];if(tHi-tLo<1)tHi=tLo+1;
   SEG_SAMPLES=[];for(const r of DATA.roads){if(r.c==="alley")continue;for(let k=1;k<r.p.length;k+=2)SEG_SAMPLES.push(r.p[k]);}
+  loadPlace();
 }
 
 /* ---------- scenarios & synthetic API ---------- */
@@ -1366,6 +1425,47 @@ const PATH_EN={
   notEmergency:"Not for emergency use. In an emergency call 911 or UCPD (510-642-3333).",
   carPass:["Cars: passable","Cars: passable","Cars: drive slowly","Cars: do not drive through","Cars: do not drive through"],
 };
+/* ---------- "Babaha ba?" answer strings (spec §3, §5, §6). ceb/ilo/hil/pam pending professional review. ---------- */
+const ANS_LANGS={
+ en:{q:"Will it flood here?",word:{oo:"Yes",baka:"Maybe",hindi:"No",nodata:"No fresh data"},
+  gloss:{oo:"Flooding here now, or expected within the hour.",baka:"Conditions for flooding, but no water measured yet.",hindi:"No sign of flooding in the next hour.",nodata:"Check again soon."},
+  reason:{stale:"The newest data is over 20 minutes old.",sensor_now:"Water on {name}: {cm} cm.",sensor_soon:"Water rising on {name}, about {min} min away.",upstream:"Water rising near {name}, about {min} min away.",reports:"{n} neighbours report flooding nearby.",reports_vs_dry_sensor:"Neighbours report flooding; sensor here is dry.",rain_flood_zone:"Heavy rain ({mm} mm/h), and this area floods in a 5- or 25-year storm.",rain_heavy:"Very heavy rain ({mm} mm/h) in a mapped flood area.",reports_few:"Neighbours report flooding nearby ({n}).",sensor_trace:"A little water on {name} ({cm} cm).",clear:"No flood signs from sensors, reports or rain."},
+  age:"updated {m} min ago",justNow:"updated just now",pick:"Pick your place to get an answer.",pickBtn:"Pick your place",
+  whereQ:"Where are you?",useLoc:"Use my location",pickBrgy:"Pick my barangay",pickSensor:"Pick a street with a sensor",skip:"Skip",
+  locFail:"Couldn't get your location. Pick your barangay instead."},
+ fil:{q:"Babaha ba?",word:{oo:"Oo",baka:"Baka",hindi:"Hindi",nodata:"Walang bagong datos"},
+  gloss:{oo:"May baha rito ngayon, o inaasahan sa loob ng isang oras.",baka:"May palatandaan ng baha, pero wala pang nasusukat na tubig.",hindi:"Walang palatandaan ng baha sa susunod na isang oras.",nodata:"Tingnan ulit mamaya."},
+  reason:{stale:"Mahigit 20 minuto na ang pinakabagong datos.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Tumataas ang tubig sa {name}, mga {min} minuto pa.",upstream:"Tumataas ang tubig malapit sa {name}, mga {min} minuto pa.",reports:"{n} kapitbahay ang nag-ulat ng baha malapit dito.",reports_vs_dry_sensor:"May nag-ulat ng baha, pero tuyo ang sensor dito.",rain_flood_zone:"Malakas na ulan ({mm} mm/oras), at binabaha ang lugar na ito sa 5- o 25-taong bagyo.",rain_heavy:"Napakalakas na ulan ({mm} mm/oras) sa lugar na may flood map.",reports_few:"May nag-ulat ng baha malapit dito ({n}).",sensor_trace:"Kaunting tubig sa {name} ({cm} cm).",clear:"Walang palatandaan ng baha mula sa sensor, ulat, o ulan."},
+  age:"na-update {m} min na ang nakalipas",justNow:"kaka-update lang",pick:"Piliin ang lugar mo para makita ang sagot.",pickBtn:"Piliin ang lugar mo",
+  whereQ:"Saan ka?",useLoc:"Gamitin ang lokasyon ko",pickBrgy:"Piliin ang barangay ko",pickSensor:"Piliin ang kalyeng may sensor",skip:"Laktawan",
+  locFail:"Hindi makuha ang lokasyon mo. Piliin na lang ang barangay mo."},
+ ceb:{q:"Mobaha ba?",word:{oo:"Oo",baka:"Basin",hindi:"Dili",nodata:"Walay bag-ong datos"},
+  gloss:{oo:"Naay baha diri karon, o gipaabot sulod sa usa ka oras.",baka:"Naay timailhan sa baha, pero wala pay nasukod nga tubig.",hindi:"Walay timailhan sa baha sa sunod nga usa ka oras.",nodata:"Tan-awa pag-usab unya."},
+  reason:{stale:"Kapin na sa 20 minutos ang pinakabag-ong datos.",sensor_now:"Naay tubig sa {name}: {cm} cm.",sensor_soon:"Nagsaka ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagsaka ang tubig duol sa {name}, mga {min} minutos pa.",reports:"{n} ka silingan ang nagtaho og baha duol diri.",reports_vs_dry_sensor:"Naay nagtaho og baha, pero uga ang sensor diri.",rain_flood_zone:"Kusog nga ulan ({mm} mm/oras), ug mobaha kini nga lugar sa 5- o 25-ka-tuig nga bagyo.",rain_heavy:"Kusog kaayo nga ulan ({mm} mm/oras) sa lugar nga naay flood map.",reports_few:"Naay nagtaho og baha duol diri ({n}).",sensor_trace:"Gamay nga tubig sa {name} ({cm} cm).",clear:"Walay timailhan sa baha gikan sa sensor, taho, o ulan."},
+  age:"gi-update {m} min na ang milabay",justNow:"bag-o lang gi-update",pick:"Pilia ang imong lugar aron makita ang tubag.",pickBtn:"Pilia ang imong lugar",
+  whereQ:"Asa ka?",useLoc:"Gamita ang akong lokasyon",pickBrgy:"Pilia ang akong barangay",pickSensor:"Pilia ang dalan nga naay sensor",skip:"Laktawi",
+  locFail:"Dili makuha ang imong lokasyon. Pilia na lang ang imong barangay."},
+ ilo:{q:"Aglayus kadi?",word:{oo:"Wen",baka:"Mabalin",hindi:"Saan",nodata:"Awan ti baro a datos"},
+  gloss:{oo:"Adda layus ditoy ita, wenno mapakpakadaan iti uneg ti maysa nga oras.",baka:"Adda pagilasinan ti layus, ngem awan pay nasukat a danum.",hindi:"Awan ti pagilasinan ti layus iti sumaruno a maysa nga oras.",nodata:"Kitaen manen no madamdama."},
+  reason:{stale:"Nasurok a 20 minuto ti kabaruan a datos.",sensor_now:"Adda danum iti {name}: {cm} cm.",sensor_soon:"Ngumatngato ti danum iti {name}, agarup {min} minuto pay.",upstream:"Ngumatngato ti danum iti asideg ti {name}, agarup {min} minuto pay.",reports:"{n} a kaarruba ti nangipadamag iti layus iti asideg.",reports_vs_dry_sensor:"Adda nangipadamag iti layus, ngem namaga ti sensor ditoy.",rain_flood_zone:"Napigsa a tudo ({mm} mm/oras), ken aglayus daytoy a lugar iti 5- wenno 25-tawen a bagyo.",rain_heavy:"Napigsa unay a tudo ({mm} mm/oras) iti lugar nga adda flood map-na.",reports_few:"Adda nangipadamag iti layus iti asideg ({n}).",sensor_trace:"Bassit a danum iti {name} ({cm} cm).",clear:"Awan ti pagilasinan ti layus manipud iti sensor, padamag, wenno tudo."},
+  age:"naipabaro {m} min ti napalabas",justNow:"kaipapabaro",pick:"Pilien ti lugarmo tapno makita ti sungbat.",pickBtn:"Pilien ti lugarmo",
+  whereQ:"Sadino ti ayanmo?",useLoc:"Usaren ti lokasionko",pickBrgy:"Pilien ti barangayko",pickSensor:"Pilien ti kalsada nga adda sensorna",skip:"Laktawan",
+  locFail:"Saan a makuha ti lokasionmo. Pilien laengen ti barangaymo."},
+ hil:{q:"Magabaha bala?",word:{oo:"Huo",baka:"Basi",hindi:"Indi",nodata:"Wala sang bag-o nga datos"},
+  gloss:{oo:"May baha diri subong, ukon ginapaabot sa sulod sang isa ka oras.",baka:"May mga tanda sang baha, pero wala pa sang nasukat nga tubig.",hindi:"Wala sang tanda sang baha sa masunod nga isa ka oras.",nodata:"Tan-awa liwat sa ulihi."},
+  reason:{stale:"Labaw na sa 20 minutos ang pinakabag-o nga datos.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Nagataas ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagataas ang tubig malapit sa {name}, mga {min} minutos pa.",reports:"{n} ka kaingod ang nag-report sang baha malapit diri.",reports_vs_dry_sensor:"May nag-report sang baha, pero uga ang sensor diri.",rain_flood_zone:"Mabaskog nga ulan ({mm} mm/oras), kag ginabaha ini nga lugar sa 5- ukon 25-ka-tuig nga bagyo.",rain_heavy:"Mabaskog gid nga ulan ({mm} mm/oras) sa lugar nga may flood map.",reports_few:"May nag-report sang baha malapit diri ({n}).",sensor_trace:"Diutay nga tubig sa {name} ({cm} cm).",clear:"Wala sang tanda sang baha halin sa sensor, report, ukon ulan."},
+  age:"gin-update {m} min na ang nagligad",justNow:"bag-o lang gin-update",pick:"Pilia ang imo lugar para makita ang sabat.",pickBtn:"Pilia ang imo lugar",
+  whereQ:"Diin ka?",useLoc:"Gamita ang akon lokasyon",pickBrgy:"Pilia ang akon barangay",pickSensor:"Pilia ang dalan nga may sensor",skip:"Laktawan",
+  locFail:"Indi makuha ang imo lokasyon. Pilia na lang ang imo barangay."},
+ pam:{q:"Albugan kaya?",word:{oo:"Wa",baka:"Malyari",hindi:"Ali",nodata:"Alang bayung datos"},
+  gloss:{oo:"Atin albug keni ngeni, o aasanan king loob ning metung a oras.",baka:"Atin tanda ning albug, oneng ala pang masukat a danum.",hindi:"Alang tanda ning albug king datang a metung a oras.",nodata:"Lawen mu pasibayu mamaya."},
+  reason:{stale:"Mayigit 20 minutu ne ing pekabayung datos.",sensor_now:"Atin danum king {name}: {cm} cm.",sensor_soon:"Sasampa ing danum king {name}, lagyu {min} minutu pa.",upstream:"Sasampa ing danum malapit king {name}, lagyu {min} minutu pa.",reports:"{n} a kapitbale ing mengreport albug malapit keni.",reports_vs_dry_sensor:"Atin mengreport albug, oneng mamalang ing sensor keni.",rain_flood_zone:"Makusug a uran ({mm} mm/oras), at albugan ya ining lugal king 5- o 25-banwang bagyu.",rain_heavy:"Makusug dili a uran ({mm} mm/oras) king lugal a atin flood map.",reports_few:"Atin mengreport albug malapit keni ({n}).",sensor_trace:"Kakaunti a danum king {name} ({cm} cm).",clear:"Alang tanda ning albug manibat king sensor, report, o uran."},
+  age:"me-update {m} min ne ing milabas",justNow:"bayu pa mu me-update",pick:"Pilinan me ing lugal mu ban akit me ing sagut.",pickBtn:"Pilinan me ing lugal mu",
+  whereQ:"Nokarin ka?",useLoc:"Gamitan me ing lokasyun ku",pickBrgy:"Pilinan me ing barangay ku",pickSensor:"Pilinan me ing dalan a atin sensor",skip:"Laktawan",
+  locFail:"E makuha ing lokasyun mu. Pilinan mu ne mu ing barangay mu."},
+};
+const A=()=>SITE_CFG&&SITE_CFG.langs==="en"?ANS_LANGS.en:(ANS_LANGS[LANG]||ANS_LANGS.en);
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(_,k)=>v[k]!=null?v[k]:"");
 const T=()=>SITE_CFG&&SITE_CFG.profile==="path"?Object.assign({},LANGS.en,PATH_EN):LANGS[LANG];
 // depth wording order follows the site's units: "16 in · 40 cm" on a US campus, "40 cm (16 in)" in the Philippines
 function fmtDepth(cm){return SITE_CFG&&SITE_CFG.units==="imperial"?`${inchesOf(cm)} in · ${cm} cm`:`${cm} cm (${inchesOf(cm)} in)`;}
@@ -1390,6 +1490,100 @@ const $=id=>document.getElementById(id);
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 const shortSt=n=>n.replace(" Street"," St").replace(" Avenue"," Ave").replace(" Road"," Rd");
 const addr=s=>s.bld?s.bld:(s.hn?s.hn+" ":"")+shortSt(s.street);
+
+/*__VERDICT_JS__*/
+const PLACES=__PLACES__;
+const DEMO_RAIN_MMH_PER_P=60;          // simulated storm intensity P → mm/h (typhoon peak ≈ 30 mm/h = PAGASA red)
+let myPlace=null;
+const placesForSite=()=>PLACES.sites[SITE]||[];
+const currentPlace=()=>placesForSite().find(p=>p.id===myPlace)||null;
+function haversineM(a,b,c,d){const r=x=>x*Math.PI/180,s=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 2*6371000*Math.asin(Math.sqrt(s));}
+function loadPlace(){
+  myPlace=null;let v=null;
+  try{v=localStorage.getItem(siteKey("bw-place"));}catch(e){}
+  if(!v){let st=null;try{st=localStorage.getItem(siteKey("bw-street"));}catch(e){}if(st)v=SITE+":s:"+st;}   // migrate old My street picks
+  if(v&&placesForSite().some(p=>p.id===v))myPlace=v;
+  else if(v){try{localStorage.removeItem(siteKey("bw-asked"));}catch(e){}}   // stored place no longer exists → ask again
+}
+function setPlace(id){
+  myPlace=id;try{localStorage.setItem(siteKey("bw-place"),id);}catch(e){}
+  const p=currentPlace();
+  if(p&&p.kind==="sensor"){myStreet=p.sensor;try{localStorage.setItem(siteKey("bw-street"),p.sensor);}catch(e){}}
+  closeWhere();renderPublic();
+}
+function demoInputs(p){
+  const now=BASE.getTime()+tMin*60000;
+  const conn=new Map(p.connected.map(c=>[c.sensor,c.travelMin]));
+  const sensors=HOUSEHOLD.map(s=>({id:s.id,name:addr(s),here:p.kind==="sensor"&&p.sensor===s.id,distM:haversineM(p.lat,p.lon,s.lat,s.lon),
+    travelMin:conn.has(s.id)?conn.get(s.id):null,depthCm:s.depth*100,rateCmPerHr:s.rate*100,at:now}));
+  const P=SCEN[scenario].P;
+  const rain={nowMmH:P*pulse(tMin,0)*DEMO_RAIN_MMH_PER_P,nextMmH:P*pulse(tMin+60,0)*DEMO_RAIN_MMH_PER_P,at:now};
+  return {now,place:p,sensors,reports:{yesPhones:0,newestAt:null},rain};
+}
+function showAnswer(v,serverNow){
+  const L=A(),box=$("p-answer");
+  box.dataset.answer=v.answer;
+  $("p-ans-word").textContent=L.word[v.answer];
+  $("p-ans-gloss").textContent=L.gloss[v.answer];
+  $("p-ans-reason").textContent=fill(L.reason[v.reason.key]||"",v.reason.vars||{});
+  const ref=serverNow!=null?serverNow:BASE.getTime()+tMin*60000;
+  const m=v.updatedAt!=null?Math.max(0,Math.round((ref-v.updatedAt)/60000)):null;
+  $("p-ans-age").textContent=m==null?"":m<1?L.justNow:fill(L.age,{m});
+}
+function placeArea(){
+  const area=$("p-area"),target=myPlace?$("p-bottom-area"):$("p-top-area");
+  if(area.parentElement!==target)target.appendChild(area);
+}
+function renderAnswer(){
+  const L=A(),p=currentPlace();
+  $("p-ans-q").firstChild.textContent=L.q+" · ";
+  $("p-ans-place").textContent=p?p.name:"—";
+  const pick=$("p-ans-pick");pick.textContent=L.pickBtn;pick.hidden=!!p;
+  placeArea();
+  if(!p){$("p-answer").dataset.answer="nodata";$("p-ans-word").textContent="";$("p-ans-gloss").textContent="";$("p-ans-reason").textContent=L.pick;$("p-ans-age").textContent="";return;}
+  showAnswer(babahaBa(demoInputs(p)));
+}
+/* ---------- "Saan ka?" ---------- */
+function openWhere(){
+  const L=A(),w=$("p-where");
+  $("p-where-q").textContent=L.whereQ;
+  const set=(act,txt)=>{const b=w.querySelector(`[data-act="${act}"]`);b.textContent=txt;return b;};
+  set("loc",L.useLoc);set("sensor",L.pickSensor);set("skip",L.skip);
+  set("brgy",L.pickBrgy).hidden=!placesForSite().some(p=>p.kind==="barangay");
+  $("p-where-list").hidden=true;w.hidden=false;
+  w.querySelector('button:not([hidden])').focus();
+}
+function closeWhere(){$("p-where").hidden=true;try{localStorage.setItem(siteKey("bw-asked"),"1");}catch(e){}}
+function listPlaces(kind){
+  const list=$("p-where-list");
+  list.innerHTML=placesForSite().filter(p=>p.kind===kind).sort((a,b)=>a.name.localeCompare(b.name))
+    .map(p=>`<button data-place="${esc(p.id)}">${esc(p.name)}${p.muni?`<small> · ${esc(p.muni)}</small>`:""}</button>`).join("");
+  list.hidden=false;list.querySelector("button")?.focus();
+}
+function nearestPlace(lat,lon){
+  let best=null;
+  for(const p of placesForSite()){
+    const d=haversineM(lat,lon,p.lat,p.lon);
+    if(p.kind==="sensor"&&d>300)continue;
+    if(!best||d<best.d)best={p,d};
+  }
+  return best&&best.p;
+}
+$("p-where").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.place)return setPlace(b.dataset.place);
+  const act=b.dataset.act;
+  if(act==="skip"){closeWhere();renderPublic();}
+  else if(act==="brgy")listPlaces("barangay");
+  else if(act==="sensor")listPlaces("sensor");
+  else if(act==="loc"){
+    if(!navigator.geolocation){$("p-ans-reason").textContent=A().locFail;return listPlaces("barangay");}
+    navigator.geolocation.getCurrentPosition(pos=>{const p=nearestPlace(pos.coords.latitude,pos.coords.longitude);if(p)setPlace(p.id);else listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");},
+      ()=>{$("p-ans-reason").textContent=A().locFail;listPlaces(placesForSite().some(q=>q.kind==="barangay")?"barangay":"sensor");},{timeout:8000,maximumAge:600000});
+  }
+});
+$("p-ans-pick").addEventListener("click",openWhere);
+
 function unitLabel(s){return esc(addr(s))+(s.near?`<small>${esc(T().near)} ${esc(shortSt(s.near))}</small>`:"");}
 function rowHTML(s,extraCls){
   const t=tierOf(s.depth),L=T();
@@ -1584,6 +1778,7 @@ function renderPublic(){
   $("p-demo").textContent=L.demo;$("p-emerg").textContent=L.notEmergency;
   const rv=$("p-review");rv.textContent=REVIEW_TAG[LANG]?L.review+" · "+LANGS.en.review:"";rv.className="p-review"+(REVIEW_TAG[LANG]?" on":"");
   document.documentElement.lang=LANG==="fil"?"fil":LANG==="ceb"?"ceb":LANG==="ilo"?"ilo":LANG==="hil"?"hil":LANG==="pam"?"pam":"en";
+  renderAnswer();
 }
 let pickMode=false;
 document.addEventListener("click",e=>{
@@ -1610,6 +1805,7 @@ $("p-my-btn").addEventListener("click",()=>{
 $("p-pick").addEventListener("click",e=>{
   const b=e.target.closest("[data-pick]");if(!b)return;
   myStreet=b.dataset.pick;try{localStorage.setItem(siteKey("bw-street"),myStreet);}catch(x){}
+  myPlace=SITE+":s:"+myStreet;try{localStorage.setItem(siteKey("bw-place"),myPlace);}catch(x){}
   pickMode=false;$("p-pick").style.display="none";
   const s=HOUSEHOLD.find(h=>h.id===myStreet);selectSensor(s);zoomTo(s.x,s.y,2.8);renderPublic();
   $("p-my-btn").focus();
@@ -1664,6 +1860,7 @@ function switchSite(id){
   setPlay(!reducedMotion);                            // the story may have ended on the previous site
   step(0,true);
   if(VIEW==="public")renderPublic();else refreshCards();
+  {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
 }
 function applySiteLang(){
   const sel=document.getElementById("p-lang"),lab=document.querySelector('label[for=p-lang]');
@@ -1703,6 +1900,7 @@ const h0=parseHash();
 initSite(h0.site);buildCards();VIEW=h0.view;
 if(VIEW==="public")speed=720;   // the story plays in ~3 real minutes for a resident just glancing
 setView(VIEW);switchSite(h0.site);syncTabs();writeHash();
+{let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
 log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
 log(`${HOUSEHOLD.length} household units online · LoRaWAN, 10-min uplink (simulated)`);
 log(SITE_CFG.attribution);
