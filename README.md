@@ -536,7 +536,7 @@ per-unit overrides) · `g_ref` (optional) · `tz`, `utc` · `labels` ·
 
 ---
 
-## 6.6 Babaha ba?, reports and no accounts
+### 6.6 Babaha ba?, reports and no accounts
 
 An answer band above the street board, in the local phrasing everyone already
 uses to ask a neighbour: **Babaha ba dito?** ("Is it flooding here?") →
@@ -546,9 +546,15 @@ used on the map markers, so colour is never the only carrier of meaning
 (§6, Accessibility). A live region announces the answer on every real change
 (place, language, or verdict), not on every re-render.
 
-**The rule.** One pure function, `babahaBa()` in `shared/verdict.js` — no
-network, no clock, no DOM — decides the answer from whatever inputs are
-fresh (sensors, neighbour reports, rain), in this order, first match wins:
+**The rule.** Flowchart:
+[shared artifact](https://claude.ai/artifact/6EmnCVpoKj743RrE9PSFfL) ·
+[repo copy](docs/superpowers/specs/2026-09-26-babaha-ba-flowchart.html)
+(linked from the design doc,
+`docs/superpowers/specs/2026-09-26-babaha-ba-reports-no-accounts-design.md`).
+Implemented as one pure function, `babahaBa()` in `shared/verdict.js` — no
+network, no clock, no DOM — which decides the answer from whatever inputs
+are fresh (sensors, neighbour reports, rain), in this order, first match
+wins:
 
 1. **stale** → `nodata` if the newest of every input is more than
    `FRESH_MIN` (20 min) old. The page must never show "Hindi" on stale data.
@@ -570,9 +576,8 @@ The Worker imports the same module for its cron (`worker/README.md`);
 `build_html.py` inlines it into the page (stripping `export`) so the demo
 build's simulated verdicts and the live build's server verdicts are the same
 code, not two implementations kept in sync by hand. Every constant lives in
-the one `RULE` object — `shared/verdict.js` is the source of truth; there is
-no separate flowchart diagram in this repo, only the decision order above
-and the table tests in `shared/verdict.test.js`.
+the one `RULE` object — `shared/verdict.js` is the source of truth, checked
+against the flowchart above by the table tests in `shared/verdict.test.js`.
 
 **`places.json`.** Every sensor street and barangay the page (and the
 Worker) can answer for, with each place's NOAH flags and which sensors feed

@@ -7,7 +7,7 @@ Free tier: Workers, D1, Turnstile. No card needed for these three.
 1. Create a free account at https://dash.cloudflare.com/sign-up (email only).
 2. Turnstile: Dashboard → Turnstile → Add widget → name "BahaWatch", hostname `gregor-posadas.github.io`,
    widget mode **Invisible**. Copy the **site key** and **secret key**.
-3. In the repo folder:
+3. **In `worker/`** (starting from the repo root):
    ```powershell
    cd worker
    npm install
@@ -18,12 +18,15 @@ Free tier: Workers, D1, Turnstile. No card needed for these three.
    npx wrangler secret put DEVICE_KEYS        # paste {} until sensor units exist
    npx wrangler deploy                        # prints https://bahawatch-api.<you>.workers.dev
    ```
-4. Build the live page with the two public values:
+4. **Back at the repo root** (`build_html.py` lives there, not in `worker/`), build the
+   live page with the two public values:
    ```powershell
+   cd ..
    $env:BAHAWATCH_API="https://bahawatch-api.<you>.workers.dev"; $env:TURNSTILE_SITEKEY="<site key>"; python build_html.py
    ```
    Commit and push; GitHub Pages redeploys in about a minute.
-5. **Smoke test**, once the first cron run has happened (wait ~5 min after deploy):
+5. **Smoke test** (any folder), once the first cron run has happened (wait ~5 min
+   after deploy):
    ```powershell
    curl https://bahawatch-api.<you>.workers.dev/status/tv:s:BW-H01
    curl https://bahawatch-api.<you>.workers.dev/recent/tv
@@ -91,11 +94,12 @@ yet), 8 on a steady run, 12 on the top of the hour (when the hourly rollup and t
 
 ## Tests
 
+**In `worker/`**:
 ```
 npm test
 ```
 
 34 tests, Node 22, using `node:sqlite` as a stand-in for D1 (`test/fake-d1.js`).
 The shared rule module (`../shared/verdict.js`) has its own tests one level up —
-run those as `node --test shared/*.test.js` from the repo root (a bare directory
-argument fails on Node 22).
+run those **from the repo root** as `node --test shared/*.test.js` (a bare
+directory argument fails on Node 22).
