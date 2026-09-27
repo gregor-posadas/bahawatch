@@ -1,8 +1,9 @@
 const {chromium}=require('playwright');
+const BASE=process.env.BW_BASE||'http://127.0.0.1:8765/';
 const {execSync}=require('child_process');
 const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else console.log("ok  ",m);};
-execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x00000000000000000000AA OUT=/tmp/bw_live_test.html python3 build_html.py',{cwd:'/home/claude/work'});
-const U='file:///tmp/bw_live_test.html#tv/live';
+execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x00000000000000000000AA OUT=/home/claude/work/_bw_live_test.html python3 build_html.py',{cwd:'/home/claude/work'});
+const U=BASE+'_bw_live_test.html#tv/live';
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
   const ctx=await b.newContext({viewport:{width:390,height:844}});
@@ -29,7 +30,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
   });
   const SN=Date.UTC(2026,8,26,9,0);
   statusBody={place:"tv:s:BW-H01",answer:"baka",reason:{key:"rain_flood_zone",vars:{mm:9}},etaMin:null,updatedAt:SN-3*60000,checkedAt:SN-60000,serverNow:SN,stillThere:null};
-  await pg.goto(U);await pg.waitForTimeout(600);
+  await pg.goto(U);await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(600);
   // live answer comes from the Worker; age uses the server clock even if the phone clock is 3 h fast
   await pg.evaluate(()=>{const d=Date.now;Date.now=()=>d()+3*3600000;});
   await pg.evaluate(()=>pollStatus());await pg.waitForTimeout(200);
@@ -133,7 +134,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u)){reqCount++;return r.abort();}
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(10000);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(10000);
     assert(reqCount<=2,"Worker unreachable for 10 s of playback -> at most 2 /status requests: "+reqCount);
     await pgF.close();
   }
@@ -150,7 +151,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(500);
     await pgF.evaluate(()=>{TURNSTILE_TIMEOUT_MS=50;});   // don't wait out a real 15 s in a test
     await pgF.evaluate(()=>{navigator.geolocation.getCurrentPosition=(ok,fail)=>fail({code:1});});
     await pgF.click('#p-rep [data-ans="oo"]');await pgF.waitForTimeout(400);
@@ -174,7 +175,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(500);
     await pgF.evaluate(()=>{navigator.geolocation.getCurrentPosition=(ok,fail)=>fail({code:1});});
     await pgF.click('#p-rep [data-ans="oo"]');await pgF.waitForTimeout(400);
     await pgF.click('#p-rep-undo');await pgF.waitForTimeout(300);
@@ -190,7 +191,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(500);
     await pgF.evaluate(()=>localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body:{place:"tv:s:BW-H01",answer:"oo",lat:1,lon:1,device:"c".repeat(24),demo:false}})));
     await pgF.evaluate(()=>flushPending());await pgF.waitForTimeout(400);
     let s5=await pgF.evaluate(()=>document.getElementById('p-rep-msg').textContent);
@@ -210,7 +211,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(500);
     await pgF.evaluate(()=>{navigator.geolocation.getCurrentPosition=(ok,fail)=>fail({code:1});});
     await pgF.evaluate(()=>{sendReport('oo');sendReport('oo');});   // two taps in immediate succession
     await pgF.waitForTimeout(30);
@@ -234,7 +235,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(500);
     let live6=await pgF.evaluate(()=>({fig:document.getElementById('p-fig').hidden,list:document.getElementById('p-col-list').hidden,area:document.getElementById('p-area').hidden,
       note:document.getElementById('p-live-note').hidden,noteText:document.getElementById('p-live-note').textContent,demo:document.getElementById('p-demo').hidden}));
     assert(live6.fig&&live6.list&&live6.area,"LIVE hides the depth figure, My street/Monitored streets, and the area headline");
@@ -244,7 +245,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
   }
   {
     const pgF=await ctx.newPage();
-    await pgF.goto('file:///home/claude/work/bahawatch_dashboard.html#tv');await pgF.waitForTimeout(500);
+    await pgF.goto(BASE+'bahawatch_dashboard.html#tv');await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(500);
     let demo6=await pgF.evaluate(()=>({fig:document.getElementById('p-fig').hidden,list:document.getElementById('p-col-list').hidden,demo:document.getElementById('p-demo').hidden}));
     assert(!demo6.fig&&!demo6.list&&!demo6.demo,"demo mode (#tv, not live) still shows the figure, street lists and the Demo footer claim");
     await pgF.close();
@@ -260,7 +261,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(500);
     await pgF.evaluate(()=>{navigator.geolocation.getCurrentPosition=(ok)=>{window.__gpsCalled=true;ok({coords:{latitude:1,longitude:1}});};});
     await pgF.click('#p-rep [data-ans="oo"]');await pgF.waitForTimeout(400);
     const gpsCalled=await pgF.evaluate(()=>!!window.__gpsCalled);
@@ -283,7 +284,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(500);
     await pgF.evaluate(()=>localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body:{place:"tv:s:BW-H01",answer:"oo",lat:1,lon:1,device:"d".repeat(24),demo:false}})));
     const flushDone=pgF.evaluate(()=>flushPending());
     await pgF.waitForTimeout(80);   // flushPending has started and is awaiting the (stubbed, slow) Turnstile token
@@ -310,7 +311,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u)){hangCount++;return new Promise(()=>{});}   // never resolves, aborts or fulfills — a hung connection
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(300);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(300);
     await pgF.evaluate(()=>{playing=false;});
     // isolate from whatever boot's own (still-hung, real-15s-default) request left behind, then shorten the timeout for this test
     await pgF.evaluate(()=>{pollInFlight=false;pollNotBefore=0;pollBackoff=POLL_MS;});
@@ -337,7 +338,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(500);
     await pgF.evaluate(()=>{playing=false;});
     await pgF.evaluate(()=>pollStatus());await pgF.waitForTimeout(200);
     let before=await pgF.evaluate(()=>document.getElementById('p-answer').dataset.answer);
@@ -373,7 +374,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgF.goto(U);await pgF.waitForTimeout(500);
+    await pgF.goto(U);await pgF.waitForFunction(()=>document.body.dataset.ready);await pgF.waitForTimeout(500);
     // "Use my location" resolves to BW-H01 (already the current place) via a real GPS fix
     const H01ll=await pgF.evaluate(()=>{const p=placesForSite().find(x=>x.id==="tv:s:BW-H01");return {lat:p.lat,lon:p.lon};});
     await pgF.evaluate(({lat,lon})=>{navigator.geolocation.getCurrentPosition=(ok)=>ok({coords:{latitude:lat,longitude:lon}});},H01ll);
@@ -413,7 +414,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgG.goto(U);await pgG.waitForTimeout(500);
+    await pgG.goto(U);await pgG.waitForFunction(()=>document.body.dataset.ready);await pgG.waitForTimeout(500);
     const PG=await pgG.evaluate(()=>currentPlace());
     await pgG.evaluate(({lat,lon})=>{navigator.geolocation.getCurrentPosition=(ok)=>ok({coords:{latitude:lat+0.045,longitude:lon}});},PG);   // ~5 km away
     await pgG.click('#p-rep [data-ans="oo"]');await pgG.waitForTimeout(400);
@@ -444,7 +445,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(r.request().url()))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(statusBody)});
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgT.goto(U);await pgT.waitForTimeout(500);
+    await pgT.goto(U);await pgT.waitForFunction(()=>document.body.dataset.ready);await pgT.waitForTimeout(500);
     await pgT.evaluate(()=>{TURNSTILE_TIMEOUT_MS=400;navigator.geolocation.getCurrentPosition=(ok,fail)=>fail({code:1});});
     await pgT.click('#p-rep [data-ans="oo"]');await pgT.waitForTimeout(1200);
     let sT=await pgT.evaluate(()=>({msg:document.getElementById('p-rep-msg').textContent,busy:[...document.querySelectorAll('#p-rep [data-ans]')].some(b=>b.disabled),sending,pend:!!localStorage.getItem("bw-pending")}));
@@ -465,7 +466,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
       if(/\/status\//.test(r.request().url())){hitsP++;if(failP)return r.abort();return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(bodyP)});}
       return r.fulfill({status:404,body:'{}'});
     });
-    await pgP.goto(U);await pgP.waitForTimeout(500);
+    await pgP.goto(U);await pgP.waitForFunction(()=>document.body.dataset.ready);await pgP.waitForTimeout(500);
     await pgP.evaluate(()=>{const d=Date.now;Date.now=()=>d()+3*3600000;});      // a phone clock 3 h fast changes nothing
     await pgP.evaluate(()=>pollNow());await pgP.waitForTimeout(200);
     let dP=await pgP.evaluate(()=>window.nextPollDelay);
@@ -497,7 +498,7 @@ const U='file:///tmp/bw_live_test.html#tv/live';
   // Finding 9: the demo page (not LIVE) never sends a report — tapping shows a demo-specific "not sent" message
   const pg2=await ctx.newPage();
   let netReqs=0;pg2.on('request',req=>{if(req.url().startsWith('http'))netReqs++;});
-  await pg2.goto('file:///home/claude/work/bahawatch_dashboard.html');await pg2.waitForTimeout(400);
+  await pg2.goto(BASE+'bahawatch_dashboard.html#tv');await pg2.waitForFunction(()=>document.body.dataset.ready);await pg2.waitForTimeout(400);
   s=await pg2.evaluate(()=>({live:LIVE,api:API_BASE}));
   assert(s.live===false&&s.api==="","the published demo page has no API and stays in demo mode");
   netReqs=0;

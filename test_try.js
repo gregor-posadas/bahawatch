@@ -1,6 +1,7 @@
 const {chromium}=require('playwright');
+const BASE=process.env.BW_BASE||'http://127.0.0.1:8765/';
 const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else console.log("ok  ",m);};
-const U='file:///home/claude/work/bahawatch_dashboard.html';
+const U=BASE+'bahawatch_dashboard.html';
 const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.answer,k:document.getElementById('p-ans-reason').textContent,why:document.getElementById('try-why').textContent}));
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
@@ -8,9 +9,10 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   await ctx.addInitScript(()=>{if(!sessionStorage.getItem("seeded")){sessionStorage.setItem("seeded","1");localStorage.setItem("bw-lang:tv","en");localStorage.setItem("bw-place:tv","tv:s:BW-H07");localStorage.setItem("bw-street:tv","BW-H07");localStorage.setItem("bw-asked:tv","1");}});
   const pg=await ctx.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
   const net=[];pg.on('request',r=>{const u=r.url();if(!u.startsWith('file:')&&!u.startsWith('data:'))net.push(u);});
-  await pg.goto(U);await pg.waitForTimeout(400);
+  await pg.goto(U+'#tv');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(400);
+  net.length=0;                                   // the page and data/tv.json are loaded; from here on nothing may be fetched
   let s=await pg.evaluate(()=>[...document.querySelectorAll('#public .site-tabs [role=tab]')].map(t=>t.dataset.site));
-  assert(s.join()==="tv,diliman,berkeley,try","fourth tab 'Try reporting' after UC Berkeley: "+s);
+  assert(s.join()==="ph,tv,berkeley,try","fourth tab 'Try reporting' after UC Berkeley: "+s);
   await pg.focus('#public .site-tabs [data-site="berkeley"]');await pg.keyboard.press('ArrowRight');await pg.waitForTimeout(300);
   s=await pg.evaluate(()=>({t:TRY,hash:location.hash,sel:document.querySelector('#public .site-tabs [aria-selected="true"]').dataset.site,place:document.getElementById('p-ans-place').textContent,playing,panel:!document.getElementById('try-panel').hidden,sim:document.getElementById('try-sim').textContent,where:document.getElementById('p-where').hidden}));
   assert(s.t&&s.hash==="#try"&&s.sel==="try","keyboard: ArrowRight from UC Berkeley opens the Try reporting tab (#try)");
@@ -59,7 +61,7 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   assert(s.msg===""&&s.undo,"leaving the tab clears the Try 'Thanks, recorded.' and its Undo (nothing claimed for your own place): "+s.msg);
   assert(net.length===0,"still no network requests after leaving the tab: "+net.join(","));
   s=await pg.evaluate(()=>({t:TRY,hash:location.hash,place:document.getElementById('p-ans-place').textContent,stored:localStorage.getItem("bw-place:tv"),playing,list:!document.getElementById('p-col-list').hidden,panel:document.getElementById('try-panel').hidden,map:document.getElementById('public-map').contains(document.getElementById('map-wrap')),flood:mapDrawn.flood}));
-  assert(!s.t&&s.hash===""&&/Mayaman/.test(s.place)&&s.stored==="tv:s:BW-H07","back on Teachers Village: your own place (43 Mayaman) untouched");
+  assert(!s.t&&s.hash==="#tv"&&/Mayaman/.test(s.place)&&s.stored==="tv:s:BW-H07","back on Teachers Village: your own place (43 Mayaman) untouched");
   assert(s.playing&&s.list&&s.panel&&s.map&&s.flood,"demo restored: storm playing, street list shown, Try panel hidden, map and flood layer back");
   await pg.click('#public .site-tabs [data-site="try"]');await pg.waitForTimeout(200);
   await pg.click('#p-details');await pg.waitForTimeout(300);
@@ -68,10 +70,10 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   await pg.click('header + .site-tabs [data-site="try"]');await pg.waitForTimeout(300);   // the details view's own tab row
   s=await pg.evaluate(()=>({t:TRY,view:VIEW}));
   assert(s.t&&s.view==="public","the details view's tab row also opens the Try tab (in the simple layout)");
-  const pg2=await ctx.newPage();pg2.on('pageerror',e=>errs.push(e.message));await pg2.goto(U+'#try');await pg2.waitForTimeout(400);
+  const pg2=await ctx.newPage();pg2.on('pageerror',e=>errs.push(e.message));await pg2.goto(U+'#try');await pg2.waitForFunction(()=>document.body.dataset.ready);await pg2.waitForTimeout(400);
   s=await pg2.evaluate(()=>({t:TRY,sel:document.querySelector('#public .site-tabs [aria-selected="true"]').dataset.site,where:document.getElementById('p-where').hidden,a:document.getElementById('p-answer').dataset.answer,playing}));
   assert(s.t&&s.sel==="try"&&s.where&&s.a==="hindi"&&!s.playing,"#try link opens the tab directly: no Saan ka?, no storm");
-  const pg3=await ctx.newPage();pg3.on('pageerror',e=>errs.push(e.message));await pg3.goto(U);await pg3.waitForTimeout(400);
+  const pg3=await ctx.newPage();pg3.on('pageerror',e=>errs.push(e.message));await pg3.goto(U+'#tv');await pg3.waitForFunction(()=>document.body.dataset.ready);await pg3.waitForTimeout(400);
   await pg3.click('#p-rep [data-ans="oo"]');await pg3.waitForTimeout(100);
   s=await pg3.evaluate(()=>({m:document.getElementById('p-rep-msg').textContent,l:!document.getElementById('p-try-link').hidden,t:document.getElementById('p-try-link').textContent}));
   assert(/Demo — not sent/.test(s.m)&&s.l&&/Try reporting/.test(s.t),"demo tabs: 'Demo — not sent' plus a link to the Try reporting tab");
@@ -98,7 +100,7 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   }
   // phone width: order phone → controls → explanation → map → list; no horizontal scroll; 48 px buttons
   const pg4=await b.newPage({viewport:{width:390,height:844}});pg4.on('pageerror',e=>errs.push(e.message));
-  await pg4.goto(U+'#try');await pg4.waitForTimeout(400);
+  await pg4.goto(U+'#try');await pg4.waitForFunction(()=>document.body.dataset.ready);await pg4.waitForTimeout(400);
   s=await pg4.evaluate(()=>{const y=id=>document.getElementById(id).getBoundingClientRect().top;
     return {order:[y('p-answer'),y('try-ctrls'),y('try-why'),y('try-map'),y('try-log-h')],sw:document.documentElement.scrollWidth,btn:Math.min(...[...document.querySelectorAll('#try-ctrls button, #p-rep [data-ans]')].map(b=>b.getBoundingClientRect().height))};});
   assert(s.order.every((v,i,a)=>i===0||v>a[i-1]),"390 px: phone, then controls, explanation, map, list: "+s.order.map(Math.round));
@@ -108,10 +110,10 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   await pg4.focus('#try-add-oo');await pg4.keyboard.press('Enter');await pg4.waitForTimeout(100);
   assert(await pg4.evaluate(()=>tryState.neighbours.length===1),"keyboard: Enter on '+ Neighbour' adds one");
   const {execSync}=require('child_process');
-  execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x00000000000000000000AA OUT=/tmp/bw_try_live.html python3 build_html.py',{cwd:'/home/claude/work'});
+  execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x00000000000000000000AA OUT=/home/claude/work/_bw_try_live.html python3 build_html.py',{cwd:'/home/claude/work'});
   const pg5=await ctx.newPage();pg5.on('pageerror',e=>errs.push(e.message));
   await pg5.route('https://api.test.local/**',r=>r.fulfill({status:503,body:'{}'}));
-  await pg5.goto('file:///tmp/bw_try_live.html#tv/live');await pg5.waitForTimeout(400);
+  await pg5.goto(BASE+'_bw_try_live.html#tv/live');await pg5.waitForFunction(()=>document.body.dataset.ready);await pg5.waitForTimeout(400);
   await pg5.click('#public .site-tabs [data-site="try"]');await pg5.waitForTimeout(200);
   await pg5.click('#public .site-tabs [data-site="tv"]');await pg5.waitForTimeout(300);
   s=await pg5.evaluate(()=>({live:LIVE,hash:location.hash,playing,flag:document.body.dataset.live}));

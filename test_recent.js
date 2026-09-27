@@ -1,7 +1,8 @@
 const {chromium}=require('playwright');
+const BASE=process.env.BW_BASE||'http://127.0.0.1:8765/';
 const {execSync}=require('child_process');
 const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else console.log("ok  ",m);};
-execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x00000000000000000000AA OUT=/tmp/bw_live_test.html python3 build_html.py',{cwd:'/home/claude/work'});
+execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x00000000000000000000AA OUT=/home/claude/work/_bw_live_test.html python3 build_html.py',{cwd:'/home/claude/work'});
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
   const ctx=await b.newContext({viewport:{width:1280,height:900}});
@@ -15,10 +16,10 @@ execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x0000000000000
     if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({place:"tv:s:BW-H01",answer:"hindi",reason:{key:"clear",vars:{}},etaMin:null,updatedAt:SN-60000,checkedAt:SN-60000,serverNow:SN,stillThere:null})});
     return r.fulfill({status:404,body:'{}'});});
   // simple live view does not fetch the per-site report list
-  await pg.goto('file:///tmp/bw_live_test.html#tv/live');await pg.waitForTimeout(500);
+  await pg.goto(BASE+'_bw_live_test.html#tv/live');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(500);
   assert(recentHits===0,"simple view: report list not fetched");
   // details + live: hash kept, list fetched, diamonds drawn, log filled
-  await pg.goto('file:///tmp/bw_live_test.html#tv/details/live');await pg.waitForTimeout(700);
+  await pg.goto(BASE+'_bw_live_test.html#tv/details/live');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(700);
   let s=await pg.evaluate(()=>({live:LIVE,view:VIEW,hash:location.hash,drawn:drawnReports,items:[...document.querySelectorAll('#rep-log li')].map(li=>li.textContent),shown:!document.getElementById('rep-log-wrap').hidden}));
   assert(s.live&&s.view==="details"&&s.hash==="#tv/details/live","details + live parsed and kept in the hash: "+s.hash);
   assert(recentHits>=1&&s.drawn===3,"three reports drawn as diamonds: "+s.drawn);
@@ -31,7 +32,7 @@ execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x0000000000000
   s=await pg.evaluate(()=>({drawn:drawnReports,t:document.getElementById('rep-log').textContent}));
   assert(s.drawn===0&&/No reports in the last hour/.test(s.t),"empty hour: no diamonds, and the log says so");
   // published demo page: no report log, no diamonds
-  const pg2=await ctx.newPage();await pg2.goto('file:///home/claude/work/bahawatch_dashboard.html#tv/details');await pg2.waitForTimeout(400);
+  const pg2=await ctx.newPage();await pg2.goto(BASE+'bahawatch_dashboard.html#tv/details');await pg2.waitForFunction(()=>document.body.dataset.ready);await pg2.waitForTimeout(400);
   s=await pg2.evaluate(()=>({hidden:document.getElementById('rep-log-wrap').hidden,drawn:drawnReports}));
   assert(s.hidden&&s.drawn===0,"demo page: no report log, no diamonds");
   assert(errs.length===0,"no page errors: "+errs.join("; "));
@@ -47,7 +48,7 @@ execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x0000000000000
       if(/\/recent\/tv$/.test(u)){hits++;return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(recent)});}
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({place:"tv:s:BW-H01",answer:"hindi",reason:{key:"clear",vars:{}},etaMin:null,updatedAt:SN-60000,checkedAt:SN-60000,serverNow:SN,stillThere:null})});
       return r.fulfill({status:404,body:'{}'});});
-    await pg3.goto('file:///tmp/bw_live_test.html#tv/details/live');await pg3.waitForTimeout(400);
+    await pg3.goto(BASE+'_bw_live_test.html#tv/details/live');await pg3.waitForFunction(()=>document.body.dataset.ready);await pg3.waitForTimeout(400);
     assert(hits===1,"boot into #tv/details/live makes exactly one /recent request: "+hits);
     await pg3.evaluate(()=>setView("public"));await pg3.waitForTimeout(150);
     await pg3.evaluate(()=>setView("details"));await pg3.waitForTimeout(400);
@@ -62,22 +63,22 @@ execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x0000000000000
     await ctx4.addInitScript(()=>{localStorage.setItem("bw-place:tv","tv:s:BW-H01");localStorage.setItem("bw-asked:tv","1");});
     const pg4=await ctx4.newPage();const errs4=[];pg4.on('pageerror',e=>errs4.push(e.message));
     const tvRecent={serverNow:SN,reports:[{lat:14.638,lon:121.060,answer:"oo",ageMin:4}]};
-    const dilimanRecent={serverNow:SN,reports:[{lat:14.66,lon:121.07,answer:"hindi",ageMin:5}]};
+    const updRecent={serverNow:SN,reports:[{lat:14.66,lon:121.07,answer:"hindi",ageMin:5}]};
     let holdTvRoute=null;
     await pg4.route('https://api.test.local/**',r=>{const u=r.request().url();
       if(/\/recent\/tv$/.test(u)){holdTvRoute=r;return;}                         // hold this one; released manually below
-      if(/\/recent\/diliman$/.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(dilimanRecent)});
+      if(/\/recent\/upd$/.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(updRecent)});
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({place:"tv:s:BW-H01",answer:"hindi",reason:{key:"clear",vars:{}},etaMin:null,updatedAt:SN-60000,checkedAt:SN-60000,serverNow:SN,stillThere:null})});
       return r.fulfill({status:404,body:'{}'});});
-    await pg4.goto('file:///tmp/bw_live_test.html#tv/details/live');await pg4.waitForTimeout(400);
+    await pg4.goto(BASE+'_bw_live_test.html#tv/details/live');await pg4.waitForFunction(()=>document.body.dataset.ready);await pg4.waitForTimeout(400);
     assert(holdTvRoute!==null,"setup: the tv /recent request is in flight and held");
-    await pg4.evaluate(()=>switchSite("diliman"));await pg4.waitForTimeout(400);
+    await pg4.evaluate(()=>loadSiteData("upd").then(()=>switchSite("upd")));await pg4.waitForTimeout(400);
     let s4=await pg4.evaluate(()=>({site:SITE,items:recentReports.map(r=>r.answer)}));
-    assert(s4.site==="diliman"&&s4.items.length===1&&s4.items[0]==="hindi","setup: on diliman with diliman's own reports before the stale tv reply lands: "+JSON.stringify(s4));
+    assert(s4.site==="upd"&&s4.items.length===1&&s4.items[0]==="hindi","setup: on upd with upd's own reports before the stale tv reply lands: "+JSON.stringify(s4));
     await holdTvRoute.fulfill({status:200,contentType:'application/json',body:JSON.stringify(tvRecent)});
     await pg4.waitForTimeout(400);
     s4=await pg4.evaluate(()=>({site:SITE,items:recentReports.map(r=>r.answer),drawn:drawnReports}));
-    assert(s4.site==="diliman"&&s4.items.length===1&&s4.items[0]==="hindi","stale tv reply after switching to diliman must not overwrite recentReports: "+JSON.stringify(s4));
+    assert(s4.site==="upd"&&s4.items.length===1&&s4.items[0]==="hindi","stale tv reply after switching to upd must not overwrite recentReports: "+JSON.stringify(s4));
     assert(errs4.length===0,"no page errors (stale-reply test): "+errs4.join("; "));
     await ctx4.close();
   }
@@ -93,7 +94,7 @@ execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x0000000000000
       if(/\/recent\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(recent)});
       if(/\/status\//.test(u))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({place:decodeURIComponent(u.split('/status/')[1]),answer:"hindi",reason:{key:"clear",vars:{}},etaMin:null,updatedAt:SN-60000,checkedAt:SN-60000,serverNow:SN,stillThere:null})});
       return r.fulfill({status:404,body:'{}'});});
-    await pg5.goto('file:///tmp/bw_live_test.html#tv/live');await pg5.waitForTimeout(500);
+    await pg5.goto(BASE+'_bw_live_test.html#tv/live');await pg5.waitForFunction(()=>document.body.dataset.ready);await pg5.waitForTimeout(500);
     const t0=await pg5.evaluate(()=>tMin);
     await pg5.waitForTimeout(2000);
     let s5=await pg5.evaluate(()=>({t:tMin,playing,flood:window.mapDrawn&&mapDrawn.flood,status:window.mapDrawn&&mapDrawn.statusMarkers,place:window.mapDrawn&&mapDrawn.placeMarker,
@@ -105,10 +106,10 @@ execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x0000000000000
     s5=await pg5.evaluate(()=>{const e=document.getElementById('p-ans-demo');return !!e&&(e.hidden||getComputedStyle(e).display==="none");});
     assert(s5,"#tv/live: no 'Demo · simulated storm' chip on a live answer");
     // a site switch in LIVE does not restart the demo
-    await pg5.evaluate(()=>switchSite("diliman"));await pg5.waitForTimeout(300);
+    await pg5.evaluate(()=>loadSiteData("upd").then(()=>switchSite("upd")));await pg5.waitForTimeout(300);
     s5=await pg5.evaluate(()=>playing);
     assert(s5===false,"LIVE: switching site does not restart playback");
-    await pg5.goto('file:///tmp/bw_live_test.html#tv/details/live');await pg5.waitForTimeout(600);
+    await pg5.goto(BASE+'_bw_live_test.html#tv/details/live');await pg5.waitForFunction(()=>document.body.dataset.ready);await pg5.waitForTimeout(600);
     s5=await pg5.evaluate(()=>{const e=document.getElementById('d-live-banner');return e?{shown:!e.hidden&&e.getBoundingClientRect().height>0,t:e.textContent.trim()}:null;});
     assert(s5&&s5.shown&&s5.t==="Simulated sensor feed — the answer above is live","#tv/details/live: banner says the sensor feed is simulated: "+JSON.stringify(s5));
     assert(errs5.length===0,"no page errors (C2 live): "+errs5.join("; "));
@@ -117,11 +118,11 @@ execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x0000000000000
     const ctx6=await b.newContext({viewport:{width:390,height:844}});
     await ctx6.addInitScript(()=>{localStorage.setItem("bw-place:tv","tv:s:BW-H01");localStorage.setItem("bw-asked:tv","1");});
     const pg6=await ctx6.newPage();
-    await pg6.goto('file:///home/claude/work/bahawatch_dashboard.html#tv');await pg6.waitForTimeout(400);
+    await pg6.goto(BASE+'bahawatch_dashboard.html#tv');await pg6.waitForFunction(()=>document.body.dataset.ready);await pg6.waitForTimeout(400);
     const d0=await pg6.evaluate(()=>tMin);await pg6.waitForTimeout(1200);
     let s6=await pg6.evaluate(()=>({t:tMin,playing,flood:window.mapDrawn&&mapDrawn.flood,status:window.mapDrawn&&mapDrawn.statusMarkers,legend:getComputedStyle(document.querySelector('.p-maplegend')).display}));
     assert(s6.playing===true&&s6.t>d0&&s6.flood===true&&s6.status===8&&s6.legend!=="none","demo #tv unchanged: playing, flood layer, 8 status markers, legend: "+JSON.stringify(s6));
-    await pg6.goto('file:///home/claude/work/bahawatch_dashboard.html#tv/details');await pg6.waitForTimeout(400);
+    await pg6.goto(BASE+'bahawatch_dashboard.html#tv/details');await pg6.waitForFunction(()=>document.body.dataset.ready);await pg6.waitForTimeout(400);
     s6=await pg6.evaluate(()=>{const e=document.getElementById('d-live-banner');return !e||e.hidden;});
     assert(s6,"demo details view: no live banner");
     await ctx6.close();

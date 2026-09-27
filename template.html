@@ -34,6 +34,13 @@ body{
 }
 button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0}
 button:focus-visible, summary:focus-visible, .house-card:focus-visible, #overlay:focus-visible, #scrub:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
+/* routes (body[data-route]): the national map, a site's file loading or failing, and the site itself */
+#nat,#route-loading,#route-fail{display:none}
+body[data-route="ph"] #nat,body[data-route="loading"] #route-loading,body[data-route="fail"] #route-fail{display:block}
+body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-live-banner,main,#timeline){display:none !important}
+.route-msg{max-width:640px; margin:0 auto; padding:48px 16px; font-size:16px}
+.route-btn{min-height:48px; padding:0 18px; border:2px solid var(--ink); border-radius:6px; font-weight:700; margin:16px 12px 0 0}
+.route-link{color:var(--brand); display:inline-flex; align-items:center; min-height:48px}
 .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
 h1,h2{font-size:inherit; font-weight:inherit}
 
@@ -379,6 +386,22 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 </style>
 </head>
 <body data-view="public">
+<section id="nat" aria-labelledby="nat-h">
+  <h1 class="nat-h" id="nat-h">PhilDev partner campuses</h1>
+<nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="ph" aria-selected="true">PhilDev campuses</button>
+  <button role="tab" data-site="tv" aria-selected="false">Teachers Village</button>
+  <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
+  <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+</nav>
+  <div id="nat-body"></div>
+</section>
+<section id="route-loading" class="route-msg"><p id="load-msg" role="status" aria-live="polite"></p></section>
+<section id="route-fail" class="route-msg">
+  <p id="fail-msg" role="alert"></p>
+  <button id="load-retry" class="route-btn"></button>
+  <a href="#ph" class="route-link" id="fail-back"></a>
+</section>
 
 <section id="public" aria-label="Flood status">
  <div class="p-inner">
@@ -393,8 +416,8 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     </div>
   </div>
 <nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
-  <button role="tab" data-site="diliman" aria-selected="false">UP Diliman</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
 </nav>
@@ -515,8 +538,8 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   </div>
 </header>
 <nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
-  <button role="tab" data-site="diliman" aria-selected="false">UP Diliman</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
 </nav>
@@ -626,7 +649,21 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
    NOAH hazard rasters. Model contract unchanged: flood extents derive ONLY
    from sensor observations, spread across the DEM with distance decay.
    ========================================================================= */
-const DATA_ALL=__DATA_ALL__;
+const CAMPUSES=__CAMPUSES__;          // the PhilDev partner campuses (pipeline/campuses.csv), embedded at build
+const CAMPUS_BY_ID=Object.fromEntries(CAMPUSES.map(c=>[c.id,c]));
+const isCampus=id=>!!CAMPUS_BY_ID[id];
+const PILOTS=["tv","berkeley"];
+const SITE_IDS=new Set([...PILOTS,...CAMPUSES.map(c=>c.id)]);
+const LEGACY_SITES={diliman:"upd"};  // old tabs → where they live now
+const DATA_BASE="data/";             // one file per site, fetched when the site is opened
+const DATA_ALL={};                   // site id → its parsed data file (loadSiteData fills it)
+const dataInflight={};
+function loadSiteData(id){
+  if(DATA_ALL[id])return Promise.resolve(DATA_ALL[id]);
+  if(!dataInflight[id])dataInflight[id]=fetch(DATA_BASE+id+".json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+    .then(d=>{DATA_ALL[id]=d;PLACES.sites[id]=d.places||[];delete dataInflight[id];return d;},e=>{delete dataInflight[id];throw e;});
+  return dataInflight[id];
+}
 const API_BASE=__API_BASE__;          // reserved for the report-submission worker (Task 6); unused here
 const TURNSTILE_SITEKEY=__TURNSTILE_SITEKEY__;  // reserved for the report widget (Task 6); unused here
 let TRY=false;                        // "Try reporting" tab (#try): local phone + pretend neighbours, no network
@@ -659,7 +696,7 @@ function initSite(id){
   SITE=id; DATA=DATA_ALL[id]; SITE_CFG=DATA.site;
   W=DATA.W;H=DATA.H;GW=DATA.GW;GH=DATA.GH;N=GW*GH;
   elev=(()=>{const v=new Int16Array(b64bytes(DATA.elev).buffer);const f=new Float32Array(N);for(let i=0;i<N;i++)f[i]=v[i]/10;return f;})();
-  NOAH=SITE_CFG.hazard?{"5":unrle(DATA.noah["5"]),"25":unrle(DATA.noah["25"]),"100":unrle(DATA.noah["100"])}:{"5":new Uint8Array(N),"25":new Uint8Array(N),"100":new Uint8Array(N)};
+  NOAH={};for(const k of ["5","25","100"])NOAH[k]=DATA.noah&&DATA.noah[k]?unrle(DATA.noah[k]):new Uint8Array(N);   // a missing NOAH map reads as no hazard
   STREETMASK=unrle(DATA.street);
   BLDS=(()=>{const v=new Uint16Array(b64bytes(DATA.blds).buffer);const a=[];for(let i=0;i<v.length;i+=2)a.push([v[i]/10,v[i+1]/10]);return a;})();
   // storm-response reference: the site's median sensor street elevation (was the constant 56 m)
@@ -1722,6 +1759,8 @@ function exitTry(nextSite,fromHash){
   syncLiveUI();syncTabs();
 }
 function selectTab(key){
+  if(key==="ph"){location.hash="#ph";return;}
+  if(ROUTE!=="site"||!DATA_ALL[key==="try"?"tv":key]){location.hash="#"+key;return;}   // needs a fetch or leaves the national map: the router does it
   if(key==="try"){if(!TRY)enterTry();return;}
   if(TRY){exitTry(key);writeHash();return;}
   if(key!==SITE){switchSite(key);syncTabs();writeHash();}
@@ -1753,7 +1792,7 @@ const shortSt=n=>n.replace(" Street"," St").replace(" Avenue"," Ave").replace(" 
 const addr=s=>s.bld?s.bld:(s.hn?s.hn+" ":"")+shortSt(s.street);
 
 /*__VERDICT_JS__*/
-const PLACES=__PLACES__;
+const PLACES={version:1,sites:{}};   // each site's places arrive inside its data file
 const DEMO_RAIN_MMH_PER_P=60;          // simulated storm intensity P → mm/h (typhoon peak ≈ 30 mm/h = PAGASA red)
 let myPlace=null;
 let locPlaceId=null;   // the SPECIFIC place chosen via "Use my location" (per site) — GPS may be used for a report at
@@ -2500,6 +2539,7 @@ function switchSite(id){
   {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!TRY&&!myPlace&&!asked)openWhere();}
   pollNow();
   recentReports=[];renderRecent();pollRecent();
+  markReady(id);
 }
 function applySiteLang(){
   const sel=document.getElementById("p-lang"),lab=document.querySelector('label[for=p-lang]');
@@ -2515,23 +2555,28 @@ $("d-simple").addEventListener("click",()=>setView("public"));
 $("p-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
 
 /* ---------- site tabs + hash routing: #<site>[/details] ---------- */
+/* Routes: "ph" (national map: a plain link, #ph, or anything unknown), "site" (#<site>[/details][/live], #try,
+   #p.<site>.<s|b>.<code>), and while a site file loads or fails, "loading" / "fail". */
 function parseHash(){
-  TRY=(location.hash||"")==="#try";if(TRY){LIVE=false;return {site:"tv",view:"public"};}
-  const tok=(location.hash||"").match(/^#p\.([a-z]+)\.(s|b)\.([A-Za-z0-9-]+)$/);
-  if(tok&&DATA_ALL[tok[1]]){SHARE_TOKEN_SEEN=true;SHARED_PLACE=tok[1]+":"+tok[2]+":"+tok[3];return {site:tok[1],view:"public"};}
-  const m=(location.hash||"").replace(/^#/,"").split("/");
+  const raw=(location.hash||"").replace(/^#/,"");
+  TRY=raw==="try";if(TRY){LIVE=false;return {route:"site",site:"tv",view:"public"};}
+  const tok=raw.match(/^p\.([a-z]+)\.(s|b)\.([A-Za-z0-9-]+)$/);
+  if(tok){const site=LEGACY_SITES[tok[1]]||tok[1];
+    if(SITE_IDS.has(site)){SHARE_TOKEN_SEEN=true;SHARED_PLACE=site+":"+tok[2]+":"+tok[3];return {route:"site",site,view:"public"};}}
+  const m=raw.split("/");
   if(m[0]==="details")m.unshift("tv");                       // pre-tab links: #details → Teachers Village details
-  const site=DATA_ALL[m[0]]?m[0]:"tv", view=m[1]==="details"?"details":"public";
+  if(LEGACY_SITES[m[0]])m[0]=LEGACY_SITES[m[0]];
+  if(!SITE_IDS.has(m[0])){LIVE=false;return {route:"ph"};}
   LIVE=!!API_BASE&&m.slice(1).includes("live");               // #<site>/live and #<site>/details/live are both live
-  return {site,view};
+  return {route:"site",site:m[0],view:m[1]==="details"?"details":"public"};
 }
-function writeHash(){if(TRY){history.replaceState(null,"",location.pathname+location.search+"#try");try{localStorage.setItem("bw-last-hash","#try");}catch(e){}return;}
-  const plain=SITE==="tv"&&VIEW==="public"&&!LIVE;
-  const h=plain?"":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
-  history.replaceState(null,"",plain?location.pathname+location.search:h);
+function writeHash(){
+  const h=ROUTE==="ph"?"":TRY?"#try":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
+  history.replaceState(null,"",h||location.pathname+location.search);
   try{localStorage.setItem("bw-last-hash",h);}catch(e){}   // Add to Home Screen: relaunch (?source=pwa, no hash) restores this
 }
-function syncTabs(){document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=TRY?b.dataset.site==="try":b.dataset.site===SITE;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
+function syncTabs(){const cur=TRY?"try":(ROUTE==="ph"||isCampus(SITE))?"ph":SITE;
+  document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=b.dataset.site===cur;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
 document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
   b.addEventListener("click",()=>selectTab(b.dataset.site));
   b.addEventListener("keydown",e=>{
@@ -2540,11 +2585,53 @@ document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
     if(j<0)return;e.preventDefault();tabs[j].click();tabs[j].focus();
   });
 });
-window.addEventListener("hashchange",()=>{const wasLive=LIVE,wasTry=TRY;const h=parseHash();
-  if(TRY){if(!wasTry)enterTry();return;}
-  if(wasTry){exitTry(h.site,true);if(h.view!==VIEW)setView(h.view);writeHash();return;}
-  if(h.site!==SITE){switchSite(h.site);syncTabs();}if(h.view!==VIEW)setView(h.view);
-  if(LIVE!==wasLive){setPlay(!reducedMotion&&!LIVE);syncLiveUI();renderPublic();drawMap();drawOverlayCanvas();pollNow();}});
+/* Strings for the national map, campus pages and loading (six languages; non-English entries are English copies
+   marked _review for native-speaker review, as in earlier rounds). */
+const NAT_EN={loading:"Loading {name}…",fail:"{name} didn't load. Check your connection.",retry:"Try again",back:"‹ All campuses"};
+const NAT_LANGS={en:NAT_EN,fil:Object.assign({_review:true},NAT_EN),ceb:Object.assign({_review:true},NAT_EN),
+  ilo:Object.assign({_review:true},NAT_EN),hil:Object.assign({_review:true},NAT_EN),pam:Object.assign({_review:true},NAT_EN)};
+const NL=()=>NAT_LANGS[LANG]||NAT_EN;
+const siteLabel=id=>CAMPUS_BY_ID[id]?CAMPUS_BY_ID[id].short:{tv:"Teachers Village",berkeley:"UC Berkeley"}[id]||id;
+let ROUTE=null, siteBooted=false, navSeq=0, lastNav=null;
+function showRoute(r){ROUTE=r;document.body.dataset.route=r;}
+function markReady(id){document.body.dataset.ready=id;}        // tests and timings wait for this
+// The router: every navigation (boot, hash change, Try again) comes through here. A newer navigation wins over one
+// whose data file is still loading.
+function go(h,ctx){
+  const seq=++navSeq;lastNav={h,ctx};
+  const want=h.want||(h.want={TRY,LIVE});   // what parseHash() set for this link (kept on h, so Try again reuses it)
+  if(h.route==="ph"){
+    if(siteBooted){if(ctx.wasTry)exitTry(SITE,true);setPlay(false);}
+    showRoute("ph");syncTabs();writeHash();markReady("ph");
+    return Promise.resolve();
+  }
+  if(!DATA_ALL[h.site]&&siteBooted){TRY=ctx.wasTry;LIVE=ctx.wasLive;}   // until the new file arrives, the page still shows the old site
+  if(!DATA_ALL[h.site]){$("load-msg").textContent=fill(NL().loading,{name:siteLabel(h.site)});showRoute("loading");document.body.dataset.ready="";}
+  return loadSiteData(h.site).then(()=>{
+    if(seq!==navSeq)return;
+    TRY=want.TRY;LIVE=want.LIVE;
+    const from=ROUTE;showRoute("site");
+    if(!siteBooted){siteBooted=true;bootSite(h);}
+    else applySiteHash(h,Object.assign({},ctx,{from}));
+    markReady(h.site);
+  },()=>{
+    if(seq!==navSeq)return;
+    const L=NL();$("fail-msg").textContent=fill(L.fail,{name:siteLabel(h.site)});$("load-retry").textContent=L.retry;$("fail-back").textContent=L.back;
+    showRoute("fail");document.body.dataset.ready="fail";$("load-retry").focus();
+  });
+}
+// A hash change while a site is already booted (was the hashchange handler).
+function applySiteHash(h,ctx){
+  if(TRY){if(!ctx.wasTry)enterTry();else if(ctx.from!=="site")resize();syncTabs();return;}
+  if(ctx.wasTry){exitTry(h.site,true);if(h.view!==VIEW)setView(h.view);writeHash();return;}
+  if(h.site!==SITE)switchSite(h.site);
+  if(h.view!==VIEW)setView(h.view);
+  if(ctx.from!=="site"){resize();setPlay(!reducedMotion&&!LIVE);}
+  if(LIVE!==ctx.wasLive){setPlay(!reducedMotion&&!LIVE);syncLiveUI();renderPublic();drawMap();drawOverlayCanvas();pollNow();}
+  syncTabs();writeHash();
+}
+window.addEventListener("hashchange",()=>{const ctx={wasLive:LIVE,wasTry:TRY};go(parseHash(),ctx);});
+$("load-retry").addEventListener("click",()=>{if(lastNav)go(lastNav.h,lastNav.ctx);});
 
 /* ---------- boot ---------- */
 window.addEventListener("resize",resize);
@@ -2553,7 +2640,8 @@ if((location.search||"").indexOf("source=pwa")!==-1&&!location.hash){
   let savedHash=null;try{savedHash=localStorage.getItem("bw-last-hash");}catch(e){}
   if(savedHash)history.replaceState(null,"",location.pathname+location.search+savedHash);
 }
-const h0=parseHash();
+// The first site opened boots the whole site UI (was top-level code; runs once, after that site's data has arrived).
+function bootSite(h0){
 initSite(h0.site);
 if(SHARED_PLACE){
   if(placesForSite().some(p=>p.id===SHARED_PLACE)){myPlace=SHARED_PLACE;try{localStorage.setItem(siteKey("bw-place"),myPlace);localStorage.setItem(siteKey("bw-asked"),"1");}catch(e){}}
@@ -2574,9 +2662,11 @@ syncLiveUI();
 log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
 log(`${HOUSEHOLD.length} household units online · LoRaWAN, 10-min uplink (simulated)`);
 log(SITE_CFG.attribution);
-if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 step(0,true);
 requestAnimationFrame(loop);
+}
+if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+go(parseHash(),{wasLive:false,wasTry:false});
 </script>
 </body>
 </html>
