@@ -216,6 +216,13 @@ pre#api-json{
 .p-ans-reason{font-size:16px; margin-top:6px}
 .p-ans-age{font-size:13px; color:var(--ans-ink-2); margin-top:2px; font-variant-numeric:tabular-nums}
 .p-ans-pick{margin-top:8px; min-height:48px}
+.p-rep{border-top:1px solid var(--line); padding-top:10px}
+.p-rep-q{font-size:16px; font-weight:700}
+.p-rep-btns{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px}
+.p-rep-btns button{min-height:48px; font-size:16px; font-weight:700; border:1px solid var(--ink); border-radius:4px; background:var(--panel)}
+.p-rep-btns button:hover{background:var(--panel-2)}
+.p-rep-msg{font-size:14px; margin-top:6px; min-height:1.4em}
+#p-rep-undo{min-height:44px; margin-top:4px}
 /* the area line (headline/sub/updated) lives inside #p-area, which JS relocates between #p-top-area
    (no place chosen — full size, matches the pre-answer-band look) and #p-bottom-area (place chosen —
    "a smaller line under the list", per spec §6, still carrying its severity colour via .p-area.tier-*) */
@@ -365,7 +372,14 @@ pre#api-json{
         <p id="p-ans-announce" class="sr-only" role="status" aria-live="polite"></p>
         <button class="p-link p-ans-pick" id="p-ans-pick" hidden></button>
       </section>
-      <div id="p-rep-slot"></div>
+      <section class="p-rep" id="p-rep" aria-labelledby="p-rep-q">
+        <div class="p-rep-q" id="p-rep-q">May baha ba rito?</div>
+        <div class="p-rep-btns">
+          <button data-ans="oo"></button><button data-ans="hindi"></button><button data-ans="di_sigurado"></button>
+        </div>
+        <div class="p-rep-msg" id="p-rep-msg" role="status" aria-live="polite"></div>
+        <button class="p-link" id="p-rep-undo" hidden></button>
+      </section>
       <div id="p-top-area"></div>
     </div>
     <figure class="p-fig">
@@ -534,6 +548,7 @@ pre#api-json{
 const DATA_ALL=__DATA_ALL__;
 const API_BASE=__API_BASE__;          // reserved for the report-submission worker (Task 6); unused here
 const TURNSTILE_SITEKEY=__TURNSTILE_SITEKEY__;  // reserved for the report widget (Task 6); unused here
+let LIVE=false, lastLive=null;        // live mode (#tv/live): answer comes from the Worker's /status, not the demo playback
 let VIEW="public";
 const RES=2.2;
 
@@ -1472,6 +1487,15 @@ const ANS_LANGS={
   locFail:"E makuha ing lokasyun mu. Pilinan mu ne mu ing barangay mu."},
 };
 const A=()=>SITE_CFG&&SITE_CFG.langs==="en"?ANS_LANGS.en:(ANS_LANGS[LANG]||ANS_LANGS.en);
+const REP_LANGS={
+ en:{q:"Is there flooding here?",still:"Someone reported flooding nearby. Is it still there?",oo:"Yes",hindi:"No",di_sigurado:"Not sure",thanks:"Thanks, recorded.",undo:"Undo",undone:"Removed.",fail:"Couldn't send. Try again.",held:"No signal. We'll send it when you're back online."},
+ fil:{q:"May baha ba rito?",still:"May nag-ulat ng baha malapit dito. Nandiyan pa ba?",oo:"Oo",hindi:"Hindi",di_sigurado:"Hindi sigurado",thanks:"Salamat, naitala.",undo:"Bawiin",undone:"Binawi na.",fail:"Hindi naipadala, subukan ulit.",held:"Walang signal. Ipapadala namin pagbalik ng signal."},
+ ceb:{q:"Naay baha diri?",still:"Naay nagtaho og baha duol diri. Naa pa ba?",oo:"Oo",hindi:"Dili",di_sigurado:"Dili sigurado",thanks:"Salamat, natala na.",undo:"Bawia",undone:"Gibawi na.",fail:"Wala napadala, sulayi pag-usab.",held:"Walay signal. Ipadala namo inig balik sa signal."},
+ ilo:{q:"Adda kadi layus ditoy?",still:"Adda nangipadamag iti layus iti asideg. Adda pay laeng kadi?",oo:"Wen",hindi:"Saan",di_sigurado:"Saan a sigurado",thanks:"Agyamanak, naitala.",undo:"Ibabawi",undone:"Naibabawin.",fail:"Saan a naipatulod, padasem manen.",held:"Awan ti signal. Ipatulodmi no agsubli ti signal."},
+ hil:{q:"May baha bala diri?",still:"May nag-report sang baha malapit diri. Yara pa bala?",oo:"Huo",hindi:"Indi",di_sigurado:"Indi sigurado",thanks:"Salamat, natala na.",undo:"Bawia",undone:"Ginbawi na.",fail:"Wala napadala, tilawi liwat.",held:"Wala sang signal. Ipadala namon kon magbalik ang signal."},
+ pam:{q:"Atin albug keni?",still:"Atin mengreport albug malapit keni. Atyu pa?",oo:"Wa",hindi:"Ali",di_sigurado:"Ali sigurado",thanks:"Salamat, me-record ne.",undo:"Bawian",undone:"Mebawi ne.",fail:"E me-padala, subukan mu pasibayu.",held:"Alang signal. Ipadala mi pamanyulit ning signal."},
+};
+const R=()=>SITE_CFG&&SITE_CFG.langs==="en"?REP_LANGS.en:(REP_LANGS[LANG]||REP_LANGS.en);
 const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(_,k)=>v[k]!=null?v[k]:"");
 const T=()=>SITE_CFG&&SITE_CFG.profile==="path"?Object.assign({},LANGS.en,PATH_EN):LANGS[LANG];
 // depth wording order follows the site's units: "16 in · 40 cm" on a US campus, "40 cm (16 in)" in the Philippines
@@ -1563,7 +1587,8 @@ function renderAnswer(){
     if(noneKey!==lastAnnounced){lastAnnounced=noneKey;$("p-ans-announce").textContent=L.pick;}
     return;
   }
-  showAnswer(babahaBa(demoInputs(p)));
+  if(LIVE){if(lastLive&&lastLive.place===p.id)renderLive();else{showAnswer({answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:null,etaMin:null});pollStatus();}}
+  else showAnswer(babahaBa(demoInputs(p)));
 }
 /* ---------- "Saan ka?" ---------- */
 function openWhere(){
@@ -1605,6 +1630,102 @@ $("p-where").addEventListener("click",e=>{
   }
 });
 $("p-ans-pick").addEventListener("click",openWhere);
+
+/* ---------- neighbour reports (spec §4) ---------- */
+const HOLD_MS=10*60000, UNDO_UI_MS=10000;
+function deviceId(){
+  let d=null;try{d=localStorage.getItem("bw-device");}catch(e){}
+  if(!/^[a-f0-9]{24}$/.test(d||"")){const a=new Uint8Array(12);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");try{localStorage.setItem("bw-device",d);}catch(e){}}
+  return d;
+}
+function loadTurnstile(){
+  return new Promise((res,rej)=>{if(window.turnstile)return res(window.turnstile);
+    const s=document.createElement("script");s.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    s.onload=()=>res(window.turnstile);s.onerror=rej;document.head.appendChild(s);});
+}
+async function turnstileToken(){
+  const ts=await loadTurnstile();
+  return new Promise((res,rej)=>{const el=document.createElement("div");el.className="sr-only";document.body.appendChild(el);
+    ts.render(el,{sitekey:TURNSTILE_SITEKEY,appearance:"interaction-only",callback:t=>{res(t);setTimeout(()=>el.remove(),0);},"error-callback":()=>{el.remove();rej(new Error("turnstile"));}});});
+}
+const round3=x=>Math.round(x*1000)/1000;
+function where(p){
+  return new Promise(res=>{
+    const centre={lat:round3(p.lat),lon:round3(p.lon)};
+    if(!navigator.geolocation)return res(centre);
+    navigator.geolocation.getCurrentPosition(pos=>res({lat:round3(pos.coords.latitude),lon:round3(pos.coords.longitude)}),()=>res(centre),{timeout:5000,maximumAge:600000});
+  });
+}
+let undoTimer=null;
+function repMsg(t,undoId){
+  $("p-rep-msg").textContent=t;const u=$("p-rep-undo");u.textContent=R().undo;u.hidden=!undoId;u.dataset.id=undoId||"";
+  clearTimeout(undoTimer);if(undoId)undoTimer=setTimeout(()=>{u.hidden=true;},UNDO_UI_MS);
+}
+async function postReport(body){
+  const token=await turnstileToken();
+  const r=await fetch(API_BASE+"/report",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...body,token})});
+  if(r.status===201)return (await r.json()).id;
+  if(r.status===429)return 0;                      // already recorded: a double tap or a re-send
+  throw new Error("report "+r.status);
+}
+async function sendReport(answer){
+  const p=currentPlace();if(!p)return openWhere();
+  const L=R();
+  if(!LIVE){repMsg(L.thanks);return;}              // demo page: acknowledged on the phone only
+  const pos=await where(p);
+  const body={place:p.id,answer,lat:pos.lat,lon:pos.lon,device:deviceId(),demo:false};
+  if(!navigator.onLine){try{localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body}));}catch(e){}repMsg(L.held);return;}
+  try{const id=await postReport(body);repMsg(L.thanks,id||null);}
+  catch(e){try{localStorage.setItem("bw-pending",JSON.stringify({madeAt:Date.now(),body}));}catch(x){}repMsg(L.fail);}
+}
+let flushing=false;   // guards against the online event and an explicit call racing on the same pending report
+async function flushPending(){
+  if(flushing)return;
+  let p=null;try{p=JSON.parse(localStorage.getItem("bw-pending")||"null");}catch(e){}
+  if(!p)return;
+  if(Date.now()-p.madeAt>HOLD_MS){try{localStorage.removeItem("bw-pending");}catch(e){}return;}
+  flushing=true;
+  try{await postReport(p.body);try{localStorage.removeItem("bw-pending");}catch(e){}repMsg(R().thanks);}catch(e){}
+  finally{flushing=false;}
+}
+window.addEventListener("online",flushPending);
+$("p-rep").addEventListener("click",e=>{const b=e.target.closest("[data-ans]");if(b)sendReport(b.dataset.ans);});
+$("p-rep-undo").addEventListener("click",async()=>{
+  const id=$("p-rep-undo").dataset.id;if(!id)return;
+  try{await fetch(API_BASE+"/report/"+id+"/undo",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({device:deviceId()})});}catch(e){}
+  repMsg(R().undone);
+});
+function renderReportRow(){
+  const L=R();
+  $("p-rep-q").textContent=lastLive&&lastLive.stillThere?L.still:L.q;
+  document.querySelectorAll("#p-rep [data-ans]").forEach(b=>{b.textContent=L[b.dataset.ans];});
+  $("p-rep").hidden=!currentPlace();
+}
+
+/* ---------- live status (spec §7) ---------- */
+const FRESH_MS=20*60000, POLL_MS=60000;
+async function pollStatus(){
+  if(!LIVE||!myPlace)return;
+  try{
+    const r=await fetch(API_BASE+"/status/"+encodeURIComponent(myPlace),{cache:"no-store"});
+    if(!r.ok)throw new Error("status "+r.status);
+    lastLive=await r.json();
+    try{localStorage.setItem("bw-last:"+myPlace,JSON.stringify({...lastLive,receivedAt:Date.now()}));}catch(e){}
+  }catch(e){
+    if(lastLive)lastLive={...lastLive,serverNow:lastLive.serverNow+(Date.now()-(lastLive._t||Date.now()))};
+  }
+  if(lastLive)lastLive._t=Date.now();
+  renderLive();
+}
+function renderLive(){
+  if(!lastLive)return;
+  const stale=lastLive.checkedAt==null||lastLive.serverNow-lastLive.checkedAt>FRESH_MS||lastLive.updatedAt==null||lastLive.serverNow-lastLive.updatedAt>FRESH_MS;
+  const v=stale?{answer:"nodata",reason:{key:"stale",vars:{}},updatedAt:lastLive.updatedAt,etaMin:null}:lastLive;
+  showAnswer(v,lastLive.serverNow);
+  renderReportRow();
+}
+setInterval(()=>{if(document.visibilityState==="visible")pollStatus();},POLL_MS);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pollStatus();});
 
 function unitLabel(s){return esc(addr(s))+(s.near?`<small>${esc(T().near)} ${esc(shortSt(s.near))}</small>`:"");}
 function rowHTML(s,extraCls){
@@ -1802,6 +1923,7 @@ function renderPublic(){
   const rv=$("p-review");rv.textContent=REVIEW_TAG[LANG]?L.review+" · "+LANGS.en.review:"";rv.className="p-review"+(REVIEW_TAG[LANG]?" on":"");
   document.documentElement.lang=LANG==="fil"?"fil":LANG==="ceb"?"ceb":LANG==="ilo"?"ilo":LANG==="hil"?"hil":LANG==="pam"?"pam":"en";
   renderAnswer();
+  renderReportRow();
 }
 let pickMode=false;
 document.addEventListener("click",e=>{
@@ -1903,9 +2025,11 @@ function parseHash(){
   const m=(location.hash||"").replace(/^#/,"").split("/");
   if(m[0]==="details")m.unshift("tv");                       // pre-tab links: #details → Teachers Village details
   const site=DATA_ALL[m[0]]?m[0]:"tv", view=m[1]==="details"?"details":"public";
+  LIVE=!!API_BASE&&m.slice(1).includes("live");               // #<site>/live and #<site>/details/live are both live
   return {site,view};
 }
-function writeHash(){history.replaceState(null,"",(SITE==="tv"&&VIEW==="public")?location.pathname+location.search:"#"+SITE+(VIEW==="details"?"/details":""));}
+function writeHash(){const plain=SITE==="tv"&&VIEW==="public"&&!LIVE;
+  history.replaceState(null,"",plain?location.pathname+location.search:"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":""));}
 function syncTabs(){document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=b.dataset.site===SITE;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
 document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
   b.addEventListener("click",()=>{if(b.dataset.site!==SITE){switchSite(b.dataset.site);syncTabs();writeHash();}});
@@ -1924,6 +2048,7 @@ initSite(h0.site);buildCards();VIEW=h0.view;
 if(VIEW==="public")speed=720;   // the story plays in ~3 real minutes for a resident just glancing
 setView(VIEW);switchSite(h0.site);syncTabs();writeHash();
 {let asked=null;try{asked=localStorage.getItem(siteKey("bw-asked"));}catch(e){}if(!myPlace&&!asked)openWhere();}
+if(LIVE){flushPending();pollStatus();}
 log(`Scenario loaded: <b>${SCEN[scenario].label}</b>`);
 log(`${HOUSEHOLD.length} household units online · LoRaWAN, 10-min uplink (simulated)`);
 log(SITE_CFG.attribution);
