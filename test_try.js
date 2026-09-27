@@ -71,6 +71,36 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   assert(/Demo — not sent/.test(s.m)&&s.l&&/Try reporting/.test(s.t),"demo tabs: 'Demo — not sent' plus a link to the Try reporting tab");
   await pg3.click('#p-try-link');await pg3.waitForTimeout(300);
   assert(await pg3.evaluate(()=>TRY&&location.hash==="#try"),"the link opens the Try reporting tab");
+  // every language: all Try strings exist and the tab shows no English leftovers
+  s=await pg2.evaluate(()=>{const need=Object.keys(TRY_LANGS.en);const miss=[];for(const k of ["en","fil","ceb","ilo","hil","pam"])for(const n of need)if(!TRY_LANGS[k]||!TRY_LANGS[k][n])miss.push(k+"."+n);return miss;});
+  assert(s.length===0,"Try strings complete in six languages: "+s.join(","));
+  await pg2.selectOption('#p-lang','fil');await pg2.click('#p-rep [data-ans="oo"]');await pg2.click('#try-add-oo');await pg2.click('#try-add-oo');await pg2.waitForTimeout(150);
+  s=await pg2.evaluate(()=>({sim:document.getElementById('try-sim').textContent,add:document.getElementById('try-add-oo').textContent,why:document.getElementById('try-why').textContent,log:document.getElementById('try-log').textContent,q:document.getElementById('p-rep-q').textContent,word:document.getElementById('p-ans-word').textContent}));
+  assert(/Simulasyon/.test(s.sim)&&/Kapitbahay: “Oo”/.test(s.add)&&/walang ulan → Baka/.test(s.why)&&/Ikaw: Oo/.test(s.log)&&/Nandiyan pa ba/.test(s.q)&&s.word==="Baka","Filipino: panel, explanation, list, question and answer all switch: "+s.why);
+  assert(!/Neighbour|Reports on this map|nothing leaves|Sensor at/.test(s.sim+s.add+s.why+s.log),"Filipino: no English left in the Try panel");
+  // contrast: every text element in the phone and the panel, both themes, three answer states
+  const lum=c=>{const m=c.match(/[\d.]+/g).map(Number);const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);};return 0.2126*f(m[0])+0.7152*f(m[1])+0.0722*f(m[2]);};
+  for(const theme of ["light","dark"]){
+    await pg2.evaluate(t=>setTheme(t,true),theme);
+    for(const cm of [0,3,20]){
+      await pg2.evaluate(c=>trySetSensor(c),cm);await pg2.waitForTimeout(80);
+      const pairs=await pg2.evaluate(()=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getComputedStyle(x).backgroundColor;if(!/rgba\(0, 0, 0, 0\)|transparent/.test(c))return c;}return getComputedStyle(document.body).backgroundColor;};
+        return [...document.querySelectorAll('#p-answer *, #p-rep *, #try-panel *, #try-sim')].filter(e=>e.offsetParent&&e.childNodes.length&&[...e.childNodes].some(n=>n.nodeType===3&&n.textContent.trim())&&!e.closest('.sr-only')).map(e=>({id:e.id||e.tagName,fg:getComputedStyle(e).color,bg:bg(e),op:getComputedStyle(e).opacity}));});
+      const bad=pairs.filter(p=>p.op==="1").map(p=>{const a=lum(p.fg),b2=lum(p.bg);return {...p,r:(Math.max(a,b2)+0.05)/(Math.min(a,b2)+0.05)};}).filter(p=>p.r<4.5);
+      assert(bad.length===0,`contrast ≥ 4.5:1 (${theme}, sensor ${cm} cm): `+bad.map(p=>p.id+" "+p.r.toFixed(2)).join(", "));
+    }
+  }
+  // phone width: order phone → controls → explanation → map → list; no horizontal scroll; 48 px buttons
+  const pg4=await b.newPage({viewport:{width:390,height:844}});pg4.on('pageerror',e=>errs.push(e.message));
+  await pg4.goto(U+'#try');await pg4.waitForTimeout(400);
+  s=await pg4.evaluate(()=>{const y=id=>document.getElementById(id).getBoundingClientRect().top;
+    return {order:[y('p-answer'),y('try-ctrls'),y('try-why'),y('try-map'),y('try-log-h')],sw:document.documentElement.scrollWidth,btn:Math.min(...[...document.querySelectorAll('#try-ctrls button, #p-rep [data-ans]')].map(b=>b.getBoundingClientRect().height))};});
+  assert(s.order.every((v,i,a)=>i===0||v>a[i-1]),"390 px: phone, then controls, explanation, map, list: "+s.order.map(Math.round));
+  assert(s.sw<=390,"390 px: no horizontal scroll ("+s.sw+")");
+  assert(s.btn>=48,"all Try and report buttons ≥ 48 px ("+s.btn+")");
+  // keyboard: the controls are reachable and operable with Tab and Enter
+  await pg4.focus('#try-add-oo');await pg4.keyboard.press('Enter');await pg4.waitForTimeout(100);
+  assert(await pg4.evaluate(()=>tryState.neighbours.length===1),"keyboard: Enter on '+ Neighbour' adds one");
   assert(errs.length===0,"no page errors: "+errs.join("; "));
   await b.close();
 })();

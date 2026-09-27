@@ -44,6 +44,7 @@ The file has **two views**:
 | `test_build.sh` | Build regression: rebuilds Teachers Village and asserts it is unchanged, then builds and sanity-checks the two campuses. |
 | `test_init.js`, `test_tabs.js`, `test_sites.js`, `test_figure.js`, `test_public.js`, `test_car.js` | Playwright browser tests: site state rebuild and switching, tab bar and `#site/view` routing, per-site wording/units/language rules, sensor siting per site, depth figure, public view, car scale. `node test_<name>.js` after `build_html.py`. |
 | `test_answer.js`, `test_report.js`, `test_recent.js`, `test_noaccount.js` | Playwright browser tests for §6.6: the Babaha ba? answer band (touch targets, contrast, live-region announcements), one-tap reports (Undo, offline hold, the demo page's no-network path, 429 shown as success), the details-view `/recent` report map and log (including a stale reply after switching sites), and the no-account features (share-link confirmation surviving playback re-renders). `node test_<name>.js` after `build_html.py`. |
+| `test_try.js` | Playwright browser tests for §6.7, the Try reporting tab: rule steps, Undo, the neighbour cap, reset, no network, restoring the demo on leave, the `#try` link, six languages, contrast, phone layout. `node test_try.js` after `build_html.py`. |
 | `build_html.py` | Injects the three data files into `template.html` → `bahawatch_dashboard.html`. Run after any edit to either. |
 | `logo.png` | BahaWatch logo (embedded in the HTML as a data URI). |
 | `README.md` | This file. |
@@ -693,6 +694,20 @@ same flag — they still need that native-speaker pass before the flag comes
 off, same as the rest of each language's table.
 
 ---
+
+### 6.7 Try reporting (proof of concept on the static site)
+
+The fourth tab, **Try reporting** (`#try`), shows how neighbour reports work without a server.
+
+- **The phone:** the same answer band and report buttons as the live page, for one fixed place (22 Malingap Street, sensor BW-H03, Teachers Village).
+- **The controls:**
+  - **+ Neighbour says "Oo" / "Hindi"** adds up to 8 pretend phones at fixed spots within about 300 m.
+  - **Sensor at 22 Malingap St** switches between dry, 3 cm and 20 cm.
+  - **Reset** clears the reports and the sensor.
+- **The explanation line** under the controls says what the rule saw and decided. The rule is the same `shared/verdict.js` the Worker uses. Reports alone reach Baka at most; only a sensor makes Oo.
+- **The map** shows each report as a hollow diamond, and the list under it repeats them as text.
+- **Nothing is sent.** State is in memory and a reload starts fresh. The tab never changes the place chosen on the other tabs.
+- **Demo tabs:** tapping a report button says "Demo — not sent" and links here.
 
 ## 7. Dashboard anatomy — details view (`template.html`)
 
