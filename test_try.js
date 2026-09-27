@@ -17,7 +17,9 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   assert(/22 Malingap/.test(s.place)&&!s.playing&&s.panel&&s.where&&/nothing leaves this page/i.test(s.sim),"fixed place 22 Malingap Street, storm stopped, controls and simulation label shown, no Saan ka?");
   s=await ans(pg);
   assert(s.a==="hindi","start: dry sensor, no reports -> Hindi ("+s.k+")");
+  assert(/^Simulation/.test(await pg.evaluate(()=>document.getElementById('p-ans-announce').textContent)),"screen readers hear 'Simulation' first in the Try tab");
   await pg.click('#p-rep [data-ans="oo"]');await pg.waitForTimeout(150);
+  assert(/^1 phone says .Yes. within 1 km/.test(await pg.evaluate(()=>document.getElementById('try-why').textContent)),"one phone: '1 phone says' (not 'say')");
   s=await pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.answer,msg:document.getElementById('p-rep-msg').textContent,undo:!document.getElementById('p-rep-undo').hidden,d:drawnReports,log:[...document.querySelectorAll('#try-log li')].map(l=>l.textContent)}));
   assert(s.a==="baka"&&/Thanks/.test(s.msg)&&s.undo,"your Yes -> Baka, 'Thanks, recorded.' with Undo");
   assert(s.d===1&&s.log.length===1&&/^You: Yes$/.test(s.log[0]),"your report is a diamond on the map and a line in the list: "+s.log);
@@ -51,7 +53,11 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   s=await pg.evaluate(()=>({flood:mapDrawn.flood,markers:mapDrawn.statusMarkers,inTry:document.getElementById('try-map').contains(document.getElementById('map-wrap'))}));
   assert(!s.flood&&s.markers===1&&s.inTry,"map: no simulated flood layer, only the Malingap sensor, inside the tab");
   assert(net.length===0,"no network requests from the tab: "+net.join(","));
+  await pg.click('#p-rep [data-ans="oo"]');await pg.waitForTimeout(100);   // leave inside the 10 s Undo window
   await pg.click('#public .site-tabs [data-site="tv"]');await pg.waitForTimeout(300);
+  s=await pg.evaluate(()=>({msg:document.getElementById('p-rep-msg').textContent,undo:document.getElementById('p-rep-undo').hidden}));
+  assert(s.msg===""&&s.undo,"leaving the tab clears the Try 'Thanks, recorded.' and its Undo (nothing claimed for your own place): "+s.msg);
+  assert(net.length===0,"still no network requests after leaving the tab: "+net.join(","));
   s=await pg.evaluate(()=>({t:TRY,hash:location.hash,place:document.getElementById('p-ans-place').textContent,stored:localStorage.getItem("bw-place:tv"),playing,list:!document.getElementById('p-col-list').hidden,panel:document.getElementById('try-panel').hidden,map:document.getElementById('public-map').contains(document.getElementById('map-wrap')),flood:mapDrawn.flood}));
   assert(!s.t&&s.hash===""&&/Mayaman/.test(s.place)&&s.stored==="tv:s:BW-H07","back on Teachers Village: your own place (43 Mayaman) untouched");
   assert(s.playing&&s.list&&s.panel&&s.map&&s.flood,"demo restored: storm playing, street list shown, Try panel hidden, map and flood layer back");
@@ -101,6 +107,15 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   // keyboard: the controls are reachable and operable with Tab and Enter
   await pg4.focus('#try-add-oo');await pg4.keyboard.press('Enter');await pg4.waitForTimeout(100);
   assert(await pg4.evaluate(()=>tryState.neighbours.length===1),"keyboard: Enter on '+ Neighbour' adds one");
+  const {execSync}=require('child_process');
+  execSync('BAHAWATCH_API=https://api.test.local TURNSTILE_SITEKEY=1x00000000000000000000AA OUT=/tmp/bw_try_live.html python3 build_html.py',{cwd:'/home/claude/work'});
+  const pg5=await ctx.newPage();pg5.on('pageerror',e=>errs.push(e.message));
+  await pg5.route('https://api.test.local/**',r=>r.fulfill({status:503,body:'{}'}));
+  await pg5.goto('file:///tmp/bw_try_live.html#tv/live');await pg5.waitForTimeout(400);
+  await pg5.click('#public .site-tabs [data-site="try"]');await pg5.waitForTimeout(200);
+  await pg5.click('#public .site-tabs [data-site="tv"]');await pg5.waitForTimeout(300);
+  s=await pg5.evaluate(()=>({live:LIVE,hash:location.hash,playing,flag:document.body.dataset.live}));
+  assert(s.live&&s.hash==="#tv/live"&&!s.playing&&s.flag==="1","live build: Try then back returns to live mode (#tv/live, no storm): "+JSON.stringify(s));
   assert(errs.length===0,"no page errors: "+errs.join("; "));
   await b.close();
 })();

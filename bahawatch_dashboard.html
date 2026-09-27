@@ -1630,7 +1630,7 @@ const REP_LANGS={
 const R=()=>SITE_CFG&&SITE_CFG.langs==="en"?REP_LANGS.en:(REP_LANGS[LANG]||REP_LANGS.en);
 // "Try reporting" tab strings. {oo}/{hindi} are the report buttons' own words in the current language.
 const TRY_LANGS={
- en:{tab:"Try reporting",sim:"Simulation — nothing leaves this page.",addOo:"+ Neighbour says “{oo}”",addHindi:"+ Neighbour says “{hindi}”",sensor:"Sensor at 22 Malingap St:",dry:"dry",reset:"Reset",why:"{n} {phones} say “{oo}” within 1 km · sensor {s} · no rain → {word}",phone1:"phone",phoneN:"phones",cap:"Reports alone can't say “{oo}”; only a sensor can.",logH:"Reports on this map",logNone:"No reports yet.",you:"You",nb:"Neighbour {i}",full:"8 neighbours is the most in this simulation.",link:"Try it in the Try reporting tab →"},
+ en:{tab:"Try reporting",sim:"Simulation — nothing leaves this page.",addOo:"+ Neighbour says “{oo}”",addHindi:"+ Neighbour says “{hindi}”",sensor:"Sensor at 22 Malingap St:",dry:"dry",reset:"Reset",why:"{n} {phones} “{oo}” within 1 km · sensor {s} · no rain → {word}",phone1:"phone says",phoneN:"phones say",cap:"Reports alone can't say “{oo}”; only a sensor can.",logH:"Reports on this map",logNone:"No reports yet.",you:"You",nb:"Neighbour {i}",full:"8 neighbours is the most in this simulation.",link:"Try it in the Try reporting tab →"},
  fil:{tab:"Subukang mag-ulat",sim:"Simulasyon — walang ipinapadala mula sa pahinang ito.",addOo:"+ Kapitbahay: “{oo}”",addHindi:"+ Kapitbahay: “{hindi}”",sensor:"Sensor sa 22 Malingap St:",dry:"tuyo",reset:"I-reset",why:"{n} {phones} ang nagsabing “{oo}” sa loob ng 1 km · sensor: {s} · walang ulan → {word}",phone1:"telepono",phoneN:"telepono",cap:"Hindi makapagsasabi ng “{oo}” ang mga ulat lang; sensor lang ang makapagsasabi.",logH:"Mga ulat sa mapang ito",logNone:"Wala pang ulat.",you:"Ikaw",nb:"Kapitbahay {i}",full:"Hanggang 8 kapitbahay lang sa simulasyong ito.",link:"Subukan sa tab na Try reporting →"},
  ceb:{tab:"Sulayi ang pagtaho",sim:"Simulasyon — walay mogawas gikan niining panid.",addOo:"+ Silingan: “{oo}”",addHindi:"+ Silingan: “{hindi}”",sensor:"Sensor sa 22 Malingap St:",dry:"uga",reset:"I-reset",why:"{n} ka {phones} ang miingon og “{oo}” sulod sa 1 km · sensor: {s} · walay ulan → {word}",phone1:"telepono",phoneN:"telepono",cap:"Dili makaingon og “{oo}” ang mga taho ra; sensor ra ang makahimo.",logH:"Mga taho niining mapa",logNone:"Wala pay taho.",you:"Ikaw",nb:"Silingan {i}",full:"Hangtod 8 ka silingan lang niining simulasyon.",link:"Sulayi sa tab nga Try reporting →"},
  ilo:{tab:"Padasen ti agipadamag",sim:"Simulasion — awan ti rummuar manipud iti daytoy a panid.",addOo:"+ Kaarruba: “{oo}”",addHindi:"+ Kaarruba: “{hindi}”",sensor:"Sensor iti 22 Malingap St:",dry:"namaga",reset:"I-reset",why:"{n} a {phones} ti nangibaga iti “{oo}” iti uneg ti 1 km · sensor: {s} · awan ti tudo → {word}",phone1:"telepono",phoneN:"telepono",cap:"Saan a makaibaga iti “{oo}” dagiti padamag laeng; sensor laeng ti makaibaga.",logH:"Dagiti padamag iti daytoy a mapa",logNone:"Awan pay ti padamag.",you:"Sika",nb:"Kaarruba {i}",full:"Agingga iti 8 a kaarruba laeng iti daytoy a simulasion.",link:"Padasem iti tab a Try reporting →"},
@@ -1701,7 +1701,9 @@ function syncTryUI(){
   if(home&&mw.parentElement!==home){home.insertBefore(mw,home.firstChild);}
   resize();resetView();renderFlood();
 }
+let tryWasLive=false;                                           // live mode is restored when the person leaves the tab
 function enterTry(){
+  if(!TRY||LIVE)tryWasLive=LIVE;
   TRY=true;LIVE=false;
   if(SITE!=="tv")switchSite("tv");                              // switchSite() keeps the storm stopped and skips "Saan ka?" in TRY
   if(VIEW!=="public")setView("public");
@@ -1710,11 +1712,14 @@ function enterTry(){
   tryReset();
   syncTryUI();renderPublic();drawOverlayCanvas();syncTabs();writeHash();
 }
-function exitTry(nextSite){
+function exitTry(nextSite,fromHash){
   TRY=false;
+  if(!fromHash)LIVE=tryWasLive;                                  // a typed/linked hash already decided LIVE in parseHash()
+  tryWasLive=false;
+  repMsg("");$("p-try-link").hidden=true;                        // nothing from the pretend phone may linger under the person's own place
   syncTryUI();
-  switchSite(nextSite||SITE);                                    // restores the demo exactly: storm, place, list, map
-  syncTabs();
+  switchSite(nextSite||SITE);                                    // restores the demo (or live) exactly: storm, place, list, map
+  syncLiveUI();syncTabs();
 }
 function selectTab(key){
   if(key==="try"){if(!TRY)enterTry();return;}
@@ -1865,7 +1870,7 @@ function showAnswer(v,serverNow){
   if(triple!==lastAnnounced){
     lastAnnounced=triple;
     // demo: the chip is said first, so a screen-reader user hears it's a simulated storm before the answer
-    $("p-ans-announce").textContent=sentences([LIVE||TRY?"":L.demoChip,L.word[v.answer],L.gloss[v.answer],reasonText]);
+    $("p-ans-announce").textContent=sentences([TRY?TL().sim:LIVE?"":L.demoChip,L.word[v.answer],L.gloss[v.answer],reasonText]);
   }
 }
 function placeArea(){
@@ -2086,6 +2091,7 @@ $("p-rep").addEventListener("click",e=>{const b=e.target.closest("[data-ans]");i
 $("p-rep-undo").addEventListener("click",async()=>{
   if(TRY){tryUndo();return;}
   const id=$("p-rep-undo").dataset.id;if(!id)return;
+  if(!LIVE||!API_BASE||id==="try")return;                         // only a live report on a live build has anything to undo
   try{
     const r=await fetch(API_BASE+"/report/"+id+"/undo",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({device:deviceId()})});
     if(!r.ok)throw new Error("undo "+r.status);
@@ -2596,7 +2602,7 @@ document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
 });
 window.addEventListener("hashchange",()=>{const wasLive=LIVE,wasTry=TRY;const h=parseHash();
   if(TRY){if(!wasTry)enterTry();return;}
-  if(wasTry){exitTry(h.site);if(h.view!==VIEW)setView(h.view);writeHash();return;}
+  if(wasTry){exitTry(h.site,true);if(h.view!==VIEW)setView(h.view);writeHash();return;}
   if(h.site!==SITE){switchSite(h.site);syncTabs();}if(h.view!==VIEW)setView(h.view);
   if(LIVE!==wasLive){setPlay(!reducedMotion&&!LIVE);syncLiveUI();renderPublic();drawMap();drawOverlayCanvas();pollNow();}});
 
