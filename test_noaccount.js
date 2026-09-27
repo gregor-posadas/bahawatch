@@ -139,13 +139,38 @@ const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else co
     await pg6.waitForTimeout(200);
     const prompted=await pg6.evaluate(()=>window.__promptedWith);
     assert(prompted&&/#p\.tv\.s\.BW-H05$/.test(prompted.url),"no share sheet/clipboard: window.prompt fallback shows the link: "+JSON.stringify(prompted));
-    const statusRole=await pg6.evaluate(()=>{
-      const e=document.getElementById('p-share');
-      return e.closest('[role=status]')?true:(document.querySelector('#p-ans-announce[role=status]')?true:null);
-    });
-    // The confirmation must be announced through some role=status element (reuse or its own).
-    assert(statusRole!==undefined,"share confirmation path checked (role=status element present)");
     await b6.close();
+  }
+
+  // Ruling 4 (fix): "Link copied" must survive the playback loop's re-renders (step()->renderPublic()->renderAnswer()
+  // runs ~1/s) and be announced once through a dedicated role=status element, then the label must revert.
+  {
+    const b7=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
+    const ctx7=await b7.newContext({viewport:{width:390,height:844}});
+    const pg7=await ctx7.newPage();const errs7=[];pg7.on('pageerror',e=>errs7.push(e.message));
+    await pg7.goto('file:///home/claude/work/bahawatch_dashboard.html#p.tv.s.BW-H05');await pg7.waitForTimeout(400);
+    await pg7.evaluate(()=>{
+      Object.defineProperty(navigator,'share',{value:undefined,configurable:true});
+      Object.defineProperty(navigator,'clipboard',{value:{writeText:()=>Promise.resolve()},configurable:true});
+    });
+    await pg7.click('#p-share');
+    // Do NOT pause playback: renderAnswer() fires repeatedly during this wait, which is exactly what overwrote
+    // the confirmation before the fix (renderAnswer() used to hard-set textContent=L.share on every call).
+    await pg7.waitForTimeout(1500);
+    const COPIED=["Link copied","Nakopya ang link","Nakopia ti link","Me-kopya ne ing link"];
+    const SHARE_LBL=["Share my place","Ibahagi ang lugar ko","Ipakigbahin ang akong lugar","Iranud ti lugarko","Ipaambit ang akon lugar","Ibahagi me ing lugal ku"];
+    const mid=await pg7.evaluate(()=>({
+      btn:document.getElementById('p-share').textContent,
+      status:document.getElementById('p-share-status').textContent,
+      role:document.getElementById('p-share-status').getAttribute('role'),
+    }));
+    assert(COPIED.includes(mid.btn),"confirmation survives ~1.5s of playback re-renders (visible button text): "+mid.btn);
+    assert(mid.role==="status"&&COPIED.includes(mid.status),"confirmation is announced once via its own role=status element: "+JSON.stringify(mid));
+    await pg7.waitForTimeout(2000);   // ~3.5 s total since the click
+    const after=await pg7.evaluate(()=>document.getElementById('p-share').textContent);
+    assert(SHARE_LBL.includes(after),"button label is restored ~3.5s after the click: "+after);
+    assert(errs7.length===0,"share-confirmation persistence: no page errors: "+errs7.join("; "));
+    await b7.close();
   }
 
   console.log("done");

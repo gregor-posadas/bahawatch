@@ -383,6 +383,7 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
         <p id="p-ans-announce" class="sr-only" role="status" aria-live="polite"></p>
         <button class="p-link p-ans-pick" id="p-ans-pick" hidden></button>
         <button class="p-link p-share" id="p-share" hidden></button>
+        <p id="p-share-status" class="sr-only" role="status" aria-live="polite"></p>
       </section>
       <section class="p-rep" id="p-rep" aria-labelledby="p-rep-q">
         <div class="p-rep-q" id="p-rep-q">May baha ba rito?</div>
@@ -1620,7 +1621,9 @@ function renderAnswer(){
   $("p-ans-q").firstChild.textContent=L.q+" · ";
   $("p-ans-place").textContent=p?p.name:"—";
   const pick=$("p-ans-pick");pick.textContent=L.pickBtn;pick.hidden=!!p;
-  const sh=$("p-share");sh.textContent=L.share;sh.hidden=!p;
+  // "Link copied" must survive the ~1/s re-render from the playback loop (step()→renderPublic()→renderAnswer()) —
+  // shareCopiedUntil keeps the confirmation on screen for its full duration regardless of how many times this runs.
+  const sh=$("p-share");sh.textContent=Date.now()<shareCopiedUntil?L.copied:L.share;sh.hidden=!p;
   placeArea();
   if(!p){
     $("p-answer").dataset.answer="nodata";$("p-ans-word").textContent="";$("p-ans-gloss").textContent="";$("p-ans-reason").textContent=L.pick;$("p-ans-age").textContent="";
@@ -1674,13 +1677,19 @@ $("p-where").addEventListener("click",e=>{
   }
 });
 $("p-ans-pick").addEventListener("click",openWhere);
+const SHARE_COPIED_MS=3000;   // how long "Link copied" stays on the button, surviving the playback loop's re-renders
+let shareCopiedUntil=0;
 $("p-share").addEventListener("click",async()=>{
   const url=shareLink();
   if(navigator.share){try{await navigator.share({title:"BahaWatch",url});return;}catch(e){}}
   try{
     await navigator.clipboard.writeText(url);
-    $("p-share").textContent=A().copied;
-    $("p-ans-announce").textContent=A().copied;   // announce the confirmation through the existing live region (role=status)
+    const L=A();
+    shareCopiedUntil=Date.now()+SHARE_COPIED_MS;
+    $("p-share").textContent=L.copied;             // reflect immediately — don't wait for the next renderAnswer() tick
+    $("p-share-status").textContent=L.copied;       // announce once, via a status element dedicated to this button
+                                                     // (not #p-ans-announce, which dedupes on the answer's own site/place/answer/lang triple)
+    setTimeout(()=>{if(Date.now()>=shareCopiedUntil)$("p-share").textContent=A().share;},SHARE_COPIED_MS+50);
   }catch(e){window.prompt(A().share,url);}   // no share sheet, no clipboard (old browsers): show the link to copy by hand
 });
 
