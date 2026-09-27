@@ -78,6 +78,8 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .c-bar{display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:6px 0}
 [data-view="details"] .c-bar{padding:6px 22px}
 .c-bar[hidden]{display:none}
+/* each campus bar belongs to one view: the simple view's sits inside #public, the Details view's after the header */
+[data-view="public"] header ~ .c-bar{display:none !important}
 .c-back,.c-pick{min-height:48px; display:inline-flex; align-items:center; font-weight:700; font-size:15px}
 .c-back{color:var(--brand)}
 .c-sim{flex-basis:100%; font-size:13px; color:var(--ink); background:var(--warn-bg); border-radius:4px; padding:6px 10px; margin:0}
@@ -1072,6 +1074,13 @@ function resize(){
   applyView();
   drawMap();
 }
+// Re-measure whenever the map's box changes size (moving into the Try panel, a window or display-scale change);
+// otherwise a canvas sized for an old box is stretched by CSS (spec §3.2).
+if(typeof ResizeObserver!=="undefined"){let roF=0;
+  new ResizeObserver(()=>{cancelAnimationFrame(roF);roF=requestAnimationFrame(()=>{
+    const w=document.getElementById("map-wrap"),d=Math.min(window.devicePixelRatio||1,2);
+    if(w.clientWidth&&(Math.round(w.clientWidth*d)!==mapCv.width||Math.round(w.clientHeight*d)!==mapCv.height))resize();});})
+  .observe(document.getElementById("map-wrap"));}
 // every OSM way that carries the selected unit's street name (both Maginhawa units → the whole of Maginhawa)
 function selectedStreetWays(){
   if(!selected)return [];

@@ -119,5 +119,17 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   s=await pg5.evaluate(()=>({live:LIVE,hash:location.hash,playing,flag:document.body.dataset.live}));
   assert(s.live&&s.hash==="#tv/live"&&!s.playing&&s.flag==="1","live build: Try then back returns to live mode (#tv/live, no storm): "+JSON.stringify(s));
   assert(errs.length===0,"no page errors: "+errs.join("; "));
+  // the map re-measures itself when it moves into the Try panel, at any display scale (spec §3.2)
+  for(const dpr of [1.25,1.5])for(const from of ["#uplb","#tv"]){
+    const c2=await b.newContext({viewport:{width:1169,height:873},deviceScaleFactor:dpr});
+    await c2.addInitScript(()=>{try{localStorage.setItem("bw-asked:uplb","1");localStorage.setItem("bw-asked:tv","1");}catch(e){}});
+    const p=await c2.newPage();await p.goto(U+from);
+    await p.waitForFunction(()=>document.body.dataset.ready&&document.body.dataset.ready!=="");await p.waitForTimeout(400);
+    await p.locator('.site-tabs [data-site="try"]:visible').first().click();await p.waitForTimeout(600);
+    const m=await p.evaluate(()=>{const w=document.getElementById('map-wrap'),c=document.getElementById('map'),d=Math.min(devicePixelRatio,2);
+      return {bw:Math.round(w.clientWidth*d),bh:Math.round(w.clientHeight*d),cw:c.width,ch:c.height};});
+    assert(Math.abs(m.bw-m.cw)<=1&&Math.abs(m.bh-m.ch)<=1,`Try map sharp at ${dpr}x from ${from}: box ${m.bw}x${m.bh}, canvas ${m.cw}x${m.ch}`);
+    await c2.close();
+  }
   await b.close();
 })();

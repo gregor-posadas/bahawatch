@@ -70,5 +70,12 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
       return {pwn:document.querySelectorAll('#pwn').length,card:document.querySelector('#house-cards .h-st').textContent,log:document.getElementById('log-list').textContent};});
     assert(r.pwn===0&&/<img id="pwn"/.test(r.card)&&/<img id="pwn"/.test(r.log),"street names with markup are shown as text, never parsed (cards, log, warning)");
     await p2.close();}
+  // each campus bar belongs to one view (Gregor's screenshot: the Details copy showed mid-page in the simple view)
+  {const p4=await ctx.newPage();
+   for(const [h,want] of [["#uplb","public"],["#uplb/details","details"],["#tv",null],["#try",null]]){
+     await p4.goto(U+h);await p4.waitForFunction(()=>document.body.dataset.ready&&document.body.dataset.ready!=="");await p4.waitForTimeout(300);
+     const v=await p4.evaluate(()=>[...document.querySelectorAll('[data-cbar]')].filter(b=>b.getClientRects().length&&getComputedStyle(b).visibility!=="hidden").map(b=>b.closest('#public')?"public":"details"));
+     assert(want?v.length===1&&v[0]===want:v.length===0,`${h}: the campus bars shown are ${JSON.stringify(v)}`);}
+   await p4.close();}
   await b.close();
 })();
