@@ -1,6 +1,6 @@
 # BahaWatch: handoff for a new chat
 
-Last updated: 2026-09-27 (Sunday), after plan Task 5 of 13 (pipeline run on Gregor's PC).
+Last updated: 2026-09-27 (Sunday), after plan Task 7 of 13 (27 site data files built).
 Kept at `docs/superpowers/handoff/BahaWatch_Handoff.md` in the repo and as `claude/BahaWatch_Handoff.md` in the
 "Berkeley PhD" Project. It is refreshed at milestones (after plan Tasks 5, 7 and 13) and whenever work stops mid-plan.
 
@@ -100,8 +100,8 @@ Points 1–3 are live, and so is the "Try reporting" tab. **Point 4 is in progre
 | 3 | FABDEM clip, buildings scan, NOAH, barangays, country outline | **done** (d54413a; NOAH index + numpy reader in Task 5) |
 | 4 | `run_pc.py find/cut` (the PC command line) | **done** (11a0b78) |
 | 5 | **Run on Gregor's PC**; choose outlines; fill centres; bring the cuts in | **done** — cuts for 25 campuses + tv in `inputs/campuses/` (and `…\campuses\_stage_cuts.zip` on the PC) |
-| 6 | Model: grids, placement, card | not started |
-| 7 | Build the 27 site data files | not started |
+| 6 | Model: grids, placement, card | **done** (a3ac853) |
+| 7 | Build the 27 site data files | **done** (b82391c) — `data/*.json` for 27 sites, `data/ph_outline.json`, `places.json` |
 | 8 | Page: one site file at a time, router, old links, test server | not started |
 | 9 | Page: shared flood fill, obstacles, sea, counts | not started |
 | 10 | Page: national map and campus list | not started |
@@ -116,6 +116,11 @@ Points 1–3 are live, and so is the "Try reporting" tab. **Point 4 is in progre
 - Outline choices, e.g. upd r20670730 and uplb w517120243. The wider pattern for QCU found the Quezon City Polytechnic University main campus.
 - LLCC isn't in OpenStreetMap, so it uses the Wikipedia point 10.29297, 123.95040 as a `manual` centre. Gregor was asked to correct it if wrong.
 - The country outline is 70 KB. Task 7 simplifies it further.
+
+**Task 7 rulings:**
+- **File size is measured on the wire:** ≤ 250 KB gzipped, and ≤ 750,000 bytes raw. Dense Manila boxes are over the spec's 450 KB raw even without building dots. Building dots are thinned to fit.
+- **Units 02–08 are kept off campus.** CLSU, UP Diliman and UPLB had several units on campus.
+- **The country outline** was simplified to 33 KB (tolerance 0.02°).
 
 **Before these:** The plan's own rulings are listed in the plan: synthetic fixtures,
 dark pin colours, `#nat-count` as the national status region, and the Task 7/8 allowances.
