@@ -233,7 +233,14 @@ main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
 @media (max-width:900px){[data-view="details"] .to-country{max-width:116px; line-height:1.2; padding:4px 10px; text-align:center}}
 .to-country[hidden]{display:none}
 /* the flood map and all its chrome step aside (and out of the tab order) while the country view is up */
-#map-wrap.country-on > :not(#country){visibility:hidden}
+#map-wrap.country-on > :not(#country):not(canvas){visibility:hidden}
+/* spec §6.1: the flood canvases stay (dimmed, with a loading line) while the detailed map loads, then fade out over 200 ms as
+   it appears (instant under reduced motion); the vector map is opaque, so #country needs no sea of its own under it */
+#map-wrap.country-on > canvas{opacity:0; visibility:hidden}
+#map-wrap.country-on.country-loading > canvas{opacity:.7; visibility:visible}
+@media (prefers-reduced-motion: no-preference){#map-wrap.country-on > canvas{transition:opacity 200ms, visibility 0s linear 200ms}}
+#country.loading,#country[data-gl="1"]{background:transparent}
+#country.loading > :not(.country-note):not(.country-foot){visibility:hidden}   /* not display:none: the map opens at its real size */
 @media (prefers-reduced-motion: reduce){#country-gl{transition:none}}
 aside{display:flex; flex-direction:column; min-height:0; overflow-y:auto; padding:16px 22px 8px 20px; scrollbar-width:thin}
 #banner{display:none; align-items:flex-start; gap:10px; border-radius:7px; padding:11px 13px; margin-bottom:14px; font-weight:600; line-height:1.35; color:var(--ink); font-size:14px; border-left:5px solid transparent}
@@ -3062,7 +3069,7 @@ function countryPullBy(f){
 function countryOut(){
   if(COUNTRY.on||!canCountry())return;
   COUNTRY.on=siteZoomedOut=true;
-  $("country").hidden=false;$("map-wrap").classList.add("country-on");syncCountryUI();
+  $("country").hidden=false;$("map-wrap").classList.add("country-on");ovCv.inert=true;syncCountryUI();   // still seen while loading, never focused
   $("country-back").textContent=NL().backFlood;
   if(COUNTRY.state==="on")countryEnterGL();
   else if(COUNTRY.state==="none"){COUNTRY.state="loading";
@@ -3088,7 +3095,8 @@ function countryEnterGL(){
 function countryBack(silent){
   if(!COUNTRY.on)return;
   COUNTRY.on=siteZoomedOut=false;countryPull=1;COUNTRY.easing=false;countryTok++;
-  $("country").hidden=true;delete $("country").dataset.gl;$("map-wrap").classList.remove("country-on");
+  $("country").hidden=true;delete $("country").dataset.gl;$("country").classList.remove("loading");
+  $("map-wrap").classList.remove("country-on","country-loading");ovCv.inert=false;
   if(!silent){ZOOM.z=ZOOM.min;ZOOM.cx=W/2;ZOOM.cy=H/2;applyView();drawMap();}
   syncCountryUI();
   if(!silent)$("to-country").focus({preventScroll:true});
@@ -3108,11 +3116,16 @@ function countryProj(){
 function countryBoxPx(px){const b=DATA.bbox,[x0,y0]=px(b[0],b[3]),[x1,y1]=px(b[2],b[1]);return {x0,y0,x1,y1};}
 function countryDraw(){
   if(!COUNTRY.on)return;
-  const el=$("country"),w=el.clientWidth,h=el.clientHeight,gl=COUNTRY.state==="on"&&el.dataset.gl==="1",ph=phSite(),L=NL(),px=countryProj();
+  const el=$("country"),w=el.clientWidth,h=el.clientHeight,gl=COUNTRY.state==="on"&&el.dataset.gl==="1",ph=phSite(),L=NL();
+  // loading (the first handover, on a cold library): the flood map stays, with a loading line; no outline yet (spec §6.1)
+  const loading=COUNTRY.state==="loading"||COUNTRY.state==="none";      // "none": the load is about to start
+  el.classList.toggle("loading",loading);$("map-wrap").classList.toggle("country-loading",loading);
+  const note=$("country-note");note.textContent=loading?L.mapLoading:L.mapNote;note.hidden=!loading&&COUNTRY.state!=="off";
+  const cr=$("country-credit");cr.textContent=L.credit;cr.hidden=!gl;         // the tiles' credit, whenever they show
+  if(loading){$("country-pins").innerHTML="";return;}
+  const px=countryProj();
   $("country-land").setAttribute("d",PH_PATH);
   $("country-svg").style.display=!gl&&ph?"":"none";
-  const note=$("country-note");note.textContent=L.mapNote;note.hidden=COUNTRY.state!=="off";
-  const cr=$("country-credit");cr.textContent=L.credit;cr.hidden=!gl;         // the tiles' credit, whenever they show
   const b=countryBoxPx(px),bw=Math.max(b.x1-b.x0,44),bh=Math.max(b.y1-b.y0,44),cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;
   const box=$("country-box"),lab=$("country-label");box.hidden=lab.hidden=!(gl||ph);
   Object.assign(box.style,{left:(cx-bw/2)+"px",top:(cy-bh/2)+"px",width:bw+"px",height:bh+"px"});

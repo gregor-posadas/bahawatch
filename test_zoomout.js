@@ -125,6 +125,54 @@ async function wheelOut(pg){
       assert(await p.evaluate(()=>!siteZoomedOut),"under reduced motion, zooming in until the box fills the view returns to the flood map");}
     await c.close();
   }
+  // finding 2 (whole-branch review): the first handover on a cold library (spec §6.1). While MapLibre loads, the flood map stays
+  // (dimmed) with a loading line, never the whole-country outline; once it is up, the flood canvas fades out (200 ms, none under
+  // reduced motion) onto the site-fitted view eased out 1.5 levels. Back/Escape cancel during loading; a second zoom out loads nothing new.
+  const rendered=id=>{const e=document.getElementById(id);return !!e&&e.getClientRects().length>0&&getComputedStyle(e).display!=="none"&&getComputedStyle(e).visibility!=="hidden";};
+  const floodCv=()=>{const e=document.getElementById('map'),cs=getComputedStyle(e);
+    return {vis:cs.visibility,op:+cs.opacity,fade:cs.transitionProperty.split(", ").map((p,i)=>p+" "+cs.transitionDuration.split(", ")[i]).find(x=>/^(opacity|all) /.test(x))||"none"};};
+  for(const rm of ["no-preference","reduce"]){
+    const c=await b.newContext({viewport:{width:1280,height:900},reducedMotion:rm});
+    await c.addInitScript(()=>{try{localStorage.setItem("bw-asked:tv","1");}catch(e){}});
+    const p=await c.newPage();const lib=[];p.on('request',r=>{if(/maplibre-gl\.mjs/.test(r.url()))lib.push(r.url());});
+    await p.route('**/maplibre-gl.mjs',r=>setTimeout(()=>r.continue(),2500));
+    await p.goto(U+'#tv');await up(p);
+    await p.click('#to-country');await p.waitForTimeout(400);
+    s=await p.evaluate(`(()=>{const rendered=${rendered};const floodCv=${floodCv};
+      return {st:COUNTRY.state,out:siteZoomedOut,cv:floodCv(),svg:rendered('country-svg'),box:rendered('country-box'),label:rendered('country-label'),
+        pins:document.querySelectorAll('#country-pins > *').length,note:rendered('country-note')&&document.getElementById('country-note').textContent,want:NL().mapLoading,
+        back:rendered('country-back'),focus:document.activeElement.id};})()`);
+    assert(s.st==="loading"&&s.out&&s.cv.vis==="visible"&&s.cv.op>0,rm+": while the library loads, the flood map stays in view: "+JSON.stringify(s));
+    assert(!s.svg&&!s.box&&!s.label&&s.pins===0,rm+": while the library loads, no whole-country outline, box or pins: "+JSON.stringify(s));
+    assert(!!s.want&&s.note===s.want&&s.back&&s.focus==="country-back",rm+": while the library loads, a loading line and 'Back to the flood map' (focused): "+JSON.stringify(s));
+    await p.keyboard.press('Escape');
+    s=await p.evaluate(`(()=>{const floodCv=${floodCv};return {out:siteZoomedOut,hidden:document.getElementById('country').hidden,cv:floodCv(),st:COUNTRY.state};})()`);
+    assert(!s.out&&s.hidden&&s.cv.vis==="visible"&&s.cv.op===1,rm+": Escape during loading returns to the flood map: "+JSON.stringify(s));
+    await p.click('#to-country');await p.waitForTimeout(100);
+    assert(await p.evaluate(()=>siteZoomedOut&&COUNTRY.state==="loading")&&lib.length===1,rm+": zooming out again during loading starts no second load: "+lib.length);
+    await p.waitForFunction(()=>COUNTRY.state==="on",null,{timeout:15000});
+    s=await p.evaluate(`(()=>{const floodCv=${floodCv};return {cv:floodCv(),gl:document.getElementById('country').dataset.gl};})()`);
+    assert(s.gl==="1"&&(rm==="reduce"?s.cv.fade==="none"||/ 0s$/.test(s.cv.fade):s.cv.fade==="opacity 0.2s"),rm+": the flood canvas fades out as the map appears ("+(rm==="reduce"?"instantly":"200 ms")+"): "+JSON.stringify(s));
+    await glReady(p);
+    s=await p.evaluate(`(()=>{const rendered=${rendered};const floodCv=${floodCv};const m=COUNTRY.map,el=document.getElementById('country'),want=m.cameraForBounds(siteLL(),{padding:0}),cc=m.getCenter();
+      return {z:m.getZoom(),want:want.zoom-1.5,d:Math.hypot(cc.lng-want.center.lng,cc.lat-want.center.lat),cov:bwCoverage(countryBoxPx(countryProj()),el.clientWidth,el.clientHeight),
+        cv:floodCv(),svg:rendered('country-svg'),box:rendered('country-box'),note:rendered('country-note')};})()`);
+    assert(Math.abs(s.z-s.want)<0.05&&s.d<0.01&&s.cov>0.2&&s.cov<0.9,rm+": once loaded, the view is centred on the site at its fitting zoom, eased out 1.5 levels: "+JSON.stringify(s));
+    assert(s.cv.vis==="hidden"&&s.cv.op===0&&!s.svg&&s.box&&!s.note,rm+": the flood canvas is gone, the box shows, no outline or note: "+JSON.stringify(s));
+    await c.close();
+  }
+  // a load that fails after a while: the outline with the box and the note, as before
+  {const c=await b.newContext({viewport:{width:1280,height:900}});
+   await c.addInitScript(()=>{try{localStorage.setItem("bw-asked:tv","1");}catch(e){}});
+   const p=await c.newPage();await p.route('**/maplibre-gl.mjs',r=>setTimeout(()=>r.abort(),1200));
+   await p.goto(U+'#tv');await up(p);await p.click('#to-country');await p.waitForTimeout(300);
+   s=await p.evaluate(`(()=>{const rendered=${rendered};return {st:COUNTRY.state,svg:rendered('country-svg')};})()`);
+   assert(s.st==="loading"&&!s.svg,"a failing load: no outline while it is still loading: "+JSON.stringify(s));
+   await glReady(p);await p.waitForTimeout(250);                    // the flood canvas's 200 ms fade
+   s=await p.evaluate(`(()=>{const rendered=${rendered};const floodCv=${floodCv};return {st:COUNTRY.state,out:siteZoomedOut,svg:rendered('country-svg'),box:rendered('country-box'),
+     note:rendered('country-note')&&document.getElementById('country-note').textContent,want:NL().mapNote,cv:floodCv().vis};})()`);
+   assert(s.st==="off"&&s.out&&s.svg&&s.box&&s.note===s.want&&s.cv==="hidden","a failing load: the outline with its box and the note: "+JSON.stringify(s));
+   await c.close();}
   // offline: a Philippine site shows the outline with its box; Berkeley shows only the note (plan ruling 7)
   {const c2=await b.newContext({viewport:{width:1280,height:900}});
    await c2.addInitScript(()=>{window.BW_NO_BASEMAP=true;try{for(const k of ["tv","berkeley"])localStorage.setItem("bw-asked:"+k,"1");}catch(e){}});
