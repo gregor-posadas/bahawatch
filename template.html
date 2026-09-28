@@ -342,7 +342,7 @@ pre#api-json{
 
 /* status band: sentence on the left, depth figure on the right */
 /* sentence column flexes, figure column is fixed at the right edge — the figure never moves with sentence length */
-.p-status{display:grid; grid-template-columns:minmax(0,1fr) 580px; gap:12px 40px; align-items:start; padding:14px 0 12px; border-bottom:1px solid var(--line)}
+.p-status{display:grid; grid-template-columns:minmax(0,620px) minmax(580px,1fr); gap:12px 40px; align-items:start; padding:14px 0 12px; border-bottom:1px solid var(--line)}
 .p-status > div:first-child{max-width:620px}
 .p-left{display:flex; flex-direction:column; gap:10px}
 .p-answer{border:2px solid var(--line); border-radius:6px; padding:12px 16px}
@@ -404,11 +404,12 @@ body[data-live="1"][data-view="public"] .p-maplegend, body[data-live="1"][data-v
 .p-where-list[hidden]{display:none}
 .p-where-msg{font-size:16px; font-weight:600; color:var(--ink)}
 .p-where-msg:empty{display:none}
-.p-fig{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:580px}
+.p-fig{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:580px; width:100%}
 .p-fig[hidden]{display:none}
 .p-live-note{font-size:14px; color:var(--ink-2); line-height:1.4; padding-top:2px}
 body[data-live="1"] .p-body{grid-template-columns:1fr}
-.p-fig svg{width:580px; height:auto; display:block}
+#p-figure{width:100%; display:flex; justify-content:center}
+.p-fig svg{width:100%; max-width:1000px; height:auto; display:block}   /* grows with the page */
 .p-fig .f-cap{font-size:14px; font-weight:600; text-align:center; line-height:1.3}
 .p-fig .f-cap small{display:block; font-weight:400; color:var(--ink-2); font-size:12px}
 
@@ -462,6 +463,7 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
 @media (max-width:1100px){
   .p-status{grid-template-columns:1fr; gap:10px 0}
   .p-fig{min-width:0; justify-self:center}
+  .p-fig svg{width:min(100%,680px)}
 }
 @media (max-width:900px){
   .p-foot-in{grid-template-columns:1fr; gap:4px}
@@ -3046,6 +3048,7 @@ let siteZoomedOut=false,countryPull=1,countryPullT=0,countryTok=0;
 const canCountry=()=>ROUTE==="site"&&!TRY&&!!DATA&&!!DATA.bbox;
 const siteLL=()=>{const b=DATA.bbox;return [[b[0],b[1]],[b[2],b[3]]];};
 const phSite=()=>SITE!=="berkeley";
+const countrySet=()=>phSite()?"":"world";   // our tiles cover the Philippines; Berkeley's view uses OpenFreeMap
 function syncCountryUI(){const b=$("to-country");b.textContent=NL().wholeCountry;b.hidden=!canCountry()||COUNTRY.on;
   $("country-back").textContent=NL().backFlood;if(COUNTRY.on){countrySR();countryDraw();}}   // a language change reaches an open view too
 // Screen-reader text (UX profile: every map has it): the group's name, and a description of the region, the site's
@@ -3071,9 +3074,9 @@ function countryOut(){
   if(COUNTRY.state==="on")countryEnterGL();
   else if(COUNTRY.state==="none"){COUNTRY.state="loading";
     const th=curTheme();
-    bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("country-gl"),{bounds:siteLL(),theme:th,reduced:reducedMotion,padding:0,minZoom:2}))
+    bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("country-gl"),{bounds:siteLL(),theme:th,reduced:reducedMotion,padding:0,minZoom:2,styleSet:countrySet()}))
       .then(map=>{COUNTRY.map=map;COUNTRY.state="on";COUNTRY.theme=th;
-        if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme()));COUNTRY.theme=curTheme();}   // switched while it loaded
+        if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme(),countrySet()));COUNTRY.theme=curTheme();}   // switched while it loaded
         map.on("move",countryDrawSoon);map.on("resize",countryDrawSoon);map.on("zoom",countryZoomCheck);
         if(COUNTRY.on)countryEnterGL();},
         ()=>{COUNTRY.state="off";if(COUNTRY.on)countrySR();countryDraw();});
@@ -3118,7 +3121,7 @@ function countryDraw(){
   const loading=COUNTRY.state==="loading"||COUNTRY.state==="none";      // "none": the load is about to start
   el.classList.toggle("loading",loading);$("map-wrap").classList.toggle("country-loading",loading);
   const note=$("country-note");note.textContent=loading?L.mapLoading:L.mapNote;note.hidden=!loading&&COUNTRY.state!=="off";
-  const cr=$("country-credit");cr.textContent=L.credit;cr.hidden=!gl;         // the tiles' credit, whenever they show
+  const cr=$("country-credit");cr.textContent=ph?L.credit:L.credit+" · OpenFreeMap © OpenMapTiles";cr.hidden=!gl;         // the tiles' credit, whenever they show
   if(loading){$("country-pins").innerHTML="";return;}
   const px=countryProj();
   $("country-land").setAttribute("d",PH_PATH);
@@ -3143,7 +3146,7 @@ function countryDraw(){
 }
 let countryF=0;
 const countryDrawSoon=()=>{if(!countryF)countryF=requestAnimationFrame(()=>{countryF=0;countryDraw();});};
-function countryThemeChanged(t){if(COUNTRY.state==="on"&&COUNTRY.theme!==t){COUNTRY.map.setStyle(bwStyleUrl(t));COUNTRY.theme=t;}}
+function countryThemeChanged(t){if(COUNTRY.state==="on"&&COUNTRY.theme!==t){COUNTRY.map.setStyle(bwStyleUrl(t,countrySet()));COUNTRY.theme=t;}}
 $("country-back").addEventListener("click",()=>countryBack());
 $("to-country").addEventListener("click",()=>countryOut());
 $("country").addEventListener("keydown",e=>{if(e.key==="Escape"){e.preventDefault();countryBack();}});

@@ -1,8 +1,10 @@
-// The vector basemap (spec §4.2, §4.3): the vendored MapLibre GL JS opens OpenFreeMap tiles in our own style, with a
+// The vector basemap (spec §4.2, §4.3): the vendored MapLibre GL JS opens our own vector tiles (PMTiles archives in
+// shared/tiles/, built by tools/build_basemap.py — no outside tile server) in our own style, with a
 // hard limit — no WebGL, a failed library or style, or no tile within 8 s, and the caller keeps its outline map.
 // Pure helpers (clustering, box maths, coverage, view fitting) are tested in basemap.test.js; build_html.py inlines
 // this file into the page with its `export`s removed.
 export const BW_LIB = "lib/maplibre-gl-6.11.2/";
+export const BW_PMTILES = "lib/pmtiles-4.5.0/pmtiles.mjs";
 export const BW_TIMEOUT_MS = 8000;
 export const BW_M_PER_DEG_LAT = 110640;                      // pipeline/common.py's constants
 export const BW_BOX_HALF_M = 1500;
@@ -43,9 +45,25 @@ export function bwCampusBox(lat, lon) {
   const dx = BW_BOX_HALF_M / (111320 * Math.cos(lat * Math.PI / 180)), dy = BW_BOX_HALF_M / BW_M_PER_DEG_LAT;
   return [[r6(lon - dx), r6(lat - dy)], [r6(lon + dx), r6(lat + dy)]];
 }
-export function bwStyleUrl(theme) {
+// set "" = our Philippine tiles; "world" = OpenFreeMap (only UC Berkeley's zoomed-out view, outside our tiles).
+export function bwStyleUrl(theme, set) {
   const o = typeof window !== "undefined" && window.BW_BASEMAP_STYLE;
-  return o || "shared/basemap-style" + (theme === "dark" ? "-dark" : "") + ".json";
+  return o || "shared/basemap-style" + (set ? "-" + set : "") + (theme === "dark" ? "-dark" : "") + ".json";
+}
+// A PMTiles archive read with HTTP range requests; a server that ignores Range (sends the whole file with 200) is fine
+// too — the file is kept and sliced.
+export class BwSource {
+  constructor(key) { this.key = key; this.whole = null; }
+  getKey() { return this.key; }
+  async getBytes(off, len, signal) {
+    if (!this.whole) {
+      const r = await fetch(this.key, { signal, headers: { range: "bytes=" + off + "-" + (off + len - 1) } });
+      if (r.status === 206) return { data: await r.arrayBuffer() };
+      if (!r.ok) throw new Error("tiles: " + r.status + " " + this.key);
+      this.whole = await r.arrayBuffer();
+    }
+    return { data: this.whole.slice(off, off + len) };
+  }
 }
 export function bwHasWebGL() {
   try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; }
@@ -70,7 +88,14 @@ export function bwLoadMapLibre() {
     if (window.BW_NO_BASEMAP) return rej(new Error("basemap turned off"));
     if (!bwHasWebGL()) return rej(new Error("no WebGL"));
     const l = document.createElement("link"); l.rel = "stylesheet"; l.href = BW_LIB + "maplibre-gl.css"; document.head.appendChild(l);
-    import("./" + BW_LIB + "maplibre-gl.mjs").then((m) => res(m.Map ? m : m.default), rej);
+    Promise.all([import("./" + BW_LIB + "maplibre-gl.mjs"), import("./" + BW_PMTILES)]).then(([m, pm]) => {
+      const lib = m.Map ? m : m.default;
+      const proto = new pm.Protocol(), arcs = new Map();       // every archive through BwSource
+      proto.tiles = { get: (k) => { if (!arcs.has(k)) arcs.set(k, new pm.PMTiles(new BwSource(k))); return arcs.get(k); },
+                      set: (k, v) => arcs.set(k, v) };
+      lib.addProtocol("pmtiles", proto.tile);
+      res(lib);
+    }, rej);
   });
   return bwLib;
 }
@@ -89,9 +114,11 @@ export function bwOpenMap(lib, container, o) {
     };
     t = setTimeout(() => (gotTile ? settle(map) : fail(new Error("no tile within " + ms + " ms"))), ms);
     try {
-      map = new lib.Map({ container, style: bwStyleUrl(o.theme), bounds: o.bounds, fitBoundsOptions: { padding: o.padding ?? 24 },
+      map = new lib.Map({ container, style: bwStyleUrl(o.theme, o.styleSet), bounds: o.bounds, fitBoundsOptions: { padding: o.padding ?? 24 },
         minZoom: o.minZoom ?? 3, maxZoom: 17, attributionControl: false, dragRotate: false, pitchWithRotate: false,
-        touchPitch: false, fadeDuration: o.reduced ? 0 : 300, cooperativeGestures: !!o.cooperativeGestures, locale: o.locale });
+        touchPitch: false, fadeDuration: o.reduced ? 0 : 300,
+        // our style's glyph and tile paths are relative to the page
+        transformRequest: (url) => (/^[a-z][a-z0-9+.-]*:/i.test(url) ? undefined : { url: new URL(url, location.href).href }), cooperativeGestures: !!o.cooperativeGestures, locale: o.locale });
     } catch (e) { fail(e); return; }
     map.touchZoomRotate.disableRotation(); map.keyboard.disableRotation();
     map.on("error", (e) => { if (!gotTile && !map.isStyleLoaded()) fail(e); });

@@ -31,8 +31,8 @@ test('offline, a data file visited before comes from the cache', async () => {
   const get = load({ 'bahawatch_dashboard.html': HTML, 'data/xu.json': XU });
   assert.equal(await get('https://bw.test/data/xu.json', 'cors'), XU);
 });
-test('the cache name moved to v3 so old shells are cleared', () => {
-  assert.match(fs.readFileSync(__dirname + '/sw.js', 'utf8'), /bahawatch-v3/);
+test('the cache name moved to v4 so old shells are cleared', () => {
+  assert.match(fs.readFileSync(__dirname + '/sw.js', 'utf8'), /bahawatch-v4/);
 });
 test('tiles and fonts from OpenFreeMap are left to the network: never cached, never answered', () => {
   const handlers = {}; let answered = false;

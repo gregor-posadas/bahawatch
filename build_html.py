@@ -9,7 +9,7 @@ from common import read_campuses  # noqa: E402
 tpl = open("template.html", encoding="utf-8").read()
 KEYS = ("id", "short", "name", "campus", "group", "type", "city", "province", "lat", "lon")
 campuses = [{k: r[k] for k in KEYS} for r in read_campuses() if r["lat"] is not None]   # only campuses with a centre
-strip = lambda f: open(f, encoding="utf-8").read().replace("export const ", "const ").replace("export function ", "function ")
+strip = lambda f: open(f, encoding="utf-8").read().replace("export const ", "const ").replace("export function ", "function ").replace("export class ", "class ")
 verdict, flood, basemap = strip("shared/verdict.js"), strip("shared/flood.js"), strip("shared/basemap.js")
 api_base = os.environ.get("BAHAWATCH_API", "")
 sitekey = os.environ.get("TURNSTILE_SITEKEY", "")

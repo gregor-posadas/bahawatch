@@ -48,21 +48,32 @@ class Styles(unittest.TestCase):
             self.assertEqual(json.load(open(os.path.join(ROOT, "shared", name), encoding="utf-8")), B.style(theme), name)
         self.assertEqual(json.load(open(os.path.join(ROOT, "tests", "fixtures", "basemap-offline.json"), encoding="utf-8")), B.fixture())
 
-    def test_openfreemap_tiles_and_fonts(self):
-        s = B.style("light"); src = s["sources"]["openmaptiles"]
-        self.assertEqual((src["type"], src["url"]), ("vector", "https://tiles.openfreemap.org/planet"))
-        self.assertEqual(src["attribution"], "OpenFreeMap © OpenMapTiles Data from OpenStreetMap")
-        self.assertEqual(s["glyphs"], "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf")
+    def test_own_tiles_and_fonts(self):
+        s = B.style("light"); src = s["sources"]["base"]
+        self.assertEqual((src["type"], src["url"]), ("vector", "pmtiles://shared/tiles/ph-base.pmtiles"))
+        self.assertIn("OpenStreetMap", src["attribution"]); self.assertIn("Open Buildings", src["attribution"])
+        self.assertEqual(s["glyphs"], "shared/fonts/{fontstack}/{range}.pbf")
+        for f in ("Noto Sans Regular", "Noto Sans Medium"):
+            self.assertTrue(os.path.exists(os.path.join(ROOT, "shared", "fonts", f, "0-255.pbf")), f)
+        for k, v in s["sources"].items():                     # every archive the style names is in the repo
+            self.assertTrue(os.path.exists(os.path.join(ROOT, v["url"][len("pmtiles://"):])), k)
+        self.assertIn("site-tv", s["sources"]); self.assertIn("site-upd", s["sources"])
         self.assertNotIn("sprite", s)
+
+    def test_world_style_for_berkeley(self):
+        w = B.world_style("light")
+        self.assertEqual(w["sources"]["openmaptiles"]["url"], "https://tiles.openfreemap.org/planet")
+        for theme, name in (("light", "basemap-style-world.json"), ("dark", "basemap-style-world-dark.json")):
+            self.assertEqual(json.load(open(os.path.join(ROOT, "shared", name), encoding="utf-8")), B.world_style(theme), name)
 
     def test_layers(self):
         for theme in ("light", "dark"):
             s = B.style(theme); ids = [l["id"] for l in s["layers"]]
-            for need in ("land", "water", "river", "boundary-province", "road-major", "road-mid", "road-minor", "building", "road-label", "place-label"):
+            for need in ("water", "land", "builtup", "river", "road-major", "road-mid", "road-minor", "building-upd", "road-label", "place-label"):
                 self.assertIn(need, ids, need)
-            self.assertLess(ids.index("water"), ids.index("road-major"))
-            self.assertEqual(next(l for l in s["layers"] if l["id"] == "building")["minzoom"], 14)
-            self.assertEqual(s["layers"][0]["paint"]["background-color"], B.PALETTES[theme]["land"])
+            self.assertLess(ids.index("land"), ids.index("road-major"))
+            self.assertEqual(next(l for l in s["layers"] if l["id"] == "building-upd")["minzoom"], 14)
+            self.assertEqual(s["layers"][0]["paint"]["background-color"], B.PALETTES[theme]["sea"])
 
     def test_sea_is_far_from_flood_hazard_and_creek_colours(self):
         for theme in ("light", "dark"):

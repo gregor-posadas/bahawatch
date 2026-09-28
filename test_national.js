@@ -16,7 +16,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
     await pg.goto(U);await ready(pg,"ph");
     const st=await glUp(pg);
     assert(st===(mode==="vector"?"on":"off"),`${mode}: basemap state ${st}`);
-    if(mode==="outline")assert(await pg.evaluate(()=>!document.getElementById('nat-note').hidden&&document.getElementById('nat-note').textContent==="Detailed map needs an internet connection."),"outline: the note says the detailed map needs an internet connection");
+    if(mode==="outline")assert(await pg.evaluate(()=>!document.getElementById('nat-note').hidden&&document.getElementById('nat-note').textContent==="The detailed map can't be shown on this device."),"outline: the note says the detailed map can't be shown");
     else assert(await pg.evaluate(()=>document.getElementById('nat-note').hidden&&document.body.dataset.natgl==="1"&&getComputedStyle(document.getElementById('nat-svg')).visibility==="hidden"),"vector: the basemap replaced the outline, no note");
     if(mode==="vector")assert(await pg.evaluate(()=>!NATGL.map.cooperativeGestures.isEnabled()),"vector, mouse: no cooperative gestures (the wheel zooms, one drag pans)");
     let s=await pg.evaluate(()=>{
@@ -32,7 +32,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
     assert(s.clusters.length>=1&&s.clusters.every(c=>/^\d+ campuses: .+Zoom in$/.test(c)),`${mode}: crowded pins become a cluster that says how many and which`);
     assert(s.legend.join("|")==="State|Local|Private|Sea",`${mode}: legend: the pin types and the sea: ${s.legend}`);
     // the tiles' credit renders only under the vector map: the outline is not from OpenStreetMap and loads no MapLibre (as rendered, not the attribute)
-    if(mode==="vector")assert(s.creditShown&&s.credit==="© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre",`${mode}: map credits shown`);
+    if(mode==="vector")assert(s.creditShown&&s.credit==="© OpenStreetMap contributors · Open Buildings (Google, Microsoft, VIDA) · MapLibre",`${mode}: map credits shown`);
     else assert(!s.creditShown,`outline: no OpenStreetMap/OpenFreeMap/MapLibre credit under the outline`);
     assert(s.desc==="Map of the Philippines with 25 PhilDev partner campuses: 17 in Luzon, 5 in Visayas, 3 in Mindanao. The campus list has the same campuses.",`${mode}: screen-reader description`);
     assert(s.tabs.join()==="ph*,tv,berkeley,try"&&/PhilDev partner campuses/.test(s.title),`${mode}: tabs and title`);
@@ -159,9 +159,10 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    const s=await pg.evaluate(()=>({z:NATGL.map.getZoom(),want:NATGL.map.cameraForBounds(PH_BOUNDS,{padding:24}).zoom,n:document.querySelectorAll('#nat-pins > *').length}));
    assert(st0==="loading"&&Math.abs(s.z-s.want)<0.05,`back on the tab after the map opened out of sight, it fits the country: ${st0} z${s.z.toFixed(2)} (want z${s.want.toFixed(2)}), ${s.n} pins/clusters`);
    await ctx.close();}
-  // Review Focus 1: the real style with its tiles unreachable: the outline, pins and note within 8 s, no late switch
+  // Review Focus 1: the real style with its tile archives unreachable: the outline, pins and note within 8 s, no late switch
   {const ctx=await b.newContext({viewport:{width:1280,height:900}});
    await ctx.addInitScript(()=>{window.BW_BASEMAP_STYLE="shared/basemap-style.json?real";});
+   await ctx.route('**/*.pmtiles',r=>r.abort());
    const pg=await ctx.newPage();const t0=Date.now();await pg.goto(U);await ready(pg,"ph");
    await pg.waitForFunction(()=>NATGL.state==="off"||NATGL.state==="on",null,{timeout:12000});
    const dt=Date.now()-t0;
@@ -169,6 +170,19 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    assert(s.st==="off"&&s.note&&s.pins>0&&!s.gl&&dt<=10000,`tiles unreachable: the outline, pins and the note after ${dt} ms`);
    await pg.waitForTimeout(3000);
    assert(await pg.evaluate(()=>NATGL.state==="off"&&!document.body.dataset.natgl),"no late switch to the vector map in the same visit");
+   await ctx.close();}
+  // our own tiles (shared/tiles/*.pmtiles): the real style opens with no outside server; UP Diliman shows its buildings
+  {const ctx=await b.newContext({viewport:{width:1280,height:900}});
+   await ctx.addInitScript(()=>{window.BW_BASEMAP_STYLE="shared/basemap-style.json?real";});
+   const pg=await ctx.newPage();const outside=[];pg.on('request',r=>{if(!r.url().startsWith(BASE))outside.push(r.url());});
+   await pg.goto(U);await ready(pg,"ph");
+   await pg.waitForFunction(()=>NATGL.state==="off"||NATGL.state==="on",null,{timeout:15000});
+   assert(await pg.evaluate(()=>NATGL.state==="on"),"the detailed map opens from our own tile files");
+   await pg.evaluate(()=>NATGL.map.jumpTo({center:[121.068,14.652],zoom:15}));
+   await pg.waitForFunction(()=>NATGL.map.areTilesLoaded(),null,{timeout:15000});await pg.waitForTimeout(500);
+   const n=await pg.evaluate(()=>({b:NATGL.map.queryRenderedFeatures({layers:["building-upd"]}).length,r:NATGL.map.queryRenderedFeatures({layers:["road-minor-site-upd"]}).length}));
+   assert(n.b>50&&n.r>10,`UP Diliman at street zoom: building footprints and streets drawn (${n.b} buildings, ${n.r} streets)`);
+   assert(outside.length===0,"no request leaves the site: "+outside.slice(0,3).join(", "));
    await ctx.close();}
   // no WebGL: the outline stays
   {const b2=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox','--disable-webgl','--disable-3d-apis']});
