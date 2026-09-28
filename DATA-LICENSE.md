@@ -13,6 +13,8 @@ are derived from open datasets and remain under their source licences.
 | The `noah` grids and NOAH shares in the Philippine `data/*.json` files (the raw shapefiles are not committed) | UP Project NOAH / UP Resilience Institute flood hazard maps (5-, 25- and 100-year): the provinces the campus boxes fall in (Metro Manila, Laguna, Batangas, Nueva Ecija, Cebu, Lanao del Norte, Misamis Oriental) and any neighbouring province a box reaches | ODbL 1.0. |
 | Barangay names, codes and cells in `data/*.json` and `places.json`; `data/ph_outline.json` (country outline); `sites/*/barangays.geojson` | Philippine Statistics Authority (PSA) and National Mapping and Resource Information Authority (NAMRIA) administrative boundaries, via OCHA HDX (`cod-ab-phl`, <https://data.humdata.org/dataset/cod-ab-phl>) | [Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO)](https://creativecommons.org/licenses/by/3.0/igo/), as stated on the HDX dataset page (confirmed by Gregor, 2026-09-27). |
 | The MMDA passability thresholds and the vehicle-speed context | MMDA Flood Gauge; Mamuyac et al. (2025), *Natural Hazards* 121:14907 | Facts, cited in the README. |
+| Map tiles and fonts on the PhilDev tab and in the zoomed-out views (fetched live, not in the repo) | OpenFreeMap © OpenMapTiles Data from OpenStreetMap | OpenStreetMap data ODbL 1.0; OpenMapTiles schema; attribution shown on the map. |
+| `lib/maplibre-gl-6.11.2/*` | MapLibre GL JS | BSD-3-Clause (`LICENSE.txt` in that folder). |
 
 The FABDEM licence is the most restrictive here: the Philippine site files may
 be shared and adapted for non-commercial purposes only, with attribution and
