@@ -131,5 +131,24 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
     assert(Math.abs(m.bw-m.cw)<=1&&Math.abs(m.bh-m.ch)<=1,`Try map sharp at ${dpr}x from ${from}: box ${m.bw}x${m.bh}, canvas ${m.cw}x${m.ch}`);
     await c2.close();
   }
+  // a phone outline around the answer and the report buttons (spec §5), and the whole neighbourhood in view
+  {const c3=await b.newContext({viewport:{width:1280,height:900}});
+   await c3.addInitScript(()=>{try{localStorage.setItem("bw-asked:tv","1");}catch(e){}});
+   const p=await c3.newPage();await p.goto(U+'#try');await p.waitForFunction(()=>TRY&&document.body.dataset.ready);await p.waitForTimeout(500);
+   let r=await p.evaluate(()=>{const l=document.querySelector('.p-left'),cs=getComputedStyle(l),pill=getComputedStyle(l,'::before'),
+     a=document.getElementById('p-answer').getBoundingClientRect(),q=document.querySelector('#p-rep .p-rep-btns').getBoundingClientRect(),lr=l.getBoundingClientRect();
+     return {bw:cs.borderTopWidth,rad:cs.borderTopLeftRadius,screen:l.clientWidth,pill:pill.content!=="none"&&pill.width==="96px",
+       inside:a.left>=lr.left&&a.right<=lr.right&&q.bottom<=lr.bottom};});
+   assert(r.bw==="12px"&&r.rad==="48px"&&Math.abs(r.screen-390)<=2&&r.pill&&r.inside,"Try: a phone outline (12 px frame, 48 px corners, camera pill) around a 390 px screen holding the answer and the buttons: "+JSON.stringify(r));
+   for(let i=0;i<8;i++)await p.click(i%2?'#try-add-hindi':'#try-add-oo');await p.waitForTimeout(200);
+   r=await p.evaluate(()=>{const b=DATA.bbox,lat=(b[1]+b[3])/2,mpu=(b[2]-b[0])*111320*Math.cos(lat*Math.PI/180)/W;
+     const span=Math.min(view.w,view.h)/view.sc*mpu;
+     const all=tryState.neighbours.every(n=>{const w=lonLatToWorld(n.lon,n.lat),x=view.ox+w.x*view.sc,y=view.oy+w.y*view.sc;return x>=0&&x<=view.w&&y>=0&&y<=view.h;});
+     return {span:Math.round(span),all,n:tryState.neighbours.length};});
+   assert(r.span>=630&&r.span<=770&&r.all&&r.n===8,"Try: the map opens on about 700 m around 22 Malingap St, all 8 pretend neighbours in view: "+JSON.stringify(r));
+   await p.setViewportSize({width:390,height:844});await p.waitForTimeout(300);
+   r=await p.evaluate(()=>({bw:getComputedStyle(document.querySelector('.p-left')).borderTopWidth,sw:document.documentElement.scrollWidth}));
+   assert(r.bw==="0px"&&r.sw<=390,"Try at 390 px: no phone outline (the page already is a phone), no sideways scroll");
+   await c3.close();}
   await b.close();
 })();
