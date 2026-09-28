@@ -18,6 +18,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
     assert(st===(mode==="vector"?"on":"off"),`${mode}: basemap state ${st}`);
     if(mode==="outline")assert(await pg.evaluate(()=>!document.getElementById('nat-note').hidden&&document.getElementById('nat-note').textContent==="Detailed map needs an internet connection."),"outline: the note says the detailed map needs an internet connection");
     else assert(await pg.evaluate(()=>document.getElementById('nat-note').hidden&&document.body.dataset.natgl==="1"&&getComputedStyle(document.getElementById('nat-svg')).visibility==="hidden"),"vector: the basemap replaced the outline, no note");
+    if(mode==="vector")assert(await pg.evaluate(()=>!NATGL.map.cooperativeGestures.isEnabled()),"vector, mouse: no cooperative gestures (the wheel zooms, one drag pans)");
     let s=await pg.evaluate(()=>{
       const pins=[...document.querySelectorAll('#nat-pins .pin')],cl=[...document.querySelectorAll('#nat-pins .pin-cluster')],m=document.getElementById('nat-map').getBoundingClientRect();
       return {n:CAMPUSES.length,shown:pins.length+cl.reduce((a,c)=>a+c.dataset.ids.split(",").length,0),
@@ -181,6 +182,28 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    assert(s.mapTop<s.listTop&&s.sw<=390,"390 px: the map sits above the list, no sideways scroll");
    await pg.click('#nat-list a[data-id="xu"]');await ready(pg,"xu");
    assert(await pg.evaluate(()=>location.hash==="#xu"),"390 px: a list row opens the campus directly");
+   await ctx.close();}
+  // finding 1 (whole-branch review): on a phone, a one-finger drag over the map scrolls the page; moving the map takes two
+  // fingers (MapLibre's cooperative gestures), with its help line in our language
+  {const ctx=await b.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});const pg=await ctx.newPage();
+   await pg.goto(U);await ready(pg,"ph");const st=await glUp(pg);await settle(pg);await pg.waitForTimeout(300);
+   const c0=await pg.evaluate(()=>{const c=NATGL.map.getCenter();return [c.lng,c.lat];});
+   const r=await pg.evaluate(()=>{const m=document.getElementById('nat-map').getBoundingClientRect();return {x:m.left+m.width*0.3,y:m.top+m.height*0.8};});
+   const cdp=await ctx.newCDPSession(pg);
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:r.x,y:r.y}]});
+   for(let i=1;i<=8;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:r.x,y:r.y-i*30}]});await pg.waitForTimeout(16);}
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await pg.waitForTimeout(600);
+   let s=await pg.evaluate(()=>{const c=NATGL.map.getCenter();return {y:scrollY,c:[c.lng,c.lat],coop:NATGL.map.cooperativeGestures.isEnabled()};});
+   assert(st==="on"&&s.coop&&s.y>0&&Math.hypot(s.c[0]-c0[0],s.c[1]-c0[1])<0.01,"390 px touch: a one-finger drag over the map scrolls the page and leaves the map where it was: "+JSON.stringify({st,c0,...s}));
+   const coopText=()=>pg.evaluate(()=>{const k="CooperativeGesturesHandler.",L=NL().coop;
+     return {mobile:(document.querySelector('#nat-gl .maplibregl-mobile-message')||{}).textContent,want:L.mobile,
+       loc:[NATGL.map._locale[k+"WindowsHelpText"],NATGL.map._locale[k+"MacHelpText"],NATGL.map._locale[k+"MobileHelpText"]].join("|"),wantLoc:[L.win,L.mac,L.mobile].join("|")};});
+   s=await coopText();
+   assert(s.mobile===s.want&&s.want==="Use two fingers to move the map"&&s.loc===s.wantLoc,"390 px touch: the two-finger help line is ours (English): "+JSON.stringify(s));
+   await pg.evaluate(()=>scrollTo(0,0));await pg.selectOption('#nat-lang','ceb');await pg.waitForTimeout(150);
+   s=await coopText();
+   assert(s.mobile===s.want&&s.want===await pg.evaluate(()=>NAT_LANGS.ceb.coop.mobile)&&s.loc===s.wantLoc,"390 px touch: a language change rewrites the help line (Cebuano): "+JSON.stringify(s));
+   await pg.selectOption('#nat-lang','en');
    await ctx.close();}
   await b.close();
 })();

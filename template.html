@@ -76,6 +76,8 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 #nat-gl{position:absolute; inset:0; opacity:0; transition:opacity .3s}
 body[data-natgl="1"] #nat-gl{opacity:1}
 body[data-natgl="1"] #nat-svg{visibility:hidden}
+/* MapLibre's two-finger help line (touch screens): white on 60 % black is ≥ 4.5:1 over either sea; 20 px is on the type scale */
+#nat-gl .maplibregl-cooperative-gesture-screen{background:rgba(0,0,0,.6); font-size:20px}
 .nat-pins{position:absolute; inset:0; pointer-events:none; z-index:2}
 .nat-pins > *{pointer-events:auto}
 .pin,.pin-cluster{position:absolute; transform:translate(-50%,-50%); width:48px; height:48px; display:flex; align-items:center; justify-content:center}
@@ -2979,10 +2981,13 @@ function natSelect(id){
 function natGLStart(){
   if(NATGL.state!=="none")return;NATGL.state="loading";
   const th=curTheme();
-  bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("nat-gl"),{bounds:PH_BOUNDS,theme:th,reduced:reducedMotion,padding:24,minZoom:3}))
+  // on a touch screen one finger scrolls the page past the map (it sits above the list on a phone); two fingers move it
+  bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("nat-gl"),{bounds:PH_BOUNDS,theme:th,reduced:reducedMotion,padding:24,minZoom:3,
+    cooperativeGestures:matchMedia("(pointer: coarse)").matches,locale:bwCoopLocale(NL().coop)}))
     .then(map=>{NATGL.map=map;NATGL.state="on";NATGL.theme=th;document.body.dataset.natgl="1";$("nat-credit").hidden=false;
       NATGL.refit=ROUTE!=="ph"||!natBox().clientWidth;              // opened out of sight: its zoom is for a 0-size box
       if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme()));NATGL.theme=curTheme();}   // switched while it loaded
+      bwSetLocale(map,bwCoopLocale(NL().coop));                     // the language may have changed while it loaded
       map.on("move",natPinsSoon);map.on("resize",natPinsSoon);
       if(NAT.sel){const c=CAMPUS_BY_ID[NAT.sel];map.fitBounds(bwCampusBox(c.lat,c.lon),{padding:60,maxZoom:15,duration:0});}
       natPins();},
@@ -3018,6 +3023,7 @@ function natRender(){
   $("nat-legend").innerHTML=["SUC","LUC","Private"].map(t=>`<li><span class="pin-shape pin-${t.toLowerCase()}" aria-hidden="true"></span>${esc(L.typesShort[t])}</li>`).join("")+
     `<li><span class="sea-sw" aria-hidden="true"></span>${esc(L.sea)}</li>`;
   $("nat-credit").textContent=L.credit;$("nat-credit").hidden=NATGL.state!=="on";   // the tiles' credit, only under the tiles
+  if(NATGL.state==="on")bwSetLocale(NATGL.map,bwCoopLocale(L.coop));   // the map's two-finger help line
   for(const [id,k] of [["nat-zin","zin"],["nat-zout","zout"],["nat-home","home"]]){$(id).setAttribute("aria-label",L[k]);$(id+"-tip").textContent=L[k];}
   $("nat-q-l").textContent=L.search;$("nat-foot").textContent=L.foot;$("nat-note").textContent=L.mapNote;
   if(NAT.sel)$("nat-open").textContent=fill(L.open,{short:CAMPUS_BY_ID[NAT.sel].short});

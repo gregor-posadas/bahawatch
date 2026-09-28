@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bwCluster, bwCoverage, bwFitVB, bwCampusBox, bwStyleUrl, bwOpenMap } from './basemap.js';
+import { bwCluster, bwCoverage, bwFitVB, bwCampusBox, bwStyleUrl, bwOpenMap, bwCoopLocale, bwSetLocale } from './basemap.js';
 
 // A minimal stand-in for a MapLibre Map: an event emitter with the handful of members bwOpenMap touches.
 function fakeMap() {
@@ -18,7 +18,7 @@ function fakeMap() {
   return m;
 }
 // `new lib.Map(opts)` must hand back our fake: a constructor that returns an object overrides `this`.
-function fakeLib(map) { return { Map: function FakeMap() { return map; } } }
+function fakeLib(map, seen) { return { Map: function FakeMap(o) { if (seen) seen.opts = o; return map; } } }
 
 test('points closer than the radius share a cluster, in list order, at their mean', () => {
   const g = bwCluster([{ id: 'a', x: 0, y: 0 }, { id: 'b', x: 30, y: 0 }, { id: 'c', x: 100, y: 0 }], 36);
@@ -82,4 +82,35 @@ test('bwOpenMap: a tile then idle before the time limit resolves once, with no d
   assert.equal(map.removed, 0);
   await new Promise((r) => setTimeout(r, 25));          // let the (already-settled) timer fire too
   assert.equal(map.removed, 0);                         // it must not remove an already-resolved map
+});
+
+// finding 1 (whole-branch review): on a phone one finger scrolls the page over the national map; two move the map
+test('bwOpenMap: cooperative gestures and the UI strings are passed through only when asked for', async () => {
+  const seen = {}, map = fakeMap();
+  const loc = bwCoopLocale({ win: 'w', mac: 'm', mobile: 'two fingers' });
+  const p = bwOpenMap(fakeLib(map, seen), {}, { timeout: 15, cooperativeGestures: true, locale: loc });
+  map.emit('sourcedata', { tile: {} }); await p;
+  assert.equal(seen.opts.cooperativeGestures, true);
+  assert.equal(seen.opts.locale['CooperativeGesturesHandler.MobileHelpText'], 'two fingers');
+  const seen2 = {}, map2 = fakeMap();
+  const p2 = bwOpenMap(fakeLib(map2, seen2), {}, { timeout: 15 });
+  map2.emit('sourcedata', { tile: {} }); await p2;
+  assert.equal(seen2.opts.cooperativeGestures, false);   // other callers (the country view) keep one-finger panning
+  assert.equal(seen2.opts.locale, undefined);
+});
+test("bwCoopLocale names MapLibre's three cooperative-gesture strings", () => {
+  assert.deepEqual(bwCoopLocale({ win: 'a', mac: 'b', mobile: 'c' }), {
+    'CooperativeGesturesHandler.WindowsHelpText': 'a', 'CooperativeGesturesHandler.MacHelpText': 'b', 'CooperativeGesturesHandler.MobileHelpText': 'c' });
+});
+test('bwSetLocale updates the strings and rebuilds the gesture screen, which reads them once, only when it is on', () => {
+  const calls = [];
+  const cg = { on: true, isEnabled() { return this.on; }, disable() { calls.push('off'); this.on = false; }, enable() { calls.push('on'); this.on = true; } };
+  const map = { _locale: { keep: 'x', 'CooperativeGesturesHandler.MobileHelpText': 'old' }, cooperativeGestures: cg };
+  bwSetLocale(map, { 'CooperativeGesturesHandler.MobileHelpText': 'bago' });
+  assert.equal(map._locale['CooperativeGesturesHandler.MobileHelpText'], 'bago');
+  assert.equal(map._locale.keep, 'x');
+  assert.deepEqual(calls, ['off', 'on']);
+  cg.on = false; calls.length = 0;
+  bwSetLocale(map, { 'CooperativeGesturesHandler.MobileHelpText': 'again' });
+  assert.deepEqual(calls, []);
 });

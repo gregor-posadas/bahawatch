@@ -50,6 +50,18 @@ export function bwStyleUrl(theme) {
 export function bwHasWebGL() {
   try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; }
 }
+// MapLibre's cooperative-gesture help lines (two fingers to move the map on a touch screen), from our strings.
+export function bwCoopLocale(c) {
+  const k = "CooperativeGesturesHandler.";
+  return { [k + "WindowsHelpText"]: c.win, [k + "MacHelpText"]: c.mac, [k + "MobileHelpText"]: c.mobile };
+}
+// A language change: MapLibre 6 has no public setter for its UI strings, and the gesture screen reads them once when
+// it is built, so update its table and rebuild the screen if it is on.
+export function bwSetLocale(map, loc) {
+  Object.assign(map._locale, loc);
+  const cg = map.cooperativeGestures;
+  if (cg && cg.isEnabled()) { cg.disable(); cg.enable(); }
+}
 let bwLib = null;
 // The library, loaded once; rejects (so the caller keeps its outline) without WebGL or when the files don't load.
 export function bwLoadMapLibre() {
@@ -79,7 +91,7 @@ export function bwOpenMap(lib, container, o) {
     try {
       map = new lib.Map({ container, style: bwStyleUrl(o.theme), bounds: o.bounds, fitBoundsOptions: { padding: o.padding ?? 24 },
         minZoom: o.minZoom ?? 3, maxZoom: 17, attributionControl: false, dragRotate: false, pitchWithRotate: false,
-        touchPitch: false, fadeDuration: o.reduced ? 0 : 300 });
+        touchPitch: false, fadeDuration: o.reduced ? 0 : 300, cooperativeGestures: !!o.cooperativeGestures, locale: o.locale });
     } catch (e) { fail(e); return; }
     map.touchZoomRotate.disableRotation(); map.keyboard.disableRotation();
     map.on("error", (e) => { if (!gotTile && !map.isStyleLoaded()) fail(e); });
