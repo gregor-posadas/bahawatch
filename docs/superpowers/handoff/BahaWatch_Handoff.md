@@ -1,337 +1,235 @@
 # BahaWatch: handoff for a new chat
 
-Last updated: 2026-09-27 (Sunday, evening): **PhilDev UI round 2** is built and reviewed on branch `phildev-ui-round2`,
-waiting for Gregor's review and merge. The nationwide PhilDev prototype (round 1) is merged into `main`.
-Kept at `docs/superpowers/handoff/BahaWatch_Handoff.md` in the repo and as `claude/BahaWatch_Handoff.md` in the
-"Berkeley PhD" Project. It is refreshed at milestones (after plan Tasks 5, 7 and 13) and whenever work stops mid-plan.
+Last updated: 2026-09-28, 2 a.m. Pacific. **PhilDev UI round 2 is live on GitHub Pages** (`main` at `efbb216`, pushed by
+Gregor 2026-09-28 00:05). A **fix on top** (maps no longer give up while the page is hidden; §3 item 7) is committed on
+`phildev-ui-round2` and sent as a small bundle; check `git ls-remote https://github.com/gregor-posadas/bahawatch` to see
+whether Gregor has pushed it.
+
+Kept as `claude/BahaWatch_Handoff.md` in the "Berkeley PhD" Project. The repo copy
+(`docs/superpowers/handoff/BahaWatch_Handoff.md`) is older and should be replaced with this text and committed in the
+next session.
 
 ---
 
 ## 1. How to resume in a new chat
 
-1. **Start the chat inside the "Berkeley PhD" Project.** That way this document, the spec and the plan are readable
-   from the Project.
-2. **Attach `bahawatch.bundle`** from your Downloads. It is the whole git history of `main` (and of
-   `phildev-ui-round2` while that branch is open). The newest copy is the one Claude sent last in the previous chat.
-3. **Link the chat to your computer** (desktop app → "Link to this computer") if the work needs your PC.
-   The pipeline step (plan Task 5), and re-staging the campus cuts, both need it.
-4. **Paste this as the first message:**
+1. **Start the chat inside the "Berkeley PhD" Project**, so this document is readable.
+2. **Link the chat to your computer** (desktop app, "Link to this computer") only if the work needs files on your PC
+   (rebuilding the map tiles or the campus cuts does).
+3. **Paste this as the first message:**
 
-> Continue BahaWatch from the handoff document `claude/BahaWatch_Handoff.md` in this Project (read it first, all
-> of it). Restore the repo from the attached `bahawatch.bundle` into `/home/claude/work` (branch `main`, or
-> `phildev-ui-round2` if it isn't merged yet). Next I want to: [say what].
+> Continue BahaWatch from the handoff document `claude/BahaWatch_Handoff.md` in this Project (read it first, all of
+> it). Clone the repo from GitHub into `/home/claude/work`. Next I want to: [say what].
 
-**What the new chat should do first:**
+**What the new chat does first.** The repo is public and GitHub is reachable from the workspace, so no bundle is needed
+once Gregor has pushed:
 
 ```bash
-git clone -b main /mnt/user-data/uploads/bahawatch.bundle /home/claude/work
-# if round 2 is not merged yet: cd /home/claude/work && git fetch /mnt/user-data/uploads/bahawatch.bundle phildev-ui-round2:phildev-ui-round2
+git clone https://github.com/gregor-posadas/bahawatch /home/claude/work
 cd /home/claude/work && git config user.name "Gregor" && git config user.email "gregor500man.gerp@gmail.com"
-git branch -a && git log --oneline -12
+git log --oneline -5          # main should be at efbb216 or later
 ```
 
-**Restore the ignored folders.** These are not in git, so a new container lacks them:
+If `main` is still at `9bf8529` (push not done), ask Gregor to attach `bahawatch-round2.part0/1/2.bin` (or the rejoined
+`bahawatch-round2.bundle`) and run `git fetch /mnt/user-data/uploads/bahawatch-round2.bundle phildev-ui-round2:phildev-ui-round2`
+after the clone.
 
-- `inputs/noah/`: the Metro Manila NOAH shapefiles that Teachers Village uses. Copy the `MetroManila_Flood_{5,25,100}year`
-  shapefiles out of the NOAH zips in `Nationwide Update` (`5yr/MetroManila.zip` and so on) into `inputs/noah/`.
-- `inputs/campuses/`: the per-campus cuts (after Task 5). Stage `…\bahawatch-data\campuses\_stage_cuts*.zip` from
-  your PC and unzip it into `inputs/campuses/` (plan Task 5 Step 8). Your PC keeps them, so the pipeline need not re-run.
-
-**Also:**
-
-- **Python packages:** `pip install --break-system-packages -q duckdb pyarrow osmium shapely` (rasterio, pyproj, pyshp,
-  scipy and numpy are usually present). Node 22 and Playwright are present, with Chromium at `/opt/pw-browsers/chromium`.
-- **The execution ledger** (`.superpowers/sdd/…/progress.md`) is git-ignored and does not survive. Section 3 below and the
-  commit messages are the record. Start a fresh ledger whose first line names the plan, and copy in the rulings from §3.
+**Not in git (a new container lacks these; needed only to rebuild data or tiles):**
+- `inputs/noah/`: Metro Manila NOAH shapefiles (from the NOAH zips in `Nationwide Update`).
+- `inputs/campuses/`: the per-campus cuts. Stage `…\bahawatch-data\campuses\_stage_cuts*.zip` from the PC and unzip.
+  Needed to rebuild `shared/tiles/site-<id>.pmtiles`.
+- `inputs/ph_land_detailed.json`: PSA admin0 simplified to 0.0002°, made from `_phl_admin0.*` in
+  `bahawatch-data/campuses/`. Needed to rebuild `ph-land.pmtiles`.
+- tippecanoe: build from source (`git clone https://github.com/felt/tippecanoe`, `make`); it was at `/tmp/tippecanoe-src/`.
+- The national inputs for `ph-base.pmtiles`: `_national_osm.geojsonl` and `_built_density.csv` in
+  `Nationwide Update/bahawatch-data/campuses/` on the PC.
+- Python: `pip install --break-system-packages -q duckdb pyarrow osmium shapely`. Node 22 and Playwright are present,
+  Chromium at `/opt/pw-browsers/chromium`.
 
 ---
 
 ## 2. The project in one page
 
 **BahaWatch** is Gregor's flood dashboard. It combines low-cost household water-level sensors with a terrain-fill flood
-model, and answers residents' question **"Babaha ba?"** ("Will it flood?") for the next hour, at their own street or
-barangay.
+model and answers residents' question **"Babaha ba?"** ("Will it flood?") for the next hour, at their street or barangay.
 
 | What | Where |
 |---|---|
-| Public site (GitHub Pages) | https://gregor-posadas.github.io/bahawatch/ |
-| Repo | `gregor-posadas/bahawatch` (Gregor pushes; Claude never does) |
-| Gregor's clone on Windows | `C:\Users\grego\bahawatch` |
-| Private demo artifact | https://claude.ai/artifact/Mjsm9genvWF9sFdXxuKis9 (update in place; read it first) |
+| Public site (GitHub Pages, serves `main`) | https://gregor-posadas.github.io/bahawatch/ (`index.html` redirects to `bahawatch_dashboard.html`) |
+| Repo (public) | `gregor-posadas/bahawatch`. Gregor pushes; Claude has no GitHub credentials |
+| Gregor's clone on Windows | `C:\Users\grego\bahawatch` (SSH key set up) |
+| Private demo artifact | https://claude.ai/artifact/Mjsm9genvWF9sFdXxuKis9 (version 34; update in place) |
 | Flowchart artifact (the answer rule) | https://claude.ai/artifact/6EmnCVpoKj743RrE9PSFfL |
 | Data folder on Gregor's PC | `C:\Users\grego\OneDrive\Desktop\Research\BahaWatch\Nationwide Update` (device_bash: `$HOME/mnt/Nationwide Update`) |
 
-**Deploy.** Claude makes `git bundle create /mnt/user-data/outputs/bahawatch.bundle main` (plus the branch while one is open)
-and sends it. Gregor then runs, in PowerShell:
+**Deploy (how Gregor gets commits onto GitHub).**
+- Files sent to Gregor are capped at **30 MB**. Send a bundle of only the new commits
+  (`git bundle create /mnt/user-data/outputs/bw.bundle origin-main-sha..<branch>`). Code-only rounds are small.
+  If it is over 30 MB, split it (`split -b 28M -d -a 1 bw.bundle bw.part`, rename to `.bin`) and give the SHA-256.
+- Round 2 went out as three parts. The PowerShell Gregor was given:
 
 ```powershell
-cd $HOME\bahawatch
-git pull "$HOME\Downloads\bahawatch.bundle" main
-git push
+cd $HOME\Downloads
+cmd /c copy /b bahawatch-round2.part0.bin+bahawatch-round2.part1.bin+bahawatch-round2.part2.bin bahawatch-round2.bundle
+(Get-FileHash bahawatch-round2.bundle).Hash   # 58FC9173BE6DB7E862E5867D099923D9AA503694EE77F3C7A00C95939756A94C
+cd C:\Users\grego\bahawatch
+git checkout main
+git pull
+git fetch $HOME\Downloads\bahawatch-round2.bundle phildev-ui-round2:phildev-ui-round2
+git merge --ff-only phildev-ui-round2
+git push origin main phildev-ui-round2
 ```
 
-**The original four-point request:**
-1. The "Babaha ba?" next-hour answer.
-2. Waze-style reports with no login (yes / no / not sure, no photos).
-3. No accounts.
-4. A nationwide Philippines prototype for PhilDev showing "what a partnership would look like" at all 25 PhilDev partner
-   institutions.
+- **Giving Claude push access** was discussed 2026-09-28 and not set up. Pushing from his PC stays the default.
 
-All four points are done; point 4 is live once Gregor pushes the merged `main` (§3).
+**The original four-point request** (all done): the "Babaha ba?" answer; Waze-style reports with no login; no accounts;
+a nationwide PhilDev prototype at all 25 partner campuses.
 
 ---
 
-## 3. Where the work is now: PhilDev UI round 2 (branch `phildev-ui-round2`)
+## 3. Round 2 and the follow-up changes (branch `phildev-ui-round2`, 33 commits on `main` 9bf8529)
 
-| Item | Status | File (repo) | PDF sent |
-|---|---|---|---|
-| UX profile | written 2026-09-27 | `.ux-profile.md` (and the "UI/UX skills" block in `CLAUDE.md`) | — |
-| Design spec | approved 2026-09-27 | `docs/superpowers/specs/2026-09-27-phildev-ui-round2-design.md` | BahaWatch_PhilDev-UI-Round2_Spec_2026-09-27.pdf |
-| Implementation plan | approved 2026-09-27 (incl. ruling 1, vendoring MapLibre); **execution: subagent-driven** | `docs/superpowers/plans/2026-09-27-phildev-ui-round2.md` | BahaWatch_PhilDev-UI-Round2_Plan_2026-09-27.pdf |
-| Build report | written | `docs/superpowers/reports/2026-09-27-phildev-ui-round2-build-report.md` | BahaWatch_PhilDev-UI-Round2_Build_Report_2026-09-27.pdf |
-| Branch | all 8 tasks done, each reviewed; final whole-branch review done and its fixes in; **waiting for Gregor's review, then merge** | — | — |
-| Private demo | updated (version 27) with the vendored MapLibre files | — | — |
+**Planned round 2** (spec, plan and build report in `docs/superpowers/{specs,plans,reports}/2026-09-27-phildev-ui-round2*`,
+PDFs sent): fixes, six-language national and campus text, visual pass, PhilDev tab as a full-window map, site maps that
+zoom out to the country, Try reporting in a phone outline. Reviewed per task and as a whole branch; build report written.
 
-**What round 2 did (Gregor's list):** stray "‹ All campuses · UPLB" bar and yellow strip gone; Try map sharp at any
-display scale; national and campus text in all six languages, with `<html lang>` and `translate="no"` when not English so
-Chrome's translation doesn't fight ours; PhilDev tab is one screen — a full-window map (MapLibre + OpenFreeMap vector
-tiles: roads, buildings, a coloured sea; smooth zoom; clusters; fly-to with the campus box and "Open …") beside a
-two-line campus list, no "Pilot sites"/"Try reporting"/"‹ All campuses"; every site map zooms out to the whole country
-("Whole country", "Back to the flood map", Escape); pages widen to 1600 px; type pass (400/600/700, 12–31 px scale,
-nothing below 12 px); sea colour on campus maps; Try reporting inside a CSS phone outline, opening on ~700 m.
+**Gregor's follow-up changes** (fast mode, no spec or report; he said "just change the code now, I'll ask for the detailed
+review and reports"). Commits `62a9601` → `efbb216`:
 
-**Progress:** Tasks 1–7 complete (commits 35d3139..70ed71d); Task 8 docs, UX audit (1 hard fail fixed), final review
-(0 Critical, 4 Important + 1 re-graded — all fixed; one fix reverted, below), build report, demo, bundle — done.
+1. **Own vector tiles, no outside tile server** (`62a9601`). PMTiles built with tippecanoe by `tools/build_basemap.py`:
+   - `shared/tiles/ph-base.pmtiles` (~13.9 MB, z0–11): built-up density from Open Buildings, main roads, rivers, places;
+   - `shared/tiles/ph-land.pmtiles` (~4.3 MB, z0–13): land polygon and coastline lines (PSA admin0);
+   - `shared/tiles/site-<id>.pmtiles` (26, z12–15): streets, waterways, buildings per site.
+   - Fonts in `shared/fonts/` (Noto Sans, OFL). pmtiles 4.5.0 bundled to `lib/pmtiles-4.5.0/pmtiles.mjs`.
+   - OpenFreeMap is now used only for the UC Berkeley country fallback (`basemap-style-world*.json`).
+   - The flood figure grows with the page.
+2. **Partnership card removed** from campus pages (`d6cb878`).
+3. **One map from country to street** (`4710036`): a MapLibre map sits under the flood canvases and follows their camera;
+   sensors fade out when zoomed out and back in at campus zoom; other campuses show as pins; units on the national map.
+4. **Receding water, wheel, coastline, country-wide typhoon** (`b29d00e`, `aa1533c`): "Oo" plus a "Receding" chip when a
+   wet sensor falls ≥ 2 cm/h; wheel over HTML pins zooms the map; black coastline; "Simulate a typhoon" on the PhilDev map
+   floods all campuses at once.
+5. **Campus pages pick the weather** (`7b911a0`): "Simulated weather: Dry day / Habagat rain / Typhoon" above the map,
+   in step with Details; "typhoon" wording throughout; UC Berkeley map restored (own canvas base, not GL); national map
+   lets go of a selected campus (zoom < 8, off view, empty click, Escape) and keeps the Philippines in view; iPhone
+   proportions for the Try phone.
+6. **Simulation timeline on campus pages** (`efbb216`): play/pause, simulated PHT clock, scrub bar beside the weather
+   buttons (captions above both groups so they share one row at 1280 px; wraps under at 390 px); one clock with Details;
+   no speed buttons (plays at the Details speed). New strings `simPlay`, `simPause`, `simTimeline`, `simClock` in six
+   languages (non-English marked for review).
 
-**Rulings to know** (full list in the build report §4):
-- MapLibre GL JS 6.11.2 is vendored in `lib/maplibre-gl-6.11.2/` (Gregor approved), not jsDelivr.
-- Light sea `#d6ddde`, dark `#1f2c35` (ΔE2000 ≥ 15 from the flood blues, NOAH purples, creek blue).
-- The 8 s rule: the outline map stays if no tile arrives within 8 s; if a tile arrived, the vector map is kept.
-- Below 900 px a list row opens the campus; at ≥ 900 px it flies the map and shows "Open …".
-- The country view carries the OSM/OpenFreeMap credit and a screen-reader description ("campuses in view, out of 25").
-- On touch screens the national map needs two fingers to move (one finger scrolls the page).
-- **Reverted:** "only the list scrolls" at ≥ 900 px — it shrank the list to a few pixels on landscape phones (932×430).
-  The left column scrolls instead; re-do it with a min-height condition and a short-screen test.
+7. **Maps wait while the page is hidden** (2026-09-28, after the push). Gregor saw "The detailed map can't be shown on
+   this device" on every map a few hours after it worked. Cause: a page loaded while not on screen (background tab, tab
+   restored after sleep) draws no frames, so MapLibre asks for no tiles and `bwOpenMap`'s 8 s limit rejected every map
+   until a reload. Fix in `shared/basemap.js`: the limit counts only while `document.visibilityState` is not hidden and
+   restarts when the page comes back. Tests: two in `shared/basemap.test.js`, and `test_hidden.js` (fails on the old code
+   with exactly that note). If a user still sees the note after a visible reload, suspect the browser's WebGL (check
+   `chrome://gpu`).
 
-**Check on the live site after the push** (couldn't be seen here — the proxy blocks OpenFreeMap):
-- the PhilDev tab loads the vector map (GitHub Pages must serve `.mjs` as JavaScript);
-- dark mode on the vector map; buildings vs roads at street zoom;
-- the zoom-out on a campus page.
-
-**Privacy (for the PhilDev counsel check):** every visitor's browser now requests map tiles and fonts from
-`tiles.openfreemap.org`, which sees their IP address and the map area viewed. BahaWatch stores nothing new.
-
----
-
-## 3a. Round 1: the nationwide PhilDev prototype (merged)
-
-**Status and documents:**
-
-| Item | Status | File (repo) | PDF sent |
-|---|---|---|---|
-| Design spec | approved 2026-09-27 | `docs/superpowers/specs/2026-09-27-philippines-phildev-campuses-design.md` | BahaWatch_PhilDev-Campuses_Spec_2026-09-27.pdf |
-| Implementation plan | approved; **execution: Native** | `docs/superpowers/plans/2026-09-27-philippines-phildev-campuses.md` | BahaWatch_PhilDev-Campuses_Plan_2026-09-27.pdf |
-| Branch | `phildev-campuses`, merged into `main` 2026-09-27 | — | — |
-
-**Progress table.** Claude updates this at each refresh. "Done" means committed on the branch; check `git log`.
-
-| Task | What | Status |
-|---|---|---|
-| 1 | Campus list (`pipeline/campuses.csv`) and box maths | **done** (a239034) |
-| 2 | OSM passes (campus outlines; streets and creeks) | **done** (f44047a; faster streets pass in Task 5) |
-| 3 | FABDEM clip, buildings scan, NOAH, barangays, country outline | **done** (d54413a; NOAH index + numpy reader in Task 5) |
-| 4 | `run_pc.py find/cut` (the PC command line) | **done** (11a0b78) |
-| 5 | **Run on Gregor's PC**; choose outlines; fill centres; bring the cuts in | **done** — cuts for 25 campuses + tv in `inputs/campuses/` (and `…\campuses\_stage_cuts.zip` on the PC) |
-| 6 | Model: grids, placement, card | **done** (a3ac853) |
-| 7 | Build the 27 site data files | **done** (b82391c) — `data/*.json` for 27 sites, `data/ph_outline.json`, `places.json` |
-| 8 | Page: one site file at a time, router, old links, test server | **done** (9fb002a) |
-| 9 | Page: shared flood fill, obstacles, sea, counts | **done** (b87a88d) |
-| 10 | Page: national map and campus list | **done** (b9af59e) |
-| 11 | Page: campus bar, simulation label, card, service worker | **done** (d42d8fa) |
-| 12 | Accessibility, speed and size checks | **done** (e99ad3c) |
-| 13 | Docs, QR codes, screenshots, final review, build report PDF, demo, bundle | **done** (8a8873c … f7eec65, plus the handoff commit) |
-
-**Status:** Gregor reviewed and approved on 2026-09-27; the branch is merged into `main` and `phildev-campuses` is deleted.
-His answers: LLCC stays on the Wikipedia point; the size budget is ≤ 250 KB gzipped (spec amended); the PSA/NAMRIA
-boundaries are CC BY-IGO (in `DATA-LICENSE.md` and the national-map footer). Nothing from this plan is left except
-the deferred minors below and §6.
-
-**Task 13 and final-review rulings and fixes:**
-- **Units stay ≥ 300 m inside the 3 km box** (the screenshots showed units clipped at the map edge or under the legend or
-  credits); `check_site_data.py` enforces it. All 25 campuses were rebuilt; spacing is still 300 m everywhere.
-- **The final reviewer (fresh, most capable model) found 0 Critical and 4 Important; all fixed test-first:** no sideways
-  scroll at 390 px in campus details; one shared language for the national map and all campuses (`bw-lang:ph`; the pilots
-  keep their own); OSM street names escaped in cards, log and warning; the Cebu 0 % NOAH shares now read "no hazard zone
-  mapped in this area" (checked on the PC: the Cebu 5-/25-yr maps have no zone near Metro Cebu).
-- **Own finding, also on the live site:** the details view's eight unit cards were squeezed to 2 px by the side panel; fixed.
-- **Deferred minors from the final review:** no sea legend entry; `test_obstacles` sea check runs on sites without sea;
-  two spec §7.1 checks missing from the checker (both hold today); where-dialog unfocused after Try → All campuses →
-  Teachers Village; `md_to_pdf.py` hard-codes its cwd.
-- **Copernicus row kept in `DATA-LICENSE.md`** for the two old GeoTIFFs still in the repo.
-
-**Before these:** The plan's own rulings are listed in the plan: synthetic fixtures,
-dark pin colours, `#nat-count` as the national status region, and the Task 7/8 allowances.
-
-**Decisions Gregor made for point 4** (spec §2):
-
-- **Depth and coverage:** all 25 campuses at full depth, each covering the campus plus its neighbours in a 3 km box.
-- **Units:** placed automatically only, 8 per campus, one on campus.
-- **Terrain:** FABDEM bare earth for all Philippine sites, including Teachers Village and UP Diliman; Berkeley keeps USGS 1 m.
-- **Buildings** are obstacles: a cell that is ≥ 75 % built blocks water, and streets and creeks never block.
-- **Loading:** the page opens on a national map and loads one campus file at a time. Pilot sites (Teachers Village, UC
-  Berkeley) and the Try reporting tab stay.
-- **UP Diliman** becomes a normal campus page (`#upd`), and old `#diliman` links redirect there.
-- **Where the cutting runs:** on Gregor's PC, only after plan approval (given 2026-09-27). It reads the downloads and writes
-  only under `bahawatch-data/campuses/`.
-- **The three spec notes Gregor accepted:**
-  - "Central Luzon University" is read as Central Luzon State University;
-  - USC uses the Talamban campus;
-  - UMak's city is Taguig.
-
-**Main-campus picks and ids** are in the spec §4 table. Ids are lowercase letters only: `bsu clsu cmu dlsu feutech jru mapua
-plp ptc pup qcu sti udm umak ust upd uplb ctu usc llcc mcc upc msuiit ustp xu`.
+**Still to do for round 2:**
+- **Push the hidden-page fix**, then **check the live site**: tiles and fonts load (`.pmtiles` range requests, `.mjs` served as
+  JavaScript), dark vector style, campus zoom-out, the new timeline. Claude has not seen the real dark style or the demo in
+  a signed-in browser.
+- When Gregor asks: the detailed review and reports (PDF) for the follow-up changes, and a refreshed build report.
+- Gregor said more feedback items are coming.
 
 ---
 
 ## 4. Gregor's preferences and constraints (apply always)
 
-**Accuracy and cost**
-- Accuracy first ("as true to reality as possible"); state limits honestly.
-- $0: free tiers only.
-
-**Documents**
-- Specs, plans and reports go out **as PDF** too (`python3 tools/md_to_pdf.py <md> <pdf>`).
-
-**Accessibility, in all work**
-- Contrast ≥ 4.5:1 for text.
-- 48 px tap targets.
-- Shape as well as colour.
-- Screen-reader text.
-- No sideways scroll at 390 px.
-
-**Figures**
-- Figures follow Jack Baker's guidance. The categorical palette, in order: #385F96, #CF5921, #9EB8DB, #E7B800, #800000.
-- Crameri colormaps (Davos for sequential, Vik for diverging); never rainbow.
-- Figures must stay readable in grayscale.
-- Check with a colour-blind simulation.
-
-**His computer and approvals**
-- Windows PC with PowerShell.
-- Deploying (GitHub, Cloudflare) or publishing needs his approval; Claude prepares the bundle and he pushes.
-- Never send his email address to outside services.
-
-**Workflow**
-- Superpowers: brainstorming → spec (+PDF) → writing-plans (+PDF) → execution. Round 1 ran **Native**; round 2 ran
-  **subagent-driven** (a fresh implementer and reviewer per task). The whole-branch review runs at the end.
-- UI work follows `.ux-profile.md` (custom look: subway signage on warm paper; WCAG AA + 48 px; plain voice, sentence
-  case; no emoji; the 6 banned patterns) and ends with the `ux-audit` skill.
-
-**Commits**
-- Author: `Gregor <gregor500man.gerp@gmail.com>` (set in the repo config).
-- The second `-m` of every commit:
-  `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and a line `Claude-Session: https://claude.ai/code/session_01ERMBTgFv3dco765efQ5BjG`.
-  A new chat uses its own session link if its system reminder gives one.
+- **Accuracy first**, honest limits; **$0** (free tiers only).
+- **Documents:** specs, plans and reports also as PDF (`python3 tools/md_to_pdf.py <md> <pdf>`), but in fast mode only
+  when he asks.
+- **Accessibility in all work:** text contrast ≥ 4.5:1; 48 px targets; shape as well as colour; screen-reader text; no
+  sideways scroll at 390 px.
+- **UI:** `.ux-profile.md` ("subway signage on warm paper"; sentence case; no emoji; glyphs only ☾ ☀ ▾ ‹ ⌂ + −; weights
+  400/600/700; sizes 12/14/16/20/25/31 (+39); nothing under 12 px, 12 px only for credits, timestamps, helper lines).
+- **Figures:** Jack Baker palette (#385F96, #CF5921, #9EB8DB, #E7B800, #800000), Crameri colormaps, grayscale-safe,
+  colour-blind check.
+- **His PC:** Windows, PowerShell. Via the bridge: read only the downloads in `Nationwide Update`; write only under
+  `bahawatch-data/campuses/`; never delete.
+- **Approvals:** deploying (GitHub, Cloudflare) or publishing needs his yes. Never send his email to outside services.
+- **Commits:** `git -c user.name=Gregor -c user.email=gregor500man.gerp@gmail.com commit -m "<subject>" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` +
+  newline + `Claude-Session: <this chat's session link>"`. Never push.
 
 ---
 
 ## 5. Technical reference
 
-**Build.**
-- `template.html` is the only page source. `build_html.py` builds `bahawatch_dashboard.html` (env `OUT`, `BAHAWATCH_API`,
-  `TURNSTILE_SITEKEY`).
-- Before plan Task 8, site data was embedded from `data.json`, `data_diliman.json` and `data_berkeley.json`. From Task 8,
-  the page fetches `data/<site>.json` and embeds only the campus list and the country outline.
-- `build_data.py`: `SITE=<id> python3 build_data.py`, with config in `sites.py`.
-- `tools/build_places.py` writes the places: `places.json` for the Worker, plus each data file after Task 7.
+**Build.** `template.html` is the only page source; `python3 build_html.py` writes `bahawatch_dashboard.html`
+(placeholders `__CAMPUSES__`, `__PH_OUTLINE__`, `__NAT_I18N__`, `/*__VERDICT_JS__*/`, `/*__FLOOD_JS__*/`,
+`/*__BASEMAP_JS__*/`). Site data: `data/<id>.json` (25 campuses 200×200, tv 200×177, berkeley 240×180).
+National/campus strings: `i18n/nat.json` (compact format: keep 1-space language indent, 2-space keys).
 
-**The answer rule** is `shared/verdict.js`, a pure function shared by the page and the Worker.
-- Constants: `FRESH_MIN 20`, `WET_CM 5`, `TRACE_CM 1`, `LOOKAHEAD_MIN 60`, `REPORTS_YES 3`, `REPORT_RADIUS_M 1000`,
-  `DRY_SENSOR_M 500`, `RAIN_YELLOW 7.5`, `RAIN_ORANGE 15`.
-- Order:
-  1. stale data;
-  2. a sensor here, wet now (the deepest) or soon (the soonest), or upstream within 60 min → **Oo**;
-  3. 3+ phones → **Baka** (reports alone never say Oo);
-  4. rain in a NOAH zone, or heavy rain → Baka;
-  5. 1–2 reports → Baka;
-  6. a trace of 1–4 cm → Baka;
-  7. otherwise **Hindi** (`clear` / `clear_no_sensor`).
-- Place ids: `<site>:s:<sensor>` and `<site>:b:<pcode>`. Share links: `#p.<site>.<s|b>.<code>`.
+**Maps.**
+- MapLibre GL JS 6.11.2 vendored in `lib/maplibre-gl-6.11.2/`. `shared/basemap.js`: `BwSource` (HTTP range requests,
+  whole-file fallback on a 200), `bwStyleUrl(theme,set)`, `bwOpenMap`.
+- Styles from `tools/basemap_style.py` → `shared/basemap-style.json`, `-dark.json` (our tiles), `-world*.json`
+  (OpenFreeMap, Berkeley only). Coast line light `#232120`, dark `#c9c1b4`.
+- Site map (`SITEGL`): non-interactive map `#site-gl` under the flood canvases, synced in `applyView()` via
+  `siteGLSync()`; `GL_K=111320/110640` vertical stretch; `zoomFloor()`, `siteFade()`, `#site-pins`, `#to-country`
+  ("Whole country" / "Back to the flood map"). `glOn()` requires `phSite()`; GL starts 800 ms after `switchSite`.
+  Without WebGL the old country overlay is used (`window.BW_SITE_NO_GL` test hook).
+- National map (`NATGL`): HTML pins and clusters, `natDeselect`/`natSelCheck`, `natLimits` (maxBounds PH ±6°/±5°).
+  Typhoon sim `NSIM` on canvas `#nat-flood`, button `#nat-storm`.
+- Rebuild tiles: `python3 tools/build_basemap.py --national <_national_osm.geojsonl> --density <_built_density.csv>
+  --tippecanoe <path>`. Size limits that shaped it: 15 MB per file for artifact publishing.
 
-**Modes and links.**
-- Demo is the default. Live mode is `#<site>/live` (only when the build has an API).
-- Try reporting is `#try`: Teachers Village, place BW-H03 "22 Malingap Street", no network.
-- The PWA `start_url` is `bahawatch_dashboard.html?source=pwa`, which restores `bw-last-hash`.
+**The answer rule** (`shared/verdict.js`, shared with the Worker): constants `FRESH_MIN 20`, `WET_CM 5`, `TRACE_CM 1`,
+`LOOKAHEAD_MIN 60`, `REPORTS_YES 3`, `REPORT_RADIUS_M 1000`, `DRY_SENSOR_M 500`, `RAIN_YELLOW 7.5`, `RAIN_ORANGE 15`,
+`RECEDE_CM_H 2`. Order: stale → sensor wet now/soon/upstream (Oo; falling ≥ 2 cm/h adds `trend:'falling'`) → 3+ reports
+Baka → rain in NOAH zone or heavy rain Baka → 1–2 reports Baka → trace Baka → Hindi.
 
-**Worker** (Cloudflare Workers + D1 + Turnstile): **written but not deployed**; it waits until real reports are wanted.
-- Endpoints: `/status/<place>`, `/recent/<site>`, `/report`, `/report/<id>/undo`, `/ingest`, `/subscribe` (501).
-- D1 Free allows 50 queries per invocation, and each statement in a batch counts. With 27 sites a cron run makes about 27 rain
-  writes plus about 6 queries: re-count before deploying.
+**Simulation clock.** `tMin` (0 to `T_END`=2160 min), `playing`, `speed` (Details 1×/4×/12×), `step()`,
+`setPlay()`, `drawScrub(canvas)`, `scrubTo(clientX, canvas)`; bars `#scrub` (Details) and `#p-scrub` (campus page).
+Demo chip `demoChip(L)`; weather buttons `.scen-group [data-sc=clear|monsoon|typhoon]`.
 
-**Tests.**
-- Rule: `node --test --no-warnings shared/*.test.js` (a folder argument fails on Node 22).
-- Worker: `cd worker && node --test --no-warnings test/*.test.js`.
-- Places: `python3 tools/test_places.py`.
-- Build: `./test_build.sh`.
-- Page suites: `./test_pages.sh` runs every `test_*.js` (17 suites, incl. `test_zoomout.js`) over `http://127.0.0.1:8765/`
-  with `BW_TEST_BASEMAP=offline` (basemap styles served from `tests/fixtures/basemap-offline.json`; `?real` on a style
-  URL bypasses it); `./test_pages.sh test_x.js` runs one.
-- Basemap: `node --test --no-warnings shared/*.test.js sw.test.js` (43, incl. `shared/basemap.test.js`);
-  `python3 -m unittest tools.test_basemap_style` (styles regenerate with `python3 tools/basemap_style.py`).
-- Pipeline: `cd pipeline && python3 -W ignore -m unittest discover -s tests -t .` (35); model: `python3 -W ignore -m unittest discover -s model/tests -t .` (20).
-- Site checks: `python3 -W ignore tools/check_site_data.py [ids]`. README §2.5 is the campus pipeline runbook.
-- Failures print `FAIL` at the start of a line.
+**Modes and links.** Demo default; live `#<site>/live` (only with an API build); Try `#try`. Service worker cache
+`bahawatch-v4`, network-first, never caches range/206 responses.
 
-**Gregor's PC (desktop app workspace).**
-- Linux, 3.9 GB RAM, 2 cores, Python 3.10; pip works.
-- Up to 180 s per `device_bash` call, and background jobs are killed when a call ends: run each step in the foreground
-  (`timeout 170`), in groups of boxes with `--only`.
-- `device_commit_files` can deliver an older cached copy when a staged path is reused: stage under a fresh name, then `mv -f`.
-- At most 400 MB per staged file.
-- Inputs in `Nationwide Update`:
-  - `bahawatch-data/fabdem`: 109 FABDEM V1-2 tiles;
-  - `bahawatch-data/barangays`;
-  - `PHL_buildings.parquet`: 5 GB, VIDA Google+Microsoft+OSM; columns `bf_source`, `bbox` struct, WKB `geometry`;
-  - `philippines-260925.osm.pbf`: 607 MB;
-  - `phl_admin_boundaries.shp.zip`: admin0–4, admin4 fields `adm4_name`, `adm4_pcode`, `adm3_name`, `center_lat`, `center_lon`;
-  - NOAH zips `5yr/25yr/100yr-*.zip`, holding `<rp>yr/<Province>.zip` with a `Var` field. Every province the 25 campuses need
-    is covered at all three periods.
+**Worker** (Cloudflare Workers + D1 + Turnstile): written, not deployed, unchanged in round 2.
+
+**Tests** (all green at `efbb216`):
+- Page suites: `./test_pages.sh` (19 suites, incl. `test_hidden.js`,, incl. `test_zoomout.js` 26 checks and `test_zoomout_fallback.js`), served on
+  8765 with `BW_TEST_BASEMAP=offline`. One suite: `./test_pages.sh test_x.js`; logs in `/tmp/bw_test_x.js.log`.
+- `node --test --no-warnings shared/*.test.js sw.test.js` (46); `(cd worker && node --test --no-warnings test/*.test.js)`
+  (46); `python3 -m unittest tools.test_basemap_style`; `./test_build.sh`.
+- **Gotchas:** a probe server left running on 8765 (started without `BW_TEST_BASEMAP=offline`) makes `test_noaccount`
+  and others fail: kill it by PID before `./test_pages.sh`. Never `pkill -f`/`pgrep -f` a pattern that appears in the
+  same command line (kills the shell). Probes: write `_probe.js` in the repo so it can `require('playwright')`, delete after.
+
+**Artifact publishing.** Absolute `file_path` (`/home/claude/work/bahawatch_dashboard.html`); for `files`, `root`
+`/home/claude/work`; `.pmtiles`/`.pbf` need contentType `application/wasm`, `.mjs` `text/javascript`; ≤ 64 MB per
+publish (batch), ≤ 15 MB per file; only changed files need re-sending.
+
+**Gregor's PC (desktop workspace, Linux VM).** 180 s per `device_bash` call, foreground only; 400 MB per staged file;
+`device_commit_files` ≤ 20 MB per file and can deliver a cached copy when a path is reused (stage under a fresh name).
 
 ---
 
 ## 6. Parked and standing items
 
-**Parked until real reports are wanted:**
-- the Cloudflare setup walkthrough;
-- "plain link opens live mode";
-- the live-only bugs: live polling can stall after a hidden-tab timer, and the live map description still describes simulated
-  sensors.
+**Parked until real reports are wanted:** Cloudflare setup; "plain link opens live mode"; live-only bugs (polling can
+stall after a hidden-tab timer; live map description still describes simulated sensors).
 
-**Deferred minors from round 2** (full list in its build report §5): the list-only scroll layout (reverted, above);
-wheel over a pin doesn't zoom the vector map; the country view's 44 px box can surround a whole cluster; edge pins
-half-clipped in the country view; `.house-grid` clips unit ids in the Details rail (pre-existing); campus-page header
-controls are 36 px, not 48 (pre-existing); fil's review tag is empty in the menu; Kapampangan "taludtud" and Ilokano
-"putput-ol" to check; `bwSetLocale` uses MapLibre's private `_locale`.
+**Deferred minors:** the list-only scroll layout (reverted; redo with a min-height condition); the country view's 44 px
+box can surround a cluster; edge pins half-clipped; `.house-grid` clips unit ids in the Details rail; campus-page header
+controls 36 px not 48; fil review tag empty in the menu; Kapampangan "taludtud" and Ilokano "putput-ol" to check;
+`bwSetLocale` uses MapLibre's private `_locale`; a home-screen relaunch can restore `#try`; Try tab label stays English;
+Undo text keeps the old language; unguarded `online` flush; a test title says "-> oo"; no sea legend entry;
+`md_to_pdf.py` hard-codes its cwd.
 
-**Deferred minors** (from the earlier build reports):
-- a home-screen relaunch can restore `#try`;
-- the Try tab label stays English;
-- the Undo text keeps the old language;
-- the `online` flush is unguarded;
-- a test title still says "-> oo".
-
-**Standing:**
-- real coordinates for the Berkeley demo unit;
-- native-speaker review of the ceb, ilo, hil and pam strings, and of all `_review` strings from this round;
-- LiPAD 1 m DTM when granted (it would replace FABDEM);
-- optional JAXA GSMaP rain;
-- a PhilDev counsel privacy check before any launch (now including the OpenFreeMap tile requests, §3).
+**Standing:** real coordinates for the Berkeley demo unit; native-speaker review of all non-English strings (ceb, ilo,
+hil, pam, and every `_review` string); LiPAD 1 m DTM when granted; optional JAXA GSMaP rain; a PhilDev counsel privacy
+check before any launch (tile requests now go to our own GitHub Pages site, except the Berkeley fallback to
+OpenFreeMap).
 
 ---
 
-## 7. Other PDFs already sent (in `/mnt/user-data/outputs/` of the old session; Gregor has copies)
+## 7. PDFs already sent (Gregor has copies)
 
 - BahaWatch_Babaha-ba_Spec / Plan / Build_Report_2026-09-26.pdf
 - BahaWatch_Try-Reporting_Spec / Plan_2026-09-26.pdf
-- BahaWatch_PhilDev-Campuses_Spec / Plan_2026-09-27.pdf
-- BahaWatch_PhilDev-Campuses_Build_Report_2026-09-27.pdf
+- BahaWatch_PhilDev-Campuses_Spec / Plan / Build_Report_2026-09-27.pdf
 - BahaWatch_PhilDev-UI-Round2_Spec / Plan / Build_Report_2026-09-27.pdf
+- BahaWatch_Handoff_2026-09-27.pdf (superseded by this document)
