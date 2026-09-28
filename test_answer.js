@@ -151,6 +151,11 @@ const U=BASE+'bahawatch_dashboard.html#tv';
   assert(s==="tv:s:BW-H03","old My street pick migrates to a place");
   // place picked on tv, "oo" naming the street — then switch to Berkeley (no stored place there): the announcement
   // must lose the tv street identifier and become exactly the pick-your-place prompt, not the old site's leftover text.
+  // still flooded but falling: the answer stays Oo, with a "Receding" tag and a going-down reason
+  s=await pg.evaluate(()=>{showAnswer({answer:"oo",reason:{key:"sensor_receding",vars:{name:"22 Malingap St",cm:40}},updatedAt:Date.now(),etaMin:null,trend:"falling"});
+    const t=document.getElementById('p-ans-trend');return {tag:!t.hidden&&t.getClientRects().length>0?t.textContent:null,gloss:document.getElementById('p-ans-gloss').textContent,reason:document.getElementById('p-ans-reason').textContent,
+      miss:Object.keys(ANS_LANGS).filter(k=>!ANS_LANGS[k].recede||!ANS_LANGS[k].glossRecede||!ANS_LANGS[k].reason.sensor_receding)};});
+  assert(s.tag==="Receding"&&s.gloss==="Still flooded here, but the water is going down."&&s.reason==="Water on 22 Malingap St: 40 cm, and going down."&&s.miss.length===0,"receding water: 'Receding' tag, going-down wording, in every language: "+JSON.stringify(s));
   await pg.evaluate(()=>{showAnswer({answer:"oo",reason:{key:"sensor_now",vars:{name:"22 Malingap St",cm:50}},updatedAt:Date.now(),etaMin:0});});
   s=await pg.evaluate(()=>document.getElementById('p-ans-announce').textContent);
   assert(/Malingap/.test(s),"setup: announcement names the tv street before switching sites: "+s);

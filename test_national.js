@@ -183,6 +183,24 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    const n=await pg.evaluate(()=>({b:NATGL.map.queryRenderedFeatures({layers:["building-upd"]}).length,r:NATGL.map.queryRenderedFeatures({layers:["road-minor-site-upd"]}).length}));
    assert(n.b>50&&n.r>10,`UP Diliman at street zoom: building footprints and streets drawn (${n.b} buildings, ${n.r} streets)`);
    assert(outside.length===0,"no request leaves the site: "+outside.slice(0,3).join(", "));
+   // a wheel over a pin zooms the map (HTML pins sit on top of the vector map and used to swallow it)
+   await pg.evaluate(()=>NATGL.map.jumpTo({center:[121.0,14.6],zoom:12}));await pg.waitForTimeout(800);
+   const pr=await pg.evaluate(()=>{const e=document.querySelector('#nat-pins a.pin');const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};});
+   await pg.mouse.move(pr.x,pr.y);const z0=await pg.evaluate(()=>NATGL.map.getZoom());
+   for(let i=0;i<4;i++){await pg.mouse.wheel(0,-150);await pg.waitForTimeout(120);}await pg.waitForTimeout(500);
+   assert(await pg.evaluate(z0=>NATGL.map.getZoom()>z0+0.3,z0),"a mouse wheel over a campus pin zooms the map");
+   // the country-wide simulated storm: every campus in view floods at once, with the campus pages' sensor shapes
+   await pg.evaluate(()=>NATGL.map.jumpTo({center:[121.0,14.6],zoom:12.8}));await pg.waitForTimeout(500);
+   assert(await pg.evaluate(()=>!document.getElementById('nat-storm').hidden&&document.getElementById('nat-storm').textContent==="Simulate a storm"),"a 'Simulate a storm' button on the detailed map");
+   await pg.click('#nat-storm');await pg.waitForTimeout(6000);
+   const st=await pg.evaluate(()=>({on:NSIM.on,pressed:document.getElementById('nat-storm').getAttribute('aria-pressed'),t:document.getElementById('nat-storm-t').textContent,
+     sites:Object.keys(NSIM.sites).length,wet:Object.values(NSIM.sites).some(m=>m.hh.some(h=>h.status!=="ok")),
+     lg:[...document.querySelectorAll('#nat-legend .lg-storm')].length,units:document.querySelectorAll('#nat-units .nat-unit').length}));
+   assert(st.on&&st.pressed==="true"&&/^Simulated typhoon · \d+:\d\d$/.test(st.t),"the storm runs on a shared clock: "+st.t);
+   assert(st.sites>=5&&st.wet,`every campus in view floods at once (${st.sites} campuses, some sensors wet)`);
+   assert(st.lg===5&&st.units===0,"the legend explains the water and the three sensor shapes; the plain unit rings give way to status shapes");
+   await pg.click('#nat-storm');
+   assert(await pg.evaluate(()=>!NSIM.on&&document.getElementById('nat-storm-t').textContent===""&&!document.querySelector('#nat-legend .lg-storm')),"'Stop the storm' ends it");
    await ctx.close();}
   // no WebGL: the outline stays
   {const b2=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox','--disable-webgl','--disable-3d-apis']});

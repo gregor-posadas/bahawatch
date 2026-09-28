@@ -3,6 +3,7 @@
 export const RULE = {
   FRESH_MIN: 20, WET_CM: 5, TRACE_CM: 1, LOOKAHEAD_MIN: 60, REPORTS_YES: 3,
   REPORT_RADIUS_M: 1000, DRY_SENSOR_M: 500, RAIN_YELLOW: 7.5, RAIN_ORANGE: 15,
+  RECEDE_CM_H: 2,   // water still here but falling at least this fast: "Oo", qualified as receding
 };
 const VERDICT_MIN_MS = 60000;
 
@@ -19,7 +20,7 @@ export function babahaBa(x) {
   const fresh = (t) => Number.isFinite(t) && now - t <= RULE.FRESH_MIN * VERDICT_MIN_MS;
   const times = [...sensors.map((s) => s.at), reports.newestAt, rain && rain.at].filter((t) => Number.isFinite(t));
   const updatedAt = times.length ? Math.max(...times) : null;
-  const out = (answer, key, vars = {}, etaMin = null) => ({ answer, reason: { key, vars }, updatedAt, etaMin });
+  const out = (answer, key, vars = {}, etaMin = null, trend = null) => ({ answer, reason: { key, vars }, updatedAt, etaMin, trend });
 
   if (updatedAt === null || !fresh(updatedAt)) return out('nodata', 'stale');
 
@@ -28,7 +29,11 @@ export function babahaBa(x) {
   // that matters for it: wet now -> the deepest; wet soon -> the soonest to reach WET_CM; trace -> the deepest.
   const hereS = live.filter((s) => s.here);
   const deepest = hereS.reduce((a, s) => (!a || s.depthCm > a.depthCm ? s : a), null);
-  if (deepest && deepest.depthCm >= RULE.WET_CM) return out('oo', 'sensor_now', { name: deepest.name, cm: Math.round(deepest.depthCm) });
+  if (deepest && deepest.depthCm >= RULE.WET_CM) {
+    // still flooded, but going down: the answer stays "Oo" (the water is there), the reason and trend say it's receding
+    if (deepest.rateCmPerHr <= -RULE.RECEDE_CM_H) return out('oo', 'sensor_receding', { name: deepest.name, cm: Math.round(deepest.depthCm) }, null, 'falling');
+    return out('oo', 'sensor_now', { name: deepest.name, cm: Math.round(deepest.depthCm) });
+  }
   const soonest = hereS.reduce((a, s) => { const t = minutesToWet(s); return !a || t < a.t ? { s, t } : a; }, null);
   if (soonest && soonest.t <= RULE.LOOKAHEAD_MIN) {
     return out('oo', 'sensor_soon', { name: soonest.s.name, min: roundEta(soonest.t) }, roundEta(soonest.t));

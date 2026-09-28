@@ -497,7 +497,8 @@ const U=BASE+'_bw_live_test.html#tv/live';
 
   // Finding 9: the demo page (not LIVE) never sends a report — tapping shows a demo-specific "not sent" message
   const pg2=await ctx.newPage();
-  let netReqs=0;pg2.on('request',req=>{if(req.url().startsWith('http'))netReqs++;});
+  // the map's own static files (styles, tiles, fonts, library) may load; a report must not send anything
+  let netReqs=0;pg2.on('request',req=>{const u=req.url();if(u.startsWith('http')&&!/\/(shared\/(fonts|tiles)\/|shared\/basemap-style|lib\/|data\/)/.test(u))netReqs++;});
   await pg2.goto(BASE+'bahawatch_dashboard.html#tv');await pg2.waitForFunction(()=>document.body.dataset.ready);await pg2.waitForTimeout(400);
   s=await pg2.evaluate(()=>({live:LIVE,api:API_BASE}));
   assert(s.live===false&&s.api==="","the published demo page has no API and stays in demo mode");

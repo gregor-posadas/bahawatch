@@ -12,7 +12,7 @@ const run = (o) => babahaBa({ now: NOW, place: place(), sensors: [], reports: { 
 
 test('constants match the spec', () => {
   assert.deepEqual(RULE, { FRESH_MIN: 20, WET_CM: 5, TRACE_CM: 1, LOOKAHEAD_MIN: 60, REPORTS_YES: 3,
-    REPORT_RADIUS_M: 1000, DRY_SENSOR_M: 500, RAIN_YELLOW: 7.5, RAIN_ORANGE: 15 });
+    REPORT_RADIUS_M: 1000, DRY_SENSOR_M: 500, RAIN_YELLOW: 7.5, RAIN_ORANGE: 15, RECEDE_CM_H: 2 });
 });
 
 test('no inputs at all -> nodata', () => {
@@ -33,6 +33,15 @@ test('sensor here 5.0 cm -> oo sensor_now; 4.9 cm steady -> baka sensor_trace', 
   assert.equal(a.answer, 'oo'); assert.equal(a.reason.key, 'sensor_now'); assert.deepEqual(a.reason.vars, { name: 'Maginhawa St', cm: 5 });
   const b = run({ sensors: [sensor({ depthCm: 4.9 })] });
   assert.equal(b.answer, 'baka'); assert.equal(b.reason.key, 'sensor_trace');
+});
+test('water here but falling >= 2 cm/h -> oo sensor_receding with trend falling; falling slower -> sensor_now', () => {
+  const a = run({ sensors: [sensor({ depthCm: 30, rateCmPerHr: -2 })] });
+  assert.equal(a.answer, 'oo'); assert.equal(a.reason.key, 'sensor_receding'); assert.equal(a.trend, 'falling');
+  assert.deepEqual(a.reason.vars, { name: 'Maginhawa St', cm: 30 });
+  const b = run({ sensors: [sensor({ depthCm: 30, rateCmPerHr: -1.9 })] });
+  assert.equal(b.reason.key, 'sensor_now'); assert.equal(b.trend, null);
+  const c = run({ sensors: [sensor({ depthCm: 30, rateCmPerHr: 4 })] });
+  assert.equal(c.reason.key, 'sensor_now'); assert.equal(c.trend, null);
 });
 test('sensor here rising: reaches 5 cm in exactly 60 min -> oo; in 63 min -> not oo', () => {
   const a = run({ sensors: [sensor({ depthCm: 3, rateCmPerHr: 2 })] });

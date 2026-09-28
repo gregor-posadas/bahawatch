@@ -14,9 +14,9 @@ OWN_ATTRIBUTION = "© OpenStreetMap contributors · buildings: Open Buildings (G
 ATTRIBUTION = "OpenFreeMap © OpenMapTiles Data from OpenStreetMap"
 PALETTES = {
     "light": dict(land="#f8f4ec", sea="#d6ddde", river="#70c0e0", residential="#f1ebdf", park="#e6e8d8", boundary="#a39a8a",
-                  road="#ffffff", casing="#c9bca6", building="#e2d8c6", builtup="#d8cab2", label="#232120", halo="#f8f4ec"),
+                  road="#ffffff", casing="#c9bca6", building="#e2d8c6", builtup="#d8cab2", coast="#232120", label="#232120", halo="#f8f4ec"),
     "dark": dict(land="#1f1e1c", sea="#1f2c35", river="#70c0e0", residential="#262421", park="#232821", boundary="#6b645b",
-                 road="#4a4640", casing="#1c1a18", building="#34312c", builtup="#3a352f", label="#f3efe7", halo="#1f1e1c"),
+                 road="#4a4640", casing="#1c1a18", building="#34312c", builtup="#3a352f", coast="#c9c1b4", label="#f3efe7", halo="#1f1e1c"),
 }
 MAJOR, MID, MINOR = ["motorway", "trunk", "primary"], ["secondary", "tertiary"], ["minor", "service"]
 
@@ -60,6 +60,8 @@ def style(theme):
     layers = [
         {"id": "water", "type": "background", "paint": {"background-color": p["sea"]}},
         {"id": "land", "type": "fill", "source": "land", "source-layer": "land", "paint": {"fill-color": p["land"], "fill-antialias": False}},
+        {"id": "coast", "type": "line", "source": "land", "source-layer": "coast", "layout": {"line-join": "round"},
+         "paint": {"line-color": p["coast"], "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 10, 1, 16, 1.5]}},
         {"id": "builtup", "type": "fill", "source": "base", "source-layer": "builtup", "maxzoom": 12,
          "paint": {"fill-color": p["builtup"], "fill-antialias": False,
                    "fill-opacity": ["interpolate", ["linear"], ["zoom"], 4, ["*", 0.33, ["get", "d"]], 9, ["*", 0.25, ["get", "d"]], 11.5, 0]}},

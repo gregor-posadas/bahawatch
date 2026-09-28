@@ -69,7 +69,7 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
   .nat-map{height:60vh; min-height:300px}
 }
 #nat-svg{position:absolute; inset:0; width:100%; height:100%}
-#nat-land{fill:var(--map-bg); stroke:var(--ink-2); stroke-width:1; vector-effect:non-scaling-stroke}
+#nat-land{fill:var(--map-bg); stroke:var(--ink); stroke-width:1; vector-effect:non-scaling-stroke}
 #nat-gl{position:absolute; inset:0; opacity:0; transition:opacity .3s}
 body[data-natgl="1"] #nat-gl{opacity:1}
 body[data-natgl="1"] #nat-svg{visibility:hidden}
@@ -105,6 +105,14 @@ body[data-natgl="1"] #nat-svg{visibility:hidden}
 /* bottom of the map: "Open …" on the right, stacked above the credits, so it never covers them */
 .nat-mapfoot{position:absolute; left:12px; right:12px; bottom:10px; z-index:3; display:flex; flex-direction:column; gap:8px; pointer-events:none}
 .nat-mapfoot > *{pointer-events:auto}
+/* the country-wide simulated storm (every campus in view floods at once, same sensor shapes as the campus pages) */
+.nat-flood{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:1}
+.nat-storm{align-self:flex-start; display:flex; align-items:center; gap:10px}
+.nat-storm .nat-btn{background:var(--panel); color:var(--ink)}
+.nat-storm .nat-btn[aria-pressed="true"]{background:var(--ink); color:var(--panel)}
+.nat-storm-t{font-size:14px; font-weight:700; color:var(--ink); background:var(--panel); padding:2px 8px; border-radius:4px}
+.nat-storm-t:empty{display:none}
+.nat-legend .lg-w{display:inline-block; width:18px; height:8px; border-radius:2px}
 .nat-open{align-self:flex-end}
 .nat-open[hidden]{display:none}
 .nat-legend{position:absolute; left:12px; top:12px; z-index:3; list-style:none; margin:0; padding:6px 10px; display:flex; flex-wrap:wrap; gap:4px 14px; font-size:14px; background:var(--panel); border:1px solid var(--line); border-radius:6px; max-width:calc(100% - 96px)}
@@ -214,7 +222,7 @@ main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
 #country-gl{position:absolute; inset:0; opacity:0; transition:opacity .3s}
 #country[data-gl="1"] #country-gl{opacity:1}
 #country-svg{position:absolute; inset:0; width:100%; height:100%}
-#country-land{fill:var(--map-bg); stroke:var(--ink-2); stroke-width:1; vector-effect:non-scaling-stroke}
+#country-land{fill:var(--map-bg); stroke:var(--ink); stroke-width:1; vector-effect:non-scaling-stroke}
 /* at country scale the box is drawn at least 44 px, round the pin or cluster it sits on, with a halo to read on any ground */
 .country-box{position:absolute; z-index:2; border:2px dashed var(--ink); box-shadow:0 0 0 2px var(--panel); pointer-events:none}
 .country-box[hidden],.country-label[hidden]{display:none}
@@ -370,6 +378,8 @@ pre#api-json{
    contrast is the same in every answer state */
 .p-ans-demo{display:inline-block; font-size:14px; font-weight:700; color:var(--ink); background:var(--panel); border:1.5px dashed var(--ink); border-radius:999px; padding:2px 10px; margin-bottom:6px}
 .p-ans-demo[hidden]{display:none}
+.p-ans-trend{display:inline-block; font-size:14px; font-weight:700; color:var(--ink); background:var(--panel); border:1.5px solid var(--ink); border-radius:999px; padding:2px 10px}
+.p-ans-trend[hidden]{display:none}
 /* LIVE simple view: the simulated depth legend and "tap a street" coach never sit under a live answer */
 body[data-live="1"][data-view="public"] .p-maplegend, body[data-live="1"][data-view="public"] .p-coach{display:none}
 /* LIVE details view: the map, cards and log still run on the simulated feed — say so */
@@ -565,6 +575,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <svg id="nat-svg" aria-hidden="true" focusable="false" preserveAspectRatio="none"><path id="nat-land"/></svg>
         <div id="nat-gl"></div>
         <div class="nat-box" id="nat-box" hidden></div>
+        <canvas class="nat-flood" id="nat-flood" aria-hidden="true"></canvas>
         <div class="nat-units" id="nat-units" aria-hidden="true"></div>
         <div class="nat-pins" id="nat-pins"></div>
         <div class="nat-zoom">
@@ -575,6 +586,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <ul class="nat-legend" id="nat-legend"></ul>
         <div class="nat-mapfoot">
           <a class="nat-btn nat-open" id="nat-open" hidden></a>
+          <div class="nat-storm"><button class="nat-btn" id="nat-storm" aria-pressed="false" hidden></button><span class="nat-storm-t" id="nat-storm-t"></span></div>
           <p class="nat-credit" id="nat-credit"></p>
         </div>
       </div>
@@ -640,6 +652,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
             <span class="p-ans-shape" id="p-ans-shape" aria-hidden="true"></span>
             <span class="p-ans-word" id="p-ans-word">—</span>
             <span class="p-ans-gloss" id="p-ans-gloss"></span>
+            <span class="p-ans-trend" id="p-ans-trend" hidden></span>
           </div>
           <div class="p-ans-reason" id="p-ans-reason"></div>
         </div>
@@ -1436,6 +1449,7 @@ const tip=document.getElementById("map-tooltip");
 const ptrs=new Map();let dragMoved=false,pinchD0=0,pinchZ0=1;
 let dragging=false;
 ovCv.addEventListener("pointerdown",e=>{
+  if(e.pointerType==="mouse"||e.isPrimary)ptrs.clear();          // a new first pointer: anything left over is stale
   ovCv.setPointerCapture(e.pointerId);
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});
   dragMoved=false;
@@ -1478,6 +1492,7 @@ function endPtr(e){
 }
 ovCv.addEventListener("pointerup",endPtr);
 ovCv.addEventListener("pointercancel",endPtr);
+ovCv.addEventListener("lostpointercapture",e=>{if(ptrs.has(e.pointerId)){ptrs.delete(e.pointerId);if(!ptrs.size){dragging=false;ovCv.classList.remove("dragging");}}});
 ovCv.addEventListener("wheel",e=>{
   e.preventDefault();
   const r=ovCv.getBoundingClientRect();
@@ -1942,42 +1957,48 @@ const PATH_EN={
 const ANS_LANGS={
  en:{q:"Will it flood here?",notCovered:"BahaWatch doesn't cover your location yet.",demoChip:"Demo · simulated storm",word:{oo:"Yes",baka:"Maybe",hindi:"No",nodata:"No fresh data"},
   gloss:{oo:"Flooding here now, or expected within the hour.",baka:"Conditions for flooding, but no water measured yet.",hindi:"No sign of flooding in the next hour.",nodata:"Check again soon."},
-  reason:{stale:"The newest data is over 20 minutes old.",sensor_now:"Water on {name}: {cm} cm.",sensor_soon:"Water rising on {name}, about {min} min away.",upstream:"Water rising near {name}, about {min} min away.",reports:"{n} neighbours report flooding nearby.",reports_vs_dry_sensor:"Neighbours report flooding; sensor here is dry.",rain_flood_zone:"Heavy rain ({mm} mm/h), and this area floods in a 5- or 25-year storm.",rain_heavy:"Very heavy rain ({mm} mm/h) in a mapped flood area.",reports_few:"Neighbours report flooding nearby ({n}).",sensor_trace:"A little water on {name} ({cm} cm).",clear:"No flood signs from sensors, reports or rain.",clear_no_sensor:"No heavy rain or flood reports nearby. No sensor here yet."},
+  glossRecede:"Still flooded here, but the water is going down.",recede:"Receding",
+  reason:{stale:"The newest data is over 20 minutes old.",sensor_receding:"Water on {name}: {cm} cm, and going down.",sensor_now:"Water on {name}: {cm} cm.",sensor_soon:"Water rising on {name}, about {min} min away.",upstream:"Water rising near {name}, about {min} min away.",reports:"{n} neighbours report flooding nearby.",reports_vs_dry_sensor:"Neighbours report flooding; sensor here is dry.",rain_flood_zone:"Heavy rain ({mm} mm/h), and this area floods in a 5- or 25-year storm.",rain_heavy:"Very heavy rain ({mm} mm/h) in a mapped flood area.",reports_few:"Neighbours report flooding nearby ({n}).",sensor_trace:"A little water on {name} ({cm} cm).",clear:"No flood signs from sensors, reports or rain.",clear_no_sensor:"No heavy rain or flood reports nearby. No sensor here yet."},
   age:"updated {m} min ago",justNow:"updated just now",pick:"Pick your place to get an answer.",pickBtn:"Pick your place",
   whereQ:"Where are you?",useLoc:"Use my location",pickBrgy:"Pick my barangay",pickSensor:"Pick a street with a sensor",skip:"Skip",
   locFail:"Couldn't get your location. Pick your barangay instead.",
   share:"Share my place",copied:"Link copied"},
  fil:{q:"Babaha ba?",notCovered:"Hindi pa sakop ng BahaWatch ang lugar mo.",demoChip:"Demo · kunwaring bagyo",word:{oo:"Oo",baka:"Baka",hindi:"Hindi",nodata:"Walang bagong datos"},
   gloss:{oo:"May baha rito ngayon, o inaasahan sa loob ng isang oras.",baka:"May palatandaan ng baha, pero wala pang nasusukat na tubig.",hindi:"Walang palatandaan ng baha sa susunod na isang oras.",nodata:"Tingnan ulit mamaya."},
-  reason:{stale:"Mahigit 20 minuto na ang pinakabagong datos.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Tumataas ang tubig sa {name}, mga {min} minuto pa.",upstream:"Tumataas ang tubig malapit sa {name}, mga {min} minuto pa.",reports:"{n} kapitbahay ang nag-ulat ng baha malapit dito.",reports_vs_dry_sensor:"May nag-ulat ng baha, pero tuyo ang sensor dito.",rain_flood_zone:"Malakas na ulan ({mm} mm/oras), at binabaha ang lugar na ito sa 5- o 25-taong bagyo.",rain_heavy:"Napakalakas na ulan ({mm} mm/oras) sa lugar na may flood map.",reports_few:"May nag-ulat ng baha malapit dito ({n}).",sensor_trace:"Kaunting tubig sa {name} ({cm} cm).",clear:"Walang palatandaan ng baha mula sa sensor, ulat, o ulan.",clear_no_sensor:"Walang malakas na ulan o ulat ng baha sa malapit. Wala pang sensor dito."},
+  glossRecede:"May baha pa rito, pero bumababa na ang tubig.",recede:"Humuhupa",
+  reason:{stale:"Mahigit 20 minuto na ang pinakabagong datos.",sensor_receding:"May tubig sa {name}: {cm} cm, at bumababa na.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Tumataas ang tubig sa {name}, mga {min} minuto pa.",upstream:"Tumataas ang tubig malapit sa {name}, mga {min} minuto pa.",reports:"{n} kapitbahay ang nag-ulat ng baha malapit dito.",reports_vs_dry_sensor:"May nag-ulat ng baha, pero tuyo ang sensor dito.",rain_flood_zone:"Malakas na ulan ({mm} mm/oras), at binabaha ang lugar na ito sa 5- o 25-taong bagyo.",rain_heavy:"Napakalakas na ulan ({mm} mm/oras) sa lugar na may flood map.",reports_few:"May nag-ulat ng baha malapit dito ({n}).",sensor_trace:"Kaunting tubig sa {name} ({cm} cm).",clear:"Walang palatandaan ng baha mula sa sensor, ulat, o ulan.",clear_no_sensor:"Walang malakas na ulan o ulat ng baha sa malapit. Wala pang sensor dito."},
   age:"na-update {m} min na ang nakalipas",justNow:"kaka-update lang",pick:"Piliin ang lugar mo para makita ang sagot.",pickBtn:"Piliin ang lugar mo",
   whereQ:"Saan ka?",useLoc:"Gamitin ang lokasyon ko",pickBrgy:"Piliin ang barangay ko",pickSensor:"Piliin ang kalyeng may sensor",skip:"Laktawan",
   locFail:"Hindi makuha ang lokasyon mo. Piliin na lang ang barangay mo.",
   share:"Ibahagi ang lugar ko",copied:"Nakopya ang link"},
  ceb:{q:"Mobaha ba?",notCovered:"Wala pa masakop sa BahaWatch ang imong lugar.",demoChip:"Demo · simulated nga bagyo",word:{oo:"Oo",baka:"Basin",hindi:"Dili",nodata:"Walay bag-ong datos"},
   gloss:{oo:"Naay baha diri karon, o gipaabot sulod sa usa ka oras.",baka:"Naay timailhan sa baha, pero wala pay nasukod nga tubig.",hindi:"Walay timailhan sa baha sa sunod nga usa ka oras.",nodata:"Tan-awa pag-usab unya."},
-  reason:{stale:"Kapin na sa 20 minutos ang pinakabag-ong datos.",sensor_now:"Naay tubig sa {name}: {cm} cm.",sensor_soon:"Nagsaka ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagsaka ang tubig duol sa {name}, mga {min} minutos pa.",reports:"{n} ka silingan ang nagtaho og baha duol diri.",reports_vs_dry_sensor:"Naay nagtaho og baha, pero uga ang sensor diri.",rain_flood_zone:"Kusog nga ulan ({mm} mm/oras), ug mobaha kini nga lugar sa 5- o 25-ka-tuig nga bagyo.",rain_heavy:"Kusog kaayo nga ulan ({mm} mm/oras) sa lugar nga naay flood map.",reports_few:"Naay nagtaho og baha duol diri ({n}).",sensor_trace:"Gamay nga tubig sa {name} ({cm} cm).",clear:"Walay timailhan sa baha gikan sa sensor, taho, o ulan.",clear_no_sensor:"Walay kusog nga ulan o taho sa baha duol diri. Wala pay sensor diri."},
+  glossRecede:"Naa pay baha diri, pero nagkubos na ang tubig.",recede:"Nagkubos",
+  reason:{stale:"Kapin na sa 20 minutos ang pinakabag-ong datos.",sensor_receding:"Naay tubig sa {name}: {cm} cm, ug nagkubos na.",sensor_now:"Naay tubig sa {name}: {cm} cm.",sensor_soon:"Nagsaka ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagsaka ang tubig duol sa {name}, mga {min} minutos pa.",reports:"{n} ka silingan ang nagtaho og baha duol diri.",reports_vs_dry_sensor:"Naay nagtaho og baha, pero uga ang sensor diri.",rain_flood_zone:"Kusog nga ulan ({mm} mm/oras), ug mobaha kini nga lugar sa 5- o 25-ka-tuig nga bagyo.",rain_heavy:"Kusog kaayo nga ulan ({mm} mm/oras) sa lugar nga naay flood map.",reports_few:"Naay nagtaho og baha duol diri ({n}).",sensor_trace:"Gamay nga tubig sa {name} ({cm} cm).",clear:"Walay timailhan sa baha gikan sa sensor, taho, o ulan.",clear_no_sensor:"Walay kusog nga ulan o taho sa baha duol diri. Wala pay sensor diri."},
   age:"gi-update {m} min na ang milabay",justNow:"bag-o lang gi-update",pick:"Pilia ang imong lugar aron makita ang tubag.",pickBtn:"Pilia ang imong lugar",
   whereQ:"Asa ka?",useLoc:"Gamita ang akong lokasyon",pickBrgy:"Pilia ang akong barangay",pickSensor:"Pilia ang dalan nga naay sensor",skip:"Laktawi",
   locFail:"Dili makuha ang imong lokasyon. Pilia na lang ang imong barangay.",
   share:"Ipakigbahin ang akong lugar",copied:"Nakopya ang link"},
  ilo:{q:"Aglayus kadi?",notCovered:"Saan pay a sakup ti BahaWatch ti lugarmo.",demoChip:"Demo · simulated a bagyo",word:{oo:"Wen",baka:"Mabalin",hindi:"Saan",nodata:"Awan ti baro a datos"},
   gloss:{oo:"Adda layus ditoy ita, wenno mapakpakadaan iti uneg ti maysa nga oras.",baka:"Adda pagilasinan ti layus, ngem awan pay nasukat a danum.",hindi:"Awan ti pagilasinan ti layus iti sumaruno a maysa nga oras.",nodata:"Kitaen manen no madamdama."},
-  reason:{stale:"Nasurok a 20 minuto ti kabaruan a datos.",sensor_now:"Adda danum iti {name}: {cm} cm.",sensor_soon:"Ngumatngato ti danum iti {name}, agarup {min} minuto pay.",upstream:"Ngumatngato ti danum iti asideg ti {name}, agarup {min} minuto pay.",reports:"{n} a kaarruba ti nangipadamag iti layus iti asideg.",reports_vs_dry_sensor:"Adda nangipadamag iti layus, ngem namaga ti sensor ditoy.",rain_flood_zone:"Napigsa a tudo ({mm} mm/oras), ken aglayus daytoy a lugar iti 5- wenno 25-tawen a bagyo.",rain_heavy:"Napigsa unay a tudo ({mm} mm/oras) iti lugar nga adda flood map-na.",reports_few:"Adda nangipadamag iti layus iti asideg ({n}).",sensor_trace:"Bassit a danum iti {name} ({cm} cm).",clear:"Awan ti pagilasinan ti layus manipud iti sensor, padamag, wenno tudo.",clear_no_sensor:"Awan ti napigsa a tudo wenno damag ti layus iti asideg. Awan pay ti sensor ditoy."},
+  glossRecede:"Adda pay layus ditoy, ngem bumabbaba ti danum.",recede:"Bumabbaba",
+  reason:{stale:"Nasurok a 20 minuto ti kabaruan a datos.",sensor_receding:"Adda danum iti {name}: {cm} cm, ken bumabbaba en.",sensor_now:"Adda danum iti {name}: {cm} cm.",sensor_soon:"Ngumatngato ti danum iti {name}, agarup {min} minuto pay.",upstream:"Ngumatngato ti danum iti asideg ti {name}, agarup {min} minuto pay.",reports:"{n} a kaarruba ti nangipadamag iti layus iti asideg.",reports_vs_dry_sensor:"Adda nangipadamag iti layus, ngem namaga ti sensor ditoy.",rain_flood_zone:"Napigsa a tudo ({mm} mm/oras), ken aglayus daytoy a lugar iti 5- wenno 25-tawen a bagyo.",rain_heavy:"Napigsa unay a tudo ({mm} mm/oras) iti lugar nga adda flood map-na.",reports_few:"Adda nangipadamag iti layus iti asideg ({n}).",sensor_trace:"Bassit a danum iti {name} ({cm} cm).",clear:"Awan ti pagilasinan ti layus manipud iti sensor, padamag, wenno tudo.",clear_no_sensor:"Awan ti napigsa a tudo wenno damag ti layus iti asideg. Awan pay ti sensor ditoy."},
   age:"naipabaro {m} min ti napalabas",justNow:"kaipapabaro",pick:"Pilien ti lugarmo tapno makita ti sungbat.",pickBtn:"Pilien ti lugarmo",
   whereQ:"Sadino ti ayanmo?",useLoc:"Usaren ti lokasionko",pickBrgy:"Pilien ti barangayko",pickSensor:"Pilien ti kalsada nga adda sensorna",skip:"Laktawan",
   locFail:"Saan a makuha ti lokasionmo. Pilien laengen ti barangaymo.",
   share:"Iranud ti lugarko",copied:"Nakopia ti link"},
  hil:{q:"Magabaha bala?",notCovered:"Wala pa nasakop sang BahaWatch ang imo lugar.",demoChip:"Demo · simulated nga bagyo",word:{oo:"Huo",baka:"Basi",hindi:"Indi",nodata:"Wala sang bag-o nga datos"},
   gloss:{oo:"May baha diri subong, ukon ginapaabot sa sulod sang isa ka oras.",baka:"May mga tanda sang baha, pero wala pa sang nasukat nga tubig.",hindi:"Wala sang tanda sang baha sa masunod nga isa ka oras.",nodata:"Tan-awa liwat sa ulihi."},
-  reason:{stale:"Labaw na sa 20 minutos ang pinakabag-o nga datos.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Nagataas ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagataas ang tubig malapit sa {name}, mga {min} minutos pa.",reports:"{n} ka kaingod ang nag-report sang baha malapit diri.",reports_vs_dry_sensor:"May nag-report sang baha, pero uga ang sensor diri.",rain_flood_zone:"Mabaskog nga ulan ({mm} mm/oras), kag ginabaha ini nga lugar sa 5- ukon 25-ka-tuig nga bagyo.",rain_heavy:"Mabaskog gid nga ulan ({mm} mm/oras) sa lugar nga may flood map.",reports_few:"May nag-report sang baha malapit diri ({n}).",sensor_trace:"Diutay nga tubig sa {name} ({cm} cm).",clear:"Wala sang tanda sang baha halin sa sensor, report, ukon ulan.",clear_no_sensor:"Wala sang mabaskog nga ulan ukon report sang baha malapit diri. Wala pa sang sensor diri."},
+  glossRecede:"May baha pa diri, pero nagahubas na ang tubig.",recede:"Nagahubas",
+  reason:{stale:"Labaw na sa 20 minutos ang pinakabag-o nga datos.",sensor_receding:"May tubig sa {name}: {cm} cm, kag nagahubas na.",sensor_now:"May tubig sa {name}: {cm} cm.",sensor_soon:"Nagataas ang tubig sa {name}, mga {min} minutos pa.",upstream:"Nagataas ang tubig malapit sa {name}, mga {min} minutos pa.",reports:"{n} ka kaingod ang nag-report sang baha malapit diri.",reports_vs_dry_sensor:"May nag-report sang baha, pero uga ang sensor diri.",rain_flood_zone:"Mabaskog nga ulan ({mm} mm/oras), kag ginabaha ini nga lugar sa 5- ukon 25-ka-tuig nga bagyo.",rain_heavy:"Mabaskog gid nga ulan ({mm} mm/oras) sa lugar nga may flood map.",reports_few:"May nag-report sang baha malapit diri ({n}).",sensor_trace:"Diutay nga tubig sa {name} ({cm} cm).",clear:"Wala sang tanda sang baha halin sa sensor, report, ukon ulan.",clear_no_sensor:"Wala sang mabaskog nga ulan ukon report sang baha malapit diri. Wala pa sang sensor diri."},
   age:"gin-update {m} min na ang nagligad",justNow:"bag-o lang gin-update",pick:"Pilia ang imo lugar para makita ang sabat.",pickBtn:"Pilia ang imo lugar",
   whereQ:"Diin ka?",useLoc:"Gamita ang akon lokasyon",pickBrgy:"Pilia ang akon barangay",pickSensor:"Pilia ang dalan nga may sensor",skip:"Laktawan",
   locFail:"Indi makuha ang imo lokasyon. Pilia na lang ang imo barangay.",
   share:"Ipaambit ang akon lugar",copied:"Nakopya ang link"},
  pam:{q:"Albugan kaya?",notCovered:"E pa sakup ning BahaWatch ing lugal mu.",demoChip:"Demo · simulated a bagyu",word:{oo:"Wa",baka:"Malyari",hindi:"Ali",nodata:"Alang bayung datos"},
   gloss:{oo:"Atin albug keni ngeni, o aasanan king loob ning metung a oras.",baka:"Atin tanda ning albug, oneng ala pang masukat a danum.",hindi:"Alang tanda ning albug king datang a metung a oras.",nodata:"Lawen mu pasibayu mamaya."},
-  reason:{stale:"Mayigit 20 minutu ne ing pekabayung datos.",sensor_now:"Atin danum king {name}: {cm} cm.",sensor_soon:"Sasampa ing danum king {name}, lagyu {min} minutu pa.",upstream:"Sasampa ing danum malapit king {name}, lagyu {min} minutu pa.",reports:"{n} a kapitbale ing mengreport albug malapit keni.",reports_vs_dry_sensor:"Atin mengreport albug, oneng mamalang ing sensor keni.",rain_flood_zone:"Makusug a uran ({mm} mm/oras), at albugan ya ining lugal king 5- o 25-banwang bagyu.",rain_heavy:"Makusug dili a uran ({mm} mm/oras) king lugal a atin flood map.",reports_few:"Atin mengreport albug malapit keni ({n}).",sensor_trace:"Kakaunti a danum king {name} ({cm} cm).",clear:"Alang tanda ning albug manibat king sensor, report, o uran.",clear_no_sensor:"Alang makusog a uran o report ning albug malapit keni. Ala pang sensor keni."},
+  glossRecede:"Atin albug pa keni, oneng mababa ne ing danum.",recede:"Mababa ne",
+  reason:{stale:"Mayigit 20 minutu ne ing pekabayung datos.",sensor_receding:"Atin danum king {name}: {cm} cm, at mababa ne.",sensor_now:"Atin danum king {name}: {cm} cm.",sensor_soon:"Sasampa ing danum king {name}, lagyu {min} minutu pa.",upstream:"Sasampa ing danum malapit king {name}, lagyu {min} minutu pa.",reports:"{n} a kapitbale ing mengreport albug malapit keni.",reports_vs_dry_sensor:"Atin mengreport albug, oneng mamalang ing sensor keni.",rain_flood_zone:"Makusug a uran ({mm} mm/oras), at albugan ya ining lugal king 5- o 25-banwang bagyu.",rain_heavy:"Makusug dili a uran ({mm} mm/oras) king lugal a atin flood map.",reports_few:"Atin mengreport albug malapit keni ({n}).",sensor_trace:"Kakaunti a danum king {name} ({cm} cm).",clear:"Alang tanda ning albug manibat king sensor, report, o uran.",clear_no_sensor:"Alang makusog a uran o report ning albug malapit keni. Ala pang sensor keni."},
   age:"me-update {m} min ne ing milabas",justNow:"bayu pa mu me-update",pick:"Pilinan me ing lugal mu ban akit me ing sagut.",pickBtn:"Pilinan me ing lugal mu",
   whereQ:"Nokarin ka?",useLoc:"Gamitan me ing lokasyun ku",pickBrgy:"Pilinan me ing barangay ku",pickSensor:"Pilinan me ing dalan a atin sensor",skip:"Laktawan",
   locFail:"E makuha ing lokasyun mu. Pilinan mu ne mu ing barangay mu.",
@@ -2166,7 +2187,9 @@ function showAnswer(v,serverNow){
   const L=A(),box=$("p-answer");
   box.dataset.answer=v.answer;
   $("p-ans-word").textContent=L.word[v.answer];
-  $("p-ans-gloss").textContent=L.gloss[v.answer];
+  const falling=v.trend==="falling";      // still flooded, but the water is going down: say so, with a tag
+  $("p-ans-gloss").textContent=falling?L.glossRecede:L.gloss[v.answer];
+  const tr=$("p-ans-trend");tr.hidden=!falling;tr.textContent=L.recede;
   const reasonText=fill(L.reason[v.reason.key]||"",v.reason.vars||{});
   $("p-ans-reason").textContent=reasonText;
   const ref=serverNow!=null?serverNow:BASE.getTime()+tMin*60000;
@@ -2179,7 +2202,7 @@ function showAnswer(v,serverNow){
   if(triple!==lastAnnounced){
     lastAnnounced=triple;
     // demo: the chip is said first, so a screen-reader user hears it's a simulated storm before the answer
-    $("p-ans-announce").textContent=sentences([TRY?TL().sim:LIVE?"":L.demoChip,L.word[v.answer],L.gloss[v.answer],reasonText]);
+    $("p-ans-announce").textContent=sentences([TRY?TL().sim:LIVE?"":L.demoChip,L.word[v.answer],falling?L.recede:"",falling?L.glossRecede:L.gloss[v.answer],reasonText]);
   }
 }
 function placeArea(){
@@ -2983,6 +3006,11 @@ function natInit(){
   $("nat-zout").addEventListener("click",()=>natZoomBy(1/1.5));
   $("nat-home").addEventListener("click",natHome);
   natBox().addEventListener("wheel",natWheel,{passive:false});
+  // a wheel over a pin or cluster (HTML on top of the vector map) would never reach the map: hand it on (it used to "stop")
+  for(const [el,m] of [[$("nat-pins"),()=>NATGL.state==="on"&&NATGL.map],[$("country-pins"),()=>COUNTRY.state==="on"&&COUNTRY.map]])
+    el.addEventListener("wheel",e=>{const map=m();if(!map)return;e.preventDefault();e.stopPropagation();
+      map.getCanvasContainer().dispatchEvent(new WheelEvent("wheel",{deltaX:e.deltaX,deltaY:e.deltaY,deltaZ:e.deltaZ,deltaMode:e.deltaMode,
+        clientX:e.clientX,clientY:e.clientY,screenX:e.screenX,screenY:e.screenY,ctrlKey:e.ctrlKey,shiftKey:e.shiftKey,bubbles:true,cancelable:true}));},{passive:false});
   window.addEventListener("resize",()=>{if(ROUTE==="ph")natResize();});
   // the box also changes size without a window resize (the note taking its line under the map)
   if(window.ResizeObserver)new ResizeObserver(()=>{if(ROUTE==="ph")natResize();}).observe(natBox());
@@ -3033,12 +3061,91 @@ function natPins(){
   }).join("");
   if(keep){const f=[...$("nat-pins").children].find(e=>(e.dataset.id||e.dataset.ids)===keep);if(f)f.focus({preventScroll:true});}
   // each campus's 8 proposed units fade in as you zoom to it (the same units its flood map shows)
-  const U=$("nat-units"),z=NATGL.state==="on"?NATGL.map.getZoom():0,op=Math.max(0,Math.min(1,(z-12.5)/1.5));
+  const U=$("nat-units"),z=NATGL.state==="on"&&!NSIM.on?NATGL.map.getZoom():0,op=Math.max(0,Math.min(1,(z-12.5)/1.5));   // the storm draws its own markers
   U.style.opacity=op.toFixed(2);
   U.innerHTML=op>0?CAMPUSES.flatMap(c=>c.u||[]).map(([lo,la])=>natPx(lo,la)).filter(([x,y])=>x>=-10&&x<=w+10&&y>=-10&&y<=h+10)
     .map(([x,y])=>`<span class="nat-unit" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px"></span>`).join(""):"";
   natBoxPlace();
+  nsimDraw();
 }
+/* ---------- a simulated storm across the country: every campus in view floods at once ---------- */
+// Each campus in view (zoomed in far enough to see its box) runs the same sensor model and terrain fill as its own page,
+// on one shared storm clock (the typhoon scenario). The water and the sensor shapes (circle, triangle, square) fade in as
+// the campus's box grows on screen, like the flood maps; street-level detail stays on the campus pages. A simulation.
+const NSIM={on:false,t:0,last:0,raf:0,sites:{},want:new Set()};
+const NSIM_SCEN="typhoon",NSIM_T0=120,NSIM_T1=900,NSIM_MIN_PER_S=24;
+function nsimModel(d){
+  const GWn=d.GW,GHn=d.GH,Nn=GWn*GHn;
+  const un=s=>{const b=b64bytes(s),g=new Uint8Array(Nn);let o=0;for(let i=0;i<b.length;i+=2){g.fill(b[i+1],o,o+b[i]);o+=b[i];}return g;};
+  const ev=new Int16Array(b64bytes(d.elev).buffer),el=new Float32Array(Nn);for(let i=0;i<Nn;i++)el[i]=ev[i]/10;
+  const NO={};for(const k of ["5","25","100"])NO[k]=d.noah&&d.noah[k]?un(d.noah[k]):new Uint8Array(Nn);
+  const n3=(g,gx,gy)=>{let m=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const x=gx+dx,y=gy+dy;if(x>=0&&y>=0&&x<GWn&&y<GHn)m=Math.max(m,g[y*GWn+x]);}return m;};
+  const gs=d.sensors.map(q=>q.g).sort((a,b)=>a-b),gRef=d.site.g_ref!=null?d.site.g_ref:gs[Math.floor(gs.length/2)];
+  const hh=d.sensors.map((q,k)=>{const gx=Math.min((q.x/d.W*GWn)|0,GWn-1),gy=Math.min((q.y/d.H*GHn)|0,GHn-1);
+    const wN=n3(NO["5"],gx,gy)*0.5+n3(NO["25"],gx,gy)*0.3+n3(NO["100"],gx,gy)*0.2;   // the campus page's weighting (initSite)
+    return {idx:k,cx:q.cx,cy:q.cy,gElev:q.g,gRef,lon:q.lon,lat:q.lat,sus:Math.min(2.6,Math.max(0.15,0.35+0.5*(gRef-q.g)/4+0.45*wN)),
+      expos:0.92+mulberry32(500+k)()*0.2,depth:0,status:"ok"};});
+  const sea=d.sea?un(d.sea):null,block=d.block?un(d.block):sea;
+  const cv=document.createElement("canvas");cv.width=GWn;cv.height=GHn;
+  return {id:d.site&&d.site.id,bbox:d.bbox,g:{elev:el,block,GW:GWn,GH:GHn},hh,scen:d.site.scen[NSIM_SCEN],cv,t:-1,
+    FS:{depth:new Float32Array(Nn),src:new Int8Array(Nn),gen:new Int32Array(Nn),dist:new Int32Array(Nn),q:new Int32Array(Nn),g:0}};
+}
+// the campus pages' pulse and sensor depth (pulse(), hhDepth()), for this campus's own typhoon scenario
+function nsimPulse(c,t,lag){if(!c.dur)return 0;let p=gp((t-c.start-lag)/c.dur);p+=0.34*gp((t-c.start-lag-270)/220);return p;}
+function nsimStep(m,t){
+  if(m.t===t)return;m.t=t;
+  for(const s of m.hh){const P=m.scen.P*nsimPulse(m.scen,t,10+(s.gRef-s.gElev)*4);s.depth=Math.min(0.9,Math.max(0,(P*s.sus-0.02)*s.expos));s.status=statusOf(s);}
+  fillFlood(m.g,m.hh,m.FS);
+  const P=mapPal(),cols=P.bands.map(c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)]);
+  const ctx=m.cv.getContext("2d"),img=ctx.createImageData(m.g.GW,m.g.GH),px=img.data,dp=m.FS.depth;
+  for(let i=0;i<dp.length;i++){const d=dp[i];if(d<=0.03)continue;const c=d<0.33?cols[1]:cols[2],o=i*4;px[o]=c[0];px[o+1]=c[1];px[o+2]=c[2];px[o+3]=225;}
+  ctx.putImageData(img,0,0);
+}
+// the campuses whose box is in view and big enough to show water, as [campus, box px, fade]
+function nsimVisible(){
+  if(NATGL.state!=="on")return [];
+  const map=NATGL.map,m=natBox(),w=m.clientWidth,h=m.clientHeight,out=[];
+  for(const c of CAMPUSES){
+    const [[W0,S0],[E0,N0]]=bwCampusBox(c.lat,c.lon),a=map.project([W0,N0]),b=map.project([E0,S0]);
+    if(b.x<0||a.x>w||b.y<0||a.y>h)continue;
+    const span=(b.x-a.x)/Math.max(1,Math.min(w,h)),fade=Math.max(0,Math.min(1,(span-0.06)/(0.2-0.06)));
+    if(fade>0)out.push([c,fade]);
+  }
+  return out;
+}
+function nsimDraw(){
+  const cv=$("nat-flood");
+  if(!NSIM.on||NATGL.state!=="on"){if(cv.width)cv.width=0;return;}
+  const m=natBox(),w=m.clientWidth,h=m.clientHeight,dpr=Math.min(window.devicePixelRatio||1,2);
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const map=NATGL.map,P=mapPal(),t=Math.round(NSIM.t);
+  for(const [c,fade] of nsimVisible()){
+    const md=NSIM.sites[c.id];
+    if(!md){if(!NSIM.want.has(c.id)){NSIM.want.add(c.id);loadSiteData(c.id).then(d=>{NSIM.sites[c.id]=nsimModel(d);nsimDraw();},()=>{});}continue;}
+    nsimStep(md,t);
+    const b=md.bbox,a=map.project([b[0],b[3]]),z=map.project([b[2],b[1]]);
+    ctx.globalAlpha=fade;ctx.imageSmoothingEnabled=true;ctx.drawImage(md.cv,a.x,a.y,z.x-a.x,z.y-a.y);
+    for(const s of md.hh){const p=map.project([s.lon,s.lat]);drawMarker(ctx,p.x,p.y,5,s.status,STATUS_COL[s.status],P,false);}
+  }
+  ctx.globalAlpha=1;
+}
+function nsimTick(now){
+  NSIM.raf=0;if(!NSIM.on||ROUTE!=="ph")return;
+  const dt=Math.min(0.25,(now-(NSIM.last||now))/1000);NSIM.last=now;
+  NSIM.t+=dt*NSIM_MIN_PER_S;if(NSIM.t>NSIM_T1)NSIM.t=NSIM_T0;      // the storm loops
+  const hm=Math.floor(NSIM.t/60)+":"+String(Math.floor(NSIM.t%60)).padStart(2,"0");
+  $("nat-storm-t").textContent=fill(NL().stormNow,{t:hm});
+  nsimDraw();
+  NSIM.raf=requestAnimationFrame(nsimTick);
+}
+function nsimSync(){
+  const b=$("nat-storm"),L=NL();b.hidden=NATGL.state!=="on";b.textContent=NSIM.on?L.stormOff:L.stormOn;b.setAttribute("aria-pressed",NSIM.on?"true":"false");
+  if(!NSIM.on)$("nat-storm-t").textContent="";
+  if(NSIM.on&&!NSIM.raf&&ROUTE==="ph"){NSIM.last=0;NSIM.raf=requestAnimationFrame(nsimTick);}
+  natPins();
+}
+document.getElementById("nat-storm").addEventListener("click",()=>{NSIM.on=!NSIM.on;if(NSIM.on&&NSIM.t<NSIM_T0)NSIM.t=NSIM_T0;natRender();});
 let natPinsF=0;
 const natPinsSoon=()=>{if(!natPinsF)natPinsF=requestAnimationFrame(()=>{natPinsF=0;natPins();});};
 function natBoxPlace(){
@@ -3094,7 +3201,7 @@ function natGLStart(){
   // on a touch screen one finger scrolls the page past the map (it sits above the list on a phone); two fingers move it
   bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("nat-gl"),{bounds:PH_BOUNDS,theme:th,reduced:reducedMotion,padding:24,minZoom:3,
     cooperativeGestures:matchMedia("(pointer: coarse)").matches,locale:bwCoopLocale(NL().coop)}))
-    .then(map=>{NATGL.map=map;NATGL.state="on";NATGL.theme=th;document.body.dataset.natgl="1";$("nat-credit").hidden=false;
+    .then(map=>{NATGL.map=map;NATGL.state="on";NATGL.theme=th;document.body.dataset.natgl="1";$("nat-credit").hidden=false;nsimSync();
       NATGL.refit=ROUTE!=="ph"||!natBox().clientWidth;              // opened out of sight: its zoom is for a 0-size box
       if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme()));NATGL.theme=curTheme();}   // switched while it loaded
       bwSetLocale(map,bwCoopLocale(NL().coop));                     // the language may have changed while it loaded
@@ -3132,8 +3239,13 @@ function natRender(){
   $("nat-h").textContent=L.title;$("nat-intro").textContent=L.intro;$("nat-map-l").textContent=L.mapL;
   $("nat-desc").textContent=fill(L.desc,{n:CAMPUSES.length,luzon:cnt("Luzon"),visayas:cnt("Visayas"),mindanao:cnt("Mindanao")});
   $("nat-legend").innerHTML=["SUC","LUC","Private"].map(t=>`<li><span class="pin-shape pin-${t.toLowerCase()}" aria-hidden="true"></span>${esc(L.typesShort[t])}</li>`).join("")+
-    `<li><span class="sea-sw" aria-hidden="true"></span>${esc(L.sea)}</li>`;
+    `<li><span class="sea-sw" aria-hidden="true"></span>${esc(L.sea)}</li>`+
+    // the storm's own key: the water and the sensor shapes the campus pages use (their words, from the page's language table)
+    (NSIM.on?(()=>{const G=(LANGS[LANG]||LANGS.en).lg,P=mapPal();return `<li class="lg-storm"><i class="lg-w" style="background:${P.bands[1]}"></i>${esc(G[0])}</li>`+
+      `<li class="lg-storm"><i class="lg-w" style="background:${P.bands[2]}"></i>${esc(G[1])}</li>`+
+      [["ok",2],["warn",3],["alert",4]].map(([k,i])=>`<li class="lg-storm"><span class="shape ${k}" aria-hidden="true"></span>${esc(G[i])}</li>`).join("");})():"");
   $("nat-credit").textContent=L.credit;$("nat-credit").hidden=NATGL.state!=="on";   // the tiles' credit, only under the tiles
+  if(typeof nsimSync==="function")nsimSync();
   if(NATGL.state==="on")bwSetLocale(NATGL.map,bwCoopLocale(L.coop));   // the map's two-finger help line
   for(const [id,k] of [["nat-zin","zin"],["nat-zout","zout"],["nat-home","home"]]){$(id).setAttribute("aria-label",L[k]);$(id+"-tip").textContent=L[k];}
   $("nat-q-l").textContent=L.search;$("nat-foot").textContent=L.foot;$("nat-note").textContent=L.mapNote;

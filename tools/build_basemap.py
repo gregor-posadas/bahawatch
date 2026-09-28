@@ -42,12 +42,14 @@ def base(tip, national, density, tmp):
     # in its own archive to zoom 13 so the coast stays true at street scale; the coarse page outline if it is missing
     land_src = os.path.join(ROOT, "inputs", "ph_land_detailed.json")
     land = json.load(open(land_src, encoding="utf-8")) if os.path.exists(land_src) else outline
-    lp = os.path.join(tmp, "land.geojsonl")
-    with open(lp, "w") as f:
+    lp, cp = os.path.join(tmp, "land.geojsonl"), os.path.join(tmp, "coast.geojsonl")
+    with open(lp, "w") as f, open(cp, "w") as fc:
         for poly in (land["coordinates"] if land["type"] == "MultiPolygon" else [land["coordinates"]]):
             f.write(feat({}, {"type": "Polygon", "coordinates": poly}))
+            for ring in poly:                  # the coastline as lines, so the outline has no seams at tile edges
+                fc.write(feat({}, {"type": "LineString", "coordinates": ring}))
     run(tip, ["-o", os.path.join(OUT, "ph-land.pmtiles"), "-Z0", "-z13", "--simplification=4", "--no-tiny-polygon-reduction",
-              "--detect-shared-borders", "--coalesce", "-L", f"land:{lp}"])
+              "--detect-shared-borders", "--coalesce", "-L", f"land:{lp}", "-L", f"coast:{cp}"])
     with open(paths["builtup"], "w") as f, open(density) as src:
         for r in csv.DictReader(src):
             n = int(r["n"])
