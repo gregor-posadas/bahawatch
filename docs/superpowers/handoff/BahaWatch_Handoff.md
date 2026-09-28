@@ -1,6 +1,7 @@
 # BahaWatch: handoff for a new chat
 
-Last updated: 2026-09-27 (Sunday): the nationwide PhilDev prototype (plan Tasks 1–13) is merged into `main`.
+Last updated: 2026-09-27 (Sunday, evening): **PhilDev UI round 2** is built and reviewed on branch `phildev-ui-round2`,
+waiting for Gregor's review and merge. The nationwide PhilDev prototype (round 1) is merged into `main`.
 Kept at `docs/superpowers/handoff/BahaWatch_Handoff.md` in the repo and as `claude/BahaWatch_Handoff.md` in the
 "Berkeley PhD" Project. It is refreshed at milestones (after plan Tasks 5, 7 and 13) and whenever work stops mid-plan.
 
@@ -10,19 +11,21 @@ Kept at `docs/superpowers/handoff/BahaWatch_Handoff.md` in the repo and as `clau
 
 1. **Start the chat inside the "Berkeley PhD" Project.** That way this document, the spec and the plan are readable
    from the Project.
-2. **Attach `bahawatch.bundle`** from your Downloads. It is the whole git history of the
-   `main` branch. The newest copy is the one Claude sent last in the previous chat.
+2. **Attach `bahawatch.bundle`** from your Downloads. It is the whole git history of `main` (and of
+   `phildev-ui-round2` while that branch is open). The newest copy is the one Claude sent last in the previous chat.
 3. **Link the chat to your computer** (desktop app → "Link to this computer") if the work needs your PC.
    The pipeline step (plan Task 5), and re-staging the campus cuts, both need it.
 4. **Paste this as the first message:**
 
 > Continue BahaWatch from the handoff document `claude/BahaWatch_Handoff.md` in this Project (read it first, all
-> of it). Restore the repo from the attached `bahawatch.bundle` into `/home/claude/work` on branch `main`. The PhilDev prototype is merged and live. Next I want to: [say what].
+> of it). Restore the repo from the attached `bahawatch.bundle` into `/home/claude/work` (branch `main`, or
+> `phildev-ui-round2` if it isn't merged yet). Next I want to: [say what].
 
 **What the new chat should do first:**
 
 ```bash
 git clone -b main /mnt/user-data/uploads/bahawatch.bundle /home/claude/work
+# if round 2 is not merged yet: cd /home/claude/work && git fetch /mnt/user-data/uploads/bahawatch.bundle phildev-ui-round2:phildev-ui-round2
 cd /home/claude/work && git config user.name "Gregor" && git config user.email "gregor500man.gerp@gmail.com"
 git branch -a && git log --oneline -12
 ```
@@ -78,7 +81,49 @@ All four points are done; point 4 is live once Gregor pushes the merged `main` (
 
 ---
 
-## 3. Where the work is now: the nationwide PhilDev prototype
+## 3. Where the work is now: PhilDev UI round 2 (branch `phildev-ui-round2`)
+
+| Item | Status | File (repo) | PDF sent |
+|---|---|---|---|
+| UX profile | written 2026-09-27 | `.ux-profile.md` (and the "UI/UX skills" block in `CLAUDE.md`) | — |
+| Design spec | approved 2026-09-27 | `docs/superpowers/specs/2026-09-27-phildev-ui-round2-design.md` | BahaWatch_PhilDev-UI-Round2_Spec_2026-09-27.pdf |
+| Implementation plan | approved 2026-09-27 (incl. ruling 1, vendoring MapLibre); **execution: subagent-driven** | `docs/superpowers/plans/2026-09-27-phildev-ui-round2.md` | BahaWatch_PhilDev-UI-Round2_Plan_2026-09-27.pdf |
+| Build report | written | `docs/superpowers/reports/2026-09-27-phildev-ui-round2-build-report.md` | BahaWatch_PhilDev-UI-Round2_Build_Report_2026-09-27.pdf |
+| Branch | all 8 tasks done, each reviewed; final whole-branch review done and its fixes in; **waiting for Gregor's review, then merge** | — | — |
+| Private demo | updated (version 27) with the vendored MapLibre files | — | — |
+
+**What round 2 did (Gregor's list):** stray "‹ All campuses · UPLB" bar and yellow strip gone; Try map sharp at any
+display scale; national and campus text in all six languages, with `<html lang>` and `translate="no"` when not English so
+Chrome's translation doesn't fight ours; PhilDev tab is one screen — a full-window map (MapLibre + OpenFreeMap vector
+tiles: roads, buildings, a coloured sea; smooth zoom; clusters; fly-to with the campus box and "Open …") beside a
+two-line campus list, no "Pilot sites"/"Try reporting"/"‹ All campuses"; every site map zooms out to the whole country
+("Whole country", "Back to the flood map", Escape); pages widen to 1600 px; type pass (400/600/700, 12–31 px scale,
+nothing below 12 px); sea colour on campus maps; Try reporting inside a CSS phone outline, opening on ~700 m.
+
+**Progress:** Tasks 1–7 complete (commits 35d3139..70ed71d); Task 8 docs, UX audit (1 hard fail fixed), final review
+(0 Critical, 4 Important + 1 re-graded — all fixed; one fix reverted, below), build report, demo, bundle — done.
+
+**Rulings to know** (full list in the build report §4):
+- MapLibre GL JS 6.11.2 is vendored in `lib/maplibre-gl-6.11.2/` (Gregor approved), not jsDelivr.
+- Light sea `#d6ddde`, dark `#1f2c35` (ΔE2000 ≥ 15 from the flood blues, NOAH purples, creek blue).
+- The 8 s rule: the outline map stays if no tile arrives within 8 s; if a tile arrived, the vector map is kept.
+- Below 900 px a list row opens the campus; at ≥ 900 px it flies the map and shows "Open …".
+- The country view carries the OSM/OpenFreeMap credit and a screen-reader description ("campuses in view, out of 25").
+- On touch screens the national map needs two fingers to move (one finger scrolls the page).
+- **Reverted:** "only the list scrolls" at ≥ 900 px — it shrank the list to a few pixels on landscape phones (932×430).
+  The left column scrolls instead; re-do it with a min-height condition and a short-screen test.
+
+**Check on the live site after the push** (couldn't be seen here — the proxy blocks OpenFreeMap):
+- the PhilDev tab loads the vector map (GitHub Pages must serve `.mjs` as JavaScript);
+- dark mode on the vector map; buildings vs roads at street zoom;
+- the zoom-out on a campus page.
+
+**Privacy (for the PhilDev counsel check):** every visitor's browser now requests map tiles and fonts from
+`tiles.openfreemap.org`, which sees their IP address and the map area viewed. BahaWatch stores nothing new.
+
+---
+
+## 3a. Round 1: the nationwide PhilDev prototype (merged)
 
 **Status and documents:**
 
@@ -176,8 +221,10 @@ plp ptc pup qcu sti udm umak ust upd uplb ctu usc llcc mcc upc msuiit ustp xu`.
 - Never send his email address to outside services.
 
 **Workflow**
-- Superpowers: brainstorming → spec (+PDF) → writing-plans (+PDF) → execution. He chose subagent-driven before and
-  **Native** now. The whole-branch review runs at the end.
+- Superpowers: brainstorming → spec (+PDF) → writing-plans (+PDF) → execution. Round 1 ran **Native**; round 2 ran
+  **subagent-driven** (a fresh implementer and reviewer per task). The whole-branch review runs at the end.
+- UI work follows `.ux-profile.md` (custom look: subway signage on warm paper; WCAG AA + 48 px; plain voice, sentence
+  case; no emoji; the 6 banned patterns) and ends with the `ux-audit` skill.
 
 **Commits**
 - Author: `Gregor <gregor500man.gerp@gmail.com>` (set in the repo config).
@@ -225,7 +272,11 @@ plp ptc pup qcu sti udm umak ust upd uplb ctu usc llcc mcc upc msuiit ustp xu`.
 - Worker: `cd worker && node --test --no-warnings test/*.test.js`.
 - Places: `python3 tools/test_places.py`.
 - Build: `./test_build.sh`.
-- Page suites: `./test_pages.sh` runs every `test_*.js` (16 suites) over `http://127.0.0.1:8765/`; `./test_pages.sh test_x.js` runs one.
+- Page suites: `./test_pages.sh` runs every `test_*.js` (17 suites, incl. `test_zoomout.js`) over `http://127.0.0.1:8765/`
+  with `BW_TEST_BASEMAP=offline` (basemap styles served from `tests/fixtures/basemap-offline.json`; `?real` on a style
+  URL bypasses it); `./test_pages.sh test_x.js` runs one.
+- Basemap: `node --test --no-warnings shared/*.test.js sw.test.js` (43, incl. `shared/basemap.test.js`);
+  `python3 -m unittest tools.test_basemap_style` (styles regenerate with `python3 tools/basemap_style.py`).
 - Pipeline: `cd pipeline && python3 -W ignore -m unittest discover -s tests -t .` (35); model: `python3 -W ignore -m unittest discover -s model/tests -t .` (20).
 - Site checks: `python3 -W ignore tools/check_site_data.py [ids]`. README §2.5 is the campus pipeline runbook.
 - Failures print `FAIL` at the start of a line.
@@ -255,6 +306,12 @@ plp ptc pup qcu sti udm umak ust upd uplb ctu usc llcc mcc upc msuiit ustp xu`.
 - the live-only bugs: live polling can stall after a hidden-tab timer, and the live map description still describes simulated
   sensors.
 
+**Deferred minors from round 2** (full list in its build report §5): the list-only scroll layout (reverted, above);
+wheel over a pin doesn't zoom the vector map; the country view's 44 px box can surround a whole cluster; edge pins
+half-clipped in the country view; `.house-grid` clips unit ids in the Details rail (pre-existing); campus-page header
+controls are 36 px, not 48 (pre-existing); fil's review tag is empty in the menu; Kapampangan "taludtud" and Ilokano
+"putput-ol" to check; `bwSetLocale` uses MapLibre's private `_locale`.
+
 **Deferred minors** (from the earlier build reports):
 - a home-screen relaunch can restore `#try`;
 - the Try tab label stays English;
@@ -267,7 +324,7 @@ plp ptc pup qcu sti udm umak ust upd uplb ctu usc llcc mcc upc msuiit ustp xu`.
 - native-speaker review of the ceb, ilo, hil and pam strings, and of all `_review` strings from this round;
 - LiPAD 1 m DTM when granted (it would replace FABDEM);
 - optional JAXA GSMaP rain;
-- a PhilDev counsel privacy check before any launch.
+- a PhilDev counsel privacy check before any launch (now including the OpenFreeMap tile requests, §3).
 
 ---
 
@@ -277,3 +334,4 @@ plp ptc pup qcu sti udm umak ust upd uplb ctu usc llcc mcc upc msuiit ustp xu`.
 - BahaWatch_Try-Reporting_Spec / Plan_2026-09-26.pdf
 - BahaWatch_PhilDev-Campuses_Spec / Plan_2026-09-27.pdf
 - BahaWatch_PhilDev-Campuses_Build_Report_2026-09-27.pdf
+- BahaWatch_PhilDev-UI-Round2_Spec / Plan / Build_Report_2026-09-27.pdf
