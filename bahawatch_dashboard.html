@@ -3158,15 +3158,34 @@ function bwStyleUrl(theme, set) {
 }
 // A PMTiles archive read with HTTP range requests; a server that ignores Range (sends the whole file with 200) is fine
 // too — the file is kept and sliced.
+// Every piece is checked before use: after a redeploy Chrome's cache can hand back a stale or zero-filled piece
+// ("Wrong magic number for PMTiles archive", every map down; Gregor's Chrome, 2026-09-28). Our archives are gzip
+// throughout, so the header starts "PMTiles" and every other piece 1f 8b; a piece that doesn't is fetched once more
+// past the cache, and fails (that one tile only) if it is still wrong.
 class BwSource {
-  constructor(key) { this.key = key; this.whole = null; }
+  constructor(key) { this.key = key; this.whole = null; this.gz = false; }
   getKey() { return this.key; }
+  sound(off, buf) {
+    const u = new Uint8Array(buf, 0, Math.min(99, buf.byteLength));
+    if (off === 0) {
+      if (u.length < 7 || String.fromCharCode(...u.slice(0, 7)) !== "PMTiles") return false;
+      this.gz = u.length > 98 && u[97] === 2 && u[98] === 2;   // internal and tile compression both gzip
+      return true;
+    }
+    return !this.gz || (u[0] === 0x1f && u[1] === 0x8b);
+  }
   async getBytes(off, len, signal) {
     if (!this.whole) {
-      const r = await fetch(this.key, { signal, headers: { range: "bytes=" + off + "-" + (off + len - 1) } });
-      if (r.status === 206) return { data: await r.arrayBuffer() };
-      if (!r.ok) throw new Error("tiles: " + r.status + " " + this.key);
-      this.whole = await r.arrayBuffer();
+      for (const cache of [undefined, "reload"]) {
+        const o = { signal, headers: { range: "bytes=" + off + "-" + (off + len - 1) } };
+        if (cache) o.cache = cache;
+        const r = await fetch(this.key, o);
+        if (r.status === 206) { const data = await r.arrayBuffer(); if (this.sound(off, data)) return { data }; continue; }
+        if (!r.ok) throw new Error("tiles: " + r.status + " " + this.key);
+        const whole = await r.arrayBuffer();                   // a server without ranges: the whole file, checked once
+        if (this.sound(0, whole)) { this.whole = whole; break; }
+      }
+      if (!this.whole) throw new Error("tiles: corrupt piece at " + off + " of " + this.key);
     }
     return { data: this.whole.slice(off, off + len) };
   }
@@ -3234,7 +3253,9 @@ function bwOpenMap(lib, container, o) {
         transformRequest: (url) => (/^[a-z][a-z0-9+.-]*:/i.test(url) ? undefined : { url: new URL(url, location.href).href }), cooperativeGestures: !!o.cooperativeGestures, locale: o.locale });
     } catch (e) { fail(e); return; }
     if (map.touchZoomRotate) map.touchZoomRotate.disableRotation(); if (map.keyboard) map.keyboard.disableRotation();
-    map.on("error", (e) => { if (!gotTile && !map.isStyleLoaded()) fail(e); });
+    // a failed style, font or library before any tile gives up; a failed tile source (one campus's archive) does not:
+    // the other sources still draw, and the time limit still catches a map with no tile at all
+    map.on("error", (e) => { if (!gotTile && !map.isStyleLoaded() && !(e && e.sourceId)) fail(e); });
     map.on("sourcedata", (e) => { if (e.tile) gotTile = true; });
     map.on("idle", () => { if (gotTile) settle(map); });
   });

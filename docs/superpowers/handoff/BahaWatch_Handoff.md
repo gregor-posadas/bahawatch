@@ -126,6 +126,17 @@ review and reports"). Commits `62a9601` → `efbb216`:
    with exactly that note). If a user still sees the note after a visible reload, suspect the browser's WebGL (check
    `chrome://gpu`).
 
+8. **Corrupted tile pieces from Chrome's cache** (2026-09-28, the real cause of Gregor's "can't be shown on this
+   device" in Chrome but not Brave; his Chrome had WebGL hardware accelerated). After a redeploy, GitHub Pages gives
+   every file a new ETag, and Chrome's cache served a zero-filled 16 KB start of `site-upd.pmtiles` (and
+   `site-tv.pmtiles`) labelled with the old ETag. PMTiles threw "Wrong magic number", and because every map's style
+   lists all 26 site archives, one bad archive took down every map. Fix in `shared/basemap.js`: `BwSource` checks each
+   piece (header "PMTiles"; every other piece gzip `1f 8b`, as all our archives are gzip) and fetches a bad piece once
+   more with `cache:'reload'`; `bwOpenMap` no longer gives up on an error from one tile source (`e.sourceId`). Tests:
+   three `BwSource` tests and one `bwOpenMap` test in `shared/basemap.test.js`, and `test_tiles_corrupt.js` (real style
+   via `window.BW_BASEMAP_STYLE='shared/basemap-style.json?real'`). Note: the other page suites run on the offline
+   fixture style, so they never touch the real tile files; new tile-path tests should use the real style.
+
 **Still to do for round 2:**
 - **Push the hidden-page fix**, then **check the live site**: tiles and fonts load (`.pmtiles` range requests, `.mjs` served as
   JavaScript), dark vector style, campus zoom-out, the new timeline. Claude has not seen the real dark style or the demo in
@@ -190,9 +201,9 @@ Demo chip `demoChip(L)`; weather buttons `.scen-group [data-sc=clear|monsoon|typ
 **Worker** (Cloudflare Workers + D1 + Turnstile): written, not deployed, unchanged in round 2.
 
 **Tests** (all green at `efbb216`):
-- Page suites: `./test_pages.sh` (19 suites, incl. `test_hidden.js`,, incl. `test_zoomout.js` 26 checks and `test_zoomout_fallback.js`), served on
+- Page suites: `./test_pages.sh` (20 suites, incl. `test_hidden.js`, `test_tiles_corrupt.js`,, incl. `test_zoomout.js` 26 checks and `test_zoomout_fallback.js`), served on
   8765 with `BW_TEST_BASEMAP=offline`. One suite: `./test_pages.sh test_x.js`; logs in `/tmp/bw_test_x.js.log`.
-- `node --test --no-warnings shared/*.test.js sw.test.js` (46); `(cd worker && node --test --no-warnings test/*.test.js)`
+- `node --test --no-warnings shared/*.test.js sw.test.js` (50); `(cd worker && node --test --no-warnings test/*.test.js)`
   (46); `python3 -m unittest tools.test_basemap_style`; `./test_build.sh`.
 - **Gotchas:** a probe server left running on 8765 (started without `BW_TEST_BASEMAP=offline`) makes `test_noaccount`
   and others fail: kill it by PID before `./test_pages.sh`. Never `pkill -f`/`pgrep -f` a pattern that appears in the

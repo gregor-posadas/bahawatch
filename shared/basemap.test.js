@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bwCluster, bwCoverage, bwFitVB, bwCampusBox, bwStyleUrl, bwOpenMap, bwCoopLocale, bwSetLocale } from './basemap.js';
+import { bwCluster, bwCoverage, bwFitVB, bwCampusBox, bwStyleUrl, bwOpenMap, bwCoopLocale, bwSetLocale, BwSource } from './basemap.js';
 
 // A minimal stand-in for a MapLibre Map: an event emitter with the handful of members bwOpenMap touches.
 function fakeMap() {
@@ -151,4 +151,48 @@ test('bwSetLocale updates the strings and rebuilds the gesture screen, which rea
   cg.on = false; calls.length = 0;
   bwSetLocale(map, { 'CooperativeGesturesHandler.MobileHelpText': 'again' });
   assert.deepEqual(calls, []);
+});
+
+// Chrome's cache can hand back a stale or zero-filled piece of a tile file after a redeploy (seen 2026-09-28 in Gregor's
+// Chrome: "Wrong magic number for PMTiles archive", every map down). Our archives are gzip throughout, so every piece
+// has a known first bytes: the header starts "PMTiles", every other piece 1f 8b. A piece that doesn't is fetched again
+// past the cache.
+const HEAD = () => { const b = new Uint8Array(16384); b.set([...'PMTiles'].map((c) => c.charCodeAt(0))); b[7] = 3; b[97] = 2; b[98] = 2; return b; };
+const GZ = (n) => { const b = new Uint8Array(n); b[0] = 0x1f; b[1] = 0x8b; return b; };
+function fakeFetch(answers) {
+  const calls = [];
+  const f = async (url, o) => { calls.push({ url, cache: o.cache, range: o.headers.range }); const b = answers.shift();
+    return { status: 206, ok: true, arrayBuffer: async () => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) }; };
+  f.calls = calls; return f;
+}
+test('BwSource: a zero-filled header from the cache is fetched again past the cache', async () => {
+  const f = fakeFetch([new Uint8Array(16384), HEAD()]); globalThis.fetch = f;
+  const r = await new BwSource('t.pmtiles').getBytes(0, 16384);
+  assert.equal(String.fromCharCode(...new Uint8Array(r.data).slice(0, 7)), 'PMTiles');
+  assert.deepEqual(f.calls.map((c) => c.cache), [undefined, 'reload']);
+});
+test('BwSource: a tile piece that is not gzip is fetched again past the cache; a good one is fetched once', async () => {
+  const f = fakeFetch([HEAD(), new Uint8Array(500), GZ(500), GZ(300)]); globalThis.fetch = f;
+  const s = new BwSource('t.pmtiles');
+  await s.getBytes(0, 16384);
+  const r = await s.getBytes(20000, 500);
+  assert.equal(new Uint8Array(r.data)[0], 0x1f);
+  await s.getBytes(30000, 300);
+  assert.deepEqual(f.calls.map((c) => c.cache), [undefined, undefined, 'reload', undefined]);
+});
+test('BwSource: still wrong after the second fetch, the piece fails (one bad tile, not a silent blank)', async () => {
+  const f = fakeFetch([new Uint8Array(16384), new Uint8Array(16384)]); globalThis.fetch = f;
+  await assert.rejects(new BwSource('t.pmtiles').getBytes(0, 16384), /corrupt/);
+});
+test('bwOpenMap: an error from one tile source before any tile does not take the whole map down', async () => {
+  const map = fakeMap();
+  let out = 'pending';
+  bwOpenMap(fakeLib(map), {}, { timeout: 1000 }).then(() => { out = 'resolved'; }, () => { out = 'rejected'; });
+  map.emit('error', { sourceId: 'site-upd', error: new Error('Wrong magic number for PMTiles archive') });
+  await wait(5);
+  assert.equal(out, 'pending');
+  assert.equal(map.removed, 0);
+  map.emit('sourcedata', { tile: {} }); map.emit('idle');
+  await wait(5);
+  assert.equal(out, 'resolved');
 });
