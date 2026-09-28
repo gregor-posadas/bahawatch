@@ -36,6 +36,31 @@ const aligned=pg=>pg.evaluate(()=>{const b=DATA.bbox,m=SITEGL.map,nw=m.project([
     tall:[...document.querySelectorAll('.p-scen button')].every(b=>b.getBoundingClientRect().height>=48)}));
   assert(s.sc==="typhoon"&&s.chip==="Demo · simulated typhoon"&&s.det==="typhoon"&&s.lbl==="Simulated weather"&&s.btns.join("|")==="Dry day|Habagat rain|Typhoon"&&s.tall,
     "the campus page picks the weather itself (Dry day, Habagat rain, Typhoon); the chip and Details follow: "+JSON.stringify(s));
+  // the simulation clock on the campus page, beside the weather row: play/pause, the PHT clock, a scrub bar; one clock with Details
+  s=await pg.evaluate(()=>{const tl=document.getElementById('p-tl'),sc=document.querySelector('.p-scen').getBoundingClientRect(),r=tl.getBoundingClientRect(),
+    m=document.getElementById('public-map').getBoundingClientRect(),c=document.getElementById('p-scrub').getBoundingClientRect(),p=document.getElementById('p-play').getBoundingClientRect();
+    return {vis:r.width>0,right:r.left>=sc.right-1&&Math.abs(r.bottom-sc.bottom)<4,above:r.bottom<=m.top+1,inMap:r.right<=m.right+1,
+      scrubW:c.width,tall:p.height>=48&&p.width>=48&&c.height>=44,lbl:document.getElementById('p-play').getAttribute('aria-label'),
+      date:document.getElementById('p-clock-date').textContent};});
+  assert(s.vis&&s.right&&s.above&&s.inMap&&s.scrubW>=150&&s.tall,"the timeline sits right of the weather buttons, above the map, fitted to the map's width: "+JSON.stringify(s));
+  assert(/simulated PHT$/.test(s.date)&&/simulation$/.test(s.lbl),"it says the time is simulated PHT, and the play button has a name: "+JSON.stringify(s));
+  await pg.click('#p-play');
+  s=await pg.evaluate(()=>({p:playing,d:document.getElementById('play').getAttribute('aria-label'),q:document.getElementById('p-play').getAttribute('aria-label')}));
+  assert(s.p===false&&s.d==="Play simulation"&&s.q==="Play the simulation","its play button pauses the one simulation (Details shows paused too): "+JSON.stringify(s));
+  const sb=await pg.evaluate(()=>{const r=document.getElementById('p-scrub').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};});
+  await pg.mouse.click(sb.x,sb.y);await pg.waitForTimeout(150);
+  s=await pg.evaluate(()=>({t:tMin,end:T_END,a:document.getElementById('p-clock').textContent,b:document.getElementById('clock').textContent,v:+document.getElementById('p-scrub').getAttribute('aria-valuenow')}));
+  assert(Math.abs(s.t-s.end/2)<30&&s.a===s.b&&Math.abs(s.v-s.t)<1,"a click halfway along the bar jumps to mid-simulation; both clocks agree: "+JSON.stringify(s));
+  await pg.focus('#p-scrub');await pg.keyboard.press('End');await pg.waitForTimeout(100);
+  assert(await pg.evaluate(()=>tMin===T_END),"the bar works from the keyboard (End goes to the last hour)");
+  await pg.keyboard.press('Home');await pg.click('#p-play');
+  assert(await pg.evaluate(()=>playing===true),"play again");
+  // phone width: it wraps under the weather buttons, no sideways scroll
+  await pg.setViewportSize({width:390,height:844});await pg.waitForTimeout(300);
+  s=await pg.evaluate(()=>{const r=document.getElementById('p-tl').getBoundingClientRect(),sc=document.querySelector('.p-scen').getBoundingClientRect();
+    return {wrap:r.top>=sc.bottom-1,fits:r.right<=390,noScroll:document.documentElement.scrollWidth<=390,w:document.getElementById('p-scrub').getBoundingClientRect().width};});
+  assert(s.wrap&&s.fits&&s.noScroll&&s.w>=120,"at 390 px the timeline wraps under the weather row and fits: "+JSON.stringify(s));
+  await pg.setViewportSize({width:1280,height:900});await pg.waitForTimeout(300);
   // wheel out: no hand-over, the same map keeps zooming; the sensors fade, other campuses appear as pins
   await wheel(pg,8,200);
   s=await pg.evaluate(()=>({z:ZOOM.z,fade:siteFade(),over:!document.getElementById('country').hidden,out:siteZoomedOut,btn:document.getElementById('to-country').textContent}));
@@ -74,6 +99,7 @@ const aligned=pg=>pg.evaluate(()=>{const b=DATA.bbox,m=SITEGL.map,nw=m.project([
   // Try reporting: no zooming out to the country
   await pg.goto(U+'#try');await up(pg);await pg.waitForTimeout(300);
   assert(await pg.evaluate(()=>document.getElementById('to-country').hidden&&document.querySelectorAll('#site-pins > *').length===0),"Try reporting: no 'Whole country', no campus pins");
+  assert(await pg.evaluate(()=>document.getElementById('p-tl').getBoundingClientRect().width===0),"Try reporting: no simulation timeline");
   assert(errs.length===0,"no page errors: "+errs.join("; "));
   await b.close();
 })();

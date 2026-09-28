@@ -160,11 +160,20 @@ header{display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:14px 
 .scenarios button{padding:7px 16px; font-weight:600; color:var(--ink-2); font-size:14px; border-radius:999px; min-height:32px}
 .scenarios button.active{background:var(--brand); color:var(--on-brand)}
 /* the campus page's own weather row (the same scenarios as the Details header) */
-.p-scen{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:0 0 10px}
+.p-ctrl{display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 16px; margin:0 0 10px}
+.p-scen{display:flex; flex-wrap:wrap; align-items:center; gap:6px}
+.p-ctrl .p-scen{display:grid; grid-template-columns:repeat(3,auto); justify-content:start}
+.p-ctrl .p-scen-l{grid-column:1/-1; line-height:20px}   /* captions sit above each group, so weather and timeline share one row */
+.p-tl{flex:1 1 240px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; min-width:0}
+.p-tl .t-clock{order:-1; flex-basis:100%; min-width:0; line-height:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.p-tl .t-clock v{display:inline; font-size:16px; letter-spacing:0}
+.p-tl .t-clock l{display:inline; margin-left:8px}
+#p-play{width:48px; height:48px; border-radius:50%; background:var(--brand); color:var(--on-brand); font-size:16px; display:flex; align-items:center; justify-content:center; flex:none}
+#p-scrub{flex:1; min-width:120px; height:48px; display:block; border-radius:7px; background:var(--panel-2); cursor:ew-resize; touch-action:none}
 .p-scen-l{font-size:14px; font-weight:700; color:var(--ink); margin-right:4px}
 .p-scen button{min-height:48px; padding:0 14px; font-size:14px; font-weight:600; border:1px solid var(--ink); border-radius:4px; background:var(--panel); color:var(--ink)}
 .p-scen button.active{background:var(--ink); color:var(--panel)}
-body[data-try="1"] .p-scen, body[data-live="1"] .p-scen{display:none}
+body[data-try="1"] .p-scen, body[data-live="1"] .p-scen, body[data-try="1"] .p-tl, body[data-live="1"] .p-tl{display:none}
 #theme-toggle{width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:var(--panel); font-size:16px; display:flex; align-items:center; justify-content:center}
 
 main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
@@ -713,7 +722,14 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     </div>
     <div class="p-col-map">
       <div class="p-sec">
+        <div class="p-ctrl">
         <div class="p-scen scen-group" role="group" aria-labelledby="p-scen-l"><span class="p-scen-l" id="p-scen-l"></span><button data-sc="clear"></button><button data-sc="monsoon"></button><button data-sc="typhoon"></button></div>
+        <div class="p-tl" id="p-tl">
+          <button id="p-play" class="tl-play" aria-label="Pause the simulation">❚❚</button>
+          <div class="t-clock"><v id="p-clock">00:00</v><l id="p-clock-date"></l></div>
+          <canvas id="p-scrub" class="scrub" tabindex="0" role="slider" aria-label="Simulation timeline" aria-valuemin="0" aria-valuemax="2160" aria-valuenow="0" aria-valuetext="00:00"></canvas>
+        </div>
+        </div>
         <div id="public-map"></div>
         <div class="p-maplegend" aria-hidden="true">
           <span><i style="background:#2f86c2"></i><span id="p-lg1"></span></span>
@@ -1655,12 +1671,14 @@ function updateImpact(){
 }
 
 /* ---------- timeline ---------- */
-const scrub=document.getElementById("scrub");
-function drawScrub(){
+const scrub=document.getElementById("scrub"), pScrub=document.getElementById("p-scrub");
+const SCRUBS=[scrub,pScrub];   // the Details bar and the campus page's own bar: one simulation clock
+function drawScrub(c=scrub){
   const dpr=Math.min(window.devicePixelRatio||1,2);
-  const w=scrub.clientWidth,h=scrub.clientHeight;
-  if(scrub.width!==w*dpr){scrub.width=w*dpr;scrub.height=h*dpr;}
-  const ctx=scrub.getContext("2d");
+  const w=c.clientWidth,h=c.clientHeight;
+  if(!w)return;   // hidden in this view
+  if(c.width!==w*dpr||c.height!==h*dpr){c.width=w*dpr;c.height=h*dpr;}
+  const ctx=c.getContext("2d");
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,w,h);
   const maxV=0.95;
@@ -1695,15 +1713,17 @@ function rebuildHistory(){
     }
   }
 }
-function scrubTo(cx){
-  const r=scrub.getBoundingClientRect();
+function scrubTo(cx,c=scrub){
+  const r=c.getBoundingClientRect();
   tMin=Math.max(0,Math.min(T_END,(cx-r.left)/r.width*T_END));
   rebuildHistory();lastEmit=-999;step(0,true);
 }
-scrub.addEventListener("pointerdown",e=>{scrubbing=true;scrub.setPointerCapture(e.pointerId);scrubTo(e.clientX);});
-scrub.addEventListener("pointermove",e=>{if(scrubbing)scrubTo(e.clientX);});
-scrub.addEventListener("pointerup",()=>scrubbing=false);
-scrub.addEventListener("keydown",e=>{
+for(const c of SCRUBS){
+c.addEventListener("pointerdown",e=>{scrubbing=true;c.setPointerCapture(e.pointerId);scrubTo(e.clientX,c);});
+c.addEventListener("pointermove",e=>{if(scrubbing)scrubTo(e.clientX,c);});
+c.addEventListener("pointerup",()=>scrubbing=false);
+c.addEventListener("lostpointercapture",()=>scrubbing=false);
+c.addEventListener("keydown",e=>{
   const stepMap={ArrowLeft:-10,ArrowRight:10,ArrowDown:-10,ArrowUp:10,PageDown:-60,PageUp:60};
   let t=null;
   if(e.key in stepMap)t=tMin+stepMap[e.key];
@@ -1712,11 +1732,15 @@ scrub.addEventListener("keydown",e=>{
   if(t===null)return;
   e.preventDefault();tMin=Math.max(0,Math.min(T_END,t));rebuildHistory();lastEmit=-999;step(0,true);
 });
+}
 
 /* ---------- controls ---------- */
-const playBtn=document.getElementById("play");
-function setPlay(p){playing=p;playBtn.textContent=p?"❚❚":"▶";playBtn.setAttribute("aria-label",p?"Pause simulation":"Play simulation");}
+const playBtn=document.getElementById("play"), pPlayBtn=document.getElementById("p-play");
+function setPlay(p){playing=p;playBtn.textContent=pPlayBtn.textContent=p?"❚❚":"▶";playBtn.setAttribute("aria-label",p?"Pause simulation":"Play simulation");
+  pTlLabels();}
+function pTlLabels(){try{pPlayBtn.setAttribute("aria-label",playing?NL().simPause:NL().simPlay);pScrub.setAttribute("aria-label",NL().simTimeline);}catch(e){}}   // the language helpers load later in the page
 playBtn.addEventListener("click",()=>setPlay(!playing));
+pPlayBtn.addEventListener("click",()=>setPlay(!playing));
 setPlay(playing);
 document.querySelectorAll(".speed button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll(".speed button").forEach(x=>{x.classList.remove("active");x.setAttribute("aria-pressed","false");});
@@ -1795,7 +1819,12 @@ function step(dtMs,force){
   document.getElementById("clock").textContent=clockStr(tMin);
   scrub.setAttribute("aria-valuenow",Math.round(tMin));scrub.setAttribute("aria-valuetext",clockStr(tMin)+(playing?" playing":" paused"));
   document.getElementById("clock-date").textContent=dateStr(tMin);
-  drawScrub();
+  if(pScrub.clientWidth)try{   // the campus page's bar, in the page's language
+    document.getElementById("p-clock").textContent=clockStr(tMin);
+    document.getElementById("p-clock-date").textContent=NL().simClock.replace("{d}",new Date(BASE.getTime()+tMin*60000).toLocaleDateString(LANG==="en"?undefined:LANG,{month:"short",day:"numeric"})).replace("{tz}",SITE_CFG.tz);
+    pScrub.setAttribute("aria-valuenow",Math.round(tMin));pScrub.setAttribute("aria-valuetext",clockStr(tMin)+(playing?" playing":" paused"));
+  }catch(e){}
+  drawScrub();drawScrub(pScrub);
   drawOverlayCanvas();
 }
 let lastT=performance.now();
@@ -2842,7 +2871,7 @@ $("p-pick").addEventListener("click",e=>{
   $("p-my-btn").focus();
   pollNow();
 });
-$("p-lang").addEventListener("change",e=>{LANG=e.target.value;try{localStorage.setItem(langKey(),LANG);}catch(x){}renderPublic();syncCampusUI();});
+$("p-lang").addEventListener("change",e=>{LANG=e.target.value;try{localStorage.setItem(langKey(),LANG);}catch(x){}renderPublic();syncCampusUI();pTlLabels();});
 const NAV_LANG=(()=>{const nav=(navigator.language||"").toLowerCase();return nav.startsWith("fil")||nav.startsWith("tl")?"fil":nav.startsWith("ceb")?"ceb":nav.startsWith("ilo")?"ilo":nav.startsWith("hil")?"hil":nav.startsWith("pam")?"pam":"en";})();
 // The campuses share one language (the national map's); a pilot site keeps its own, and starts from the shared one.
 const LANG_KEY_PH="bw-lang:ph";

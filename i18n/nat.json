@@ -50,7 +50,11 @@
   "stormOn": "Simulate a typhoon",
   "stormOff": "Stop the typhoon",
   "stormNow": "Simulated typhoon · {t}",
-  "simWeather": "Simulated weather"
+  "simWeather": "Simulated weather",
+  "simPlay": "Play the simulation",
+  "simPause": "Pause the simulation",
+  "simTimeline": "Simulation timeline",
+  "simClock": "{d} · simulated {tz}"
  },
  "fil": {
   "_review": true,
@@ -104,7 +108,11 @@
   "stormOn": "Mag-simulate ng bagyo",
   "stormOff": "Itigil ang bagyo",
   "stormNow": "Kunwaring bagyo · {t}",
-  "simWeather": "Kunwaring panahon"
+  "simWeather": "Kunwaring panahon",
+  "simPlay": "I-play ang simulation",
+  "simPause": "I-pause ang simulation",
+  "simTimeline": "Timeline ng simulation",
+  "simClock": "{d} · kunwaring {tz}"
  },
  "ceb": {
   "_review": true,
@@ -158,7 +166,11 @@
   "stormOn": "Sulayi og bagyo",
   "stormOff": "Hunonga ang bagyo",
   "stormNow": "Sinulayan nga bagyo · {t}",
-  "simWeather": "Sinulayan nga panahon"
+  "simWeather": "Sinulayan nga panahon",
+  "simPlay": "Padagana ang simulasyon",
+  "simPause": "Hunonga ang simulasyon",
+  "simTimeline": "Timeline sa simulasyon",
+  "simClock": "{d} · sinulayan nga {tz}"
  },
  "ilo": {
   "_review": true,
@@ -212,7 +224,11 @@
   "stormOn": "Iyaramid ti simulasion a bagyo",
   "stormOff": "Isardeng ti bagyo",
   "stormNow": "Simulasion a bagyo · {t}",
-  "simWeather": "Simulasion ti panahon"
+  "simWeather": "Simulasion ti panahon",
+  "simPlay": "I-play ti simulasion",
+  "simPause": "I-pause ti simulasion",
+  "simTimeline": "Timeline ti simulasion",
+  "simClock": "{d} · simulasion {tz}"
  },
  "hil": {
   "_review": true,
@@ -266,7 +282,11 @@
   "stormOn": "Himuan sang simulasyon nga bagyo",
   "stormOff": "Untata ang bagyo",
   "stormNow": "Simulasyon sang bagyo · {t}",
-  "simWeather": "Simulasyon sang panahon"
+  "simWeather": "Simulasyon sang panahon",
+  "simPlay": "I-play ang simulasyon",
+  "simPause": "I-pause ang simulasyon",
+  "simTimeline": "Timeline sang simulasyon",
+  "simClock": "{d} · simulasyon {tz}"
  },
  "pam": {
   "_review": true,
@@ -320,6 +340,10 @@
   "stormOn": "Gawan ing simulasyun a bagyu",
   "stormOff": "Pundahan ing bagyu",
   "stormNow": "Simulasyun a bagyu · {t}",
-  "simWeather": "Simulasyun ning panahun"
+  "simWeather": "Simulasyun ning panahun",
+  "simPlay": "I-play ing simulasyun",
+  "simPause": "I-pause ing simulasyun",
+  "simTimeline": "Timeline ning simulasyun",
+  "simClock": "{d} · simulasyun {tz}"
  }
 }
