@@ -262,8 +262,11 @@ connection." The vector map is not retried later in the same visit.
 **Test plumbing.** `BW_TEST_BASEMAP=offline` starts the test server on an
 offline style (`tests/fixtures/basemap-offline.json`: the country outline
 and two roads, no network at all), so the browser suites can exercise the
-vector map path without reaching the internet. `?real` on the page's URL
-asks for the live OpenFreeMap tiles instead, for manual checking.
+vector map path without reaching the internet. The page itself never reads
+its URL's query. For manual checking against the live OpenFreeMap tiles,
+either run the server without `BW_TEST_BASEMAP`, or set
+`window.BW_BASEMAP_STYLE='shared/basemap-style.json?real'` before the map
+opens (the server serves the real style for a request with `?real`).
 
 **Privacy note.** Every visitor's browser requests tiles and fonts from
 `tiles.openfreemap.org`, which sees their IP address and the map area they
