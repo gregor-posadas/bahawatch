@@ -24,13 +24,15 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
         inside:[...pins,...cl].every(e=>{const r=e.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;return x>=m.left&&x<=m.right&&y>=m.top&&y<=m.bottom;}),
         labels:pins.every(p=>/: .+, .+\. (State|Local|Private)/.test(p.getAttribute('aria-label'))),text:pins.every(p=>p.querySelector('.pin-t').textContent.length>1),
         clusters:cl.map(c=>c.getAttribute('aria-label')),legend:[...document.querySelectorAll('#nat-legend li')].map(l=>l.textContent),
-        credit:document.getElementById('nat-credit').textContent,desc:document.getElementById('nat-desc').textContent,title:document.title,
+        credit:document.getElementById('nat-credit').textContent,creditShown:(e=>e.getClientRects().length>0&&getComputedStyle(e).display!=="none")(document.getElementById('nat-credit')),desc:document.getElementById('nat-desc').textContent,title:document.title,
         tabs:[...document.querySelectorAll('#nat .site-tabs [role=tab]')].map(t=>t.dataset.site+(t.getAttribute('aria-selected')==="true"?"*":""))};});
     assert(s.n===25&&s.shown===25&&s.inside,`${mode}: all 25 campuses are on the map, as pins or in clusters, inside the map box: ${s.shown}`);
     assert(s.labels&&s.text,`${mode}: each pin has a visible short label and a full spoken label`);
     assert(s.clusters.length>=1&&s.clusters.every(c=>/^\d+ campuses: .+Zoom in$/.test(c)),`${mode}: crowded pins become a cluster that says how many and which`);
     assert(s.legend.join("|")==="State|Local|Private|Sea",`${mode}: legend: the pin types and the sea: ${s.legend}`);
-    assert(s.credit==="© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre",`${mode}: map credits`);
+    // the tiles' credit renders only under the vector map: the outline is not from OpenStreetMap and loads no MapLibre (as rendered, not the attribute)
+    if(mode==="vector")assert(s.creditShown&&s.credit==="© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles · MapLibre",`${mode}: map credits shown`);
+    else assert(!s.creditShown,`outline: no OpenStreetMap/OpenFreeMap/MapLibre credit under the outline`);
     assert(s.desc==="Map of the Philippines with 25 PhilDev partner campuses: 17 in Luzon, 5 in Visayas, 3 in Mindanao. The campus list has the same campuses.",`${mode}: screen-reader description`);
     assert(s.tabs.join()==="ph*,tv,berkeley,try"&&/PhilDev partner campuses/.test(s.title),`${mode}: tabs and title`);
     s=await pg.evaluate(()=>[...document.querySelectorAll('#nat-list h2')].map(h=>h.dataset.group+h.dataset.n+":"+h.nextElementSibling.children.length));

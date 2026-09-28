@@ -108,6 +108,7 @@ body[data-natgl="1"] #nat-svg{visibility:hidden}
 .nat-legend{position:absolute; left:12px; top:12px; z-index:3; list-style:none; margin:0; padding:6px 10px; display:flex; flex-wrap:wrap; gap:4px 14px; font-size:14px; background:var(--panel); border:1px solid var(--line); border-radius:6px; max-width:calc(100% - 96px)}
 .nat-legend li{display:flex; align-items:center; gap:6px}
 .nat-credit{align-self:flex-start; margin:0; font-size:12px; color:var(--ink-2); background:var(--panel); padding:2px 6px; border-radius:4px}
+.nat-credit[hidden]{display:none}
 .nat-note{margin:8px 0 0; color:var(--ink)}
 .nat-note[hidden]{display:none}
 .nat-ql{display:block; font-weight:700; margin-bottom:6px}
@@ -2976,13 +2977,13 @@ function natGLStart(){
   if(NATGL.state!=="none")return;NATGL.state="loading";
   const th=curTheme();
   bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("nat-gl"),{bounds:PH_BOUNDS,theme:th,reduced:reducedMotion,padding:24,minZoom:3}))
-    .then(map=>{NATGL.map=map;NATGL.state="on";NATGL.theme=th;document.body.dataset.natgl="1";
+    .then(map=>{NATGL.map=map;NATGL.state="on";NATGL.theme=th;document.body.dataset.natgl="1";$("nat-credit").hidden=false;
       NATGL.refit=ROUTE!=="ph"||!natBox().clientWidth;              // opened out of sight: its zoom is for a 0-size box
       if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme()));NATGL.theme=curTheme();}   // switched while it loaded
       map.on("move",natPinsSoon);map.on("resize",natPinsSoon);
       if(NAT.sel){const c=CAMPUS_BY_ID[NAT.sel];map.fitBounds(bwCampusBox(c.lat,c.lon),{padding:60,maxZoom:15,duration:0});}
       natPins();},
-      ()=>{NATGL.state="off";const n=$("nat-note");n.textContent=NL().mapNote;n.hidden=false;});
+      ()=>{NATGL.state="off";$("nat-credit").hidden=true;const n=$("nat-note");n.textContent=NL().mapNote;n.hidden=false;});
 }
 // A theme switch restyles the vector maps; our overlays are untouched.
 function bwThemeChanged(t){
@@ -3013,7 +3014,7 @@ function natRender(){
   $("nat-desc").textContent=fill(L.desc,{n:CAMPUSES.length,luzon:cnt("Luzon"),visayas:cnt("Visayas"),mindanao:cnt("Mindanao")});
   $("nat-legend").innerHTML=["SUC","LUC","Private"].map(t=>`<li><span class="pin-shape pin-${t.toLowerCase()}" aria-hidden="true"></span>${esc(L.typesShort[t])}</li>`).join("")+
     `<li><span class="sea-sw" aria-hidden="true"></span>${esc(L.sea)}</li>`;
-  $("nat-credit").textContent=L.credit;
+  $("nat-credit").textContent=L.credit;$("nat-credit").hidden=NATGL.state!=="on";   // the tiles' credit, only under the tiles
   for(const [id,k] of [["nat-zin","zin"],["nat-zout","zout"],["nat-home","home"]]){$(id).setAttribute("aria-label",L[k]);$(id+"-tip").textContent=L[k];}
   $("nat-q-l").textContent=L.search;$("nat-foot").textContent=L.foot;$("nat-note").textContent=L.mapNote;
   if(NAT.sel)$("nat-open").textContent=fill(L.open,{short:CAMPUS_BY_ID[NAT.sel].short});
