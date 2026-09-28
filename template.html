@@ -199,6 +199,30 @@ main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
   padding:4px 10px; border-radius:5px;
 }
 
+/* zoom out to the country (spec §6.1): an overlay over the flood map */
+#country{position:absolute; inset:0; z-index:8; background:var(--sea)}
+#country[hidden]{display:none}
+#country-gl{position:absolute; inset:0; opacity:0; transition:opacity .3s}
+#country[data-gl="1"] #country-gl{opacity:1}
+#country-svg{position:absolute; inset:0; width:100%; height:100%}
+#country-land{fill:var(--map-bg); stroke:var(--ink-2); stroke-width:1; vector-effect:non-scaling-stroke}
+/* at country scale the box is drawn at least 44 px, round the pin or cluster it sits on, with a halo to read on any ground */
+.country-box{position:absolute; z-index:2; border:2px dashed var(--ink); box-shadow:0 0 0 2px var(--panel); pointer-events:none}
+.country-box[hidden],.country-label[hidden]{display:none}
+.country-label{position:absolute; z-index:3; margin:0; font-size:14px; font-weight:700; color:var(--ink); background:var(--panel); padding:2px 6px; border-radius:4px; white-space:nowrap; pointer-events:none}
+.country-note{position:absolute; left:12px; top:12px; z-index:3; margin:0; background:var(--panel); color:var(--ink); padding:6px 10px; border:1px solid var(--line); border-radius:6px}
+.country-note[hidden]{display:none}
+.country-back{align-self:flex-end}
+#country-credit[hidden]{display:none}
+/* public view: top right (it has no zoom control, and its coach note sits bottom left); details: under the zoom control */
+.to-country{position:absolute; right:12px; top:12px; z-index:5}
+[data-view="details"] .to-country{right:14px; top:168px}
+/* narrow details: beside the legend there is a 120 px column; the label wraps onto two lines to fit it */
+@media (max-width:900px){[data-view="details"] .to-country{max-width:116px; line-height:1.2; padding:4px 10px; text-align:center}}
+.to-country[hidden]{display:none}
+/* the flood map and all its chrome step aside (and out of the tab order) while the country view is up */
+#map-wrap.country-on > :not(#country){visibility:hidden}
+@media (prefers-reduced-motion: reduce){#country-gl{transition:none}}
 aside{display:flex; flex-direction:column; min-height:0; overflow-y:auto; padding:16px 22px 8px 20px; scrollbar-width:thin}
 #banner{display:none; align-items:flex-start; gap:10px; border-radius:7px; padding:11px 13px; margin-bottom:14px; font-weight:600; line-height:1.35; color:var(--ink); font-size:14px; border-left:5px solid transparent}
 #banner.warn{display:flex; background:var(--warn-bg); border-color:var(--warn)}
@@ -720,6 +744,19 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <div class="bands-lab"><span>low</span><span>medium</span><span>high</span></div></div>
       <div class="hint">Extents come only from sensor readings, spread over the site's terrain. Tap a sensor to isolate its footprint.</div>
     </div>
+    <div id="country" hidden>
+      <div id="country-gl"></div>
+      <svg id="country-svg" aria-hidden="true" focusable="false" preserveAspectRatio="none"><path id="country-land"/></svg>
+      <div class="country-box" id="country-box"></div>
+      <p class="country-label" id="country-label"></p>
+      <div class="nat-pins" id="country-pins"></div>
+      <p class="country-note" id="country-note" role="status" hidden></p>
+      <div class="nat-mapfoot country-foot">
+        <button class="nat-btn country-back" id="country-back"></button>
+        <p class="nat-credit" id="country-credit" hidden></p>
+      </div>
+    </div>
+    <button class="nat-btn to-country" id="to-country" hidden></button>
     <div id="map-tooltip"></div>
     <div class="p-coach" id="p-coach" role="note"></div>
     <div class="map-attr">Map data © OpenStreetMap contributors · Terrain: Copernicus GLO-30 © ESA/DLR/Airbus via OpenTopography · Hazard: UP Project NOAH (ODbL)</div>
@@ -1058,6 +1095,8 @@ function applyView(){
   const zl=document.getElementById("zoom-lvl");if(zl)zl.textContent=(Math.round(ZOOM.z*10)/10)+"×";
 }
 function zoomAt(factor,sx,sy){
+  if(factor<1&&ZOOM.z<=ZOOM.min+1e-6&&countryPullBy(factor))return;   // spec §6.1
+  if(factor>1)countryPull=1;
   const wxp=(sx-view.ox)/view.sc,wyp=(sy-view.oy)/view.sc;
   ZOOM.z=Math.max(ZOOM.min,Math.min(ZOOM.max,ZOOM.z*factor));
   const fit=Math.min(view.w/W,view.h/H),nsc=fit*ZOOM.z;
@@ -1280,6 +1319,7 @@ ovCv.addEventListener("pointermove",e=>{
     const[a,b]=[...ptrs.values()];
     const d=Math.hypot(a.x-b.x,a.y-b.y);
     const mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top;
+    if(pinchZ0*d/Math.max(pinchD0,1)<ZOOM.min*0.75&&!COUNTRY.on&&canCountry()){ptrs.clear();countryOut();return;}
     const target=Math.max(ZOOM.min,Math.min(ZOOM.max,pinchZ0*d/Math.max(pinchD0,1)));
     zoomAt(target/ZOOM.z,mx,my);
     dragMoved=true;tip.style.display="none";
@@ -1898,6 +1938,7 @@ function syncTryUI(){
 }
 let tryWasLive=false;                                           // live mode is restored when the person leaves the tab
 function enterTry(){
+  countryBack(true);
   if(!TRY||LIVE)tryWasLive=LIVE;
   TRY=true;LIVE=false;
   if(SITE!=="tv")switchSite("tv");                              // switchSite() keeps the storm stopped and skips "Saan ka?" in TRY
@@ -2678,6 +2719,7 @@ function syncLiveUI(){
 }
 function switchSite(id){
   if(!DATA_ALL[id])id="tv";
+  countryBack(true);
   // per-site language is persisted by the menu's change handler; nothing to save here
   selected=null;pickMode=false;
   const pk=document.getElementById("p-pick");pk.style.display="none";pk.setAttribute("aria-hidden","true");pk.innerHTML="";
@@ -2960,8 +3002,111 @@ function natRender(){
 let natFocusSearch=false;             // the campus bar's "▾" opens the national list with the search box focused
 function natEnter(){let saved=null;try{saved=localStorage.getItem(LANG_KEY_PH);}catch(e){}if(saved&&LANGS[saved])LANG=saved;natRender();
   if(natFocusSearch){natFocusSearch=false;$("nat-q").focus();}}
+/* ---------- zoom out to the country (spec §6.1) ---------- */
+// Zooming out past the whole box hands the map box over to the vector basemap (or the outline, offline), centred on
+// the site with its box outlined; zooming back in until the box fills the view, "Back to the flood map" or Escape
+// returns. Never in the Try tab. Leaving the site closes it.
+const COUNTRY={on:false,map:null,state:"none",theme:null,easing:false};
+let siteZoomedOut=false,countryPull=1,countryPullT=0,countryTok=0;
+const canCountry=()=>ROUTE==="site"&&!TRY&&!!DATA&&!!DATA.bbox;
+const siteLL=()=>{const b=DATA.bbox;return [[b[0],b[1]],[b[2],b[3]]];};
+const phSite=()=>SITE!=="berkeley";
+function syncCountryUI(){const b=$("to-country");b.textContent=NL().wholeCountry;b.hidden=!canCountry()||COUNTRY.on;
+  $("country-back").textContent=NL().backFlood;if(COUNTRY.on)countryDraw();}   // a language change reaches an open view too
+// a pull of ×0.75 past the whole box (one "−", two wheel notches) hands over; it fades if the zooming stops
+function countryPullBy(f){
+  if(!canCountry())return false;
+  countryPull*=f;clearTimeout(countryPullT);countryPullT=setTimeout(()=>{countryPull=1;},500);
+  if(countryPull<0.75){countryPull=1;countryOut();}
+  return true;
+}
+function countryOut(){
+  if(COUNTRY.on||!canCountry())return;
+  COUNTRY.on=siteZoomedOut=true;
+  $("country").hidden=false;$("map-wrap").classList.add("country-on");syncCountryUI();
+  $("country-back").textContent=NL().backFlood;
+  if(COUNTRY.state==="on")countryEnterGL();
+  else if(COUNTRY.state==="none"){COUNTRY.state="loading";
+    const th=curTheme();
+    bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("country-gl"),{bounds:siteLL(),theme:th,reduced:reducedMotion,padding:0,minZoom:2}))
+      .then(map=>{COUNTRY.map=map;COUNTRY.state="on";COUNTRY.theme=th;
+        if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme()));COUNTRY.theme=curTheme();}   // switched while it loaded
+        map.on("move",countryDrawSoon);map.on("resize",countryDrawSoon);map.on("zoom",countryZoomCheck);
+        if(COUNTRY.on)countryEnterGL();},
+        ()=>{COUNTRY.state="off";countryDraw();});
+  }
+  countryDraw();
+  $("country-back").focus({preventScroll:true});
+}
+function countryEnterGL(){
+  const m=COUNTRY.map;$("country").dataset.gl="1";m.resize();m.setMinZoom(phSite()?4:2);
+  // fitted afresh on every entry, so a map that finished opening while the view was closed (0-size box) is right
+  COUNTRY.easing=true;m.stop();m.fitBounds(siteLL(),{padding:0,duration:0});
+  const tok=++countryTok;m.once("moveend",()=>{if(tok!==countryTok)return;COUNTRY.easing=false;countryDraw();});
+  m.easeTo({zoom:m.getZoom()-1.5,duration:natDur(600)});
+  countryDraw();
+}
+function countryBack(silent){
+  if(!COUNTRY.on)return;
+  COUNTRY.on=siteZoomedOut=false;countryPull=1;COUNTRY.easing=false;countryTok++;
+  $("country").hidden=true;delete $("country").dataset.gl;$("map-wrap").classList.remove("country-on");
+  if(!silent){ZOOM.z=ZOOM.min;ZOOM.cx=W/2;ZOOM.cy=H/2;applyView();drawMap();}
+  syncCountryUI();
+  if(!silent)$("to-country").focus({preventScroll:true});
+}
+function countryZoomCheck(){
+  if(!COUNTRY.on||COUNTRY.easing||$("country").dataset.gl!=="1")return;
+  const el=$("country");
+  if(bwCoverage(countryBoxPx(countryProj()),el.clientWidth,el.clientHeight)>=0.9)countryBack();
+}
+// px inside #country for a longitude/latitude: the vector map when it is up, else the whole-country outline
+function countryProj(){
+  const el=$("country"),w=el.clientWidth,h=el.clientHeight;
+  if(COUNTRY.state==="on"&&el.dataset.gl==="1")return (lon,lat)=>{const p=COUNTRY.map.project([lon,lat]);return [p.x,p.y];};
+  phOutline();const vb=bwFitVB(phVB(),w,h);$("country-svg").setAttribute("viewBox",vb.join(" "));
+  return (lon,lat)=>{const [x,y]=natProj(lon,lat);return [(x-vb[0])/vb[2]*w,(y-vb[1])/vb[3]*h];};
+}
+function countryBoxPx(px){const b=DATA.bbox,[x0,y0]=px(b[0],b[3]),[x1,y1]=px(b[2],b[1]);return {x0,y0,x1,y1};}
+function countryDraw(){
+  if(!COUNTRY.on)return;
+  const el=$("country"),w=el.clientWidth,h=el.clientHeight,gl=COUNTRY.state==="on"&&el.dataset.gl==="1",ph=phSite(),L=NL(),px=countryProj();
+  $("country-land").setAttribute("d",PH_PATH);
+  $("country-svg").style.display=!gl&&ph?"":"none";
+  const note=$("country-note");note.textContent=L.mapNote;note.hidden=COUNTRY.state!=="off";
+  const cr=$("country-credit");cr.textContent=L.credit;cr.hidden=!gl;         // the tiles' credit, whenever they show
+  const b=countryBoxPx(px),bw=Math.max(b.x1-b.x0,44),bh=Math.max(b.y1-b.y0,44),cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;
+  const box=$("country-box"),lab=$("country-label");box.hidden=lab.hidden=!(gl||ph);
+  Object.assign(box.style,{left:(cx-bw/2)+"px",top:(cy-bh/2)+"px",width:bw+"px",height:bh+"px"});
+  lab.textContent=L.simArea;
+  const pts=ph?CAMPUSES.map(c=>{const [x,y]=px(c.lon,c.lat);return {id:c.id,x,y};}).filter(p=>p.x>=0&&p.x<=w&&p.y>=0&&p.y<=h):[];
+  $("country-pins").innerHTML=bwCluster(pts,36).map(g=>{
+    const cls=g.ids.includes(SITE)?" pin-sel":"";                      // a cluster wears its member's mark, as on the national map
+    const html=g.ids.length===1?pinHTML(CAMPUS_BY_ID[g.ids[0]],cls):clusterHTML(g.ids,cls);
+    return html.replace(/^<(a|button) /,`<$1 style="left:${g.x.toFixed(1)}px;top:${g.y.toFixed(1)}px" `);}).join("");
+  // "Simulated area" above the box, or below it where a pin's name would sit under the label (a campus just north of it)
+  if(lab.hidden)return;
+  const marks=[...$("country-pins").querySelectorAll(".pin-shape,.pin-t,.pin-cluster span")].map(e=>e.getBoundingClientRect());
+  for(const top of [Math.max(4,cy-bh/2-30),cy+bh/2+8]){
+    Object.assign(lab.style,{left:(cx-bw/2)+"px",top:top+"px"});
+    const r=lab.getBoundingClientRect();
+    if(!marks.some(m=>m.left<r.right&&r.left<m.right&&m.top<r.bottom&&r.top<m.bottom))break;
+  }
+}
+let countryF=0;
+const countryDrawSoon=()=>{if(!countryF)countryF=requestAnimationFrame(()=>{countryF=0;countryDraw();});};
+function countryThemeChanged(t){if(COUNTRY.state==="on"&&COUNTRY.theme!==t){COUNTRY.map.setStyle(bwStyleUrl(t));COUNTRY.theme=t;}}
+$("country-back").addEventListener("click",()=>countryBack());
+$("to-country").addEventListener("click",()=>countryOut());
+$("country").addEventListener("keydown",e=>{if(e.key==="Escape"){e.preventDefault();countryBack();}});
+$("country-pins").addEventListener("click",e=>{
+  const cl=e.target.closest(".pin-cluster");if(!cl||COUNTRY.state!=="on"||$("country").dataset.gl!=="1")return;
+  const cs=cl.dataset.ids.split(",").map(id=>CAMPUS_BY_ID[id]);
+  COUNTRY.map.fitBounds([[Math.min(...cs.map(c=>c.lon)),Math.min(...cs.map(c=>c.lat))],[Math.max(...cs.map(c=>c.lon)),Math.max(...cs.map(c=>c.lat))]],{padding:80,maxZoom:12,duration:natDur(600)});
+});
+window.addEventListener("resize",()=>{if(COUNTRY.on)countryDrawSoon();});
 // Campus pages: the "‹ All campuses · <campus> ▾" bar with the simulation label, and the partnership card (spec §3.2).
 function syncCampusUI(){
+  syncCountryUI();
   const c=CAMPUS_BY_ID[SITE],L=NL(),on=!!c&&!TRY;
   document.querySelectorAll("[data-cbar]").forEach(bar=>{
     bar.hidden=!on;if(!on)return;
@@ -2992,6 +3137,7 @@ function go(h,ctx){
   const seq=++navSeq;lastNav={h,ctx};
   const want=h.want||(h.want={TRY,LIVE});   // what parseHash() set for this link (kept on h, so Try again reuses it)
   if(h.route==="ph"){
+    countryBack(true);
     if(siteBooted){if(ctx.wasTry)exitTry(SITE,true);setPlay(false);}
     showRoute("ph");natEnter();syncTabs();writeHash();markReady("ph");
     return Promise.resolve();
