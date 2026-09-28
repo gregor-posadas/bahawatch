@@ -106,13 +106,20 @@ export function bwOpenMap(lib, container, o) {
   return new Promise((res, rej) => {
     let done = false, gotTile = false, map = null, t = 0;
     const ms = o.timeout || BW_TIMEOUT_MS;
-    const settle = (m) => { if (done) return; done = true; clearTimeout(t); res(m); };
+    // A hidden page (a background tab, a tab restored after sleep) draws no frames, so no tile is ever asked for:
+    // the limit counts only while the page is on screen, and starts over each time it comes back.
+    const doc = o.doc || (typeof document !== "undefined" ? document : null);
+    const arm = () => { clearTimeout(t); t = 0;
+      if (!doc || doc.visibilityState !== "hidden") t = setTimeout(() => (gotTile ? settle(map) : fail(new Error("no tile within " + ms + " ms"))), ms); };
+    const stop = () => { clearTimeout(t); if (doc) doc.removeEventListener("visibilitychange", arm); };
+    const settle = (m) => { if (done) return; done = true; stop(); res(m); };
     const fail = (e) => {
-      if (done) return; done = true; clearTimeout(t);
+      if (done) return; done = true; stop();
       try { if (map) map.remove(); } catch (x) { /* already gone */ }
       rej(e instanceof Error ? e : new Error(String((e && e.error) || e)));
     };
-    t = setTimeout(() => (gotTile ? settle(map) : fail(new Error("no tile within " + ms + " ms"))), ms);
+    if (doc) doc.addEventListener("visibilitychange", arm);
+    arm();
     try {
       map = new lib.Map({ container, style: bwStyleUrl(o.theme, o.styleSet), bounds: o.bounds, fitBoundsOptions: { padding: o.padding ?? 24 },
         minZoom: o.minZoom ?? 3, maxZoom: o.maxZoom ?? 17, attributionControl: false, interactive: o.interactive ?? true, dragRotate: false, pitchWithRotate: false,

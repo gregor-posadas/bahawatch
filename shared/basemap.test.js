@@ -65,6 +65,44 @@ test('bwOpenMap: no tile within the time limit rejects and removes the map once'
   await assert.rejects(p);
   assert.equal(map.removed, 1);
 });
+// A page loaded in a background tab (or a hidden pane) draws no frames, so MapLibre never asks for a tile: the time
+// limit must only count while the page is on screen, or every map gives up before anyone looks (seen 2026-09-28).
+function fakeDoc(state) {
+  const hs = [];
+  return { visibilityState: state, added: 0, removed: 0,
+    addEventListener(ev, cb) { if (ev === 'visibilitychange') { hs.push(cb); this.added++; } },
+    removeEventListener(ev, cb) { const i = hs.indexOf(cb); if (i >= 0) { hs.splice(i, 1); this.removed++; } },
+    set(state) { this.visibilityState = state; for (const cb of [...hs]) cb(); } };
+}
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+test('bwOpenMap: the time limit does not run while the page is hidden', async () => {
+  const map = fakeMap(), doc = fakeDoc('hidden');
+  let out = 'pending';
+  bwOpenMap(fakeLib(map), {}, { timeout: 15, doc }).then(() => { out = 'resolved'; }, () => { out = 'rejected'; });
+  await wait(60);
+  assert.equal(out, 'pending');                        // hidden four times the limit: still waiting, map kept
+  assert.equal(map.removed, 0);
+  doc.set('visible');                                  // on screen: the frames start, and so does the limit
+  map.emit('sourcedata', { tile: {} });
+  map.emit('idle');
+  await wait(5);
+  assert.equal(out, 'resolved');
+  assert.equal(doc.removed, doc.added);                // no listener left behind
+});
+test('bwOpenMap: hidden part-way, the limit starts over when the page is back on screen', async () => {
+  const map = fakeMap(), doc = fakeDoc('visible');
+  let out = 'pending';
+  bwOpenMap(fakeLib(map), {}, { timeout: 40, doc }).then(() => { out = 'resolved'; }, () => { out = 'rejected'; });
+  await wait(20);
+  doc.set('hidden');
+  await wait(80);
+  assert.equal(out, 'pending');
+  doc.set('visible');
+  await wait(90);
+  assert.equal(out, 'rejected');                       // on screen for the full limit with no tile: a real failure
+  assert.equal(map.removed, 1);
+  assert.equal(doc.removed, doc.added);
+});
 test('bwOpenMap: a style error before any tile rejects and removes the map once', async () => {
   const map = fakeMap();
   const p = bwOpenMap(fakeLib(map), {}, { timeout: 1000 });
