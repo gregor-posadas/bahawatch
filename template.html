@@ -133,13 +133,6 @@ body[data-natgl="1"] #nat-svg{visibility:hidden}
 .c-back,.c-pick{min-height:48px; display:inline-flex; align-items:center; font-weight:700; font-size:16px}
 .c-back{color:var(--brand)}
 .c-sim{flex-basis:100%; font-size:14px; color:var(--ink); background:var(--warn-bg); border-radius:4px; padding:6px 10px; margin:0}
-.c-card{border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin-top:14px; background:var(--panel)}
-.c-card[hidden]{display:none}
-.c-card h2{font-size:16px; font-weight:700; margin-bottom:4px}
-.c-card h3{font-size:14px; font-weight:700; margin:12px 0 4px}
-.c-card ol,.c-card ul{margin:0; padding-left:20px}
-.c-card li{margin:2px 0}
-.c-card summary{min-height:48px; display:flex; align-items:center; cursor:pointer}
 .c-oc{font-weight:700}
 .c-u-name{display:block; font-size:14px; color:var(--ink-2)}
 .route-msg{max-width:640px; margin:0 auto; padding:48px 16px; font-size:16px}
@@ -518,7 +511,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 .try-row button[aria-pressed="true"]{background:var(--ink); color:var(--panel)}
 .try-row button:disabled{opacity:.6; cursor:not-allowed}
 .try-l{font-size:14px; font-weight:700; color:var(--ink); margin-right:4px}
-.p-review,.nat-intro,.foot-note,.c-card p{max-width:72ch}
+.p-review,.nat-intro,.foot-note{max-width:72ch}
 .try-why{font-size:16px; line-height:1.45; color:var(--ink); margin:0}
 .try-log h2{font-size:14px; font-weight:700; color:var(--ink-2); margin:0 0 4px}
 .try-log ul{list-style:none; padding:0; margin:0; font-size:14px; color:var(--ink)}
@@ -656,13 +649,6 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <div class="p-rep-msg" id="p-rep-msg" role="status" aria-live="polite"></div>
         <button class="p-link" id="p-rep-undo" hidden></button>
         <button class="p-link" id="p-try-link" hidden></button>
-      </section>
-      <section class="c-card" id="c-card" aria-labelledby="c-card-h" hidden>
-        <h2 id="c-card-h"></h2>
-        <h3 id="c-units-h"></h3><ol id="c-units"></ol>
-        <h3 id="c-brgy-h"></h3><details id="c-brgy-d"><summary id="c-brgy-s"></summary><ul id="c-brgy"></ul></details>
-        <h3 id="c-noah-h"></h3><ul id="c-noah"></ul>
-        <h3 id="c-role-h"></h3><ul id="c-role"></ul>
       </section>
       <div class="p-live-note" id="p-live-note" hidden></div>
       <div id="p-top-area"></div>
@@ -3166,17 +3152,6 @@ function syncCampusUI(){
     const p=bar.querySelector(".c-pick");p.textContent=c.short+" ▾";p.setAttribute("aria-label",fill(L.change,{name:c.name}));
     bar.querySelector(".c-sim").textContent=L.sim;
   });
-  const card=$("c-card"),D=DATA&&DATA.card;
-  card.hidden=!on||!D||VIEW!=="public";if(card.hidden)return;
-  $("c-card-h").textContent=L.cardH;
-  $("c-units-h").textContent=fill(L.unitsH,{n:D.units.length});
-  $("c-units").innerHTML=D.units.map(u=>`<li><b>${esc(u.id)}</b>${u.oc?` — <span class="c-oc">${esc(L.onCampus)}</span>`:""}<span class="c-u-name">${esc(u.name.replace(/ · /g,", "))}</span></li>`).join("");
-  $("c-brgy-h").textContent=L.brgyH;
-  $("c-brgy-s").textContent=fill(D.barangays.length===1?L.brgy1:L.brgyN,{n:D.barangays.length});
-  $("c-brgy").innerHTML=D.barangays.map(b=>`<li>${esc(b)}</li>`).join("");
-  $("c-noah-h").textContent=L.noahH;
-  $("c-noah").innerHTML=["5","25","100"].map(rp=>{const v=D.noah[rp];return `<li>${esc(fill(L.noahRp,{rp}))}: ${v==null?esc(L.noahNA):v===0?esc(L.noah0):v<0.005?"&lt;1%":Math.round(v*100)+"%"}</li>`;}).join("");
-  $("c-role-h").textContent=L.roleH;$("c-role").innerHTML=L.role.map(r=>`<li>${esc(r)}</li>`).join("");
 }
 document.addEventListener("click",e=>{if(e.target.closest(".c-pick")){natFocusSearch=true;location.hash="#ph";}});
 

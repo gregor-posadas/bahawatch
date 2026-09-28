@@ -17,29 +17,16 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
   assert(s.shown&&s.back==="‹ All campuses"&&s.href==="#ph"&&s.pick==="XU ▾"&&/Change campus \(now Xavier University/.test(s.pickL),"campus bar: ‹ All campuses · XU ▾ ("+s.pickL+")");
   assert(s.sim==="Simulation: sensor readings are simulated; unit spots are proposals. Terrain: FABDEM (30 m). Not a forecast; not for emergency use.","simulation label always shown on a campus page");
   assert(s.tab==="ph","the PhilDev campuses tab stays selected on a campus page");
-  s=await pg.evaluate(()=>({hidden:document.getElementById('c-card').hidden,h:document.getElementById('c-card-h').textContent,uh:document.getElementById('c-units-h').textContent,
-    units:[...document.querySelectorAll('#c-units li')].map(l=>l.textContent),brgyS:document.getElementById('c-brgy-s').textContent,brgy:document.querySelectorAll('#c-brgy li').length,
-    card:DATA.card,noah:[...document.querySelectorAll('#c-noah li')].map(l=>l.textContent),role:document.querySelectorAll('#c-role li').length}));
-  assert(!s.hidden&&s.h==="What a partnership looks like","partnership card shown with its heading");
-  assert(s.uh==="Proposed units: 8 household water-level units, placed automatically"&&s.units.length===8,"8 proposed units listed");
-  assert(/^BW-XU-01 — on campusnear .+, .+$/.test(s.units[0])&&s.units.slice(1).every(u=>/^BW-XU-0\dnear /.test(u)&&!/on campus/.test(u))&&!s.units.some(u=>/ · /.test(u)),"unit 01, and only unit 01, is marked on campus; unit lines are plain (no ' · '): "+s.units[0]);
-  assert(s.brgy===s.card.barangays.length&&s.brgy>0&&s.brgyS===(s.brgy===1?"1 barangay":s.brgy+" barangays"),"barangays covered: count, then the list ("+s.brgyS+")");
-  assert(s.noah.length===3&&s.noah.every((t,i)=>new RegExp("^"+["5","25","100"][i]+"-year rain: (\\d+%|not available from NOAH|no hazard zone mapped in this area)$").test(t)),"three NOAH lines: "+s.noah.join(" | "));
-  assert(s.role===3,"university role: three lines");
-  s=await pg.evaluate(()=>{DATA.card.noah["100"]=null;syncCampusUI();return document.querySelectorAll('#c-noah li')[2].textContent;});
-  assert(s==="100-year rain: not available from NOAH","a missing NOAH period reads 'not available', never 0%");
-  s=await pg.evaluate(()=>{DATA.card.noah["5"]=0;syncCampusUI();return document.querySelectorAll('#c-noah li')[0].textContent;});
-  assert(s==="5-year rain: no hazard zone mapped in this area","a 0 share reads 'no hazard zone mapped', not 0% (the Cebu 5- and 25-year maps have no zone near Cebu City)");
+  assert(await pg.evaluate(()=>!document.getElementById('c-card')),"no partnership card on campus pages (removed at Gregor's request)");
   // details view: bar stays, card goes; Try tab and pilot sites: neither
   await pg.click('#p-details');await pg.waitForTimeout(200);
-  s=await pg.evaluate(()=>({bar:!document.querySelector('header + .site-tabs + [data-cbar]').hidden,card:document.getElementById('c-card').hidden}));
-  assert(s.bar&&s.card,"details view: the campus bar stays, the card is for the simple view");
+  assert(await pg.evaluate(()=>!document.querySelector('header + .site-tabs + [data-cbar]').hidden),"details view: the campus bar stays");
   s=await pg.evaluate(()=>({cards:[...document.querySelectorAll('#house-cards .house-card')].map(c=>Math.round(c.getBoundingClientRect().height)),grid:Math.round(document.getElementById('house-cards').getBoundingClientRect().height)}));
   assert(s.cards.length===8&&s.cards.every(h=>h>=44)&&s.grid>=4*44,"details view: the eight unit cards are shown, not squeezed to nothing by the side panel (grid "+s.grid+" px)");
   await pg.click('header + .site-tabs [data-site="try"]');await pg.waitForTimeout(300);
-  assert(await pg.evaluate(()=>[...document.querySelectorAll('[data-cbar]')].every(b=>b.hidden)&&document.getElementById('c-card').hidden),"Try reporting: no campus bar, no card");
+  assert(await pg.evaluate(()=>[...document.querySelectorAll('[data-cbar]')].every(b=>b.hidden)),"Try reporting: no campus bar");
   await pg.click('#public .site-tabs [data-site="tv"]');await pg.waitForTimeout(300);
-  assert(await pg.evaluate(()=>[...document.querySelectorAll('[data-cbar]')].every(b=>b.hidden)&&document.getElementById('c-card').hidden),"a pilot site: no campus bar, no card");
+  assert(await pg.evaluate(()=>[...document.querySelectorAll('[data-cbar]')].every(b=>b.hidden)),"a pilot site: no campus bar");
   // ▾ opens the national list with the search box focused; ‹ All campuses opens the map
   await pg.goto(U+'#xu');await ready(pg,"xu");
   await pg.click('#public [data-cbar] .c-pick');await ready(pg,"ph");
@@ -55,8 +42,7 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
     const d0=await p3.evaluate(()=>({lang:document.documentElement.lang,tr:document.documentElement.getAttribute("translate"),h:document.getElementById("nat-q-l").textContent}));
     assert(d0.lang==="fil"&&d0.tr==="no"&&d0.h==="Maghanap ng kampus","Filipino on the national map: <html lang=fil translate=no>, search label in Filipino: "+JSON.stringify(d0));
     await p3.goto(U+'#xu');await ready(p3,"xu");
-    const card=await p3.evaluate(()=>({h:document.getElementById("c-card-h").textContent,fil:NAT_LANGS.fil.cardH,en:NAT_LANGS.en.cardH}));
-    assert(card.h===card.fil&&card.h!==card.en,"the partnership card is in Filipino: "+card.h);
+    assert(await p3.evaluate(()=>document.querySelector("#public [data-cbar] .c-sim").textContent===NAT_LANGS.fil.sim),"the campus bar is in Filipino");
     const a1=await p3.evaluate(()=>LANG);
     await p3.selectOption('#p-lang','ceb');
     await p3.goto(U+'#upd');await ready(p3,"upd");
