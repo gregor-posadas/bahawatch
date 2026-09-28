@@ -29,6 +29,13 @@ const aligned=pg=>pg.evaluate(()=>{const b=DATA.bbox,m=SITEGL.map,nw=m.project([
   assert(s.st==="on"&&s.gl,"Teachers Village: the detailed map is under the flood map");
   assert(s.btn==="Whole country"&&s.z>=1&&s.fade===1&&s.markers===8,"it opens on the neighbourhood with all 8 sensors, and a 'Whole country' button: "+JSON.stringify(s));
   let d=await aligned(pg);assert(d<2,`the two maps line up (box corners within ${d.toFixed(2)} px)`);
+  // the weather, chosen on the campus page itself (no trip to Details): the same scenarios, kept in step with Details
+  await pg.click('.p-scen [data-sc="typhoon"]');await pg.waitForTimeout(300);
+  s=await pg.evaluate(()=>({sc:scenario,chip:document.getElementById('p-ans-demo').textContent,lbl:document.getElementById('p-scen-l').textContent,
+    btns:[...document.querySelectorAll('.p-scen button')].map(b=>b.textContent),det:document.querySelector('.scenarios .active').dataset.sc,
+    tall:[...document.querySelectorAll('.p-scen button')].every(b=>b.getBoundingClientRect().height>=48)}));
+  assert(s.sc==="typhoon"&&s.chip==="Demo · simulated typhoon"&&s.det==="typhoon"&&s.lbl==="Simulated weather"&&s.btns.join("|")==="Dry day|Habagat rain|Typhoon"&&s.tall,
+    "the campus page picks the weather itself (Dry day, Habagat rain, Typhoon); the chip and Details follow: "+JSON.stringify(s));
   // wheel out: no hand-over, the same map keeps zooming; the sensors fade, other campuses appear as pins
   await wheel(pg,8,200);
   s=await pg.evaluate(()=>({z:ZOOM.z,fade:siteFade(),over:!document.getElementById('country').hidden,out:siteZoomedOut,btn:document.getElementById('to-country').textContent}));
@@ -61,10 +68,9 @@ const aligned=pg=>pg.evaluate(()=>{const b=DATA.bbox,m=SITEGL.map,nw=m.project([
   assert(s.z>=1&&s.fade===1,"another site opens on its own box, not zoomed out");
   d=await aligned(pg);assert(d<2,`UP Diliman: the maps line up (${d.toFixed(2)} px)`);
   // Berkeley: the world style, no PhilDev pins
-  await pg.goto(U+'#berkeley');await up(pg);await pg.waitForTimeout(600);
-  await wheel(pg,20,200);
-  s=await pg.evaluate(()=>({set:SITEGL.set,pins:document.querySelectorAll('#site-pins > *').length}));
-  assert(s.set==="world"&&s.pins===0,"UC Berkeley: the world style, no PhilDev pins");
+  await pg.goto(U+'#berkeley');await up(pg);await pg.waitForTimeout(1200);
+  s=await pg.evaluate(()=>({gl:document.getElementById('map-wrap').classList.contains('gl'),on:glOn(),pins:document.querySelectorAll('#site-pins > *').length,markers:mapDrawn.statusMarkers,n:HOUSEHOLD.length}));
+  assert(!s.gl&&!s.on&&s.pins===0&&s.markers===s.n,"UC Berkeley (outside our tiles): the flood map draws its own base, never a blank map: "+JSON.stringify(s));
   // Try reporting: no zooming out to the country
   await pg.goto(U+'#try');await up(pg);await pg.waitForTimeout(300);
   assert(await pg.evaluate(()=>document.getElementById('to-country').hidden&&document.querySelectorAll('#site-pins > *').length===0),"Try reporting: no 'Whole country', no campus pins");

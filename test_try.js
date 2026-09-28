@@ -138,9 +138,10 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
    const p=await c3.newPage();await p.goto(U+'#try');await p.waitForFunction(()=>TRY&&document.body.dataset.ready);await p.waitForTimeout(500);
    let r=await p.evaluate(()=>{const l=document.querySelector('.p-left'),cs=getComputedStyle(l),pill=getComputedStyle(l,'::before'),
      a=document.getElementById('p-answer').getBoundingClientRect(),q=document.querySelector('#p-rep .p-rep-btns').getBoundingClientRect(),lr=l.getBoundingClientRect();
-     return {bw:cs.borderTopWidth,rad:cs.borderTopLeftRadius,screen:l.clientWidth,pill:pill.content!=="none"&&pill.width==="96px",
+     return {bw:cs.borderTopWidth,rad:cs.borderTopLeftRadius,ratio:lr.width/lr.height,pill:pill.content!=="none"&&pill.width==="112px",
        inside:a.left>=lr.left&&a.right<=lr.right&&q.bottom<=lr.bottom};});
-   assert(r.bw==="12px"&&r.rad==="48px"&&Math.abs(r.screen-390)<=2&&r.pill&&r.inside,"Try: a phone outline (12 px frame, 48 px corners, camera pill) around a 390 px screen holding the answer and the buttons: "+JSON.stringify(r));
+   // an iPhone's real proportions: 71.6 × 147.6 mm (0.485), thin bezel, rounded corners, the island
+   assert(r.bw==="10px"&&r.rad==="56px"&&Math.abs(r.ratio-71.6/147.6)<0.01&&r.pill&&r.inside,"Try: a phone with an iPhone's proportions (0.485), island, holding the answer and the buttons: "+JSON.stringify(r));
    for(let i=0;i<8;i++)await p.click(i%2?'#try-add-hindi':'#try-add-oo');await p.waitForTimeout(200);
    r=await p.evaluate(()=>{const b=DATA.bbox,lat=(b[1]+b[3])/2,mpu=(b[2]-b[0])*111320*Math.cos(lat*Math.PI/180)/W;
      const span=Math.min(view.w,view.h)/view.sc*mpu;

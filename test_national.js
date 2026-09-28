@@ -191,7 +191,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    assert(await pg.evaluate(z0=>NATGL.map.getZoom()>z0+0.3,z0),"a mouse wheel over a campus pin zooms the map");
    // the country-wide simulated storm: every campus in view floods at once, with the campus pages' sensor shapes
    await pg.evaluate(()=>NATGL.map.jumpTo({center:[121.0,14.6],zoom:12.8}));await pg.waitForTimeout(500);
-   assert(await pg.evaluate(()=>!document.getElementById('nat-storm').hidden&&document.getElementById('nat-storm').textContent==="Simulate a storm"),"a 'Simulate a storm' button on the detailed map");
+   assert(await pg.evaluate(()=>!document.getElementById('nat-storm').hidden&&document.getElementById('nat-storm').textContent==="Simulate a typhoon"),"a 'Simulate a typhoon' button on the detailed map");
    await pg.click('#nat-storm');await pg.waitForTimeout(6000);
    const st=await pg.evaluate(()=>({on:NSIM.on,pressed:document.getElementById('nat-storm').getAttribute('aria-pressed'),t:document.getElementById('nat-storm-t').textContent,
      sites:Object.keys(NSIM.sites).length,wet:Object.values(NSIM.sites).some(m=>m.hh.some(h=>h.status!=="ok")),
@@ -200,7 +200,15 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    assert(st.sites>=5&&st.wet,`every campus in view floods at once (${st.sites} campuses, some sensors wet)`);
    assert(st.lg===5&&st.units===0,"the legend explains the water and the three sensor shapes; the plain unit rings give way to status shapes");
    await pg.click('#nat-storm');
-   assert(await pg.evaluate(()=>!NSIM.on&&document.getElementById('nat-storm-t').textContent===""&&!document.querySelector('#nat-legend .lg-storm')),"'Stop the storm' ends it");
+   assert(await pg.evaluate(()=>!NSIM.on&&document.getElementById('nat-storm-t').textContent===""&&!document.querySelector('#nat-legend .lg-storm')),"'Stop the typhoon' ends it");
+   // a chosen campus lets go when you zoom back out to the country; the map keeps the Philippines in view
+   await pg.evaluate(()=>natSelect("bsu"));await pg.waitForTimeout(1800);
+   assert(await pg.evaluate(()=>NAT.sel==="bsu"&&!document.getElementById('nat-open').hidden),"setup: BatStateU chosen, 'Open BatStateU' shown");
+   await pg.evaluate(()=>NATGL.map.jumpTo({center:[122,12],zoom:5}));await pg.waitForTimeout(600);
+   assert(await pg.evaluate(()=>NAT.sel===null&&document.getElementById('nat-open').hidden&&document.getElementById('nat-box').hidden),"zooming back out to the country lets go of the campus: no 'Open …', no box");
+   const lim=await pg.evaluate(()=>{const m=NATGL.map;m.jumpTo({center:[160,40],zoom:1});const c=m.getCenter(),b=m.getBounds();
+     return {z:m.getZoom(),min:m.getMinZoom(),seesPH:b.getWest()<121&&b.getEast()>121&&b.getSouth()<12&&b.getNorth()>12,c:[c.lng,c.lat]};});
+   assert(lim.z>=lim.min&&lim.min>2&&lim.seesPH,"no zooming out past the whole country or dragging it out of view: "+JSON.stringify(lim));
    await ctx.close();}
   // no WebGL: the outline stays
   {const b2=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox','--disable-webgl','--disable-3d-apis']});

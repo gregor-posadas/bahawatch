@@ -47,9 +47,10 @@
   "roleH": "University role",
   "role": ["Students install and look after the units with residents.", "Faculty check the data.", "The campus hosts one unit and the local dashboard."],
   "foot": "Campus list: PhilDev partners across the Philippines (PhilDev Starter Pack). Map: PSA/NAMRIA administrative boundaries via OCHA HDX (CC BY-IGO), simplified. Main campuses are shown where a university has several.",
-  "stormOn": "Simulate a storm",
-  "stormOff": "Stop the storm",
-  "stormNow": "Simulated typhoon · {t}"
+  "stormOn": "Simulate a typhoon",
+  "stormOff": "Stop the typhoon",
+  "stormNow": "Simulated typhoon · {t}",
+  "simWeather": "Simulated weather"
  },
  "fil": {
   "_review": true,
@@ -102,7 +103,8 @@
   "foot": "Listahan ng kampus: mga katuwang ng PhilDev sa buong Pilipinas (PhilDev Starter Pack). Mapa: mga hangganang administratibo ng PSA/NAMRIA mula sa OCHA HDX (CC BY-IGO), pinasimple. Ipinapakita ang pangunahing kampus kung may ilang kampus ang unibersidad.",
   "stormOn": "Mag-simulate ng bagyo",
   "stormOff": "Itigil ang bagyo",
-  "stormNow": "Kunwaring bagyo · {t}"
+  "stormNow": "Kunwaring bagyo · {t}",
+  "simWeather": "Kunwaring panahon"
  },
  "ceb": {
   "_review": true,
@@ -155,7 +157,8 @@
   "foot": "Lista sa kampus: mga kauban sa PhilDev sa tibuok Pilipinas (PhilDev Starter Pack). Mapa: mga utlanan sa administrasyon gikan sa PSA/NAMRIA pinaagi sa OCHA HDX (CC BY-IGO), gipasimple. Gipakita ang main campus kon daghan og kampus ang unibersidad.",
   "stormOn": "Sulayi og bagyo",
   "stormOff": "Hunonga ang bagyo",
-  "stormNow": "Sinulayan nga bagyo · {t}"
+  "stormNow": "Sinulayan nga bagyo · {t}",
+  "simWeather": "Sinulayan nga panahon"
  },
  "ilo": {
   "_review": true,
@@ -208,7 +211,8 @@
   "foot": "Listaan dagiti kampus: dagiti kadua ti PhilDev iti intero a Filipinas (PhilDev Starter Pack). Mapa: dagiti administratibo a beddeng ti PSA/NAMRIA manipud iti OCHA HDX (CC BY-IGO), napasimple. Maipakita ti kangrunaan a kampus no adu ti kampus ti unibersidad.",
   "stormOn": "Iyaramid ti simulasion a bagyo",
   "stormOff": "Isardeng ti bagyo",
-  "stormNow": "Simulasion a bagyo · {t}"
+  "stormNow": "Simulasion a bagyo · {t}",
+  "simWeather": "Simulasion ti panahon"
  },
  "hil": {
   "_review": true,
@@ -261,7 +265,8 @@
   "foot": "Listahan sang kampus: mga kaupod sang PhilDev sa bug-os nga Pilipinas (PhilDev Starter Pack). Mapa: mga administratibo nga dulunan halin sa PSA/NAMRIA paagi sa OCHA HDX (CC BY-IGO), ginpasimple. Ginapakita ang main campus kon madamo ang kampus sang unibersidad.",
   "stormOn": "Himuan sang simulasyon nga bagyo",
   "stormOff": "Untata ang bagyo",
-  "stormNow": "Simulasyon sang bagyo · {t}"
+  "stormNow": "Simulasyon sang bagyo · {t}",
+  "simWeather": "Simulasyon sang panahon"
  },
  "pam": {
   "_review": true,
@@ -314,6 +319,7 @@
   "foot": "Listaan da reng kampus: deng kayabe ning PhilDev king sablang Filipinas (PhilDev Starter Pack). Mapa: deng administratibung hanggan ning PSA/NAMRIA manibat king OCHA HDX (CC BY-IGO), pepasimple. Ipakit ya ing main campus nung dakal ya kampus ing unibersidad.",
   "stormOn": "Gawan ing simulasyun a bagyu",
   "stormOff": "Pundahan ing bagyu",
-  "stormNow": "Simulasyun a bagyu · {t}"
+  "stormNow": "Simulasyun a bagyu · {t}",
+  "simWeather": "Simulasyun ning panahun"
  }
 }

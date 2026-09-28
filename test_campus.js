@@ -70,7 +70,7 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
   {const p2=await ctx.newPage();const fs=require('fs');
     await p2.route('**/data/usc.json',r=>{const d=JSON.parse(fs.readFileSync('data/usc.json','utf8'));d.sensors.forEach(u=>{u.street='<img id="pwn" src="x">';});r.fulfill({contentType:'application/json',body:JSON.stringify(d)});});
     await p2.goto(U+'#usc/details');await ready(p2,"usc");
-    await p2.click('[data-sc="typhoon"]');
+    await p2.click('.scenarios [data-sc="typhoon"]');
     const r=await p2.evaluate(()=>{setPlay(false);for(let t=0;t<=720;t+=10){tMin=t;step(0,true);}
       return {pwn:document.querySelectorAll('#pwn').length,card:document.querySelector('#house-cards .h-st').textContent,log:document.getElementById('log-list').textContent};});
     assert(r.pwn===0&&/<img id="pwn"/.test(r.card)&&/<img id="pwn"/.test(r.log),"street names with markup are shown as text, never parsed (cards, log, warning)");
