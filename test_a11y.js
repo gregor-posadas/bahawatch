@@ -24,8 +24,16 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   await pg.click('#nat-theme');await pg.click('#nat-theme');
   assert(errs.length===0&&await pg.evaluate(()=>document.documentElement.dataset.theme==="light"),"the theme button works on the national map before any site is opened");
   // wide screens: the national tab is one screen; only the campus list scrolls (spec §4.1)
-  const one=await pg.evaluate(()=>{const l=document.querySelector('#nat .nat-listcol'),cs=getComputedStyle(l);return {page:document.scrollingElement.scrollHeight,vh:innerHeight,list:l.scrollHeight>l.clientHeight,ov:cs.overflowY};});
-  assert(one.page<=one.vh+1&&one.list&&one.ov==="auto","1280 px national tab: the page doesn't scroll, the campus list does: "+JSON.stringify(one));
+  const one=await pg.evaluate(()=>{const scrollers=[...document.querySelectorAll('#nat *')].filter(e=>/auto|scroll/.test(getComputedStyle(e).overflowY)&&e.scrollHeight>e.clientHeight+1).map(e=>e.id||e.className);
+    return {page:document.scrollingElement.scrollHeight,vh:innerHeight,scrollers};});
+  assert(one.page<=one.vh+1&&one.scrollers.join()==="nat-list","1280 px national tab: the page doesn't scroll; the campus list (#nat-list) is the only scroll region: "+JSON.stringify(one));
+  // spec §4.1 "only the list scrolls": scrolled to its last row, the intro, search box and its label are still in view
+  const kept=await pg.evaluate(()=>{const l=document.getElementById('nat-list');l.scrollTop=l.scrollHeight;
+    const inView=e=>{const r=e.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return r.height>0&&r.top>=0&&r.bottom<=innerHeight&&!!hit&&(hit===e||e.contains(hit));};
+    const last=[...l.querySelectorAll('.nat-item')].pop();
+    return {scrolled:l.scrollTop>0,q:inView(document.getElementById('nat-q')),label:inView(document.getElementById('nat-q-l')),intro:inView(document.getElementById('nat-intro')),last:inView(last)};});
+  assert(Object.values(kept).every(Boolean),"1280 px: scrolling the list to its end keeps the intro, search box and label in view: "+JSON.stringify(kept));
+  await pg.evaluate(()=>{document.getElementById('nat-list').scrollTop=0;});
   // spec §7: pin labels are labels, not credits: 14 px
   const pinPx=await pg.evaluate(()=>[...document.querySelectorAll('#nat-pins .pin-t')].map(e=>parseFloat(getComputedStyle(e).fontSize)));
   assert(pinPx.length>0&&pinPx.every(v=>v>=14),"national map: pin labels are 14 px, not 12: "+pinPx.join());
