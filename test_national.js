@@ -46,6 +46,16 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
     s=await find("Xavier");assert(s.count==="1 campus matches.",`${mode}: search announces how many matched`);
     s=await find("zzz");assert(s.ids.length===0&&/No campus matches “zzz”/.test(s.none),`${mode}: no match says so`);
     await pg.fill('#nat-q','');await pg.waitForTimeout(450);
+    // icon-buttons: the zoom/home controls have a real tooltip (not the native title), shown on hover and keyboard focus — before
+    // any mouse click on them, so the browser's own :focus-visible heuristic (mouse-clicked buttons don't re-show it) doesn't skew the check
+    s=await pg.evaluate(()=>['nat-zin','nat-zout','nat-home'].map(id=>{
+      const b=document.getElementById(id),tipId=b.getAttribute('aria-describedby'),tip=tipId&&document.getElementById(tipId);
+      return {id,hasTitle:b.hasAttribute('title'),tipRole:tip&&tip.getAttribute('role'),tipText:tip&&tip.textContent,label:b.getAttribute('aria-label')};
+    }));
+    assert(s.every(b=>!b.hasTitle&&b.tipRole==="tooltip"&&b.tipText===b.label),`${mode}: no native title; each has a role=tooltip matching its aria-label: `+JSON.stringify(s));
+    await pg.focus('#nat-zin');await pg.waitForTimeout(150);
+    const tipVisible=await pg.evaluate(()=>{const tip=document.getElementById(document.getElementById('nat-zin').getAttribute('aria-describedby'));return tip&&getComputedStyle(tip).visibility!=="hidden"&&getComputedStyle(tip).opacity!=="0";});
+    assert(tipVisible,`${mode}: the tooltip shows on keyboard focus, not only on hover`);
     // zoom: a cluster zooms in and separates pins; + − ⌂ zoom smoothly
     const before=await pg.evaluate(()=>document.querySelectorAll('#nat-pins .pin').length);
     await pg.click('#nat-pins .pin-cluster');await settle(pg);

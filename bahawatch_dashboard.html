@@ -93,6 +93,12 @@ body[data-natgl="1"] #nat-svg{visibility:hidden}
 .nat-box[hidden]{display:none}
 .nat-zoom{position:absolute; top:12px; right:12px; z-index:3; display:flex; flex-direction:column; gap:4px}
 .nat-zoom button{width:48px; height:48px; border:1px solid var(--ink); border-radius:6px; background:var(--panel); color:var(--ink); font-size:20px; font-weight:700}
+/* real tooltips (not the native title, which never shows on keyboard focus): icon-buttons skill */
+.ic-wrap{position:relative; display:block}
+.ic-tip{position:absolute; right:calc(100% + 8px); top:50%; transform:translateY(-50%); white-space:nowrap; font-size:12px; font-weight:600;
+  background:var(--ink); color:var(--panel); padding:4px 8px; border-radius:4px; opacity:0; visibility:hidden; pointer-events:none}
+.ic-wrap button:hover + .ic-tip, .ic-wrap button:focus-visible + .ic-tip{opacity:1; visibility:visible}
+@media (prefers-reduced-motion:no-preference){.ic-tip{transition:opacity 100ms}}
 .nat-btn{min-height:48px; padding:0 14px; border:2px solid var(--ink); border-radius:6px; font-weight:700; background:var(--panel); color:var(--ink); display:inline-flex; align-items:center; text-decoration:none}
 /* bottom of the map: "Open …" on the right, stacked above the credits, so it never covers them */
 .nat-mapfoot{position:absolute; left:12px; right:12px; bottom:10px; z-index:3; display:flex; flex-direction:column; gap:8px; pointer-events:none}
@@ -548,7 +554,11 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <div id="nat-gl"></div>
         <div class="nat-box" id="nat-box" hidden></div>
         <div class="nat-pins" id="nat-pins"></div>
-        <div class="nat-zoom"><button id="nat-zin">+</button><button id="nat-zout">−</button><button id="nat-home">⌂</button></div>
+        <div class="nat-zoom">
+          <span class="ic-wrap"><button id="nat-zin" aria-describedby="nat-zin-tip">+</button><span class="ic-tip" id="nat-zin-tip" role="tooltip"></span></span>
+          <span class="ic-wrap"><button id="nat-zout" aria-describedby="nat-zout-tip">−</button><span class="ic-tip" id="nat-zout-tip" role="tooltip"></span></span>
+          <span class="ic-wrap"><button id="nat-home" aria-describedby="nat-home-tip">⌂</button><span class="ic-tip" id="nat-home-tip" role="tooltip"></span></span>
+        </div>
         <ul class="nat-legend" id="nat-legend"></ul>
         <div class="nat-mapfoot">
           <a class="nat-btn nat-open" id="nat-open" hidden></a>
@@ -3194,7 +3204,7 @@ function natRender(){
   $("nat-legend").innerHTML=["SUC","LUC","Private"].map(t=>`<li><span class="pin-shape pin-${t.toLowerCase()}" aria-hidden="true"></span>${esc(L.typesShort[t])}</li>`).join("")+
     `<li><span class="sea-sw" aria-hidden="true"></span>${esc(L.sea)}</li>`;
   $("nat-credit").textContent=L.credit;
-  for(const [id,k] of [["nat-zin","zin"],["nat-zout","zout"],["nat-home","home"]]){$(id).setAttribute("aria-label",L[k]);$(id).title=L[k];}
+  for(const [id,k] of [["nat-zin","zin"],["nat-zout","zout"],["nat-home","home"]]){$(id).setAttribute("aria-label",L[k]);$(id+"-tip").textContent=L[k];}
   $("nat-q-l").textContent=L.search;$("nat-foot").textContent=L.foot;$("nat-note").textContent=L.mapNote;
   if(NAT.sel)$("nat-open").textContent=fill(L.open,{short:CAMPUS_BY_ID[NAT.sel].short});
   document.title="BahaWatch — "+L.title;
