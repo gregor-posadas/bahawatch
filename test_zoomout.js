@@ -35,6 +35,19 @@ async function wheelOut(pg){
   assert(s.pins>0&&s.back==="country-back","campus pins show, and focus is on 'Back to the flood map'");
   assert(await pg.evaluate(()=>[...document.querySelectorAll('#map-wrap > :not(#country)')].every(e=>getComputedStyle(e).visibility==="hidden")),
     "the flood map's own controls step out of sight and out of the tab order under the country view");
+  // screen-reader text (UX profile: every map): a named group, described by the site's area, the region and the campuses
+  const srText=pg=>pg.evaluate(()=>{const el=document.getElementById('country'),l=document.getElementById(el.getAttribute('aria-labelledby')),d=document.getElementById(el.getAttribute('aria-describedby'));
+    return {role:el.getAttribute('role'),name:l&&l.textContent,desc:d&&d.textContent,site:siteLabel(SITE),n:CAMPUSES.length};});
+  s=await srText(pg);
+  assert(s.role==="group"&&s.name==="Teachers Village, zoomed out","the country view is a group named for the site: "+JSON.stringify(s.name));
+  assert(s.desc==="Map of the Philippines. A dashed box marks the simulated area of Teachers Village. The map marks the "+s.n+" PhilDev partner campuses. Zoom in on the box, or use Back to the flood map, to return.",
+    "its description names the simulated area, the region and the campuses: "+s.desc);
+  assert(await pg.getByRole('group',{name:"Teachers Village, zoomed out"}).count()===1,"the accessible name resolves in the browser");
+  await pg.selectOption('#p-lang','fil');await pg.waitForTimeout(100);
+  s=await pg.evaluate(()=>({name:document.getElementById('country-l').textContent,desc:document.getElementById('country-desc').textContent,
+    wantL:fill(NAT_LANGS.fil.countryL,{site:"Teachers Village"}),wantD:fill(NAT_LANGS.fil.countryPh,{site:"Teachers Village",n:CAMPUSES.length}),out:siteZoomedOut}));
+  assert(s.out&&s.name===s.wantL&&s.desc===s.wantD&&!/Map of/.test(s.desc),"a language change rewrites the name and description (Filipino): "+s.name+" / "+s.desc);
+  await pg.selectOption('#p-lang','en');await pg.waitForTimeout(100);
   // the slack: a small zoom back in does not flip back
   await pg.evaluate(()=>COUNTRY.map.zoomTo(COUNTRY.map.getZoom()+0.3,{duration:0}));await pg.waitForTimeout(200);
   assert(await pg.evaluate(()=>siteZoomedOut),"a small zoom back in stays on the country view (no flicker)");
@@ -74,6 +87,9 @@ async function wheelOut(pg){
   await pg.goto(U+'#berkeley');await up(pg);await wheelOut(pg);await glReady(pg);
   s=await pg.evaluate(()=>({out:siteZoomedOut,pins:document.querySelectorAll('#country-pins > *').length,min:COUNTRY.map.getMinZoom()}));
   assert(s.out&&s.pins===0&&s.min<=2,"UC Berkeley zooms out too, with no PhilDev pins: "+JSON.stringify(s));
+  s=await srText(pg);
+  assert(s.role==="group"&&s.name==="UC Berkeley, zoomed out"&&s.desc==="Map of the San Francisco Bay Area and beyond. A dashed box marks the simulated area of UC Berkeley. There are no PhilDev campuses here. Zoom in on the box, or use Back to the flood map, to return.",
+    "UC Berkeley's country view is named and described without campuses: "+JSON.stringify(s));
   assert(errs.length===0,"no page errors: "+errs.join("; "));
   await ctx.close();
   // controller ruling: the vector country view carries the tile credit, 12 px, never under "Back to the flood map" or the note
@@ -118,6 +134,8 @@ async function wheelOut(pg){
    await p.goto(U+'#berkeley');await up(p);await wheelOut(p);await glReady(p);
    s=await p.evaluate(()=>({out:siteZoomedOut,svg:getComputedStyle(document.getElementById('country-svg')).display!=="none",note:!document.getElementById('country-note').hidden}));
    assert(s.out&&!s.svg&&s.note,"offline: Berkeley shows the note only: "+JSON.stringify(s));
+   s=await p.evaluate(()=>({name:document.getElementById('country-l').textContent,desc:document.getElementById('country-desc').textContent,note:NL().mapNote}));
+   assert(s.name==="UC Berkeley, zoomed out"&&s.desc==="The simulated area of UC Berkeley, zoomed out. "+s.note,"offline: Berkeley's description says there is no map to describe: "+JSON.stringify(s));
    await c2.close();}
   await b.close();
 })();

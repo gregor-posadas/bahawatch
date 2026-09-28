@@ -744,7 +744,8 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <div class="bands-lab"><span>low</span><span>medium</span><span>high</span></div></div>
       <div class="hint">Extents come only from sensor readings, spread over the site's terrain. Tap a sensor to isolate its footprint.</div>
     </div>
-    <div id="country" hidden>
+    <div id="country" role="group" aria-labelledby="country-l" aria-describedby="country-desc" hidden>
+      <span id="country-l" hidden></span><p id="country-desc" hidden></p>
       <div id="country-gl"></div>
       <svg id="country-svg" aria-hidden="true" focusable="false" preserveAspectRatio="none"><path id="country-land"/></svg>
       <div class="country-box" id="country-box"></div>
@@ -3012,7 +3013,15 @@ const canCountry=()=>ROUTE==="site"&&!TRY&&!!DATA&&!!DATA.bbox;
 const siteLL=()=>{const b=DATA.bbox;return [[b[0],b[1]],[b[2],b[3]]];};
 const phSite=()=>SITE!=="berkeley";
 function syncCountryUI(){const b=$("to-country");b.textContent=NL().wholeCountry;b.hidden=!canCountry()||COUNTRY.on;
-  $("country-back").textContent=NL().backFlood;if(COUNTRY.on)countryDraw();}   // a language change reaches an open view too
+  $("country-back").textContent=NL().backFlood;if(COUNTRY.on){countrySR();countryDraw();}}   // a language change reaches an open view too
+// Screen-reader text (UX profile: every map has it): the group's name, and a description of the region, the site's
+// simulated area and the campuses. The two elements are hidden; aria-labelledby/-describedby still read them.
+function countrySR(){
+  const L=NL(),site=siteLabel(SITE),ph=phSite();
+  $("country-l").textContent=fill(L.countryL,{site});
+  $("country-desc").textContent=!ph&&COUNTRY.state==="off"?fill(L.countryOff,{site})+" "+L.mapNote   // Berkeley offline: no map at all
+    :fill(ph?L.countryPh:L.countryUs,{site,n:CAMPUSES.length});
+}
 // a pull of ×0.75 past the whole box (one "−", two wheel notches) hands over; it fades if the zooming stops
 function countryPullBy(f){
   if(!canCountry())return false;
@@ -3033,7 +3042,7 @@ function countryOut(){
         if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme()));COUNTRY.theme=curTheme();}   // switched while it loaded
         map.on("move",countryDrawSoon);map.on("resize",countryDrawSoon);map.on("zoom",countryZoomCheck);
         if(COUNTRY.on)countryEnterGL();},
-        ()=>{COUNTRY.state="off";countryDraw();});
+        ()=>{COUNTRY.state="off";if(COUNTRY.on)countrySR();countryDraw();});
   }
   countryDraw();
   $("country-back").focus({preventScroll:true});
