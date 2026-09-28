@@ -5,6 +5,7 @@ const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else co
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
   const pg=await b.newPage({viewport:{width:1280,height:900}});
+  await pg.addInitScript(()=>{window.BW_NO_BASEMAP=true;});   // these checks read the flood canvas's own drawing of the streets
   const errs=[];pg.on('pageerror',e=>errs.push(e.message));
   await pg.goto(BASE+'bahawatch_dashboard.html#tv');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(400);
   const setAll=async(cm)=>pg.evaluate(cm=>{playing=false;for(const s of HOUSEHOLD){s.depth=cm/100;s.rate=0;s.status=statusOf(s);}computeFlood(0);renderFlood();drawMap();renderPublic();},cm);
@@ -45,9 +46,9 @@ const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else co
   const lbl=await pg.evaluate(()=>typeof selectedStreetLabel==="function"&&!!selectedStreetLabel());
   assert(lbl,"a label position exists for the selected street");
   // 4. selection marker: no ring; the marker itself grows
-  const ringless=await pg.evaluate(()=>!/R\+7,0,7\);ctx\.strokeStyle=P\.select/.test(drawOverlayCanvas.toString()));
+  const ringless=await pg.evaluate(()=>!/R\+7,0,7\);ctx\.strokeStyle=P\.select/.test(drawOverlayInner.toString()));
   assert(ringless,"no selection ring drawn around markers");
-  const grows=await pg.evaluate(()=>/selected\?/.test(drawOverlayCanvas.toString())&&/drawMarker\(ctx,X,Y,R\*/.test(drawOverlayCanvas.toString()));
+  const grows=await pg.evaluate(()=>/selected\?/.test(drawOverlayInner.toString())&&/drawMarker\(ctx,X,Y,R\*/.test(drawOverlayInner.toString()));
   assert(grows,"selected marker is drawn at a larger radius");
   // "Choose my street" picker: the "near …" part sits on its own line, not glued to the name
   await pg.click('#p-my-btn');await pg.waitForTimeout(100);

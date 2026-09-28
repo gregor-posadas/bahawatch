@@ -37,9 +37,17 @@ def run(tip, args):
 
 def base(tip, national, density, tmp):
     outline = json.load(open(os.path.join(ROOT, "data", "ph_outline.json"), encoding="utf-8"))
-    paths = {k: os.path.join(tmp, k + ".geojsonl") for k in ("land", "builtup", "roads", "rivers", "places")}
-    with open(paths["land"], "w") as f:
-        f.write(feat({}, outline))
+    paths = {k: os.path.join(tmp, k + ".geojsonl") for k in ("builtup", "roads", "rivers", "places")}
+    # the coastline: PSA/NAMRIA admin0 simplified to 0.0002° (inputs/ph_land_detailed.json, made from the HDX shapefile),
+    # in its own archive to zoom 13 so the coast stays true at street scale; the coarse page outline if it is missing
+    land_src = os.path.join(ROOT, "inputs", "ph_land_detailed.json")
+    land = json.load(open(land_src, encoding="utf-8")) if os.path.exists(land_src) else outline
+    lp = os.path.join(tmp, "land.geojsonl")
+    with open(lp, "w") as f:
+        for poly in (land["coordinates"] if land["type"] == "MultiPolygon" else [land["coordinates"]]):
+            f.write(feat({}, {"type": "Polygon", "coordinates": poly}))
+    run(tip, ["-o", os.path.join(OUT, "ph-land.pmtiles"), "-Z0", "-z13", "--simplification=4", "--no-tiny-polygon-reduction",
+              "--detect-shared-borders", "--coalesce", "-L", f"land:{lp}"])
     with open(paths["builtup"], "w") as f, open(density) as src:
         for r in csv.DictReader(src):
             n = int(r["n"])

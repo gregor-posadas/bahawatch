@@ -156,6 +156,13 @@ header{display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:14px 
 main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
 #map-wrap{position:relative; overflow:hidden; background:var(--map-bg); min-height:430px; margin:16px 0 16px 22px; border-radius:10px; border:1px solid var(--line)}
 #map,#overlay{position:absolute; inset:0; width:100%; height:100%; display:block}
+/* one map from the country to the street: the detailed map under the flood canvas, driven by the flood map's camera */
+#site-gl{position:absolute; inset:0; pointer-events:none; opacity:0}
+#map-wrap.gl #site-gl{opacity:1}
+@media (prefers-reduced-motion: no-preference){#site-gl{transition:opacity .3s}}
+#site-pins{z-index:3}
+.nat-units{position:absolute; inset:0; pointer-events:none; z-index:1}
+.nat-unit{position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; border:3.5px solid var(--ok); background:var(--marker-fill); box-shadow:0 0 0 2px var(--marker-fill)}
 #overlay{cursor:grab; touch-action:none}
 #overlay.dragging{cursor:grabbing}
 #map-tooltip{
@@ -558,6 +565,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <svg id="nat-svg" aria-hidden="true" focusable="false" preserveAspectRatio="none"><path id="nat-land"/></svg>
         <div id="nat-gl"></div>
         <div class="nat-box" id="nat-box" hidden></div>
+        <div class="nat-units" id="nat-units" aria-hidden="true"></div>
         <div class="nat-pins" id="nat-pins"></div>
         <div class="nat-zoom">
           <span class="ic-wrap"><button id="nat-zin" aria-describedby="nat-zin-tip">+</button><span class="ic-tip" id="nat-zin-tip" role="tooltip"></span></span>
@@ -737,8 +745,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 
 <main>
   <div id="map-wrap">
+    <div id="site-gl" aria-hidden="true"></div>
     <canvas id="map"></canvas>
     <canvas id="overlay" tabindex="0" role="application" aria-label="Flood map. Use plus and minus to zoom, arrow keys to pan, 0 to reset." aria-describedby="map-desc"></canvas>
+    <div class="nat-pins" id="site-pins"></div>
     <p id="map-desc" class="sr-only"></p>
     <div id="legend" aria-hidden="true">
       <div class="lg-title">Modeled water depth</div>
@@ -1105,16 +1115,23 @@ function applyView(){
   const fit=Math.min(view.w/W,view.h/H);
   view.sc=fit*ZOOM.z;
   const hw=view.w/2/view.sc,hh=view.h/2/view.sc;
+  if(glOn()){                                    // one map: pan anywhere in the country, within reason
+    const r=W*2500;ZOOM.cx=Math.max(-r,Math.min(W+r,ZOOM.cx));ZOOM.cy=Math.max(-r,Math.min(H+r,ZOOM.cy));
+  }else{
   ZOOM.cx=(W*view.sc<=view.w)?W/2:Math.max(hw,Math.min(W-hw,ZOOM.cx));
   ZOOM.cy=(H*view.sc<=view.h)?H/2:Math.max(hh,Math.min(H-hh,ZOOM.cy));
+  }
   view.ox=view.w/2-ZOOM.cx*view.sc;view.oy=view.h/2-ZOOM.cy*view.sc;
+  siteGLSync();
+  if(glOn()){const b=$("to-country"),t=ZOOM.z<0.9?NL().backFlood:NL().wholeCountry;if(b.textContent!==t)b.textContent=t;}
   const zl=document.getElementById("zoom-lvl");if(zl)zl.textContent=(Math.round(ZOOM.z*10)/10)+"×";
 }
 function zoomAt(factor,sx,sy){
-  if(factor<1&&ZOOM.z<=ZOOM.min+1e-6&&countryPullBy(factor))return;   // spec §6.1
+  if(!glOn()&&factor<1&&ZOOM.z<=ZOOM.min+1e-6&&countryPullBy(factor))return;   // spec §6.1 (only without the detailed map)
   if(factor>1)countryPull=1;
+  zoomAnim=0;
   const wxp=(sx-view.ox)/view.sc,wyp=(sy-view.oy)/view.sc;
-  ZOOM.z=Math.max(ZOOM.min,Math.min(ZOOM.max,ZOOM.z*factor));
+  ZOOM.z=Math.max(zoomFloor(),Math.min(ZOOM.max,ZOOM.z*factor));
   const fit=Math.min(view.w/W,view.h/H),nsc=fit*ZOOM.z;
   ZOOM.cx=wxp+(view.w/2-sx)/nsc;ZOOM.cy=wyp+(view.h/2-sy)/nsc;
   applyView();drawMap();
@@ -1122,7 +1139,84 @@ function zoomAt(factor,sx,sy){
 // The Try map opens on about 700 m around 22 Malingap St across its shorter side: every pretend phone in view (spec §5).
 function tryZoom(){const b=DATA.bbox,lat=(b[1]+b[3])/2,mpu=(b[2]-b[0])*111320*Math.cos(lat*Math.PI/180)/W,fit=Math.min(view.w/W,view.h/H);
   return Math.min(view.w,view.h)/(700/mpu)/fit;}
-function zoomTo(x,y,z){ZOOM.z=Math.max(ZOOM.min,Math.min(ZOOM.max,z));ZOOM.cx=x;ZOOM.cy=y;applyView();drawMap();}
+function zoomTo(x,y,z){zoomAnim=0;ZOOM.z=Math.max(zoomFloor(),Math.min(ZOOM.max,z));ZOOM.cx=x;ZOOM.cy=y;applyView();drawMap();}
+/* ---------- the detailed map under the flood map (one map from the whole country to the street) ---------- */
+// The flood canvas keeps its own camera (ZOOM); the MapLibre map below follows it every frame. Zooming out past the
+// simulated box keeps going on the same map, to the whole country; the flood layer and the sensors fade out as the box
+// gets small and fade back in as you zoom to it; other campuses show as pins. No WebGL: the old flood map alone.
+const SITEGL={map:null,state:"none",theme:null,set:null};
+const glOn=()=>SITEGL.state==="on"&&!!DATA;
+let zoomAnim=0;
+// The simulation grid measures a degree of latitude as 110,640 m (the pipeline's ellipsoid figure); the web map uses the
+// sphere's 111,320 m. Over the detailed map the flood canvas is stretched by that ratio about the view's centre line.
+const GL_K=111320/110640;
+const glTransform=ctx=>{if(glOn())ctx.setTransform(view.dpr,0,0,view.dpr*GL_K,0,view.dpr*view.h/2*(1-GL_K));else ctx.setTransform(view.dpr,0,0,view.dpr,0,0);};
+const siteMpu=()=>{const b=DATA.bbox,lat=(b[1]+b[3])/2;return (b[2]-b[0])*111320*Math.cos(lat*Math.PI/180)/W;};   // metres per world unit
+// how far out the flood map may zoom: the whole Philippines (or ~2,000 km around UC Berkeley) in view
+function zoomFloor(){
+  if(!glOn()||!view.w)return ZOOM.min;
+  const fit=Math.min(view.w/W,view.h/H),span=phSite()?1.85e6:2.0e6;
+  return Math.min(ZOOM.min,Math.min(view.w,view.h)/(span/siteMpu())/fit);
+}
+// 0 when the simulated box is a speck, 1 once it spans about half the map: the flood layer and sensors fade in between
+function siteFade(){
+  if(!glOn())return 1;
+  const box=Math.min(W,H)*view.sc/Math.max(1,Math.min(view.w,view.h));
+  return Math.max(0,Math.min(1,(box-0.12)/(0.45-0.12)));
+}
+function siteGLSync(){
+  if(!glOn()||!view.w)return;
+  const b=DATA.bbox,lon=b[0]+ZOOM.cx/W*(b[2]-b[0]),lat=b[3]-ZOOM.cy/H*(b[3]-b[1]);
+  const mpp=siteMpu()/view.sc,z=Math.log2(40075016.686*Math.cos(lat*Math.PI/180)/(512*mpp));
+  SITEGL.map.jumpTo({center:[lon,lat],zoom:z});
+  sitePinsSoon();
+}
+function siteGLStart(){
+  if(SITEGL.state!=="none")return;
+  if(window.BW_SITE_NO_GL){SITEGL.state="off";return;}   // test hook: the flood map alone, as without WebGL
+  SITEGL.state="loading";const th=curTheme(),set=countrySet();
+  bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("site-gl"),{bounds:siteLL(),theme:th,reduced:true,padding:0,minZoom:1,maxZoom:21,styleSet:set,interactive:false}))
+    .then(map=>{SITEGL.map=map;SITEGL.state="on";SITEGL.theme=th;SITEGL.set=set;siteGLStyle();
+      $("map-wrap").classList.add("gl");syncCountryUI();applyView();drawMap();drawOverlayCanvas();},
+      ()=>{SITEGL.state="off";});
+}
+function siteGLStyle(){
+  if(!glOn())return;const t=curTheme(),set=countrySet();
+  if(t!==SITEGL.theme||set!==SITEGL.set){SITEGL.map.setStyle(bwStyleUrl(t,set));SITEGL.theme=t;SITEGL.set=set;}
+}
+// a smooth zoom (log-scale) to z around world point (x,y); instant under reduced motion
+function animZoom(z,x,y,ms,done){
+  const z0=ZOOM.z,x0=ZOOM.cx,y0=ZOOM.cy,t0=performance.now(),d=natDur(ms),tok=++zoomAnim;
+  z=Math.max(zoomFloor(),Math.min(ZOOM.max,z));
+  const step=now=>{
+    if(tok!==zoomAnim)return;
+    const k=d?Math.min(1,(now-t0)/d):1,e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    ZOOM.z=Math.exp(Math.log(z0)+(Math.log(z)-Math.log(z0))*e);ZOOM.cx=x0+(x-x0)*e;ZOOM.cy=y0+(y-y0)*e;
+    applyView();drawMap();drawOverlayCanvas();
+    if(k<1)requestAnimationFrame(step);else{zoomAnim=0;if(done)done();}
+  };
+  requestAnimationFrame(step);
+}
+// other campuses on the zoomed-out flood map, placed by the detailed map's projection
+let sitePinsF=0;
+const sitePinsSoon=()=>{if(!sitePinsF)sitePinsF=requestAnimationFrame(()=>{sitePinsF=0;sitePins();});};
+function sitePins(){
+  const el=$("site-pins");
+  if(!glOn()||!phSite()||TRY||siteFade()>=1){if(el.innerHTML)el.innerHTML="";return;}
+  const m=SITEGL.map,w=view.w,h=view.h,op=(1-siteFade()).toFixed(2);
+  const pts=CAMPUSES.filter(c=>c.id!==SITE).map(c=>{const p=m.project([c.lon,c.lat]);return {id:c.id,x:p.x,y:p.y};}).filter(p=>p.x>=-24&&p.x<=w+24&&p.y>=-24&&p.y<=h+24);
+  el.style.opacity=op;
+  el.innerHTML=bwCluster(pts,36).map(g=>{
+    const html=g.ids.length===1?pinHTML(CAMPUS_BY_ID[g.ids[0]],""):clusterHTML(g.ids,"");
+    return html.replace(/^<(a|button) /,`<$1 style="left:${g.x.toFixed(1)}px;top:${g.y.toFixed(1)}px" `);
+  }).join("");
+}
+document.getElementById("site-pins").addEventListener("click",e=>{
+  const cl=e.target.closest(".pin-cluster");if(!cl||!glOn())return;
+  const cs=cl.dataset.ids.split(",").map(id=>CAMPUS_BY_ID[id]),lon=cs.reduce((a,c)=>a+c.lon,0)/cs.length,lat=cs.reduce((a,c)=>a+c.lat,0)/cs.length;
+  const w=lonLatToWorld(lon,lat);animZoom(ZOOM.z*6,w.x,w.y,700);
+});
+document.getElementById("site-pins").addEventListener("wheel",e=>{e.preventDefault();const r=ovCv.getBoundingClientRect();zoomAt(Math.exp(-e.deltaY*0.0016),e.clientX-r.left,e.clientY-r.top);},{passive:false});
 function fitSensors(){
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   const grow=(x,y)=>{if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;};
@@ -1134,7 +1228,7 @@ function fitSensors(){
   const padX=210,padY=70;x0-=padX;x1+=padX;y0-=padY;y1+=padY;
   const fit=Math.min(view.w/W,view.h/H);
   const z=Math.min(view.w/(x1-x0),view.h/(y1-y0))/fit;
-  zoomTo((x0+x1)/2,(y0+y1)/2,Math.min(z,3.5));
+  zoomTo((x0+x1)/2,(y0+y1)/2,Math.max(ZOOM.min,Math.min(z,3.5)));   // never opens zoomed out past the simulated box
 }
 function resetView(){if(TRY&&VIEW==="public"){const h=HOUSEHOLD.find(s=>s.id===TRY_SENSOR);if(h&&view.w){zoomTo(h.x,h.y,tryZoom());return;}}if(VIEW==="public"&&view.w){fitSensors();return;}ZOOM.z=1;ZOOM.cx=W/2;ZOOM.cy=H/2;applyView();drawMap();}
 function resize(){
@@ -1143,6 +1237,7 @@ function resize(){
   const cw=wrap.clientWidth,ch=wrap.clientHeight;
   for(const c of[mapCv,ovCv]){c.width=Math.round(cw*dpr);c.height=Math.round(ch*dpr);}
   Object.assign(view,{dpr,w:cw,h:ch});
+  if(SITEGL.map)SITEGL.map.resize();
   applyView();
   drawMap();
 }
@@ -1186,20 +1281,32 @@ function selectedStreetLabel(){
 }
 function drawMap(){
   const ctx=mapCv.getContext("2d");
-  ctx.setTransform(view.dpr,0,0,view.dpr,0,0);
-  const P=mapPal();
+  ctx.setTransform(view.dpr,0,0,view.dpr,0,0);ctx.clearRect(0,0,view.w,view.h);glTransform(ctx);
+  const P=mapPal(),gl=glOn(),fade=siteFade();
+  const hl=selectedStreetWays().length>0;
+  ctx.imageSmoothingEnabled=true;
+  if(gl){
+    ctx.clearRect(0,0,view.w,view.h);
+    if(VIEW!=="public"){ctx.globalAlpha=fade*(hl?0.42:1);ctx.drawImage(baseCv,view.ox,view.oy,W*view.sc,H*view.sc);ctx.globalAlpha=1;}
+    else if(hl){ctx.fillStyle=`rgba(${P.bgLo[0]},${P.bgLo[1]},${P.bgLo[2]},0.58)`;ctx.fillRect(0,0,view.w,view.h);}   // everything else recedes
+  }else{
   ctx.fillStyle=`rgb(${P.bgLo[0]},${P.bgLo[1]},${P.bgLo[2]})`;
   ctx.fillRect(0,0,view.w,view.h);
-  ctx.imageSmoothingEnabled=true;
-  const hl=selectedStreetWays().length>0;
   if(hl)ctx.globalAlpha=0.42;            // everything else recedes toward the paper
   ctx.drawImage(baseCv,view.ox,view.oy,W*view.sc,H*view.sc);
   ctx.globalAlpha=1;
+  }
+  ctx.globalAlpha=fade;
   drawStreetHighlight(ctx,P);
   if(VIEW!=="public")ctx.drawImage(noahCv,view.ox,view.oy,W*view.sc,H*view.sc);
   // LIVE simple view: the flood layer is the SIMULATED storm — never draw it under a live answer
   mapDrawn.flood=!liveSimple();
   if(mapDrawn.flood)ctx.drawImage(floodCv,view.ox,view.oy,W*view.sc,H*view.sc);
+  ctx.globalAlpha=1;
+  if(gl&&fade<1){                                // the simulated box, as the flood layer fades out
+    ctx.save();ctx.globalAlpha=1-fade;ctx.setLineDash([6,4]);ctx.lineWidth=2;ctx.strokeStyle=P.markerInk;
+    ctx.strokeRect(view.ox,view.oy,W*view.sc,H*view.sc);ctx.restore();
+  }
 }
 // What the last draw put on the map (read by tests, like drawnReports): the simulated flood layer, how many
 // status-coloured sensor markers, and whether the picked place's neutral marker was drawn.
@@ -1227,7 +1334,12 @@ function drawMarker(ctx,X,Y,R,status,col,P,bold){
 function drawOverlayCanvas(){
   const ctx=ovCv.getContext("2d");
   ctx.setTransform(view.dpr,0,0,view.dpr,0,0);
-  ctx.clearRect(0,0,view.w,view.h);
+  ctx.clearRect(0,0,view.w,view.h);glTransform(ctx);
+  const fade=siteFade();if(fade<=0){mapDrawn.statusMarkers=0;return;}
+  ctx.globalAlpha=fade;                          // the sensors fade in as you zoom to the campus
+  drawOverlayInner(ctx);ctx.globalAlpha=1;
+}
+function drawOverlayInner(ctx){
   const wx=x=>view.ox+x*view.sc, wy=y=>view.oy+y*view.sc;
   const P=mapPal();
   if(VIEW!=="public")for(const g of cutSegs){
@@ -1338,8 +1450,8 @@ ovCv.addEventListener("pointermove",e=>{
     const[a,b]=[...ptrs.values()];
     const d=Math.hypot(a.x-b.x,a.y-b.y);
     const mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top;
-    if(pinchZ0*d/Math.max(pinchD0,1)<ZOOM.min*0.75&&!COUNTRY.on&&canCountry()){ptrs.clear();countryOut();return;}
-    const target=Math.max(ZOOM.min,Math.min(ZOOM.max,pinchZ0*d/Math.max(pinchD0,1)));
+    if(!glOn()&&pinchZ0*d/Math.max(pinchD0,1)<ZOOM.min*0.75&&!COUNTRY.on&&canCountry()){ptrs.clear();countryOut();return;}
+    const target=Math.max(zoomFloor(),Math.min(ZOOM.max,pinchZ0*d/Math.max(pinchD0,1)));
     zoomAt(target/ZOOM.z,mx,my);
     dragMoved=true;tip.style.display="none";
     return;
@@ -1356,7 +1468,7 @@ function endPtr(e){
   const p=ptrs.get(e.pointerId);
   ptrs.delete(e.pointerId);
   if(ptrs.size===0){dragging=false;ovCv.classList.remove("dragging");}
-  if(p&&!dragMoved&&e.type==="pointerup"&&!liveSimple()){      // LIVE simple view has no simulated sensors to pick
+  if(p&&!dragMoved&&e.type==="pointerup"&&!liveSimple()&&siteFade()>0.5){      // LIVE simple view has no simulated sensors to pick
     const r=ovCv.getBoundingClientRect();
     const x=(e.clientX-r.left-view.ox)/view.sc, y=(e.clientY-r.top-view.oy)/view.sc;
     let hit=null;
@@ -2738,7 +2850,8 @@ function syncLiveUI(){
 }
 function switchSite(id){
   if(!DATA_ALL[id])id="tv";
-  countryBack(true);
+  countryBack(true);zoomAnim=0;
+  setTimeout(siteGLStyle,0);setTimeout(siteGLStart,800);   // after the flood map is up: it never waits for the detailed map
   // per-site language is persisted by the menu's change handler; nothing to save here
   selected=null;pickMode=false;
   const pk=document.getElementById("p-pick");pk.style.display="none";pk.setAttribute("aria-hidden","true");pk.innerHTML="";
@@ -2919,6 +3032,11 @@ function natPins(){
     return html.replace(/^<(a|button) /,`<$1 style="left:${g.x.toFixed(1)}px;top:${g.y.toFixed(1)}px" `);
   }).join("");
   if(keep){const f=[...$("nat-pins").children].find(e=>(e.dataset.id||e.dataset.ids)===keep);if(f)f.focus({preventScroll:true});}
+  // each campus's 8 proposed units fade in as you zoom to it (the same units its flood map shows)
+  const U=$("nat-units"),z=NATGL.state==="on"?NATGL.map.getZoom():0,op=Math.max(0,Math.min(1,(z-12.5)/1.5));
+  U.style.opacity=op.toFixed(2);
+  U.innerHTML=op>0?CAMPUSES.flatMap(c=>c.u||[]).map(([lo,la])=>natPx(lo,la)).filter(([x,y])=>x>=-10&&x<=w+10&&y>=-10&&y<=h+10)
+    .map(([x,y])=>`<span class="nat-unit" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px"></span>`).join(""):"";
   natBoxPlace();
 }
 let natPinsF=0;
@@ -2989,6 +3107,7 @@ function natGLStart(){
 function bwThemeChanged(t){
   if(NATGL.state==="on"&&NATGL.theme!==t){NATGL.map.setStyle(bwStyleUrl(t));NATGL.theme=t;}
   if(typeof countryThemeChanged==="function")countryThemeChanged(t);
+  siteGLStyle();
 }
 let natAnnounceT=null,natLastQ="";
 function natList(){
@@ -3035,7 +3154,7 @@ const canCountry=()=>ROUTE==="site"&&!TRY&&!!DATA&&!!DATA.bbox;
 const siteLL=()=>{const b=DATA.bbox;return [[b[0],b[1]],[b[2],b[3]]];};
 const phSite=()=>SITE!=="berkeley";
 const countrySet=()=>phSite()?"":"world";   // our tiles cover the Philippines; Berkeley's view uses OpenFreeMap
-function syncCountryUI(){const b=$("to-country");b.textContent=NL().wholeCountry;b.hidden=!canCountry()||COUNTRY.on;
+function syncCountryUI(){const b=$("to-country");b.textContent=glOn()&&ZOOM.z<0.9?NL().backFlood:NL().wholeCountry;b.hidden=!canCountry()||COUNTRY.on;
   $("country-back").textContent=NL().backFlood;if(COUNTRY.on){countrySR();countryDraw();}}   // a language change reaches an open view too
 // Screen-reader text (UX profile: every map has it): the group's name, and a description of the region, the site's
 // simulated area and the campuses. The two elements are hidden; aria-labelledby/-describedby still read them.
@@ -3134,7 +3253,11 @@ let countryF=0;
 const countryDrawSoon=()=>{if(!countryF)countryF=requestAnimationFrame(()=>{countryF=0;countryDraw();});};
 function countryThemeChanged(t){if(COUNTRY.state==="on"&&COUNTRY.theme!==t){COUNTRY.map.setStyle(bwStyleUrl(t,countrySet()));COUNTRY.theme=t;}}
 $("country-back").addEventListener("click",()=>countryBack());
-$("to-country").addEventListener("click",()=>countryOut());
+$("to-country").addEventListener("click",()=>{
+  if(!glOn()){countryOut();return;}
+  if(ZOOM.z<0.9){const t=VIEW==="public"?null:1;if(t)animZoom(1,W/2,H/2,900);else{const z0=ZOOM.z,x0=ZOOM.cx,y0=ZOOM.cy;resetView();const z=ZOOM.z,x=ZOOM.cx,y=ZOOM.cy;ZOOM.z=z0;ZOOM.cx=x0;ZOOM.cy=y0;applyView();animZoom(z,x,y,900);}}
+  else{phOutline();const b=PH_BOUNDS,c=phSite()?lonLatToWorld((b[0][0]+b[1][0])/2,(b[0][1]+b[1][1])/2):{x:W/2,y:H/2};animZoom(0,c.x,c.y,1200);}   // 0: as far out as the floor allows
+});
 $("country").addEventListener("keydown",e=>{if(e.key==="Escape"){e.preventDefault();countryBack();}});
 $("country-pins").addEventListener("click",e=>{
   const cl=e.target.closest(".pin-cluster");if(!cl||COUNTRY.state!=="on"||$("country").dataset.gl!=="1")return;

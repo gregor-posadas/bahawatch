@@ -43,6 +43,7 @@ def style(theme):
     p = PALETTES[theme]
     sites = sorted(os.path.basename(f)[5:-8] for f in glob.glob(os.path.join(ROOT, "shared", "tiles", "site-*.pmtiles")))
     sources = {"base": {"type": "vector", "url": "pmtiles://shared/tiles/ph-base.pmtiles", "attribution": OWN_ATTRIBUTION}}
+    sources["land"] = {"type": "vector", "url": "pmtiles://shared/tiles/ph-land.pmtiles"}
     for sid in sites:
         sources["site-" + sid] = {"type": "vector", "url": f"pmtiles://shared/tiles/site-{sid}.pmtiles"}
     cls = lambda *c: ["match", ["get", "class"], list(c), True, False]
@@ -58,10 +59,10 @@ def style(theme):
         return out
     layers = [
         {"id": "water", "type": "background", "paint": {"background-color": p["sea"]}},
-        {"id": "land", "type": "fill", "source": "base", "source-layer": "land", "paint": {"fill-color": p["land"]}},
-        {"id": "builtup", "type": "fill", "source": "base", "source-layer": "builtup",
+        {"id": "land", "type": "fill", "source": "land", "source-layer": "land", "paint": {"fill-color": p["land"], "fill-antialias": False}},
+        {"id": "builtup", "type": "fill", "source": "base", "source-layer": "builtup", "maxzoom": 12,
          "paint": {"fill-color": p["builtup"], "fill-antialias": False,
-                   "fill-opacity": ["interpolate", ["linear"], ["zoom"], 4, ["*", 0.33, ["get", "d"]], 10, ["*", 0.25, ["get", "d"]], 12, ["*", 0.12, ["get", "d"]], 14, 0.1]}},
+                   "fill-opacity": ["interpolate", ["linear"], ["zoom"], 4, ["*", 0.33, ["get", "d"]], 9, ["*", 0.25, ["get", "d"]], 11.5, 0]}},
         {"id": "river", "type": "line", "source": "base", "source-layer": "rivers", "minzoom": 9,
          "paint": {"line-color": p["river"], "line-width": width(9, 0.6, 16, 3)}},
     ]
@@ -69,7 +70,7 @@ def style(theme):
         layers.append({"id": "waterway-" + sid, "type": "line", "source": "site-" + sid, "source-layer": "waterways", "minzoom": 12,
                        "paint": {"line-color": p["river"], "line-width": width(12, 1, 18, 5)}})
     for sid in sites:
-        layers.append({"id": "building-" + sid, "type": "fill", "source": "site-" + sid, "source-layer": "buildings", "minzoom": 14,
+        layers.append({"id": "building-" + sid, "type": "fill", "source": "site-" + sid, "source-layer": "buildings", "minzoom": 13,
                        "paint": {"fill-color": p["building"], "fill-outline-color": p["casing"]}})
     layers += roads("base", "roads", 4)
     for sid in sites:

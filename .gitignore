@@ -16,3 +16,4 @@ node_modules/
 inputs/campuses/
 # live-mode page builds made by the tests (served over http with the data files)
 _bw_*.html
+inputs/ph_land_detailed.json

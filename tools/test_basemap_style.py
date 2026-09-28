@@ -72,7 +72,7 @@ class Styles(unittest.TestCase):
             for need in ("water", "land", "builtup", "river", "road-major", "road-mid", "road-minor", "building-upd", "road-label", "place-label"):
                 self.assertIn(need, ids, need)
             self.assertLess(ids.index("land"), ids.index("road-major"))
-            self.assertEqual(next(l for l in s["layers"] if l["id"] == "building-upd")["minzoom"], 14)
+            self.assertEqual(next(l for l in s["layers"] if l["id"] == "building-upd")["minzoom"], 13)
             self.assertEqual(s["layers"][0]["paint"]["background-color"], B.PALETTES[theme]["sea"])
 
     def test_sea_is_far_from_flood_hazard_and_creek_colours(self):

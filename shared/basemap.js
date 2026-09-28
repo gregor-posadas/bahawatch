@@ -115,12 +115,12 @@ export function bwOpenMap(lib, container, o) {
     t = setTimeout(() => (gotTile ? settle(map) : fail(new Error("no tile within " + ms + " ms"))), ms);
     try {
       map = new lib.Map({ container, style: bwStyleUrl(o.theme, o.styleSet), bounds: o.bounds, fitBoundsOptions: { padding: o.padding ?? 24 },
-        minZoom: o.minZoom ?? 3, maxZoom: 17, attributionControl: false, dragRotate: false, pitchWithRotate: false,
+        minZoom: o.minZoom ?? 3, maxZoom: o.maxZoom ?? 17, attributionControl: false, interactive: o.interactive ?? true, dragRotate: false, pitchWithRotate: false,
         touchPitch: false, fadeDuration: o.reduced ? 0 : 300,
         // our style's glyph and tile paths are relative to the page
         transformRequest: (url) => (/^[a-z][a-z0-9+.-]*:/i.test(url) ? undefined : { url: new URL(url, location.href).href }), cooperativeGestures: !!o.cooperativeGestures, locale: o.locale });
     } catch (e) { fail(e); return; }
-    map.touchZoomRotate.disableRotation(); map.keyboard.disableRotation();
+    if (map.touchZoomRotate) map.touchZoomRotate.disableRotation(); if (map.keyboard) map.keyboard.disableRotation();
     map.on("error", (e) => { if (!gotTile && !map.isStyleLoaded()) fail(e); });
     map.on("sourcedata", (e) => { if (e.tile) gotTile = true; });
     map.on("idle", () => { if (gotTile) settle(map); });

@@ -8,7 +8,8 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   const ctx=await b.newContext({viewport:{width:1280,height:900}});
   await ctx.addInitScript(()=>{if(!sessionStorage.getItem("seeded")){sessionStorage.setItem("seeded","1");localStorage.setItem("bw-lang:tv","en");localStorage.setItem("bw-place:tv","tv:s:BW-H07");localStorage.setItem("bw-street:tv","BW-H07");localStorage.setItem("bw-asked:tv","1");}});
   const pg=await ctx.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
-  const net=[];pg.on('request',r=>{const u=r.url();if(!u.startsWith('file:')&&!u.startsWith('data:'))net.push(u);});
+  // the map's own static files (styles, tiles, fonts, library) are part of the page; nothing else may be requested
+  const net=[];pg.on('request',r=>{const u=r.url();if(!u.startsWith('file:')&&!u.startsWith('data:')&&!/\/(shared\/(fonts|tiles)\/|shared\/basemap-style|lib\/)/.test(u))net.push(u);});
   await pg.goto(U+'#tv');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(400);
   net.length=0;                                   // the page and data/tv.json are loaded; from here on nothing may be fetched
   let s=await pg.evaluate(()=>[...document.querySelectorAll('#public .site-tabs [role=tab]')].map(t=>t.dataset.site));
