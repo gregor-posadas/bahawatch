@@ -40,8 +40,11 @@ async function wheelOut(pg){
     return {role:el.getAttribute('role'),name:l&&l.textContent,desc:d&&d.textContent,site:siteLabel(SITE),n:CAMPUSES.length};});
   s=await srText(pg);
   assert(s.role==="group"&&s.name==="Teachers Village, zoomed out","the country view is a group named for the site: "+JSON.stringify(s.name));
-  assert(s.desc==="Map of the Philippines. A dashed box marks the simulated area of Teachers Village. The map marks the "+s.n+" PhilDev partner campuses. Zoom in on the box, or use Back to the flood map, to return.",
+  assert(s.desc==="Map of the Philippines. A dashed box marks the simulated area of Teachers Village. Pins mark the PhilDev partner campuses in view, out of "+s.n+" across the country. Zoom in on the box, or use Back to the flood map, to return.",
     "its description names the simulated area, the region and the campuses: "+s.desc);
+  // true at every zoom: at the entry zoom only a few pins are in view, so it never claims all of them are on the map
+  s=await pg.evaluate(()=>({desc:document.getElementById('country-desc').textContent,inView:document.querySelectorAll('#country-pins .pin').length+[...document.querySelectorAll('#country-pins .pin-cluster')].reduce((a,c)=>a+c.dataset.ids.split(",").length,0),n:CAMPUSES.length}));
+  assert(s.inView<s.n&&!new RegExp("marks the "+s.n+"|"+s.n+" PhilDev partner campuses").test(s.desc),"it does not claim all "+s.n+" campuses are on the map when "+s.inView+" are in view: "+s.desc);
   assert(await pg.getByRole('group',{name:"Teachers Village, zoomed out"}).count()===1,"the accessible name resolves in the browser");
   await pg.selectOption('#p-lang','fil');await pg.waitForTimeout(100);
   s=await pg.evaluate(()=>({name:document.getElementById('country-l').textContent,desc:document.getElementById('country-desc').textContent,
