@@ -26,6 +26,9 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   // wide screens: the national tab is one screen; only the campus list scrolls (spec §4.1)
   const one=await pg.evaluate(()=>{const l=document.querySelector('#nat .nat-listcol'),cs=getComputedStyle(l);return {page:document.scrollingElement.scrollHeight,vh:innerHeight,list:l.scrollHeight>l.clientHeight,ov:cs.overflowY};});
   assert(one.page<=one.vh+1&&one.list&&one.ov==="auto","1280 px national tab: the page doesn't scroll, the campus list does: "+JSON.stringify(one));
+  // spec §7: pin labels are labels, not credits: 14 px
+  const pinPx=await pg.evaluate(()=>[...document.querySelectorAll('#nat-pins .pin-t')].map(e=>parseFloat(getComputedStyle(e).fontSize)));
+  assert(pinPx.length>0&&pinPx.every(v=>v>=14),"national map: pin labels are 14 px, not 12: "+pinPx.join());
   // keyboard: the search box, the list and the pins are reachable with Tab, and focus is visible
   await pg.focus('#nat-q');await pg.keyboard.press('Tab');
   let s=await pg.evaluate(()=>({cls:document.activeElement.className,ol:getComputedStyle(document.activeElement).outlineStyle}));

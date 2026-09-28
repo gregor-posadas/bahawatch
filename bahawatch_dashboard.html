@@ -81,24 +81,27 @@ body[data-natgl="1"] #nat-svg{visibility:hidden}
 .pin-suc{--pin:var(--pin-suc)} .pin-luc{--pin:var(--pin-luc)} .pin-private{--pin:var(--pin-pvt)}
 .pin-suc .pin-shape, .pin-shape.pin-suc{border-radius:50%}
 .pin-private .pin-shape, .pin-shape.pin-private{clip-path:polygon(50% 0,100% 100%,0 100%); width:18px; height:17px}
-.pin-t{position:absolute; left:34px; top:50%; transform:translateY(-50%); white-space:nowrap; font-size:12px; font-weight:700; color:var(--ink); background:var(--map-bg); padding:0 3px; border-radius:3px; pointer-events:none}
+.pin-t{position:absolute; left:34px; top:50%; transform:translateY(-50%); white-space:nowrap; font-size:14px; font-weight:700; color:var(--ink); background:var(--map-bg); padding:0 3px; border-radius:3px; pointer-events:none}
 .pin-cluster span{min-width:32px; height:32px; border-radius:16px; background:var(--ink); color:var(--bg); font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 6px}
 /* a ring around the chosen (ink) or hovered (brand) pin; not an outline on the shape, which the triangle's clip-path would cut off */
 .pin-sel::before,.pin-hl::before{content:""; position:absolute; inset:7px; border:3px solid var(--ink); border-radius:50%; pointer-events:none}
 .pin-hl::before{border-color:var(--brand)}
 .pin-sel .pin-t,.pin-hl .pin-t{left:44px}
+.pin-cluster.pin-sel::before,.pin-cluster.pin-hl::before{inset:2px}
 .pin:focus-visible,.pin-cluster:focus-visible,.nat-item:focus-visible,.nat-btn:focus-visible,.nat-q:focus-visible,.nat-zoom button:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
 .nat-box{position:absolute; z-index:1; border:2px dashed var(--ink); pointer-events:none}
 .nat-box[hidden]{display:none}
 .nat-zoom{position:absolute; top:12px; right:12px; z-index:3; display:flex; flex-direction:column; gap:4px}
 .nat-zoom button{width:48px; height:48px; border:1px solid var(--ink); border-radius:6px; background:var(--panel); color:var(--ink); font-size:20px; font-weight:700}
 .nat-btn{min-height:48px; padding:0 14px; border:2px solid var(--ink); border-radius:6px; font-weight:700; background:var(--panel); color:var(--ink); display:inline-flex; align-items:center; text-decoration:none}
-.nat-open{position:absolute; right:12px; bottom:12px; z-index:3}
+/* bottom of the map: "Open …" on the right, stacked above the credits, so it never covers them */
+.nat-mapfoot{position:absolute; left:12px; right:12px; bottom:10px; z-index:3; display:flex; flex-direction:column; gap:8px; pointer-events:none}
+.nat-mapfoot > *{pointer-events:auto}
+.nat-open{align-self:flex-end}
 .nat-open[hidden]{display:none}
-.nat-legend{position:absolute; left:12px; bottom:44px; z-index:3; list-style:none; margin:0; padding:6px 10px; display:flex; flex-wrap:wrap; gap:4px 14px; font-size:14px; background:var(--panel); border:1px solid var(--line); border-radius:6px; max-width:calc(100% - 96px)}
+.nat-legend{position:absolute; left:12px; top:12px; z-index:3; list-style:none; margin:0; padding:6px 10px; display:flex; flex-wrap:wrap; gap:4px 14px; font-size:14px; background:var(--panel); border:1px solid var(--line); border-radius:6px; max-width:calc(100% - 96px)}
 .nat-legend li{display:flex; align-items:center; gap:6px}
-@media (max-width:899px){.nat-legend{top:12px; bottom:auto}}   /* it wraps here and the credits take two lines: keep them apart */
-.nat-credit{position:absolute; left:12px; bottom:10px; z-index:3; margin:0; font-size:12px; color:var(--ink-2); background:var(--panel); padding:2px 6px; border-radius:4px}
+.nat-credit{align-self:flex-start; margin:0; font-size:12px; color:var(--ink-2); background:var(--panel); padding:2px 6px; border-radius:4px}
 .nat-note{margin:8px 0 0; color:var(--ink)}
 .nat-note[hidden]{display:none}
 .nat-ql{display:block; font-weight:700; margin-bottom:6px}
@@ -516,8 +519,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <div class="nat-pins" id="nat-pins"></div>
         <div class="nat-zoom"><button id="nat-zin">+</button><button id="nat-zout">−</button><button id="nat-home">⌂</button></div>
         <ul class="nat-legend" id="nat-legend"></ul>
-        <p class="nat-credit" id="nat-credit"></p>
-        <a class="nat-btn nat-open" id="nat-open" hidden></a>
+        <div class="nat-mapfoot">
+          <a class="nat-btn nat-open" id="nat-open" hidden></a>
+          <p class="nat-credit" id="nat-credit"></p>
+        </div>
       </div>
       <p class="nat-note" id="nat-note" role="status" hidden></p>
       <span class="sr-only" id="nat-map-l"></span>
@@ -3024,11 +3029,13 @@ function natResize(){
   const m=natBox();NAT.full=natFull();
   NAT.vb=NAT.vb?natClamp(bwFitVB(NAT.vb,m.clientWidth,m.clientHeight)):NAT.full.slice();
   $("nat-svg").setAttribute("viewBox",NAT.vb.join(" "));
-  if(NATGL.state==="on")NATGL.map.resize();
+  if(NATGL.state==="on"){NATGL.map.resize();
+    if(NATGL.refit&&m.clientWidth){NATGL.refit=false;const c=CAMPUS_BY_ID[NAT.sel];
+      if(c)NATGL.map.fitBounds(bwCampusBox(c.lat,c.lon),{padding:60,maxZoom:15,duration:0});else NATGL.map.fitBounds(PH_BOUNDS,{padding:24,duration:0});}}
   natPins();
 }
 const pinHTML=(c,cls)=>`<a class="pin pin-${c.type.toLowerCase()}${cls||""}" href="#${c.id}" data-id="${c.id}" aria-label="${esc(pinLabel(c))}"><span class="pin-shape" aria-hidden="true"></span><span class="pin-t" aria-hidden="true">${esc(c.short)}</span></a>`;
-const clusterHTML=ids=>`<button class="pin-cluster" data-ids="${ids.join(",")}" aria-label="${esc(fill(NL().cluster,{n:ids.length,names:ids.map(id=>CAMPUS_BY_ID[id].short).join(", ")}))}"><span aria-hidden="true">${ids.length}</span></button>`;
+const clusterHTML=(ids,cls)=>`<button class="pin-cluster${cls||""}" data-ids="${ids.join(",")}" aria-label="${esc(fill(NL().cluster,{n:ids.length,names:ids.map(id=>CAMPUS_BY_ID[id].short).join(", ")}))}"><span aria-hidden="true">${ids.length}</span></button>`;
 // Pins closer than 36 px become a numbered cluster; DOM order follows the list; focus survives a redraw.
 function natPins(){
   if(!NAT.built||!NAT.vb)return;
@@ -3036,7 +3043,8 @@ function natPins(){
   const keep=a&&a.closest&&a.closest("#nat-pins")?(a.dataset.id||a.dataset.ids):null;
   const pts=CAMPUSES.map(c=>{const [x,y]=natPx(c.lon,c.lat);return {id:c.id,x,y};}).filter(p=>p.x>=-24&&p.x<=w+24&&p.y>=-24&&p.y<=h+24);
   $("nat-pins").innerHTML=bwCluster(pts,36).map(g=>{
-    const html=g.ids.length===1?pinHTML(CAMPUS_BY_ID[g.ids[0]],(NAT.sel===g.ids[0]?" pin-sel":"")+(NAT.hl===g.ids[0]?" pin-hl":"")):clusterHTML(g.ids);
+    const cls=(g.ids.includes(NAT.sel)?" pin-sel":"")+(g.ids.includes(NAT.hl)?" pin-hl":"");   // a cluster wears its member's mark
+    const html=g.ids.length===1?pinHTML(CAMPUS_BY_ID[g.ids[0]],cls):clusterHTML(g.ids,cls);
     return html.replace(/^<(a|button) /,`<$1 style="left:${g.x.toFixed(1)}px;top:${g.y.toFixed(1)}px" `);
   }).join("");
   if(keep){const f=[...$("nat-pins").children].find(e=>(e.dataset.id||e.dataset.ids)===keep);if(f)f.focus({preventScroll:true});}
@@ -3051,7 +3059,8 @@ function natBoxPlace(){
   Object.assign(b.style,{left:(cx-bw/2)+"px",top:(cy-bh/2)+"px",width:bw+"px",height:bh+"px"});b.hidden=false;
 }
 // Only a class toggle: rebuilding the pins here would remove the pin that focus is moving to (focusout fires first).
-function natHighlight(id){if(NAT.hl===id)return;NAT.hl=id;for(const p of $("nat-pins").querySelectorAll(".pin"))p.classList.toggle("pin-hl",p.dataset.id===id);}
+function natHighlight(id){if(NAT.hl===id)return;NAT.hl=id;
+  for(const p of $("nat-pins").children)p.classList.toggle("pin-hl",!!id&&(p.dataset.id||p.dataset.ids).split(",").includes(id));}
 function natFocusFirstPin(){const f=$("nat-pins").querySelector("a,button");if(f)f.focus({preventScroll:true});}
 function natPinClick(e){
   const cl=e.target.closest(".pin-cluster");if(cl){natZoomTo(cl.dataset.ids.split(","));return;}
@@ -3095,6 +3104,7 @@ function natGLStart(){
   const th=curTheme();
   bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("nat-gl"),{bounds:PH_BOUNDS,theme:th,reduced:reducedMotion,padding:24,minZoom:3}))
     .then(map=>{NATGL.map=map;NATGL.state="on";NATGL.theme=th;document.body.dataset.natgl="1";
+      NATGL.refit=ROUTE!=="ph"||!natBox().clientWidth;              // opened out of sight: its zoom is for a 0-size box
       if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme()));NATGL.theme=curTheme();}   // switched while it loaded
       map.on("move",natPinsSoon);map.on("resize",natPinsSoon);
       if(NAT.sel){const c=CAMPUS_BY_ID[NAT.sel];map.fitBounds(bwCampusBox(c.lat,c.lon),{padding:60,maxZoom:15,duration:0});}

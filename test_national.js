@@ -115,6 +115,37 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    await pg.click('#nat-pins .pin-cluster');await pg.waitForTimeout(300);
    assert(await pg.evaluate(()=>!!document.activeElement.closest('#nat-pins')),"reduced motion: a cluster zooms in and focus moves to the pins");
    await ctx.close();}
+  // "Open …" never covers the map credits (the credit must stay readable), in both maps, wide and narrow
+  for(const mode of ["vector","outline"])for(const [w,h] of [[920,800],[390,844]]){
+    const ctx=await b.newContext({viewport:{width:w,height:h}});if(mode==="outline")await ctx.addInitScript(()=>{window.BW_NO_BASEMAP=true;});
+    const pg=await ctx.newPage();await pg.goto(U);await ready(pg,"ph");await glUp(pg);
+    await pg.evaluate(()=>natSelect("mapua"));await settle(pg);
+    const s=await pg.evaluate(()=>{const a=document.getElementById('nat-open').getBoundingClientRect(),c=document.getElementById('nat-credit').getBoundingClientRect();
+      return {hit:a.left<c.right&&c.left<a.right&&a.top<c.bottom&&c.top<a.bottom,open:!document.getElementById('nat-open').hidden};});
+    assert(s.open&&!s.hit,`${mode} ${w} px: "Open Mapúa" and the map credits don't overlap`);
+    await ctx.close();}
+  // a list row's hover or focus marks its pin, or the cluster it is in; the chosen campus's cluster is marked too
+  {const ctx=await b.newContext({viewport:{width:1280,height:900}});const pg=await ctx.newPage();await pg.goto(U);await ready(pg,"ph");await glUp(pg);await settle(pg);
+   const mark=cls=>pg.evaluate(c=>{const e=[...document.querySelectorAll('#nat-pins > *')].find(e=>(e.dataset.id||e.dataset.ids).split(",").includes("bsu"));
+     return {kind:e&&e.className.split(" ")[0],on:!!e&&e.classList.contains(c),ring:!!e&&getComputedStyle(e,'::before').borderTopStyle==="solid",others:document.querySelectorAll('#nat-pins .'+c).length};},cls);
+   await pg.hover('#nat-list a[data-id="bsu"]');let s=await mark("pin-hl");
+   assert(s.on&&s.ring&&s.others===1,"hovering the BatStateU row marks its pin or cluster with a ring: "+JSON.stringify(s));
+   await pg.mouse.move(5,5);await pg.focus('#nat-list a[data-id="bsu"]');s=await mark("pin-hl");
+   assert(s.on&&s.ring&&s.others===1,"focusing the BatStateU row marks its pin or cluster: "+JSON.stringify(s));
+   await pg.focus('#nat-q');
+   await pg.evaluate(()=>{NAT.sel="bsu";natPins();});s=await mark("pin-sel");
+   assert(s.kind==="pin-cluster"&&s.on&&s.ring,"the chosen campus's cluster is marked when the campus is inside it: "+JSON.stringify(s));
+   await ctx.close();}
+  // leaving the tab while the vector map is still loading: back on the tab, the map shows the whole country, not zoomed out
+  {const ctx=await b.newContext({viewport:{width:1280,height:844}});const pg=await ctx.newPage();
+   await pg.route('**/maplibre-gl.mjs',r=>setTimeout(()=>r.continue(),1500));
+   await pg.goto(U);await ready(pg,"ph");const st0=await pg.evaluate(()=>NATGL.state);
+   await pg.evaluate(()=>{location.hash="#xu";});await ready(pg,"xu");
+   await pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",null,{timeout:15000});
+   await pg.goBack();await ready(pg,"ph");await pg.waitForTimeout(300);await settle(pg);
+   const s=await pg.evaluate(()=>({z:NATGL.map.getZoom(),want:NATGL.map.cameraForBounds(PH_BOUNDS,{padding:24}).zoom,n:document.querySelectorAll('#nat-pins > *').length}));
+   assert(st0==="loading"&&Math.abs(s.z-s.want)<0.05,`back on the tab after the map opened out of sight, it fits the country: ${st0} z${s.z.toFixed(2)} (want z${s.want.toFixed(2)}), ${s.n} pins/clusters`);
+   await ctx.close();}
   // Review Focus 1: the real style with its tiles unreachable: the outline, pins and note within 8 s, no late switch
   {const ctx=await b.newContext({viewport:{width:1280,height:900}});
    await ctx.addInitScript(()=>{window.BW_BASEMAP_STYLE="shared/basemap-style.json?real";});
