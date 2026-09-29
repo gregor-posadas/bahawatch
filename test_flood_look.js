@@ -54,6 +54,9 @@ const storm=pg=>pg.evaluate(()=>{document.querySelector('.p-scen [data-sc="typho
     const foot=T(()=>{FOOT.at=-1e9;FOOT.n=0;footLoad();}),rf=[0,1,2].map(()=>T(renderFlood));return {foot:Math.round(foot),render:Math.round(Math.max(...rf))};});
   assert(s.foot<800&&s.render<120,"reading 42,000 building outlines and redrawing the water are quick (ms): "+JSON.stringify(s));
   assert(await pg.evaluate(()=>typeof drawShimmer==="undefined"),"no shimmer (removed at Gregor's request)");
+  // the legend shows water depth as one spectrum in the map's own colours (2026-09-29 feedback)
+  s=await pg.evaluate(()=>({pub:document.getElementById('p-grad').style.background,det:document.getElementById('lg-grad').style.background}));
+  assert(/linear-gradient/.test(s.pub)&&/linear-gradient/.test(s.det)&&(s.pub.match(/rgba/g)||[]).length>10,"the water legend is a depth spectrum (simple view and Details)");
   assert(errs.length===0,"no page errors: "+errs.join("; "));
   await ctx.close();
   await b.close();

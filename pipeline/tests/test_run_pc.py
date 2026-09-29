@@ -34,7 +34,7 @@ class EndToEnd(unittest.TestCase):
     def setUpClass(cls):
         cls.data = d = tempfile.mkdtemp(prefix="Nationwide Update ")
         write_osm(os.path.join(d, "philippines-test.osm"))
-        write_fabdem_tiles(os.path.join(d, "bahawatch-data", "fabdem"), tiles=((14, 120), (14, 121), (10, 123)))
+        write_fabdem_tiles(os.path.join(d, "bahawatch-data", "fabdem"), tiles=((14, 120), (14, 121), (10, 123), (15, 120)))   # (15, 120): San Joaquin, a pilot box since 2026-09-29
         write_buildings(os.path.join(d, "PHL_buildings.parquet"),
                         [sbox(121.066, 14.652, 121.0661, 14.6521), sbox(123.901, 10.301, 123.9011, 10.3011), sbox(121.05, 14.64, 121.0501, 14.6401)])
         write_noah(d); write_admin(os.path.join(d, "phl_admin_boundaries.shp.zip"))

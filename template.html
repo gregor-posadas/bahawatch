@@ -35,9 +35,79 @@ body{
 button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0}
 button:focus-visible, summary:focus-visible, .house-card:focus-visible, #overlay:focus-visible, #scrub:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
 /* routes (body[data-route]): the national map, a site's file loading or failing, and the site itself */
-#nat,#route-loading,#route-fail{display:none}
-body[data-route="ph"] #nat,body[data-route="loading"] #route-loading,body[data-route="fail"] #route-fail{display:block}
+#nat,#route-loading,#route-fail,#about{display:none}
+body[data-route="about"] #about,body[data-route="ph"] #nat,body[data-route="loading"] #route-loading,body[data-route="fail"] #route-fail{display:block}
 body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-live-banner,main,#timeline){display:none !important}
+/* About (#about, #about/<section>): a reading page (marketing route type "About"): the site tabs, a contents rail with
+   the FAQ at its foot, and one article column of at most 72ch. Terms carry "?" toggletips (.tt, below). */
+.ab-inner{padding:14px 24px 48px}
+#ab-theme{border:1px solid var(--ink); border-radius:4px; background:var(--panel); color:var(--ink); font-size:16px; min-width:48px; min-height:48px}
+.ab-body{display:grid; grid-template-columns:200px minmax(0,72ch); gap:48px; margin-top:24px}
+.ab-rail{position:sticky; top:16px; align-self:start}
+.ab-rail-h{font-size:14px; font-weight:700; margin:0 0 8px}
+.ab-rail ul{list-style:none; margin:0; padding:0}
+.ab-rail a{display:flex; align-items:center; min-height:48px; padding:0 12px; border-left:3px solid var(--line); color:var(--ink-2); text-decoration:none; font-size:14px; font-weight:600}
+.ab-rail a:hover{color:var(--ink)}
+.ab-rail a[aria-current="true"]{border-left-color:var(--ink); color:var(--ink); font-weight:700}
+.ab-rail-faq{margin-top:16px}
+.ab-rail a:focus-visible{outline:3px solid var(--brand); outline-offset:2px}
+.ab-rail-tip{font-size:14px; color:var(--ink-2); margin:16px 0 0; max-width:24ch}
+.ab-q{display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border:1.5px solid var(--ink-2); border-radius:50%; font-weight:700}
+.ab-main{font-size:16px; line-height:1.5; min-width:0}
+.ab-main > section{padding-bottom:24px; border-bottom:1px solid var(--line); margin-bottom:32px}
+.ab-main h2{font-size:25px; font-weight:700; line-height:1.2; margin:0 0 12px; scroll-margin-top:16px}
+.ab-main h2:focus{outline:none}
+.ab-main h3{font-size:16px; font-weight:700; margin:24px 0 8px}
+.ab-main p{margin:0 0 12px}
+.ab-lead{font-size:20px; line-height:1.4}
+.ab-note{border:1px solid var(--ink); border-left-width:6px; border-radius:4px; background:var(--panel); padding:12px 16px 0; margin:16px 0}
+.ab-list{margin:0 0 12px; padding-left:20px}
+.ab-list li{margin-bottom:8px}
+.ab-steps{margin:0 0 16px; padding-left:24px}
+.ab-steps li{margin-bottom:12px; padding-left:4px}
+.ab-ds{margin:0 0 16px}
+.ab-ds > div{display:grid; grid-template-columns:160px minmax(0,1fr); gap:16px; padding:10px 0; border-top:1px solid var(--line)}
+.ab-ds > div:last-child{border-bottom:1px solid var(--line)}
+.ab-ds dt{font-weight:700}
+.ab-ds dd{margin:0}
+.ab-use{display:block; font-size:14px; color:var(--ink-2); margin-top:4px}
+.ab-tag{display:inline-block; font-size:14px; font-weight:600; color:var(--ink-2); border:1px solid var(--ink-2); border-radius:4px; padding:0 6px; margin-left:6px; vertical-align:1px}
+.ab-small{font-size:14px; color:var(--ink-2)}
+.ab-faq details{border-top:1px solid var(--line)}
+.ab-faq details:last-child{border-bottom:1px solid var(--line)}
+.ab-faq summary{display:flex; align-items:center; gap:12px; min-height:48px; padding:8px 0; font-weight:700; cursor:pointer; list-style:none}
+.ab-faq summary::-webkit-details-marker{display:none}
+.ab-faq summary::before{content:"+"; flex:none; width:20px; text-align:center; font-size:20px; font-weight:400; line-height:1}
+.ab-faq details[open] summary::before{content:"−"}
+.ab-faq details p{margin:0 0 16px 32px}
+@media (max-width:899px){
+  .ab-inner{padding:14px 16px 40px}
+  .ab-body{grid-template-columns:minmax(0,1fr); gap:16px}
+  .ab-rail{position:static}
+  .ab-rail ul{display:flex; flex-wrap:wrap; column-gap:4px}
+  .ab-rail a{border-left:none; border-bottom:3px solid transparent; padding:0 8px}
+  .ab-rail a[aria-current="true"]{border-bottom-color:var(--ink)}
+  .ab-rail-faq{margin-top:0}
+  .ab-rail-tip{max-width:none}
+  .ab-ds > div{grid-template-columns:minmax(0,1fr); gap:2px}
+  .ab-lead{font-size:16px; font-weight:600}
+  .ab-main h2{font-size:20px}
+}
+/* "?" toggletips: a plain-language note for a term. Click or tap pins it; hover shows it; Escape or a click elsewhere
+   closes it. The note is the button's next sibling (read in order), placed in fixed position so no panel clips it. */
+.tt{display:inline}
+.tt-w{white-space:nowrap}
+.tt-b{position:relative; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin:0 1px 0 4px;
+  border:1.5px solid var(--ink-2); border-radius:50%; color:var(--ink-2); font-size:14px; font-weight:700; line-height:1; vertical-align:2px}
+.tt-b::after{content:""; position:absolute; inset:-14px}
+.tt-b:hover,.tt-b[aria-expanded="true"]{color:var(--ink); border-color:var(--ink)}
+.tt-b[aria-expanded="true"]{background:var(--ink); color:var(--bg)}
+.tt-b:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:50%}
+.tt-p{position:fixed; z-index:80; left:0; top:0; width:max-content; max-width:min(340px,calc(100vw - 32px)); padding:12px 14px;
+  background:var(--panel); color:var(--ink); border:1px solid var(--ink); border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.18);
+  font-size:14px; font-weight:400; font-style:normal; line-height:1.45; text-align:left; white-space:normal; opacity:0; transition:opacity .15s ease-out}
+.tt-p.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.tt-p{transition:none}}
 /* the national map (#nat): an outline of the Philippines with campus pins, and the same campuses as a list */
 :root{--pin-suc:#385F96; --pin-luc:#CF5921; --pin-pvt:#800000}
 :root[data-theme="dark"]{--pin-suc:#7FA8E0; --pin-luc:#F08A4B; --pin-pvt:#F2F2F2}
@@ -124,7 +194,19 @@ body[data-natgl="1"] #nat-svg{visibility:hidden}
 .nat-ql{display:block; font-weight:700; margin-bottom:6px}
 .nat-q{width:100%; min-height:48px; font:inherit; font-size:16px; padding:0 12px; border:2px solid var(--ink); border-radius:6px; background:var(--panel); color:var(--ink)}
 .nat-count{min-height:1.4em; margin:6px 0; color:var(--ink-2)}
-.nat-g{font-size:16px; font-weight:700; margin:16px 0 4px}
+.nat-grp,.nat-prov{margin:0}
+.nat-grp > summary,.nat-prov > summary{display:flex; align-items:center; gap:8px; min-height:48px; cursor:pointer; list-style:none; border-bottom:1px solid var(--line)}
+.nat-grp > summary::-webkit-details-marker,.nat-prov > summary::-webkit-details-marker{display:none}
+.nat-grp > summary::before,.nat-prov > summary::before{content:"▾"; flex:none; width:20px; text-align:center; font-size:14px; color:var(--ink-2); transform:rotate(-90deg); transition:transform .15s ease-out}
+.nat-grp[open] > summary::before,.nat-prov[open] > summary::before{transform:none}
+.nat-grp > summary:hover .nat-g,.nat-prov > summary:hover .nat-p{text-decoration:underline}
+.nat-grp > summary:focus-visible,.nat-prov > summary:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
+.nat-g{font-size:16px; font-weight:700; margin:0}
+.nat-p{font-size:16px; font-weight:600; margin:0}
+.nat-n{font-weight:400; color:var(--ink-2)}
+.nat-prov{padding-left:20px}
+.nat-prov .nat-ul{padding-left:8px}
+@media (prefers-reduced-motion: reduce){.nat-grp > summary::before,.nat-prov > summary::before{transition:none}}
 .nat-ul{list-style:none; padding:0; margin:0}
 .nat-item{display:grid; grid-template-columns:24px 1fr; align-items:center; column-gap:8px; min-height:48px; padding:6px 4px; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none; font-size:16px}
 .nat-item .pin-shape{justify-self:center}
@@ -201,7 +283,7 @@ main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
 #legend .lg-title{font-weight:700; margin-bottom:8px; font-size:12px}
 #legend .row{display:flex; align-items:center; gap:9px; margin-top:7px; color:var(--ink-2); font-weight:600}
 #legend .bands{display:flex; gap:2px}
-#legend .bands i{height:9px; flex:1; border-radius:3px}
+#legend .bands i{height:10px; flex:1; border-radius:3px; box-shadow:inset 0 0 0 1px var(--line)}
 #legend .bands-lab{display:flex; justify-content:space-between; font-size:12px; color:var(--ink-2); margin-top:3px}
 #legend .hint{margin-top:10px; font-size:12px; color:var(--ink-2); line-height:1.4; border-top:1px solid var(--line); padding-top:8px}
 #legend .noah-h{font-weight:700; margin-top:12px; font-size:12px}
@@ -221,7 +303,7 @@ main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
 .zoom-ctl button:hover{background:var(--panel-2)}
 .zoom-ctl .zl{font-size:12px; font-weight:600; color:var(--ink-2); text-align:center; padding:2px 0 3px; font-variant-numeric:tabular-nums}
 .map-attr{
-  position:absolute; left:14px; bottom:12px; z-index:4; max-width:72%;
+  position:absolute; left:14px; bottom:12px; z-index:4; max-width:calc(100% - 170px);
   font-size:12px; color:var(--ink-2); background:var(--panel); border:1px solid var(--line);
   padding:4px 9px; border-radius:5px; line-height:1.35;
 }
@@ -298,6 +380,10 @@ details.api, details.log{border-bottom:1px solid var(--line); margin-bottom:14px
 details summary{padding:0 0 12px; font-weight:700; font-size:14px; color:var(--ink-2); cursor:pointer; list-style:none; display:flex; align-items:center; min-height:28px}
 details summary::after{content:"+"; margin-left:auto; font-weight:400; font-size:16px}
 details[open] summary::after{content:"–"}
+/* the campus tree and the About FAQ draw their own marker (before the label) */
+.nat-grp > summary,.nat-prov > summary,.ab-faq summary{padding:0; color:var(--ink); font-size:16px}
+.ab-faq summary{padding:8px 0}
+#nat-list summary::after,#about summary::after{content:none}
 .api-body{padding:0 0 14px}
 .api-url{font-size:12px; color:var(--ink-2); word-break:break-all; margin-bottom:8px}
 pre#api-json{
@@ -314,6 +400,7 @@ pre#api-json{
 #rep-log li:first-child{border-top:none}
 #rep-log time{font-variant-numeric:tabular-nums; font-weight:600; color:var(--ink); margin-right:6px}
 .foot-note{font-size:12px; color:var(--ink-2); padding:0 0 8px; line-height:1.5}
+.foot-note a{display:inline-block; padding:14px 2px; margin:-14px 0; color:var(--brand); font-weight:600}
 
 #timeline{display:flex; align-items:center; gap:16px; padding:12px 22px 16px; flex-wrap:wrap; border-top:1px solid var(--line)}
 #play{width:44px; height:44px; border-radius:50%; background:var(--brand); color:var(--on-brand); font-size:16px; display:flex; align-items:center; justify-content:center; flex:none}
@@ -330,8 +417,9 @@ pre#api-json{
   main{grid-template-columns:minmax(0,1fr); grid-template-rows:58vh auto}   /* minmax: long unit names must not widen the page */
   #map-wrap{min-height:360px; margin:12px 14px 0}
   aside{padding:14px; overflow:visible}
-  .hdr-right{margin-left:0; width:100%}
-  .scenarios{flex:1}
+  .hdr-right{margin-left:0; width:100%; flex-wrap:wrap}
+  .scenarios{flex:1 1 100%}
+  #theme-toggle{flex:none}
   .scenarios button{flex:1}
   .map-attr{display:none}
 }
@@ -355,13 +443,14 @@ pre#api-json{
 .p-review.on{display:block}
 
 /* site tabs (one bar per view; the details copy sits under the header) */
-.site-tabs{display:flex; gap:22px; border-bottom:1px solid var(--line); padding:0}
+.site-tabs{display:flex; flex-wrap:wrap; column-gap:22px; row-gap:0; border-bottom:1px solid var(--line); padding:0}
+.site-tabs button{white-space:nowrap}
 .site-tabs button{font-size:14px; font-weight:700; color:var(--ink-2); padding:10px 0 9px; border-bottom:3px solid transparent; margin-bottom:-1px; min-height:40px}
 .site-tabs button[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--ink)}
 .site-tabs button:hover{color:var(--ink)}
 [data-view="details"] .site-tabs{padding:0 22px}
 [data-view="public"] header + .site-tabs{display:none}
-@media (max-width:560px){.site-tabs{gap:14px}.site-tabs button{font-size:14px}}
+@media (max-width:560px){.site-tabs{column-gap:16px}.site-tabs button{font-size:14px}}
 
 /* status band: sentence on the left, depth figure on the right */
 /* sentence column flexes, figure column is fixed at the right edge — the figure never moves with sentence length */
@@ -471,6 +560,9 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
 .p-maplegend{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:14px; color:var(--ink-2); padding:8px 2px 0}
 .p-maplegend span{display:inline-flex; align-items:center; gap:6px}
 .p-maplegend i{width:20px; height:8px; border-radius:2px; display:inline-block}
+/* water depth as one spectrum (2026-09-29): the same colours and shallow fade the map draws (waterGradient) */
+.lg-grad{display:inline-flex; align-items:center; gap:6px}
+.p-maplegend .lg-grad i, .nat-legend .lg-grad i{width:72px; height:10px; border-radius:2px; box-shadow:inset 0 0 0 1px var(--line)}
 /* fix round 1: .p-maplegend span / #legend .row set display, which otherwise beats the UA [hidden] rule and shows Sea on every campus */
 #p-lg-sea[hidden],#lg-sea[hidden]{display:none}
 /* coach mark inside the map, shown until the first street is chosen */
@@ -574,8 +666,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 <nav class="site-tabs" role="tablist" aria-label="Site">
   <button role="tab" data-site="ph" aria-selected="true">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="false">Teachers Village</button>
+  <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+  <button role="tab" data-site="about" aria-selected="false">About</button>
 </nav>
   <div class="nat-body">
     <div class="nat-listcol">
@@ -620,6 +714,163 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <a href="#ph" class="route-link" id="fail-back"></a>
 </section>
 
+<section id="about" aria-labelledby="ab-h">
+ <div class="ab-inner">
+  <div class="nat-top">
+    <div><div class="p-name">BahaWatch</div><h1 class="nat-h" id="ab-h">About BahaWatch</h1></div>
+    <div class="p-tools">
+      <button id="ab-theme" aria-label="Switch theme">☾</button>
+    </div>
+  </div>
+<nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
+  <button role="tab" data-site="tv" aria-selected="false">Teachers Village</button>
+  <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
+  <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
+  <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+  <button role="tab" data-site="about" aria-selected="true">About</button>
+</nav>
+  <div class="ab-body">
+   <nav class="ab-rail" aria-label="On this page">
+    <p class="ab-rail-h">On this page</p>
+    <ul>
+      <li><a href="#about/what" data-sec="what">What it is</a></li>
+      <li><a href="#about/how" data-sec="how">How it works</a></li>
+      <li><a href="#about/data" data-sec="data">Data</a></li>
+      <li><a href="#about/sensors" data-sec="sensors">Sensor units</a></li>
+      <li><a href="#about/limits" data-sec="limits">Accuracy and limits</a></li>
+      <li><a href="#about/next" data-sec="next">Future work</a></li>
+      <li class="ab-rail-faq"><a href="#about/faq" data-sec="faq">FAQ</a></li>
+    </ul>
+    <p class="ab-rail-tip">Tap <span class="ab-q" aria-hidden="true">?</span> after a term for a short explanation.</p>
+   </nav>
+   <article class="ab-main">
+
+    <section id="ab-what" aria-labelledby="ab-what-h">
+      <h2 id="ab-what-h" tabindex="-1">What it is</h2>
+      <p class="ab-lead">BahaWatch answers one question for a street or barangay: <i>Babaha ba?</i> — “Is it flooding here?” — and says how deep the water is for someone walking, riding a motorcycle or driving.</p>
+      <div class="ab-note" role="note">
+        <p><b>Everything moving on the dashboard is simulated.</b> Streets, buildings, terrain and flood hazard maps are real open data. Sensor readings, storms and neighbour reports are simulated.</p>
+        <p>Not a forecast. Not for emergency use. Follow PAGASA and local government advisories.</p>
+      </div>
+      <h3>The sites</h3>
+      <ul class="ab-list">
+        <li><b>25 PhilDev partner campuses</b> in Luzon, the Visayas and Mindanao. Each has a 3 km map with eight proposed sensor spots.</li>
+        <li><b>Two neighbourhood pilots:</b> Teachers Village, Quezon City, and Brgy. San Joaquin, Mabalacat City, Pampanga.</li>
+        <li><b>UC Berkeley</b>, California: a check site with very accurate terrain<span class="tt" data-term="the Berkeley terrain">The US Geological Survey’s 1 m lidar map: an aircraft laser survey of the bare ground. Nothing like it is openly available for most of the Philippines, so Berkeley shows how the method behaves when the ground heights are right.</span> and one real test sensor on Strawberry Creek.</li>
+      </ul>
+    </section>
+
+    <section id="ab-how" aria-labelledby="ab-how-h">
+      <h2 id="ab-how-h" tabindex="-1">How it works</h2>
+      <ol class="ab-steps">
+        <li><b>Sensors measure water on the street.</b> Each household unit<span class="tt" data-term="household units">A small ultrasonic sensor on a gate post at the street’s edge, hosted by a household. It points down at the road and measures the distance to the surface: less distance, more water. See Sensor units below.</span> sends the water depth in front of it every 10 minutes over LoRaWAN<span class="tt" data-term="LoRaWAN">A long-range, low-power radio network for small sensors. One gateway can hear units a few kilometres away in a city, each reading is only a few bytes, and it does not depend on mobile data, which often jams during storms.</span>.</li>
+        <li><b>The model spreads that water over the map.</b> At each wet sensor it sets a water level (ground height + measured depth) and lets it spread to nearby lower ground, until the ground rises above it. It fades with distance<span class="tt" data-term="how the spread is limited">The water level drops 1 cm for every 15 m it travels, and spreading stops after about 1.2 km. Water also never spreads into ground more than 45 cm deeper than the sensor saw, so a 20 cm reading on a slope can’t flood a whole valley below it. Both rules keep the map on the cautious side.</span> and goes around buildings<span class="tt" data-term="buildings on the map">The map is a grid of 7.5 m squares. A square at least 75% covered by building footprints blocks water; streets and creeks never block. Streets are cut 0.5 m into the terrain so they carry water, as real streets do.</span>. No reading, no flood on the map.</li>
+        <li><b>A rule gives the answer.</b> The <i>Babaha ba?</i> rule<span class="tt" data-term="the Babaha ba? rule">Checked in order; the first match wins. Nothing newer than 20 minutes: “No fresh data”. The sensor here reads 5 cm or more, or is rising to it within an hour: <i>Oo</i> (yes). Three or more neighbours report flooding within 1 km in the last hour, or heavy rain falls on a mapped hazard zone: <i>Baka</i> (maybe). One or two reports, or a trace at the sensor: <i>Baka</i>. Otherwise <i>Hindi</i> (no). Reports alone never give <i>Oo</i>; only a sensor can.</span> combines sensors, neighbour reports and rain into <i>Oo</i>, <i>Baka</i>, <i>Hindi</i> or “No fresh data”.</li>
+        <li><b>Depth becomes something you can act on.</b> Water is described as gutter-, half-knee-, knee- or waist-deep, and as passable or not for cars<span class="tt" data-term="the car levels">From the MMDA Flood Gauge: half-tire (33 cm) is not passable to light vehicles, tire level (66 cm) is not passable to any vehicle. From 25 cm we say “drive slowly”, where Mamuyac et al. (2025) saw lane closures begin in MMDA CCTV footage.</span> and motorcycles<span class="tt" data-term="the motorcycle levels">Our own rule, because the MMDA gauge has none for motorcycles: slow from 15 cm, where the engine sits; not passable from 30 cm, the height of the exhaust and footpegs, where bikes stall.</span>.</li>
+      </ol>
+      <p>Two views: the <b>simple view</b> for residents (one answer, the street list, a map) and <b>Details</b> for operators and researchers (storm scenarios, a 36-hour timeline, each sensor’s readings, the NOAH layer).</p>
+    </section>
+
+    <section id="ab-data" aria-labelledby="ab-data-h">
+      <h2 id="ab-data-h" tabindex="-1">Data</h2>
+      <p>All open data, cut to each site by our pipeline and stored with the page.</p>
+      <dl class="ab-ds">
+        <div><dt>Ground height</dt><dd>FABDEM<span class="tt" data-term="FABDEM">A global map of ground height with buildings and trees removed (Hawker et al. 2022, University of Bristol), made from the 30 m Copernicus satellite elevation map with machine learning. Bare ground is what water flows over. Free for non-commercial use.</span>, 30 m, smoothed onto the 7.5 m grid. USGS 1 m lidar at Berkeley.<span class="ab-use">Where water can go.</span></dd></div>
+        <div><dt>Buildings</dt><dd>Footprints from Google Open Buildings, Microsoft and OpenStreetMap, combined by VIDA<span class="tt" data-term="the building footprints">Building outlines traced from satellite images by Google and Microsoft, merged with OpenStreetMap. They can miss small, new or informal buildings, and can’t tell a house from a warehouse or count floors.</span>.<span class="ab-use">What blocks water; buildings counted in flooded areas; the map.</span></dd></div>
+        <div><dt>Streets, creeks, names</dt><dd>OpenStreetMap<span class="tt" data-term="OpenStreetMap">A free world map drawn by volunteers, like a Wikipedia for maps. Coverage in Philippine cities is good; small alleys and creeks can be missing.</span>.<span class="ab-use">Streets cut into the terrain as water paths; street names in answers; the map.</span></dd></div>
+        <div><dt>Flood hazard</dt><dd>UP Project NOAH<span class="tt" data-term="the NOAH hazard maps">Flood hazard maps from the University of the Philippines (Project NOAH, now the UP Resilience Institute), modelled for rain heavy enough to come once in 5, 25 or 100 years on average. They show mostly river and overland flooding; ponding from blocked drains often doesn’t appear.</span> 5-, 25- and 100-year maps.<span class="ab-use">A reference layer to compare with; the rain rule; choosing sensor spots; shaping the simulated storms. Never used to draw the flood.</span></dd></div>
+        <div><dt>Barangays</dt><dd>PSA and NAMRIA boundaries, via OCHA HDX.<span class="ab-use">“My barangay” answers.</span></dd></div>
+        <div><dt>Depth levels</dt><dd>MMDA Flood Gauge; Mamuyac et al. 2025, <i>Natural Hazards</i>.<span class="ab-use">Depth words and passability.</span></dd></div>
+        <div><dt>Rain</dt><dd>Open-Meteo hourly rain, in live mode only (not switched on yet).<span class="ab-use">The rain step of the rule.</span></dd></div>
+        <div><dt>Terrain check</dt><dd>NASA ICESat-2<span class="tt" data-term="ICESat-2">A NASA satellite laser that measures ground height along narrow tracks, to within tens of centimetres on open ground. We used 17,936 of its ground points at 26 sites as the reference to test FABDEM.</span> ground heights, 2019–2026.<span class="ab-use">Measuring how wrong the terrain is (see Accuracy).</span></dd></div>
+        <div><dt>Simulated</dt><dd>Sensor readings, storms, neighbour reports.<span class="ab-use">Everything that moves.</span></dd></div>
+      </dl>
+      <p class="ab-small">Code: MIT licence. FABDEM’s licence is non-commercial (CC BY-NC-SA 4.0), so the Philippine site files are too. Full list in the repository’s DATA-LICENSE.md.</p>
+    </section>
+
+    <section id="ab-sensors" aria-labelledby="ab-sensors-h">
+      <h2 id="ab-sensors-h" tabindex="-1">Sensor units</h2>
+      <p class="ab-lead">None are installed in the Philippines yet. This is what the dashboard assumes about a unit, written down so it can be checked in the field.</p>
+      <h3>The device</h3>
+      <p>An ultrasonic distance sensor<span class="tt" data-term="ultrasonic sensors">It sends a short sound pulse, too high to hear, and times the echo from the surface below. Nothing touches the floodwater, so there is less dirt and damage than with a sensor sitting in the water.</span> pointing down at the street, with a LoRaWAN radio and a battery. About US$210 per unit (our estimate). Each reading carries only the unit’s ID, the time, the water depth and the unit’s location.</p>
+      <h3>How it is mounted <span class="ab-tag">Our assumptions, not yet field-tested</span></h3>
+      <dl class="ab-ds">
+        <div><dt>Where</dt><dd>On a household gate post or front wall at the street’s edge, with the household’s consent.</dd></div>
+        <div><dt>Looking at</dt><dd>Street pavement straight below: not the yard, a canal or a drain opening. A clear patch about half a metre wide, where cars don’t usually park.</dd></div>
+        <div><dt>Height</dt><dd>About 2 m above the road<span class="tt" data-term="the 2 m height">Low-cost ultrasonic sensors can’t see closer than about 25–30 cm. At 2 m a unit still reads water up to about 1.5 m deep, past the waist-deep level the dashboard shows, and it sits above most heads and splashes. A person or vehicle passing under gives a short false reading, so a unit should report the median of several pings.</span>.</dd></div>
+        <div><dt>Zero point</dt><dd>At install, on a dry day, the unit records the distance to dry pavement. Water depth = that distance − the distance now.</dd></div>
+        <div><dt>Ground height</dt><dd>Taken from the terrain map at the unit’s street square, not surveyed. Terrain error shifts the unit’s water level by the same amount.</dd></div>
+        <div><dt>Radio</dt><dd>Within range of a LoRaWAN gateway; one reading every 10 minutes.</dd></div>
+      </dl>
+      <h3>Where the spots come from</h3>
+      <p>Teachers Village’s eight units were placed by hand along its low streets. Everywhere else a rule picks them<span class="tt" data-term="the placement rule">Candidates are houses within 25 m of a street and at least 300 m inside the map’s edge. Each gets a score: 0.5 × how low it sits (the share of ground within 300 m that is higher) + 0.3 × NOAH hazard + 0.2 × closeness to a creek or river (zero at 300 m). The best eight are picked at least 300 m apart (250 m, then 200 m, if eight don’t fit).</span>: low ground, mapped hazard, near water, spread apart. On a campus, unit 01 is on campus and the rest are in the barangays around it; in San Joaquin all eight are inside the barangay.</p>
+      <p><b>The spots are proposals</b>, not surveyed or agreed with residents.</p>
+    </section>
+
+    <section id="ab-limits" aria-labelledby="ab-limits-h">
+      <h2 id="ab-limits-h" tabindex="-1">Accuracy and limits</h2>
+      <p class="ab-lead">The depth at a sensor is measured. How far the water spreads from it is only as good as the terrain map, and the terrain is the weakest part.</p>
+      <h3>Terrain error, measured</h3>
+      <p>We compared FABDEM with 17,936 ICESat-2 ground points at 26 sites:</p>
+      <ul class="ab-list ab-nums">
+        <li>Typical error about <b>1.4 m</b> (NMAD<span class="tt" data-term="NMAD">Normalised median absolute deviation: a measure of typical error that isn’t thrown off by a few wild points. For roughly normal errors, about two-thirds of points fall within ±1 NMAD.</span>); median +0.66 m (the map sits a little above the ground).</li>
+        <li>46% of points within 1 m, 72% within 2 m.</li>
+        <li><b>Open campuses</b> (CLSU, LLCC, MSU-IIT, CMU): 0.4–0.8 m.</li>
+        <li><b>Old Manila core</b> (UST, FEU Tech, Mapúa, UDM): the map is about 2 m too high; only 2–12% of points within 1 m.</li>
+      </ul>
+      <p>Error grows with how built-up a place is. In tight streets the satellite can mistake roofs for ground, so the real error there may be larger.</p>
+      <h3>Other limits and biases</h3>
+      <ul class="ab-list">
+        <li><b>No moving water.</b> The model does not simulate rain, runoff, drains, flow speed or volume. It shows where the measured water level can reach; places far from any sensor stay blank.</li>
+        <li><b>New 7.5 m grid, not yet validated.</b> Finer building squares block more water; on dense campuses the spread shrank (UST: 90 to 48 ha at the same storm moment). It may now understate floods there.</li>
+        <li><b>Buildings.</b> Footprints miss small, new and informal homes, so dense informal areas are undercounted. “Residents affected” is a rough multiple of buildings.</li>
+        <li><b>The demo agrees with NOAH by design.</b> The simulated storms flood low, NOAH-flagged spots first, so the demo looking plausible is not evidence that the model is right.</li>
+        <li><b>Sensor spots favour low ground.</b> Good for seeing water early, but higher streets get answers from reports and rain only (“No sensor here yet”).</li>
+        <li><b>Who gets heard.</b> Reporting needs a smartphone and data; hosting needs a gate post and a willing household. Renters, older residents and informal settlers may be under-represented.</li>
+        <li><b>Not modelled:</b> storm surge, tides, dam releases.</li>
+        <li><b>Languages.</b> Cebuano, Ilokano, Hiligaynon and Kapampangan were drafted without a native speaker and are marked for review.</li>
+      </ul>
+    </section>
+
+    <section id="ab-next" aria-labelledby="ab-next-h">
+      <h2 id="ab-next-h" tabindex="-1">Future work</h2>
+      <ul class="ab-list">
+        <li><b>Real sensors.</b> Bench-test the unit, then a pilot street in Teachers Village or San Joaquin; replay a recorded storm on the dashboard.</li>
+        <li><b>Check against real floods.</b> Compare mapped extents with observed flooding from a past typhoon: MMDA flood reports, geotagged photos, barangay records.</li>
+        <li><b>Better terrain.</b> Test FathomDEM<span class="tt" data-term="FathomDEM">A newer bare-earth elevation map (Fathom, 2025) built for flood modelling. Its authors report smaller errors than FABDEM, including in cities; we have asked for access and will run the same ICESat-2 check on it.</span> (access requested) and 1 m Phil-LiDAR maps where available; survey each unit’s ground height at install.</li>
+        <li><b>Water that moves.</b> Try a simple two-dimensional flow model for direction and timing, and add drainage where it is mapped.</li>
+        <li><b>Count flooded buildings by outline</b>, not by grid square.</li>
+        <li><b>Go live.</b> Switch on the server for real answers, rain and reports; add SMS for phones without data.</li>
+        <li><b>Design with residents.</b> Work with barangays and households on where units go, who hosts them and how the answer is worded; native-speaker review of every language.</li>
+        <li><b>Data governance.</b> Agree who owns the readings and reports, and how long they are kept.</li>
+      </ul>
+    </section>
+
+    <section id="ab-faq" aria-labelledby="ab-faq-h">
+      <h2 id="ab-faq-h" tabindex="-1">FAQ</h2>
+      <div class="ab-faq">
+        <details><summary>Is any of this real?</summary><p>The map is: streets, buildings, terrain, barangays and NOAH hazard layers all come from open data. The sensor readings, storms and neighbour reports are simulated, and every page says so. One real test unit exists, at UC Berkeley; its readings are not yet connected to the page.</p></details>
+        <details><summary>Why not just use the NOAH hazard maps?</summary><p>NOAH shows where floods <i>can</i> happen in a storm of a given size, not what is happening now. It is modelled mainly for rivers and overland flow, so it often misses street ponding from blocked drains; in Teachers Village it is blank across the Maginhawa interior, which is known to flood. BahaWatch keeps NOAH as a layer to compare against.</p></details>
+        <details><summary>How accurate is the flood map?</summary><p>At a sensor, as accurate as the sensor. Away from it, the spread depends on terrain, which is typically about 1.4 m off and about 2 m too high in old Manila. Read the extents as a guide to where water is likely, not a street-by-street survey. Details under Accuracy and limits.</p></details>
+        <details><summary>Is it a forecast?</summary><p>No. It maps water measured now. Its only look-ahead is one hour: a sensor rising fast enough to reach 5 cm within the hour already counts as <i>Oo</i>. For warnings, follow PAGASA and your local government.</p></details>
+        <details><summary>Why ultrasonic sensors, not pressure sensors or cameras?</summary><p>An ultrasonic unit never touches the floodwater, is cheap, and sends one number. A pressure sensor must sit in dirty water on the road; a camera sends images, which needs more bandwidth and raises privacy concerns. The trade-offs: a short blind zone, false echoes from people or debris, and a reading that needs correcting for air temperature.</p></details>
+        <details><summary>What if power or signal is lost?</summary><p>Every answer shows its age. If nothing is newer than 20 minutes, the answer becomes “No fresh data”; it never says <i>Hindi</i> on old data. The page itself opens without signal and shows the last answer with its time.</p></details>
+        <details><summary>How do you stop fake or mistaken reports?</summary><p>Reports alone can only raise <i>Baka</i> (maybe); only a sensor can say <i>Oo</i>. It takes three different phones within 1 km in the last hour, one report per phone per place every 10 minutes, and a report from more than 2 km away is refused. Reports expire after an hour, and a dry sensor nearby is shown against them.</p></details>
+        <details><summary>What do you store about people?</summary><p>No accounts, names or phone numbers. A report’s position is rounded to about 100 m and used only when the phone is within 1 km of the place. Report IDs are erased after an hour and raw reports deleted after 30 days. This applies in live mode; the demo sends nothing.</p></details>
+        <details><summary>What does it cost to run?</summary><p>The site is plain files on GitHub Pages, with its own map tiles: no running cost. The live server is designed for Cloudflare’s free plan (not switched on yet). Hardware: about US$210 per unit (our estimate), plus a LoRaWAN gateway per area.</p></details>
+        <details><summary>Does it work on cheap phones and slow connections?</summary><p>A campus page loaded in about 3 seconds on a simulated fast 3G connection in our tests; each site’s data is at most 250 KB compressed. Once opened, the page opens again without signal. It comes in six languages, uses shapes as well as colours, and has screen-reader text for every map.</p></details>
+        <details><summary>Can it be set up somewhere new?</summary><p>Yes, anywhere the open datasets cover: give the pipeline a map box and it cuts terrain, buildings, streets, NOAH layers and barangays, then proposes sensor spots. San Joaquin was added this way. NOAH coverage and footprint quality vary by province.</p></details>
+        <details><summary>Why is UC Berkeley on a Philippine dashboard?</summary><p>It has 1 m lidar terrain and the real test unit, so it is where the method can be checked on well-known ground. It also shows the dashboard working with US units and wording.</p></details>
+        <details><summary>Why a 7.5 m grid?</summary><p>Barangay streets are often 4–8 m wide. With 15 m squares, houses and streets merged and water leaked through blocks. Buildings and streets are now on 7.5 m squares; the terrain keeps FABDEM’s detail, since finer squares add no height information.</p></details>
+      </div>
+    </section>
+    <p class="ab-small">BahaWatch is a research prototype. Map data © OpenStreetMap contributors; terrain FABDEM © University of Bristol; hazard UP NOAH / UP Resilience Institute; boundaries PSA / NAMRIA.</p>
+   </article>
+  </div>
+ </div>
+</section>
+
 <section id="public" aria-label="Flood status">
  <div class="p-inner">
   <div class="p-head">
@@ -635,8 +886,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 <nav class="site-tabs" role="tablist" aria-label="Site">
   <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
+  <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+  <button role="tab" data-site="about" aria-selected="false">About</button>
 </nav>
 <div class="c-bar" data-cbar hidden>
   <a href="#ph" class="c-back"></a><span aria-hidden="true">·</span><button class="c-pick"></button>
@@ -732,8 +985,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         </div>
         <div id="public-map"></div>
         <div class="p-maplegend" aria-hidden="true">
-          <span><i style="background:#2f86c2"></i><span id="p-lg1"></span></span>
-          <span><i style="background:#0030a0"></i><span id="p-lg2"></span></span>
+          <span class="lg-grad"><span id="p-lg1"></span><i id="p-grad"></i><span id="p-lg2"></span></span>
           <span><span class="shape ok"></span><span id="p-lg3"></span></span>
           <span><span class="shape warn"></span><span id="p-lg4"></span></span>
           <span><span class="shape alert"></span><span id="p-lg5"></span></span>
@@ -771,8 +1023,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 <nav class="site-tabs" role="tablist" aria-label="Site">
   <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
+  <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+  <button role="tab" data-site="about" aria-selected="false">About</button>
 </nav>
 <div class="c-bar" data-cbar hidden>
   <a href="#ph" class="c-back"></a><span aria-hidden="true">·</span><button class="c-pick"></button>
@@ -789,7 +1043,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <p id="map-desc" class="sr-only"></p>
     <div id="legend" aria-hidden="true">
       <div class="lg-title">Modeled water depth</div>
-      <div class="bands"><i style="background:#8fc6e2"></i><i style="background:#2f86c2"></i><i style="background:#0030a0"></i></div>
+      <div class="bands"><i id="lg-grad"></i></div>
       <div class="bands-lab"><span>ankle</span><span>knee</span><span>waist+</span></div>
       <div class="row"><span class="shape ok"></span>Sensor · normal</div>
       <div class="row"><span class="shape warn"></span>Water on street</div>
@@ -804,7 +1058,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       </div>
       <div class="noah-lg"><div class="noah-bands" aria-hidden="true"><i style="background:#d9c2ea"></i><i style="background:#a978cf"></i><i style="background:#5b2a8f"></i></div>
       <div class="bands-lab"><span>low</span><span>medium</span><span>high</span></div></div>
-      <div class="hint">Extents come only from sensor readings, spread over the site's terrain. Tap a sensor to isolate its footprint.</div>
+      <div class="hint">Water drawn from sensor readings only. Tap a sensor to see its reach.</div>
     </div>
     <div id="country" role="group" aria-labelledby="country-l" aria-describedby="country-desc" hidden>
       <span id="country-l" hidden></span><p id="country-desc" hidden></p>
@@ -823,7 +1077,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <div id="map-tooltip"></div>
     <div class="p-coach" id="p-coach" role="note"></div>
     <div class="map-attr">Map data © OpenStreetMap contributors · Terrain: Copernicus GLO-30 © ESA/DLR/Airbus via OpenTopography · Hazard: UP Project NOAH (ODbL)</div>
-    <div class="map-note">Scroll or pinch to zoom · drag to pan · hover for depth · keys: + − arrows 0</div>
+    <div class="map-note">Map help<span class="tt" data-term="the map controls">Scroll or pinch to zoom, drag to pan, and point at the water for its depth. Keys: + and − zoom, the arrow keys pan, 0 resets the view.</span></div>
     <div class="zoom-ctl" aria-label="Map zoom">
       <button id="zoom-in" aria-label="Zoom in">+</button>
       <button id="zoom-out" aria-label="Zoom out">−</button>
@@ -847,7 +1101,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <canvas id="f-spark" width="620" height="92"></canvas>
     </div>
 
-    <h2 class="rail-h">Household units · depth at the gate post, uplink every 10 min</h2>
+    <h2 class="rail-h">Household units<span class="tt" data-term="household units">Each card is one unit: the water depth on the street below its gate-post sensor, and its status. Real units would report every 10 minutes over LoRaWAN; here the readings are simulated.</span></h2>
     <div class="house-grid" id="house-cards"></div>
 
     <div class="stats">
@@ -878,7 +1132,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <ul id="rep-log"></ul>
     </details>
 
-    <p class="foot-note">Proof of concept on real data: OpenStreetMap streets, <span id="foot-nb"></span> building footprints, <span id="foot-terrain"></span> terrain (streets carved as flow paths<span id="foot-block">; water goes around cells that are at least 75% built</span>), and Project NOAH flood hazard as a reference layer.<span id="foot-limits"> FABDEM heights can be 1–3 m off in dense cities, and this is a spread from measured points over terrain and buildings, not a hydraulic model.</span> Each geotagged unit reports water depth at its own location; the model sets a local water surface there (ground + measured depth) and spreads it across the terrain only where topography allows, with a conservative decay away from the observation. No sensor reading, no modeled extent. Sensor readings are simulated — storm response is calibrated per site using its NOAH hazard class and local elevation. Not a forecast; not for emergency use.</p>
+    <p class="foot-note">Real map data; simulated sensor readings. Not a forecast; not for emergency use.<span class="tt" data-term="how this map is made">Built from OpenStreetMap streets, <span id="foot-nb"></span> building footprints and <span id="foot-terrain"></span> terrain (streets carved as flow paths<span id="foot-block">; water goes around squares that are at least 75% built</span>), with Project NOAH flood hazard as a reference layer. Each unit’s reading sets a local water level (ground + measured depth) that spreads only where the terrain allows, fading with distance. No reading, no flood.<span id="foot-limits"> FABDEM heights can be 1–3 m off in dense cities, and this is not a hydraulic model.</span> Simulated storms are tuned per site from NOAH hazard and local elevation.</span> <a href="#about">How it works</a></p>
   </aside>
 </main>
 
@@ -905,7 +1159,7 @@ const CAMPUSES=__CAMPUSES__;          // the PhilDev partner campuses (pipeline/
 const PH_OUTLINE=__PH_OUTLINE__;      // simplified country outline for the national map (data/ph_outline.json)
 const CAMPUS_BY_ID=Object.fromEntries(CAMPUSES.map(c=>[c.id,c]));
 const isCampus=id=>!!CAMPUS_BY_ID[id];
-const PILOTS=["tv","berkeley"];
+const PILOTS=["tv","sjq","berkeley"];   // sjq: Brgy. San Joaquin, Mabalacat City, Pampanga (2026-09-29)
 const SITE_IDS=new Set([...PILOTS,...CAMPUSES.map(c=>c.id)]);
 const LEGACY_SITES={diliman:"upd"};  // old tabs → where they live now
 const DATA_BASE="data/";             // one file per site, fetched when the site is opened
@@ -972,7 +1226,7 @@ function initSite(id){
     const sus=Math.min(2.6,Math.max(0.15,0.35+0.5*lowness+0.45*wNoah));
     const r=mulberry32(500+k)();
     return {id:s.id,idx:k,name:"Household unit · "+(s.hn?s.hn+" ":"")+(s.bld||s.street),street:s.street,bld:s.bld||null,
-      x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,gRef,hn:s.hn||"",near:s.bld?shortSt(s.street):(s.near||null),
+      x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,gRef,hn:s.hn||"",near:s.bld?(s.bld.includes(shortSt(s.street))?null:shortSt(s.street)):(s.near||null),   // campus labels already say "near <street>": no second "near"
       short:s.short||null,labelPos:s.lp||(s.id==="BW-H06"?"above":(s.id==="BW-H01"||s.id==="BW-H02")?"left":"right"),
       noahCls:Math.max(h5,h25,h100),sus,expos:0.92+r*0.2,readings:[],depth:0,rate:0,status:"ok"};
   });
@@ -1152,6 +1406,14 @@ function waterLUT(P,pub){
 }
 // Returns {cv, x0, y0}: only the rectangle of cells that can hold water is painted (x0, y0: its corner in fine pixels),
 // so a small flood costs little to paint and to draw onto the map.
+// The legend's water spectrum: the drawing's own colour table (waterLUT) from dry to deep, shallow edge faded as on the map
+function waterGradient(pub){
+  const L=waterLUT(mapPal(),pub),max=pub?0.6:0.8,st=[];
+  for(let v=0;v<=max+1e-9;v+=0.02){const k=Math.min(255,Math.round(v*100))*4;st.push(`rgba(${L[k]},${L[k+1]},${L[k+2]},${(0.88*L[k+3]/255).toFixed(3)}) ${(v/max*100).toFixed(1)}%`);}
+  return `linear-gradient(90deg,${st.join(",")})`;
+}
+function paintLegends(){const a=document.getElementById("p-grad"),b=document.getElementById("lg-grad");
+  if(a)a.style.background=waterGradient(true);if(b)b.style.background=waterGradient(false);}
 function paintWater(F,GW,GH,FK,LUT,alphaOf){
   const N=GW*GH,act=new Uint8Array(N);let bx0=GW,by0=GH,bx1=-1,by1=-1;
   for(let i=0;i<N;i++)if(F[i]>0){const x=i%GW,y=(i/GW)|0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<GW&&Y<GH)act[Y*GW+X]=1;}
@@ -1914,13 +2176,14 @@ function loop(now){
 const themeBtn=document.getElementById("theme-toggle");
 function setTheme(t,render){
   document.documentElement.dataset.theme=t;
+  paintLegends();
   if(render)bwThemeChanged(t);        // not on the boot call: the map code below hasn't run yet (NATGL would be in its TDZ)
   STATUS_COL=t==="dark"?STATUS_COL_DARK:STATUS_COL_LIGHT;
   try{localStorage.setItem("bw-theme",t);}catch(e){}
   themeBtn.textContent=t==="dark"?"☀":"☾";
   themeBtn.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");
   themeBtn.setAttribute("aria-pressed",t==="dark"?"true":"false");
-  for(const pt of [document.getElementById("p-theme"),document.getElementById("nat-theme")])if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
+  for(const pt of [document.getElementById("p-theme"),document.getElementById("nat-theme"),document.getElementById("ab-theme")])if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
   if(render&&siteBooted){renderBase();renderNoah();renderFlood();drawMap();}   // on the national map no site is drawn yet
 }
 let savedTheme=null;try{savedTheme=localStorage.getItem("bw-theme");}catch(e){}
@@ -2223,7 +2486,7 @@ function exitTry(nextSite,fromHash){
   syncLiveUI();syncTabs();
 }
 function selectTab(key){
-  if(key==="ph"){location.hash="#ph";return;}
+  if(key==="ph"||key==="about"){if(location.hash!=="#"+key)location.hash="#"+key;else if(key==="about")aboutEnter("");return;}
   if(ROUTE!=="site"||!DATA_ALL[key==="try"?"tv":key]){location.hash="#"+key;return;}   // needs a fetch or leaves the national map: the router does it
   if(key==="try"){if(!TRY)enterTry();return;}
   if(TRY){exitTry(key);writeHash();return;}
@@ -2893,7 +3156,7 @@ function renderPublic(){
   $("p-all").innerHTML=sorted.map(s=>rowHTML(s)).join("");
   // figure shows the selected street, else my street, else the deepest
   renderFigure(selected||mine||sorted[0]);
-  $("p-lg1").textContent=L.lg[0];$("p-lg2").textContent=L.lg[1];$("p-lg3").textContent=L.lg[2];$("p-lg4").textContent=L.lg[3];$("p-lg5").textContent=L.lg[4];
+  paintLegends();$("p-lg1").textContent=L.lg[0];$("p-lg2").textContent=L.lg[1];$("p-lg3").textContent=L.lg[2];$("p-lg4").textContent=L.lg[3];$("p-lg5").textContent=L.lg[4];
   $("p-lg6").textContent=NL().sea;$("p-lg-sea").hidden=!HAS_SEA;$("lg-sea").hidden=!HAS_SEA;$("lg-sea-t").textContent=NL().sea;
   const coach=$("p-coach");coach.textContent=L.mapHint;
   let seen=false;try{seen=localStorage.getItem("bw-coach")==="1";}catch(e){}
@@ -3042,6 +3305,7 @@ $("p-theme").addEventListener("click",()=>setTheme(document.documentElement.data
 function parseHash(){
   const raw=(location.hash||"").replace(/^#/,"");
   TRY=raw==="try";if(TRY){LIVE=false;return {route:"site",site:"tv",view:"public"};}
+  if(/^about(\/|$)/.test(raw)){LIVE=false;return {route:"about",sec:raw.split("/")[1]||""};}
   const tok=raw.match(/^p\.([a-z]+)\.(s|b)\.([A-Za-z0-9-]+)$/);
   if(tok){const site=LEGACY_SITES[tok[1]]||tok[1];
     if(SITE_IDS.has(site)){SHARE_TOKEN_SEEN=true;SHARED_PLACE=site+":"+tok[2]+":"+tok[3];return {route:"site",site,view:"public"};}}
@@ -3053,11 +3317,11 @@ function parseHash(){
   return {route:"site",site:m[0],view:m[1]==="details"?"details":"public"};
 }
 function writeHash(){
-  const h=ROUTE==="ph"?"":TRY?"#try":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
+  const h=ROUTE==="ph"?"":ROUTE==="about"?"#about"+(ABOUT_SEC?"/"+ABOUT_SEC:""):TRY?"#try":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
   history.replaceState(null,"",h||location.pathname+location.search);
   try{localStorage.setItem("bw-last-hash",h);}catch(e){}   // Add to Home Screen: relaunch (?source=pwa, no hash) restores this
 }
-function syncTabs(){const cur=TRY?"try":(ROUTE==="ph"||isCampus(SITE))?"ph":SITE;
+function syncTabs(){const cur=ROUTE==="about"?"about":TRY?"try":(ROUTE==="ph"||isCampus(SITE))?"ph":SITE;
   document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=b.dataset.site===cur;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
 document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
   b.addEventListener("click",()=>selectTab(b.dataset.site));
@@ -3072,7 +3336,7 @@ document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
 const NAT_LANGS=__NAT_I18N__;
 const NAT_EN=NAT_LANGS.en;
 const NL=()=>NAT_LANGS[LANG]||NAT_EN;
-const siteLabel=id=>CAMPUS_BY_ID[id]?CAMPUS_BY_ID[id].short:{tv:"Teachers Village",berkeley:"UC Berkeley"}[id]||id;
+const siteLabel=id=>CAMPUS_BY_ID[id]?CAMPUS_BY_ID[id].short:{tv:"Teachers Village",sjq:"San Joaquin",berkeley:"UC Berkeley"}[id]||id;
 /*__BASEMAP_JS__*/
 /* ---------- the national map: PhilDev partner campuses ---------- */
 // The outline (SVG, drawn first, always) and, when it loads, the vector basemap (spec §4). Pins, clusters and the chosen
@@ -3116,6 +3380,9 @@ function natInit(){
   $("nat-q").addEventListener("input",natList);
   $("nat-pins").addEventListener("click",natPinClick);
   $("nat-list").addEventListener("click",natRowClick);
+  // remember what the person opens or closes (a click or Enter/Space on a summary; the toggle event also fires for re-renders)
+  $("nat-list").addEventListener("click",e=>{const s=e.target.closest("summary"),d=s&&s.parentElement;if(!d||!d.dataset.key||$("nat-q").value.trim())return;
+    if(d.open)NAT_OPEN.delete(d.dataset.key);else NAT_OPEN.add(d.dataset.key);});
   for(const [ev,on] of [["pointerover",1],["focusin",1],["pointerout",0],["focusout",0]])
     $("nat-list").addEventListener(ev,e=>{const a=on&&e.target.closest(".nat-item");natHighlight(a?a.dataset.id:null);});
   $("nat-zin").addEventListener("click",()=>natZoomBy(1.5));
@@ -3300,7 +3567,7 @@ function natZoomTo(ids){
 }
 // Choose a campus on the map: fly to it, outline its 3 km box, offer "Open <short>" (spec §4.2).
 function natSelect(id){
-  const c=CAMPUS_BY_ID[id];NAT.sel=id;
+  const c=CAMPUS_BY_ID[id];NAT.sel=id;natReveal(id);
   const b=bwCampusBox(c.lat,c.lon);
   if(NATGL.state==="on")NATGL.map.fitBounds(b,{padding:60,maxZoom:15,duration:natDur(1200)});
   else{const [x0,y0]=natProj(b[0][0],b[1][1]),[x1,y1]=natProj(b[1][0],b[0][1]),p=(x1-x0)*6,W=natBox().clientWidth;
@@ -3349,20 +3616,33 @@ function bwThemeChanged(t){
   siteGLStyle();
 }
 let natAnnounceT=null,natLastQ="";
+// The campus list is a tree of drop-downs: island group › province › campuses (2026-09-29 feedback). Closed by default;
+// a search opens every branch with a match. What the person opened survives re-renders (language, search cleared).
+const NAT_OPEN=new Set();
 function natList(){
   const q=$("nat-q").value,n=norm(q.trim()),L=NL();
   const ms=n?CAMPUSES.filter(c=>[c.name,c.short,c.city,c.province,c.id].some(f=>norm(f).includes(n))):CAMPUSES;
+  const op=k=>n||NAT_OPEN.has(k)?" open":"";
   let html="";
   for(const g of ["Luzon","Visayas","Mindanao"]){
     const all=CAMPUSES.filter(c=>c.group===g).length,cs=ms.filter(c=>c.group===g);
     if(!cs.length)continue;
-    html+=`<h2 class="nat-g" data-group="${g}" data-n="${all}">${esc(L.groups[g])} (${all})</h2><ul class="nat-ul">`+cs.map(c=>
-      `<li><a class="nat-item" href="#${c.id}" data-id="${c.id}" aria-label="${esc(pinLabel(c))}"><span class="pin-shape pin-${c.type.toLowerCase()}" aria-hidden="true"></span><span class="nat-name"><b>${esc(c.short)}</b> ${esc(c.name)}</span><span class="nat-where">${esc(c.city)}, ${esc(c.province)}</span></a></li>`).join("")+"</ul>";
+    const provs=[...new Set(cs.map(c=>c.province))].sort((a,b)=>a.localeCompare(b));
+    html+=`<details class="nat-grp" data-key="${g}" data-group="${g}" data-n="${all}"${op(g)}><summary><h2 class="nat-g">${esc(L.groups[g])} <span class="nat-n">(${all})</span></h2></summary>`+
+      provs.map(p=>{const pc=cs.filter(c=>c.province===p),k=g+"/"+p;
+        return `<details class="nat-prov" data-key="${esc(k)}"${op(k)}><summary><h3 class="nat-p">${esc(p)} <span class="nat-n">(${CAMPUSES.filter(c=>c.province===p).length})</span></h3></summary><ul class="nat-ul">`+pc.map(c=>
+      `<li><a class="nat-item" href="#${c.id}" data-id="${c.id}" aria-label="${esc(pinLabel(c))}"><span class="pin-shape pin-${c.type.toLowerCase()}" aria-hidden="true"></span><span class="nat-name"><b>${esc(c.short)}</b> ${esc(c.name)}</span><span class="nat-where">${esc(c.city)}</span></a></li>`).join("")+"</ul></details>";}).join("")+"</details>";
   }
   $("nat-list").innerHTML=html||`<p>${esc(fill(L.count0,{q}))}</p>`;
   clearTimeout(natAnnounceT);                         // announce once the typing pauses, and only when the query changed
   natAnnounceT=setTimeout(()=>{if(q===natLastQ)return;natLastQ=q;
     $("nat-count").textContent=!n?"":ms.length===0?fill(L.count0,{q}):ms.length===1?L.count1:fill(L.countN,{n:ms.length});},400);
+}
+// open the branches down to a campus's row (a pin chosen on the map shows where it sits in the list)
+function natReveal(id){
+  const c=CAMPUS_BY_ID[id];if(!c)return;NAT_OPEN.add(c.group);NAT_OPEN.add(c.group+"/"+c.province);
+  const a=$("nat-list").querySelector(`.nat-item[data-id="${id}"]`);if(!a)return;
+  for(let d=a.closest("details");d;d=d.parentElement.closest("details"))d.open=true;
 }
 function natRender(){
   natInit();
@@ -3373,8 +3653,7 @@ function natRender(){
   $("nat-legend").innerHTML=["SUC","LUC","Private"].map(t=>`<li><span class="pin-shape pin-${t.toLowerCase()}" aria-hidden="true"></span>${esc(L.typesShort[t])}</li>`).join("")+
     `<li><span class="sea-sw" aria-hidden="true"></span>${esc(L.sea)}</li>`+
     // the storm's own key: the water and the sensor shapes the campus pages use (their words, from the page's language table)
-    (NSIM.on?(()=>{const G=(LANGS[LANG]||LANGS.en).lg,P=mapPal();return `<li class="lg-storm"><i class="lg-w" style="background:${P.bands[1]}"></i>${esc(G[0])}</li>`+
-      `<li class="lg-storm"><i class="lg-w" style="background:${P.bands[2]}"></i>${esc(G[1])}</li>`+
+    (NSIM.on?(()=>{const G=(LANGS[LANG]||LANGS.en).lg;return `<li class="lg-storm"><span class="lg-grad">${esc(G[0])}<i style="background:${waterGradient(true)}"></i>${esc(G[1])}</span></li>`+
       [["ok",2],["warn",3],["alert",4]].map(([k,i])=>`<li class="lg-storm"><span class="shape ${k}" aria-hidden="true"></span>${esc(G[i])}</li>`).join("");})():"");
   $("nat-credit").textContent=L.credit;$("nat-credit").hidden=NATGL.state!=="on";   // the tiles' credit, only under the tiles
   if(typeof nsimSync==="function")nsimSync();
@@ -3522,6 +3801,76 @@ function syncCampusUI(){
 }
 document.addEventListener("click",e=>{if(e.target.closest(".c-pick")){natFocusSearch=true;location.hash="#ph";}});
 
+/* ---------- "?" toggletips (About page and Details): <span class="tt" data-term="…">note</span> becomes a "?" button
+   followed by its note. Click or tap pins the note, hover shows it, Escape / a click elsewhere / tabbing away close it. ---------- */
+let ttSeq=0,TT=null,ttHideT=0;                  // TT: the open note {el, pinned}
+const TT_HOVER=matchMedia("(hover:hover) and (pointer:fine)");
+function tipsInit(root){
+  root.querySelectorAll(".tt:not([data-tt])").forEach(el=>{
+    el.dataset.tt="1";const id="tt-"+(++ttSeq);
+    // keep the "?" on the same line as the word before it (and any punctuation right after it)
+    const pv=el.previousSibling,nx=el.nextSibling,mw=pv&&pv.nodeType===3&&/(\S+)$/.exec(pv.data);
+    if(mw){pv.data=pv.data.slice(0,-mw[1].length);const w=document.createElement("span");w.className="tt-w";w.textContent=mw[1];el.before(w);w.append(el);
+      const mp=nx&&nx.nodeType===3&&/^[.,;:)”]+/.exec(nx.data);if(mp){nx.data=nx.data.slice(mp[0].length);w.append(mp[0]);}}
+    const p=document.createElement("span");p.className="tt-p";p.id=id;p.hidden=true;
+    while(el.firstChild)p.appendChild(el.firstChild);
+    const b=document.createElement("button");b.type="button";b.className="tt-b";b.textContent="?";
+    b.setAttribute("aria-label","More about "+el.dataset.term);b.setAttribute("aria-expanded","false");b.setAttribute("aria-controls",id);
+    el.append(b,p);
+    b.addEventListener("click",e=>{e.stopPropagation();if(TT&&TT.el===el&&TT.pinned)tipHide(false);else tipShow(el,true);});
+    el.addEventListener("mouseenter",()=>{clearTimeout(ttHideT);if(TT_HOVER.matches&&!(TT&&TT.pinned))tipShow(el,false);});
+    el.addEventListener("mouseleave",()=>{if(TT&&TT.el===el&&!TT.pinned){clearTimeout(ttHideT);ttHideT=setTimeout(()=>tipHide(false),200);}});
+    el.addEventListener("focusout",e=>{if(TT&&TT.el===el&&!el.contains(e.relatedTarget))tipHide(false);});
+  });
+}
+function tipShow(el,pin){
+  if(TT&&TT.el!==el)tipHide(false);
+  const b=el.querySelector(".tt-b"),p=el.querySelector(".tt-p");
+  TT={el,pinned:pin||!!(TT&&TT.pinned)};b.setAttribute("aria-expanded","true");
+  if(p.hidden){p.hidden=false;tipPlace();void p.offsetWidth;p.classList.add("on");}else tipPlace();
+}
+function tipHide(refocus){
+  if(!TT)return;const el=TT.el;TT=null;clearTimeout(ttHideT);
+  const b=el.querySelector(".tt-b"),p=el.querySelector(".tt-p");
+  b.setAttribute("aria-expanded","false");p.classList.remove("on");p.hidden=true;if(refocus)b.focus();
+}
+// below the "?" (above it when there is no room), kept 16 px inside the window; closes once its "?" scrolls away
+function tipPlace(){
+  if(!TT)return;const b=TT.el.querySelector(".tt-b"),p=TT.el.querySelector(".tt-p"),r=b.getBoundingClientRect();
+  const vw=document.documentElement.clientWidth,vh=window.innerHeight;
+  if(r.bottom<0||r.top>vh||!r.width){tipHide(false);return;}
+  const w=p.offsetWidth,h=p.offsetHeight,x=Math.max(16,Math.min(r.left+r.width/2-28,vw-16-w));
+  let y=r.bottom+10;if(y+h>vh-8&&r.top-10-h>=8)y=r.top-10-h;
+  p.style.left=Math.round(x)+"px";p.style.top=Math.round(y)+"px";
+}
+document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!TT)return;e.stopImmediatePropagation();tipHide(TT.el.contains(document.activeElement));},true);
+document.addEventListener("click",e=>{if(TT&&!TT.el.contains(e.target))tipHide(false);});
+window.addEventListener("scroll",tipPlace,{passive:true,capture:true});
+window.addEventListener("resize",tipPlace);
+
+/* ---------- About (#about, #about/<section>) ---------- */
+const ABOUT_SECS=["what","how","data","sensors","limits","next","faq"];
+let ABOUT_SEC="";
+function aboutEnter(sec,from){
+  ABOUT_SEC=ABOUT_SECS.includes(sec)?sec:"";
+  if(ABOUT_SEC){const h=document.getElementById("ab-"+ABOUT_SEC+"-h");
+    h.scrollIntoView({behavior:reducedMotion||from!=="about"?"auto":"smooth",block:"start"});h.focus({preventScroll:true});}
+  else window.scrollTo(0,0);
+  aboutSpy(ABOUT_SEC||"what");
+}
+// the rail marks the section being read: the last one whose heading has passed the top third of the window
+function aboutSpy(force){
+  let cur=force;
+  if(!cur){cur="what";for(const s of ABOUT_SECS){const h=document.getElementById("ab-"+s+"-h");if(h.getBoundingClientRect().top<=window.innerHeight/3)cur=s;}
+    if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-2)cur=ABOUT_SECS[ABOUT_SECS.length-1];}
+  document.querySelectorAll(".ab-rail a").forEach(a=>{if(a.dataset.sec===cur)a.setAttribute("aria-current","true");else a.removeAttribute("aria-current");});
+}
+let abSpyQ=0;
+window.addEventListener("scroll",()=>{if(ROUTE!=="about"||abSpyQ)return;abSpyQ=requestAnimationFrame(()=>{abSpyQ=0;aboutSpy();});},{passive:true});
+document.querySelectorAll(".ab-rail a").forEach(a=>a.addEventListener("click",e=>{if(location.hash===a.getAttribute("href")){e.preventDefault();aboutEnter(a.dataset.sec,"about");}}));
+$("ab-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
+tipsInit(document);
+
 let ROUTE=null, siteBooted=false, navSeq=0, lastNav=null;
 function showRoute(r){ROUTE=r;document.body.dataset.route=r;}
 function markReady(id){document.body.dataset.ready=id;}        // tests and timings wait for this
@@ -3534,6 +3883,11 @@ function go(h,ctx){
     countryBack(true);
     if(siteBooted){if(ctx.wasTry)exitTry(SITE,true);setPlay(false);}
     showRoute("ph");natEnter();syncTabs();writeHash();markReady("ph");
+    return Promise.resolve();
+  }
+  if(h.route==="about"){
+    if(siteBooted){if(ctx.wasTry)exitTry(SITE,true);setPlay(false);}
+    const from=ROUTE;showRoute("about");aboutEnter(h.sec,from);syncTabs();writeHash();markReady("about");
     return Promise.resolve();
   }
   if(!DATA_ALL[h.site]&&siteBooted){TRY=ctx.wasTry;LIVE=ctx.wasLive;}   // until the new file arrives, the page still shows the old site

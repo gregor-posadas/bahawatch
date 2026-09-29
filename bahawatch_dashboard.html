@@ -35,9 +35,79 @@ body{
 button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0}
 button:focus-visible, summary:focus-visible, .house-card:focus-visible, #overlay:focus-visible, #scrub:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
 /* routes (body[data-route]): the national map, a site's file loading or failing, and the site itself */
-#nat,#route-loading,#route-fail{display:none}
-body[data-route="ph"] #nat,body[data-route="loading"] #route-loading,body[data-route="fail"] #route-fail{display:block}
+#nat,#route-loading,#route-fail,#about{display:none}
+body[data-route="about"] #about,body[data-route="ph"] #nat,body[data-route="loading"] #route-loading,body[data-route="fail"] #route-fail{display:block}
 body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-live-banner,main,#timeline){display:none !important}
+/* About (#about, #about/<section>): a reading page (marketing route type "About"): the site tabs, a contents rail with
+   the FAQ at its foot, and one article column of at most 72ch. Terms carry "?" toggletips (.tt, below). */
+.ab-inner{padding:14px 24px 48px}
+#ab-theme{border:1px solid var(--ink); border-radius:4px; background:var(--panel); color:var(--ink); font-size:16px; min-width:48px; min-height:48px}
+.ab-body{display:grid; grid-template-columns:200px minmax(0,72ch); gap:48px; margin-top:24px}
+.ab-rail{position:sticky; top:16px; align-self:start}
+.ab-rail-h{font-size:14px; font-weight:700; margin:0 0 8px}
+.ab-rail ul{list-style:none; margin:0; padding:0}
+.ab-rail a{display:flex; align-items:center; min-height:48px; padding:0 12px; border-left:3px solid var(--line); color:var(--ink-2); text-decoration:none; font-size:14px; font-weight:600}
+.ab-rail a:hover{color:var(--ink)}
+.ab-rail a[aria-current="true"]{border-left-color:var(--ink); color:var(--ink); font-weight:700}
+.ab-rail-faq{margin-top:16px}
+.ab-rail a:focus-visible{outline:3px solid var(--brand); outline-offset:2px}
+.ab-rail-tip{font-size:14px; color:var(--ink-2); margin:16px 0 0; max-width:24ch}
+.ab-q{display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border:1.5px solid var(--ink-2); border-radius:50%; font-weight:700}
+.ab-main{font-size:16px; line-height:1.5; min-width:0}
+.ab-main > section{padding-bottom:24px; border-bottom:1px solid var(--line); margin-bottom:32px}
+.ab-main h2{font-size:25px; font-weight:700; line-height:1.2; margin:0 0 12px; scroll-margin-top:16px}
+.ab-main h2:focus{outline:none}
+.ab-main h3{font-size:16px; font-weight:700; margin:24px 0 8px}
+.ab-main p{margin:0 0 12px}
+.ab-lead{font-size:20px; line-height:1.4}
+.ab-note{border:1px solid var(--ink); border-left-width:6px; border-radius:4px; background:var(--panel); padding:12px 16px 0; margin:16px 0}
+.ab-list{margin:0 0 12px; padding-left:20px}
+.ab-list li{margin-bottom:8px}
+.ab-steps{margin:0 0 16px; padding-left:24px}
+.ab-steps li{margin-bottom:12px; padding-left:4px}
+.ab-ds{margin:0 0 16px}
+.ab-ds > div{display:grid; grid-template-columns:160px minmax(0,1fr); gap:16px; padding:10px 0; border-top:1px solid var(--line)}
+.ab-ds > div:last-child{border-bottom:1px solid var(--line)}
+.ab-ds dt{font-weight:700}
+.ab-ds dd{margin:0}
+.ab-use{display:block; font-size:14px; color:var(--ink-2); margin-top:4px}
+.ab-tag{display:inline-block; font-size:14px; font-weight:600; color:var(--ink-2); border:1px solid var(--ink-2); border-radius:4px; padding:0 6px; margin-left:6px; vertical-align:1px}
+.ab-small{font-size:14px; color:var(--ink-2)}
+.ab-faq details{border-top:1px solid var(--line)}
+.ab-faq details:last-child{border-bottom:1px solid var(--line)}
+.ab-faq summary{display:flex; align-items:center; gap:12px; min-height:48px; padding:8px 0; font-weight:700; cursor:pointer; list-style:none}
+.ab-faq summary::-webkit-details-marker{display:none}
+.ab-faq summary::before{content:"+"; flex:none; width:20px; text-align:center; font-size:20px; font-weight:400; line-height:1}
+.ab-faq details[open] summary::before{content:"−"}
+.ab-faq details p{margin:0 0 16px 32px}
+@media (max-width:899px){
+  .ab-inner{padding:14px 16px 40px}
+  .ab-body{grid-template-columns:minmax(0,1fr); gap:16px}
+  .ab-rail{position:static}
+  .ab-rail ul{display:flex; flex-wrap:wrap; column-gap:4px}
+  .ab-rail a{border-left:none; border-bottom:3px solid transparent; padding:0 8px}
+  .ab-rail a[aria-current="true"]{border-bottom-color:var(--ink)}
+  .ab-rail-faq{margin-top:0}
+  .ab-rail-tip{max-width:none}
+  .ab-ds > div{grid-template-columns:minmax(0,1fr); gap:2px}
+  .ab-lead{font-size:16px; font-weight:600}
+  .ab-main h2{font-size:20px}
+}
+/* "?" toggletips: a plain-language note for a term. Click or tap pins it; hover shows it; Escape or a click elsewhere
+   closes it. The note is the button's next sibling (read in order), placed in fixed position so no panel clips it. */
+.tt{display:inline}
+.tt-w{white-space:nowrap}
+.tt-b{position:relative; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin:0 1px 0 4px;
+  border:1.5px solid var(--ink-2); border-radius:50%; color:var(--ink-2); font-size:14px; font-weight:700; line-height:1; vertical-align:2px}
+.tt-b::after{content:""; position:absolute; inset:-14px}
+.tt-b:hover,.tt-b[aria-expanded="true"]{color:var(--ink); border-color:var(--ink)}
+.tt-b[aria-expanded="true"]{background:var(--ink); color:var(--bg)}
+.tt-b:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:50%}
+.tt-p{position:fixed; z-index:80; left:0; top:0; width:max-content; max-width:min(340px,calc(100vw - 32px)); padding:12px 14px;
+  background:var(--panel); color:var(--ink); border:1px solid var(--ink); border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.18);
+  font-size:14px; font-weight:400; font-style:normal; line-height:1.45; text-align:left; white-space:normal; opacity:0; transition:opacity .15s ease-out}
+.tt-p.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.tt-p{transition:none}}
 /* the national map (#nat): an outline of the Philippines with campus pins, and the same campuses as a list */
 :root{--pin-suc:#385F96; --pin-luc:#CF5921; --pin-pvt:#800000}
 :root[data-theme="dark"]{--pin-suc:#7FA8E0; --pin-luc:#F08A4B; --pin-pvt:#F2F2F2}
@@ -124,7 +194,19 @@ body[data-natgl="1"] #nat-svg{visibility:hidden}
 .nat-ql{display:block; font-weight:700; margin-bottom:6px}
 .nat-q{width:100%; min-height:48px; font:inherit; font-size:16px; padding:0 12px; border:2px solid var(--ink); border-radius:6px; background:var(--panel); color:var(--ink)}
 .nat-count{min-height:1.4em; margin:6px 0; color:var(--ink-2)}
-.nat-g{font-size:16px; font-weight:700; margin:16px 0 4px}
+.nat-grp,.nat-prov{margin:0}
+.nat-grp > summary,.nat-prov > summary{display:flex; align-items:center; gap:8px; min-height:48px; cursor:pointer; list-style:none; border-bottom:1px solid var(--line)}
+.nat-grp > summary::-webkit-details-marker,.nat-prov > summary::-webkit-details-marker{display:none}
+.nat-grp > summary::before,.nat-prov > summary::before{content:"▾"; flex:none; width:20px; text-align:center; font-size:14px; color:var(--ink-2); transform:rotate(-90deg); transition:transform .15s ease-out}
+.nat-grp[open] > summary::before,.nat-prov[open] > summary::before{transform:none}
+.nat-grp > summary:hover .nat-g,.nat-prov > summary:hover .nat-p{text-decoration:underline}
+.nat-grp > summary:focus-visible,.nat-prov > summary:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
+.nat-g{font-size:16px; font-weight:700; margin:0}
+.nat-p{font-size:16px; font-weight:600; margin:0}
+.nat-n{font-weight:400; color:var(--ink-2)}
+.nat-prov{padding-left:20px}
+.nat-prov .nat-ul{padding-left:8px}
+@media (prefers-reduced-motion: reduce){.nat-grp > summary::before,.nat-prov > summary::before{transition:none}}
 .nat-ul{list-style:none; padding:0; margin:0}
 .nat-item{display:grid; grid-template-columns:24px 1fr; align-items:center; column-gap:8px; min-height:48px; padding:6px 4px; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none; font-size:16px}
 .nat-item .pin-shape{justify-self:center}
@@ -201,7 +283,7 @@ main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
 #legend .lg-title{font-weight:700; margin-bottom:8px; font-size:12px}
 #legend .row{display:flex; align-items:center; gap:9px; margin-top:7px; color:var(--ink-2); font-weight:600}
 #legend .bands{display:flex; gap:2px}
-#legend .bands i{height:9px; flex:1; border-radius:3px}
+#legend .bands i{height:10px; flex:1; border-radius:3px; box-shadow:inset 0 0 0 1px var(--line)}
 #legend .bands-lab{display:flex; justify-content:space-between; font-size:12px; color:var(--ink-2); margin-top:3px}
 #legend .hint{margin-top:10px; font-size:12px; color:var(--ink-2); line-height:1.4; border-top:1px solid var(--line); padding-top:8px}
 #legend .noah-h{font-weight:700; margin-top:12px; font-size:12px}
@@ -221,7 +303,7 @@ main{flex:1; display:grid; grid-template-columns:1fr 340px; gap:0; min-height:0}
 .zoom-ctl button:hover{background:var(--panel-2)}
 .zoom-ctl .zl{font-size:12px; font-weight:600; color:var(--ink-2); text-align:center; padding:2px 0 3px; font-variant-numeric:tabular-nums}
 .map-attr{
-  position:absolute; left:14px; bottom:12px; z-index:4; max-width:72%;
+  position:absolute; left:14px; bottom:12px; z-index:4; max-width:calc(100% - 170px);
   font-size:12px; color:var(--ink-2); background:var(--panel); border:1px solid var(--line);
   padding:4px 9px; border-radius:5px; line-height:1.35;
 }
@@ -298,6 +380,10 @@ details.api, details.log{border-bottom:1px solid var(--line); margin-bottom:14px
 details summary{padding:0 0 12px; font-weight:700; font-size:14px; color:var(--ink-2); cursor:pointer; list-style:none; display:flex; align-items:center; min-height:28px}
 details summary::after{content:"+"; margin-left:auto; font-weight:400; font-size:16px}
 details[open] summary::after{content:"–"}
+/* the campus tree and the About FAQ draw their own marker (before the label) */
+.nat-grp > summary,.nat-prov > summary,.ab-faq summary{padding:0; color:var(--ink); font-size:16px}
+.ab-faq summary{padding:8px 0}
+#nat-list summary::after,#about summary::after{content:none}
 .api-body{padding:0 0 14px}
 .api-url{font-size:12px; color:var(--ink-2); word-break:break-all; margin-bottom:8px}
 pre#api-json{
@@ -314,6 +400,7 @@ pre#api-json{
 #rep-log li:first-child{border-top:none}
 #rep-log time{font-variant-numeric:tabular-nums; font-weight:600; color:var(--ink); margin-right:6px}
 .foot-note{font-size:12px; color:var(--ink-2); padding:0 0 8px; line-height:1.5}
+.foot-note a{display:inline-block; padding:14px 2px; margin:-14px 0; color:var(--brand); font-weight:600}
 
 #timeline{display:flex; align-items:center; gap:16px; padding:12px 22px 16px; flex-wrap:wrap; border-top:1px solid var(--line)}
 #play{width:44px; height:44px; border-radius:50%; background:var(--brand); color:var(--on-brand); font-size:16px; display:flex; align-items:center; justify-content:center; flex:none}
@@ -330,8 +417,9 @@ pre#api-json{
   main{grid-template-columns:minmax(0,1fr); grid-template-rows:58vh auto}   /* minmax: long unit names must not widen the page */
   #map-wrap{min-height:360px; margin:12px 14px 0}
   aside{padding:14px; overflow:visible}
-  .hdr-right{margin-left:0; width:100%}
-  .scenarios{flex:1}
+  .hdr-right{margin-left:0; width:100%; flex-wrap:wrap}
+  .scenarios{flex:1 1 100%}
+  #theme-toggle{flex:none}
   .scenarios button{flex:1}
   .map-attr{display:none}
 }
@@ -355,13 +443,14 @@ pre#api-json{
 .p-review.on{display:block}
 
 /* site tabs (one bar per view; the details copy sits under the header) */
-.site-tabs{display:flex; gap:22px; border-bottom:1px solid var(--line); padding:0}
+.site-tabs{display:flex; flex-wrap:wrap; column-gap:22px; row-gap:0; border-bottom:1px solid var(--line); padding:0}
+.site-tabs button{white-space:nowrap}
 .site-tabs button{font-size:14px; font-weight:700; color:var(--ink-2); padding:10px 0 9px; border-bottom:3px solid transparent; margin-bottom:-1px; min-height:40px}
 .site-tabs button[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--ink)}
 .site-tabs button:hover{color:var(--ink)}
 [data-view="details"] .site-tabs{padding:0 22px}
 [data-view="public"] header + .site-tabs{display:none}
-@media (max-width:560px){.site-tabs{gap:14px}.site-tabs button{font-size:14px}}
+@media (max-width:560px){.site-tabs{column-gap:16px}.site-tabs button{font-size:14px}}
 
 /* status band: sentence on the left, depth figure on the right */
 /* sentence column flexes, figure column is fixed at the right edge — the figure never moves with sentence length */
@@ -471,6 +560,9 @@ body[data-live="1"] .p-body{grid-template-columns:1fr}
 .p-maplegend{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:14px; color:var(--ink-2); padding:8px 2px 0}
 .p-maplegend span{display:inline-flex; align-items:center; gap:6px}
 .p-maplegend i{width:20px; height:8px; border-radius:2px; display:inline-block}
+/* water depth as one spectrum (2026-09-29): the same colours and shallow fade the map draws (waterGradient) */
+.lg-grad{display:inline-flex; align-items:center; gap:6px}
+.p-maplegend .lg-grad i, .nat-legend .lg-grad i{width:72px; height:10px; border-radius:2px; box-shadow:inset 0 0 0 1px var(--line)}
 /* fix round 1: .p-maplegend span / #legend .row set display, which otherwise beats the UA [hidden] rule and shows Sea on every campus */
 #p-lg-sea[hidden],#lg-sea[hidden]{display:none}
 /* coach mark inside the map, shown until the first street is chosen */
@@ -574,8 +666,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 <nav class="site-tabs" role="tablist" aria-label="Site">
   <button role="tab" data-site="ph" aria-selected="true">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="false">Teachers Village</button>
+  <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+  <button role="tab" data-site="about" aria-selected="false">About</button>
 </nav>
   <div class="nat-body">
     <div class="nat-listcol">
@@ -620,6 +714,163 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <a href="#ph" class="route-link" id="fail-back"></a>
 </section>
 
+<section id="about" aria-labelledby="ab-h">
+ <div class="ab-inner">
+  <div class="nat-top">
+    <div><div class="p-name">BahaWatch</div><h1 class="nat-h" id="ab-h">About BahaWatch</h1></div>
+    <div class="p-tools">
+      <button id="ab-theme" aria-label="Switch theme">☾</button>
+    </div>
+  </div>
+<nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
+  <button role="tab" data-site="tv" aria-selected="false">Teachers Village</button>
+  <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
+  <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
+  <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+  <button role="tab" data-site="about" aria-selected="true">About</button>
+</nav>
+  <div class="ab-body">
+   <nav class="ab-rail" aria-label="On this page">
+    <p class="ab-rail-h">On this page</p>
+    <ul>
+      <li><a href="#about/what" data-sec="what">What it is</a></li>
+      <li><a href="#about/how" data-sec="how">How it works</a></li>
+      <li><a href="#about/data" data-sec="data">Data</a></li>
+      <li><a href="#about/sensors" data-sec="sensors">Sensor units</a></li>
+      <li><a href="#about/limits" data-sec="limits">Accuracy and limits</a></li>
+      <li><a href="#about/next" data-sec="next">Future work</a></li>
+      <li class="ab-rail-faq"><a href="#about/faq" data-sec="faq">FAQ</a></li>
+    </ul>
+    <p class="ab-rail-tip">Tap <span class="ab-q" aria-hidden="true">?</span> after a term for a short explanation.</p>
+   </nav>
+   <article class="ab-main">
+
+    <section id="ab-what" aria-labelledby="ab-what-h">
+      <h2 id="ab-what-h" tabindex="-1">What it is</h2>
+      <p class="ab-lead">BahaWatch answers one question for a street or barangay: <i>Babaha ba?</i> — “Is it flooding here?” — and says how deep the water is for someone walking, riding a motorcycle or driving.</p>
+      <div class="ab-note" role="note">
+        <p><b>Everything moving on the dashboard is simulated.</b> Streets, buildings, terrain and flood hazard maps are real open data. Sensor readings, storms and neighbour reports are simulated.</p>
+        <p>Not a forecast. Not for emergency use. Follow PAGASA and local government advisories.</p>
+      </div>
+      <h3>The sites</h3>
+      <ul class="ab-list">
+        <li><b>25 PhilDev partner campuses</b> in Luzon, the Visayas and Mindanao. Each has a 3 km map with eight proposed sensor spots.</li>
+        <li><b>Two neighbourhood pilots:</b> Teachers Village, Quezon City, and Brgy. San Joaquin, Mabalacat City, Pampanga.</li>
+        <li><b>UC Berkeley</b>, California: a check site with very accurate terrain<span class="tt" data-term="the Berkeley terrain">The US Geological Survey’s 1 m lidar map: an aircraft laser survey of the bare ground. Nothing like it is openly available for most of the Philippines, so Berkeley shows how the method behaves when the ground heights are right.</span> and one real test sensor on Strawberry Creek.</li>
+      </ul>
+    </section>
+
+    <section id="ab-how" aria-labelledby="ab-how-h">
+      <h2 id="ab-how-h" tabindex="-1">How it works</h2>
+      <ol class="ab-steps">
+        <li><b>Sensors measure water on the street.</b> Each household unit<span class="tt" data-term="household units">A small ultrasonic sensor on a gate post at the street’s edge, hosted by a household. It points down at the road and measures the distance to the surface: less distance, more water. See Sensor units below.</span> sends the water depth in front of it every 10 minutes over LoRaWAN<span class="tt" data-term="LoRaWAN">A long-range, low-power radio network for small sensors. One gateway can hear units a few kilometres away in a city, each reading is only a few bytes, and it does not depend on mobile data, which often jams during storms.</span>.</li>
+        <li><b>The model spreads that water over the map.</b> At each wet sensor it sets a water level (ground height + measured depth) and lets it spread to nearby lower ground, until the ground rises above it. It fades with distance<span class="tt" data-term="how the spread is limited">The water level drops 1 cm for every 15 m it travels, and spreading stops after about 1.2 km. Water also never spreads into ground more than 45 cm deeper than the sensor saw, so a 20 cm reading on a slope can’t flood a whole valley below it. Both rules keep the map on the cautious side.</span> and goes around buildings<span class="tt" data-term="buildings on the map">The map is a grid of 7.5 m squares. A square at least 75% covered by building footprints blocks water; streets and creeks never block. Streets are cut 0.5 m into the terrain so they carry water, as real streets do.</span>. No reading, no flood on the map.</li>
+        <li><b>A rule gives the answer.</b> The <i>Babaha ba?</i> rule<span class="tt" data-term="the Babaha ba? rule">Checked in order; the first match wins. Nothing newer than 20 minutes: “No fresh data”. The sensor here reads 5 cm or more, or is rising to it within an hour: <i>Oo</i> (yes). Three or more neighbours report flooding within 1 km in the last hour, or heavy rain falls on a mapped hazard zone: <i>Baka</i> (maybe). One or two reports, or a trace at the sensor: <i>Baka</i>. Otherwise <i>Hindi</i> (no). Reports alone never give <i>Oo</i>; only a sensor can.</span> combines sensors, neighbour reports and rain into <i>Oo</i>, <i>Baka</i>, <i>Hindi</i> or “No fresh data”.</li>
+        <li><b>Depth becomes something you can act on.</b> Water is described as gutter-, half-knee-, knee- or waist-deep, and as passable or not for cars<span class="tt" data-term="the car levels">From the MMDA Flood Gauge: half-tire (33 cm) is not passable to light vehicles, tire level (66 cm) is not passable to any vehicle. From 25 cm we say “drive slowly”, where Mamuyac et al. (2025) saw lane closures begin in MMDA CCTV footage.</span> and motorcycles<span class="tt" data-term="the motorcycle levels">Our own rule, because the MMDA gauge has none for motorcycles: slow from 15 cm, where the engine sits; not passable from 30 cm, the height of the exhaust and footpegs, where bikes stall.</span>.</li>
+      </ol>
+      <p>Two views: the <b>simple view</b> for residents (one answer, the street list, a map) and <b>Details</b> for operators and researchers (storm scenarios, a 36-hour timeline, each sensor’s readings, the NOAH layer).</p>
+    </section>
+
+    <section id="ab-data" aria-labelledby="ab-data-h">
+      <h2 id="ab-data-h" tabindex="-1">Data</h2>
+      <p>All open data, cut to each site by our pipeline and stored with the page.</p>
+      <dl class="ab-ds">
+        <div><dt>Ground height</dt><dd>FABDEM<span class="tt" data-term="FABDEM">A global map of ground height with buildings and trees removed (Hawker et al. 2022, University of Bristol), made from the 30 m Copernicus satellite elevation map with machine learning. Bare ground is what water flows over. Free for non-commercial use.</span>, 30 m, smoothed onto the 7.5 m grid. USGS 1 m lidar at Berkeley.<span class="ab-use">Where water can go.</span></dd></div>
+        <div><dt>Buildings</dt><dd>Footprints from Google Open Buildings, Microsoft and OpenStreetMap, combined by VIDA<span class="tt" data-term="the building footprints">Building outlines traced from satellite images by Google and Microsoft, merged with OpenStreetMap. They can miss small, new or informal buildings, and can’t tell a house from a warehouse or count floors.</span>.<span class="ab-use">What blocks water; buildings counted in flooded areas; the map.</span></dd></div>
+        <div><dt>Streets, creeks, names</dt><dd>OpenStreetMap<span class="tt" data-term="OpenStreetMap">A free world map drawn by volunteers, like a Wikipedia for maps. Coverage in Philippine cities is good; small alleys and creeks can be missing.</span>.<span class="ab-use">Streets cut into the terrain as water paths; street names in answers; the map.</span></dd></div>
+        <div><dt>Flood hazard</dt><dd>UP Project NOAH<span class="tt" data-term="the NOAH hazard maps">Flood hazard maps from the University of the Philippines (Project NOAH, now the UP Resilience Institute), modelled for rain heavy enough to come once in 5, 25 or 100 years on average. They show mostly river and overland flooding; ponding from blocked drains often doesn’t appear.</span> 5-, 25- and 100-year maps.<span class="ab-use">A reference layer to compare with; the rain rule; choosing sensor spots; shaping the simulated storms. Never used to draw the flood.</span></dd></div>
+        <div><dt>Barangays</dt><dd>PSA and NAMRIA boundaries, via OCHA HDX.<span class="ab-use">“My barangay” answers.</span></dd></div>
+        <div><dt>Depth levels</dt><dd>MMDA Flood Gauge; Mamuyac et al. 2025, <i>Natural Hazards</i>.<span class="ab-use">Depth words and passability.</span></dd></div>
+        <div><dt>Rain</dt><dd>Open-Meteo hourly rain, in live mode only (not switched on yet).<span class="ab-use">The rain step of the rule.</span></dd></div>
+        <div><dt>Terrain check</dt><dd>NASA ICESat-2<span class="tt" data-term="ICESat-2">A NASA satellite laser that measures ground height along narrow tracks, to within tens of centimetres on open ground. We used 17,936 of its ground points at 26 sites as the reference to test FABDEM.</span> ground heights, 2019–2026.<span class="ab-use">Measuring how wrong the terrain is (see Accuracy).</span></dd></div>
+        <div><dt>Simulated</dt><dd>Sensor readings, storms, neighbour reports.<span class="ab-use">Everything that moves.</span></dd></div>
+      </dl>
+      <p class="ab-small">Code: MIT licence. FABDEM’s licence is non-commercial (CC BY-NC-SA 4.0), so the Philippine site files are too. Full list in the repository’s DATA-LICENSE.md.</p>
+    </section>
+
+    <section id="ab-sensors" aria-labelledby="ab-sensors-h">
+      <h2 id="ab-sensors-h" tabindex="-1">Sensor units</h2>
+      <p class="ab-lead">None are installed in the Philippines yet. This is what the dashboard assumes about a unit, written down so it can be checked in the field.</p>
+      <h3>The device</h3>
+      <p>An ultrasonic distance sensor<span class="tt" data-term="ultrasonic sensors">It sends a short sound pulse, too high to hear, and times the echo from the surface below. Nothing touches the floodwater, so there is less dirt and damage than with a sensor sitting in the water.</span> pointing down at the street, with a LoRaWAN radio and a battery. About US$210 per unit (our estimate). Each reading carries only the unit’s ID, the time, the water depth and the unit’s location.</p>
+      <h3>How it is mounted <span class="ab-tag">Our assumptions, not yet field-tested</span></h3>
+      <dl class="ab-ds">
+        <div><dt>Where</dt><dd>On a household gate post or front wall at the street’s edge, with the household’s consent.</dd></div>
+        <div><dt>Looking at</dt><dd>Street pavement straight below: not the yard, a canal or a drain opening. A clear patch about half a metre wide, where cars don’t usually park.</dd></div>
+        <div><dt>Height</dt><dd>About 2 m above the road<span class="tt" data-term="the 2 m height">Low-cost ultrasonic sensors can’t see closer than about 25–30 cm. At 2 m a unit still reads water up to about 1.5 m deep, past the waist-deep level the dashboard shows, and it sits above most heads and splashes. A person or vehicle passing under gives a short false reading, so a unit should report the median of several pings.</span>.</dd></div>
+        <div><dt>Zero point</dt><dd>At install, on a dry day, the unit records the distance to dry pavement. Water depth = that distance − the distance now.</dd></div>
+        <div><dt>Ground height</dt><dd>Taken from the terrain map at the unit’s street square, not surveyed. Terrain error shifts the unit’s water level by the same amount.</dd></div>
+        <div><dt>Radio</dt><dd>Within range of a LoRaWAN gateway; one reading every 10 minutes.</dd></div>
+      </dl>
+      <h3>Where the spots come from</h3>
+      <p>Teachers Village’s eight units were placed by hand along its low streets. Everywhere else a rule picks them<span class="tt" data-term="the placement rule">Candidates are houses within 25 m of a street and at least 300 m inside the map’s edge. Each gets a score: 0.5 × how low it sits (the share of ground within 300 m that is higher) + 0.3 × NOAH hazard + 0.2 × closeness to a creek or river (zero at 300 m). The best eight are picked at least 300 m apart (250 m, then 200 m, if eight don’t fit).</span>: low ground, mapped hazard, near water, spread apart. On a campus, unit 01 is on campus and the rest are in the barangays around it; in San Joaquin all eight are inside the barangay.</p>
+      <p><b>The spots are proposals</b>, not surveyed or agreed with residents.</p>
+    </section>
+
+    <section id="ab-limits" aria-labelledby="ab-limits-h">
+      <h2 id="ab-limits-h" tabindex="-1">Accuracy and limits</h2>
+      <p class="ab-lead">The depth at a sensor is measured. How far the water spreads from it is only as good as the terrain map, and the terrain is the weakest part.</p>
+      <h3>Terrain error, measured</h3>
+      <p>We compared FABDEM with 17,936 ICESat-2 ground points at 26 sites:</p>
+      <ul class="ab-list ab-nums">
+        <li>Typical error about <b>1.4 m</b> (NMAD<span class="tt" data-term="NMAD">Normalised median absolute deviation: a measure of typical error that isn’t thrown off by a few wild points. For roughly normal errors, about two-thirds of points fall within ±1 NMAD.</span>); median +0.66 m (the map sits a little above the ground).</li>
+        <li>46% of points within 1 m, 72% within 2 m.</li>
+        <li><b>Open campuses</b> (CLSU, LLCC, MSU-IIT, CMU): 0.4–0.8 m.</li>
+        <li><b>Old Manila core</b> (UST, FEU Tech, Mapúa, UDM): the map is about 2 m too high; only 2–12% of points within 1 m.</li>
+      </ul>
+      <p>Error grows with how built-up a place is. In tight streets the satellite can mistake roofs for ground, so the real error there may be larger.</p>
+      <h3>Other limits and biases</h3>
+      <ul class="ab-list">
+        <li><b>No moving water.</b> The model does not simulate rain, runoff, drains, flow speed or volume. It shows where the measured water level can reach; places far from any sensor stay blank.</li>
+        <li><b>New 7.5 m grid, not yet validated.</b> Finer building squares block more water; on dense campuses the spread shrank (UST: 90 to 48 ha at the same storm moment). It may now understate floods there.</li>
+        <li><b>Buildings.</b> Footprints miss small, new and informal homes, so dense informal areas are undercounted. “Residents affected” is a rough multiple of buildings.</li>
+        <li><b>The demo agrees with NOAH by design.</b> The simulated storms flood low, NOAH-flagged spots first, so the demo looking plausible is not evidence that the model is right.</li>
+        <li><b>Sensor spots favour low ground.</b> Good for seeing water early, but higher streets get answers from reports and rain only (“No sensor here yet”).</li>
+        <li><b>Who gets heard.</b> Reporting needs a smartphone and data; hosting needs a gate post and a willing household. Renters, older residents and informal settlers may be under-represented.</li>
+        <li><b>Not modelled:</b> storm surge, tides, dam releases.</li>
+        <li><b>Languages.</b> Cebuano, Ilokano, Hiligaynon and Kapampangan were drafted without a native speaker and are marked for review.</li>
+      </ul>
+    </section>
+
+    <section id="ab-next" aria-labelledby="ab-next-h">
+      <h2 id="ab-next-h" tabindex="-1">Future work</h2>
+      <ul class="ab-list">
+        <li><b>Real sensors.</b> Bench-test the unit, then a pilot street in Teachers Village or San Joaquin; replay a recorded storm on the dashboard.</li>
+        <li><b>Check against real floods.</b> Compare mapped extents with observed flooding from a past typhoon: MMDA flood reports, geotagged photos, barangay records.</li>
+        <li><b>Better terrain.</b> Test FathomDEM<span class="tt" data-term="FathomDEM">A newer bare-earth elevation map (Fathom, 2025) built for flood modelling. Its authors report smaller errors than FABDEM, including in cities; we have asked for access and will run the same ICESat-2 check on it.</span> (access requested) and 1 m Phil-LiDAR maps where available; survey each unit’s ground height at install.</li>
+        <li><b>Water that moves.</b> Try a simple two-dimensional flow model for direction and timing, and add drainage where it is mapped.</li>
+        <li><b>Count flooded buildings by outline</b>, not by grid square.</li>
+        <li><b>Go live.</b> Switch on the server for real answers, rain and reports; add SMS for phones without data.</li>
+        <li><b>Design with residents.</b> Work with barangays and households on where units go, who hosts them and how the answer is worded; native-speaker review of every language.</li>
+        <li><b>Data governance.</b> Agree who owns the readings and reports, and how long they are kept.</li>
+      </ul>
+    </section>
+
+    <section id="ab-faq" aria-labelledby="ab-faq-h">
+      <h2 id="ab-faq-h" tabindex="-1">FAQ</h2>
+      <div class="ab-faq">
+        <details><summary>Is any of this real?</summary><p>The map is: streets, buildings, terrain, barangays and NOAH hazard layers all come from open data. The sensor readings, storms and neighbour reports are simulated, and every page says so. One real test unit exists, at UC Berkeley; its readings are not yet connected to the page.</p></details>
+        <details><summary>Why not just use the NOAH hazard maps?</summary><p>NOAH shows where floods <i>can</i> happen in a storm of a given size, not what is happening now. It is modelled mainly for rivers and overland flow, so it often misses street ponding from blocked drains; in Teachers Village it is blank across the Maginhawa interior, which is known to flood. BahaWatch keeps NOAH as a layer to compare against.</p></details>
+        <details><summary>How accurate is the flood map?</summary><p>At a sensor, as accurate as the sensor. Away from it, the spread depends on terrain, which is typically about 1.4 m off and about 2 m too high in old Manila. Read the extents as a guide to where water is likely, not a street-by-street survey. Details under Accuracy and limits.</p></details>
+        <details><summary>Is it a forecast?</summary><p>No. It maps water measured now. Its only look-ahead is one hour: a sensor rising fast enough to reach 5 cm within the hour already counts as <i>Oo</i>. For warnings, follow PAGASA and your local government.</p></details>
+        <details><summary>Why ultrasonic sensors, not pressure sensors or cameras?</summary><p>An ultrasonic unit never touches the floodwater, is cheap, and sends one number. A pressure sensor must sit in dirty water on the road; a camera sends images, which needs more bandwidth and raises privacy concerns. The trade-offs: a short blind zone, false echoes from people or debris, and a reading that needs correcting for air temperature.</p></details>
+        <details><summary>What if power or signal is lost?</summary><p>Every answer shows its age. If nothing is newer than 20 minutes, the answer becomes “No fresh data”; it never says <i>Hindi</i> on old data. The page itself opens without signal and shows the last answer with its time.</p></details>
+        <details><summary>How do you stop fake or mistaken reports?</summary><p>Reports alone can only raise <i>Baka</i> (maybe); only a sensor can say <i>Oo</i>. It takes three different phones within 1 km in the last hour, one report per phone per place every 10 minutes, and a report from more than 2 km away is refused. Reports expire after an hour, and a dry sensor nearby is shown against them.</p></details>
+        <details><summary>What do you store about people?</summary><p>No accounts, names or phone numbers. A report’s position is rounded to about 100 m and used only when the phone is within 1 km of the place. Report IDs are erased after an hour and raw reports deleted after 30 days. This applies in live mode; the demo sends nothing.</p></details>
+        <details><summary>What does it cost to run?</summary><p>The site is plain files on GitHub Pages, with its own map tiles: no running cost. The live server is designed for Cloudflare’s free plan (not switched on yet). Hardware: about US$210 per unit (our estimate), plus a LoRaWAN gateway per area.</p></details>
+        <details><summary>Does it work on cheap phones and slow connections?</summary><p>A campus page loaded in about 3 seconds on a simulated fast 3G connection in our tests; each site’s data is at most 250 KB compressed. Once opened, the page opens again without signal. It comes in six languages, uses shapes as well as colours, and has screen-reader text for every map.</p></details>
+        <details><summary>Can it be set up somewhere new?</summary><p>Yes, anywhere the open datasets cover: give the pipeline a map box and it cuts terrain, buildings, streets, NOAH layers and barangays, then proposes sensor spots. San Joaquin was added this way. NOAH coverage and footprint quality vary by province.</p></details>
+        <details><summary>Why is UC Berkeley on a Philippine dashboard?</summary><p>It has 1 m lidar terrain and the real test unit, so it is where the method can be checked on well-known ground. It also shows the dashboard working with US units and wording.</p></details>
+        <details><summary>Why a 7.5 m grid?</summary><p>Barangay streets are often 4–8 m wide. With 15 m squares, houses and streets merged and water leaked through blocks. Buildings and streets are now on 7.5 m squares; the terrain keeps FABDEM’s detail, since finer squares add no height information.</p></details>
+      </div>
+    </section>
+    <p class="ab-small">BahaWatch is a research prototype. Map data © OpenStreetMap contributors; terrain FABDEM © University of Bristol; hazard UP NOAH / UP Resilience Institute; boundaries PSA / NAMRIA.</p>
+   </article>
+  </div>
+ </div>
+</section>
+
 <section id="public" aria-label="Flood status">
  <div class="p-inner">
   <div class="p-head">
@@ -635,8 +886,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 <nav class="site-tabs" role="tablist" aria-label="Site">
   <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
+  <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+  <button role="tab" data-site="about" aria-selected="false">About</button>
 </nav>
 <div class="c-bar" data-cbar hidden>
   <a href="#ph" class="c-back"></a><span aria-hidden="true">·</span><button class="c-pick"></button>
@@ -732,8 +985,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         </div>
         <div id="public-map"></div>
         <div class="p-maplegend" aria-hidden="true">
-          <span><i style="background:#2f86c2"></i><span id="p-lg1"></span></span>
-          <span><i style="background:#0030a0"></i><span id="p-lg2"></span></span>
+          <span class="lg-grad"><span id="p-lg1"></span><i id="p-grad"></i><span id="p-lg2"></span></span>
           <span><span class="shape ok"></span><span id="p-lg3"></span></span>
           <span><span class="shape warn"></span><span id="p-lg4"></span></span>
           <span><span class="shape alert"></span><span id="p-lg5"></span></span>
@@ -771,8 +1023,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 <nav class="site-tabs" role="tablist" aria-label="Site">
   <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
+  <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+  <button role="tab" data-site="about" aria-selected="false">About</button>
 </nav>
 <div class="c-bar" data-cbar hidden>
   <a href="#ph" class="c-back"></a><span aria-hidden="true">·</span><button class="c-pick"></button>
@@ -789,7 +1043,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <p id="map-desc" class="sr-only"></p>
     <div id="legend" aria-hidden="true">
       <div class="lg-title">Modeled water depth</div>
-      <div class="bands"><i style="background:#8fc6e2"></i><i style="background:#2f86c2"></i><i style="background:#0030a0"></i></div>
+      <div class="bands"><i id="lg-grad"></i></div>
       <div class="bands-lab"><span>ankle</span><span>knee</span><span>waist+</span></div>
       <div class="row"><span class="shape ok"></span>Sensor · normal</div>
       <div class="row"><span class="shape warn"></span>Water on street</div>
@@ -804,7 +1058,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       </div>
       <div class="noah-lg"><div class="noah-bands" aria-hidden="true"><i style="background:#d9c2ea"></i><i style="background:#a978cf"></i><i style="background:#5b2a8f"></i></div>
       <div class="bands-lab"><span>low</span><span>medium</span><span>high</span></div></div>
-      <div class="hint">Extents come only from sensor readings, spread over the site's terrain. Tap a sensor to isolate its footprint.</div>
+      <div class="hint">Water drawn from sensor readings only. Tap a sensor to see its reach.</div>
     </div>
     <div id="country" role="group" aria-labelledby="country-l" aria-describedby="country-desc" hidden>
       <span id="country-l" hidden></span><p id="country-desc" hidden></p>
@@ -823,7 +1077,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <div id="map-tooltip"></div>
     <div class="p-coach" id="p-coach" role="note"></div>
     <div class="map-attr">Map data © OpenStreetMap contributors · Terrain: Copernicus GLO-30 © ESA/DLR/Airbus via OpenTopography · Hazard: UP Project NOAH (ODbL)</div>
-    <div class="map-note">Scroll or pinch to zoom · drag to pan · hover for depth · keys: + − arrows 0</div>
+    <div class="map-note">Map help<span class="tt" data-term="the map controls">Scroll or pinch to zoom, drag to pan, and point at the water for its depth. Keys: + and − zoom, the arrow keys pan, 0 resets the view.</span></div>
     <div class="zoom-ctl" aria-label="Map zoom">
       <button id="zoom-in" aria-label="Zoom in">+</button>
       <button id="zoom-out" aria-label="Zoom out">−</button>
@@ -847,7 +1101,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <canvas id="f-spark" width="620" height="92"></canvas>
     </div>
 
-    <h2 class="rail-h">Household units · depth at the gate post, uplink every 10 min</h2>
+    <h2 class="rail-h">Household units<span class="tt" data-term="household units">Each card is one unit: the water depth on the street below its gate-post sensor, and its status. Real units would report every 10 minutes over LoRaWAN; here the readings are simulated.</span></h2>
     <div class="house-grid" id="house-cards"></div>
 
     <div class="stats">
@@ -878,7 +1132,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <ul id="rep-log"></ul>
     </details>
 
-    <p class="foot-note">Proof of concept on real data: OpenStreetMap streets, <span id="foot-nb"></span> building footprints, <span id="foot-terrain"></span> terrain (streets carved as flow paths<span id="foot-block">; water goes around cells that are at least 75% built</span>), and Project NOAH flood hazard as a reference layer.<span id="foot-limits"> FABDEM heights can be 1–3 m off in dense cities, and this is a spread from measured points over terrain and buildings, not a hydraulic model.</span> Each geotagged unit reports water depth at its own location; the model sets a local water surface there (ground + measured depth) and spreads it across the terrain only where topography allows, with a conservative decay away from the observation. No sensor reading, no modeled extent. Sensor readings are simulated — storm response is calibrated per site using its NOAH hazard class and local elevation. Not a forecast; not for emergency use.</p>
+    <p class="foot-note">Real map data; simulated sensor readings. Not a forecast; not for emergency use.<span class="tt" data-term="how this map is made">Built from OpenStreetMap streets, <span id="foot-nb"></span> building footprints and <span id="foot-terrain"></span> terrain (streets carved as flow paths<span id="foot-block">; water goes around squares that are at least 75% built</span>), with Project NOAH flood hazard as a reference layer. Each unit’s reading sets a local water level (ground + measured depth) that spreads only where the terrain allows, fading with distance. No reading, no flood.<span id="foot-limits"> FABDEM heights can be 1–3 m off in dense cities, and this is not a hydraulic model.</span> Simulated storms are tuned per site from NOAH hazard and local elevation.</span> <a href="#about">How it works</a></p>
   </aside>
 </main>
 
@@ -905,7 +1159,7 @@ const CAMPUSES=[{"id":"bsu","short":"BatStateU","name":"Batangas State Universit
 const PH_OUTLINE={"type":"MultiPolygon","coordinates":[[[[120.847,18.65],[120.928,18.559],[121.035,18.62],[121.163,18.622],[121.622,18.351],[121.903,18.266],[122.026,18.299],[122.132,18.387],[122.149,18.511],[122.225,18.523],[122.338,18.31],[122.303,18.219],[122.168,18.087],[122.191,17.918],[122.137,17.783],[122.246,17.366],[122.295,17.334],[122.373,17.353],[122.4,17.29],[122.407,17.333],[122.444,17.264],[122.44,17.241],[122.413,17.275],[122.417,17.14],[122.472,17.123],[122.442,17.12],[122.446,17.102],[122.51,17.142],[122.528,17.098],[122.467,16.977],[122.435,16.798],[122.2,16.435],[122.221,16.395],[122.243,16.421],[122.18,16.303],[122.236,16.31],[122.203,16.238],[122.07,16.12],[122.049,16.066],[121.989,16.029],[122.132,16.261],[122.07,16.241],[122.079,16.19],[121.744,16.07],[121.555,15.9],[121.561,15.775],[121.635,15.752],[121.639,15.705],[121.61,15.707],[121.588,15.673],[121.616,15.648],[121.494,15.524],[121.484,15.429],[121.374,15.336],[121.417,15.217],[121.481,15.181],[121.602,14.828],[121.734,14.696],[121.678,14.702],[121.691,14.699],[121.625,14.657],[121.62,14.686],[121.604,14.652],[121.659,14.401],[121.758,14.247],[121.734,14.169],[121.918,14.003],[122.231,13.895],[122.244,13.943],[122.182,13.994],[122.299,13.959],[122.324,14.02],[122.29,14.017],[122.165,14.141],[122.245,14.186],[122.25,14.242],[122.277,14.235],[122.268,14.124],[122.309,14.142],[122.31,14.102],[122.352,14.122],[122.334,14.202],[122.354,14.185],[122.349,14.226],[122.382,14.215],[122.36,14.252],[122.419,14.316],[122.43,14.299],[122.471,14.34],[122.519,14.317],[122.522,14.349],[122.689,14.28],[122.668,14.339],[122.713,14.34],[122.723,14.312],[122.791,14.311],[122.8,14.275],[122.864,14.271],[122.917,14.219],[122.888,14.201],[123.043,14.099],[123.03,14.036],[123.083,13.982],[123.095,13.891],[123.065,13.874],[123.046,13.776],[123.12,13.721],[123.239,13.732],[123.325,13.8],[123.285,13.896],[123.333,13.938],[123.339,13.982],[123.294,13.927],[123.228,14.0],[123.27,13.999],[123.23,14.026],[123.283,14.033],[123.255,14.073],[123.321,14.04],[123.34,14.105],[123.374,14.04],[123.343,14.013],[123.389,14.034],[123.426,13.92],[123.451,13.92],[123.45,13.967],[123.501,13.942],[123.491,13.914],[123.543,13.909],[123.545,13.932],[123.681,13.879],[123.707,13.943],[123.783,13.844],[123.941,13.796],[123.976,13.739],[123.969,13.709],[123.883,13.739],[123.803,13.688],[123.583,13.728],[123.53,13.574],[123.678,13.477],[123.744,13.325],[123.815,13.288],[123.832,13.234],[123.829,13.267],[123.868,13.24],[123.862,13.224],[123.775,13.227],[123.756,13.145],[123.786,13.115],[123.751,13.09],[123.759,13.059],[123.812,13.054],[123.879,13.143],[123.972,13.109],[124.075,13.004],[124.131,13.075],[124.193,13.061],[124.198,13.019],[124.151,12.998],[124.117,12.909],[124.149,12.893],[124.156,12.809],[124.081,12.536],[123.989,12.545],[123.939,12.625],[123.875,12.656],[123.83,12.828],[123.859,12.876],[123.925,12.845],[123.95,12.876],[123.998,12.862],[124.034,12.964],[123.884,12.979],[123.855,12.898],[123.796,12.863],[123.759,12.88],[123.736,12.845],[123.71,12.876],[123.734,12.898],[123.692,12.897],[123.693,12.865],[123.673,12.908],[123.696,12.915],[123.711,12.941],[123.662,12.918],[123.652,12.87],[123.426,13.04],[123.32,13.007],[123.281,13.058],[123.288,13.147],[123.327,13.198],[123.239,13.29],[123.195,13.427],[122.888,13.576],[122.799,13.651],[122.862,13.69],[122.836,13.735],[122.742,13.777],[122.769,13.786],[122.722,13.817],[122.653,13.821],[122.642,13.882],[122.567,13.905],[122.536,13.964],[122.525,13.923],[122.42,13.943],[122.525,13.816],[122.523,13.732],[122.48,13.713],[122.497,13.647],[122.634,13.529],[122.618,13.513],[122.565,13.563],[122.677,13.379],[122.703,13.225],[122.599,13.162],[122.505,13.244],[122.519,13.343],[122.402,13.524],[122.322,13.59],[122.28,13.574],[122.267,13.607],[122.208,13.602],[122.099,13.785],[121.981,13.806],[121.975,13.84],[121.823,13.893],[121.818,13.941],[121.749,13.969],[121.695,13.961],[121.708,13.922],[121.474,13.839],[121.432,13.765],[121.469,13.684],[121.363,13.659],[121.286,13.597],[121.184,13.645],[121.037,13.634],[121.06,13.739],[121.002,13.782],[120.893,13.683],[120.873,13.72],[120.927,13.762],[120.913,13.874],[120.79,13.928],[120.708,13.922],[120.723,13.849],[120.657,13.857],[120.676,13.789],[120.653,13.77],[120.621,13.811],[120.603,13.974],[120.632,13.983],[120.624,14.109],[120.568,14.135],[120.61,14.146],[120.575,14.171],[120.613,14.178],[120.583,14.194],[120.588,14.23],[120.621,14.221],[120.623,14.267],[120.769,14.332],[120.9,14.496],[120.921,14.481],[120.89,14.451],[120.978,14.482],[120.985,14.562],[120.933,14.603],[120.96,14.601],[120.948,14.653],[120.905,14.724],[120.865,14.719],[120.819,14.778],[120.801,14.755],[120.652,14.768],[120.57,14.849],[120.581,14.814],[120.539,14.809],[120.545,14.721],[120.615,14.48],[120.571,14.426],[120.496,14.437],[120.5,14.408],[120.476,14.409],[120.389,14.459],[120.394,14.58],[120.368,14.626],[120.312,14.626],[120.248,14.692],[120.28,14.736],[120.242,14.761],[120.281,14.78],[120.258,14.788],[120.298,14.802],[120.292,14.824],[120.229,14.879],[120.178,14.741],[120.084,14.785],[120.109,14.817],[120.08,14.814],[120.053,14.887],[120.059,15.065],[120.016,15.266],[119.89,15.431],[119.919,15.449],[119.903,15.492],[119.942,15.478],[119.969,15.506],[119.904,15.622],[119.934,15.693],[119.869,15.733],[119.911,15.759],[119.882,15.815],[119.909,15.858],[119.857,15.964],[119.772,15.916],[119.75,15.964],[119.775,16.024],[119.756,16.05],[119.781,16.133],[119.753,16.17],[119.772,16.276],[119.817,16.36],[119.856,16.357],[119.882,16.394],[119.925,16.384],[119.918,16.248],[119.977,16.228],[120.012,16.17],[120.043,16.195],[120.088,16.168],[120.111,16.146],[120.086,16.146],[120.097,16.065],[120.142,16.038],[120.33,16.062],[120.423,16.162],[120.401,16.249],[120.364,16.273],[120.376,16.238],[120.342,16.297],[120.304,16.501],[120.32,16.575],[120.278,16.618],[120.31,16.615],[120.336,16.679],[120.335,16.836],[120.4,16.882],[120.45,16.998],[120.404,17.211],[120.461,17.408],[120.419,17.516],[120.345,17.561],[120.352,17.683],[120.436,17.734],[120.402,17.798],[120.458,17.825],[120.429,17.916],[120.498,17.997],[120.471,18.087],[120.595,18.323],[120.564,18.493],[120.625,18.546],[120.761,18.539],[120.783,18.622],[120.847,18.65]]],[[[125.441,9.824],[125.506,9.766],[125.573,9.762],[125.566,9.743],[125.574,9.733],[125.619,9.751],[125.59,9.695],[125.64,9.61],[125.86,9.535],[125.943,9.446],[125.962,9.48],[125.954,9.441],[125.894,9.414],[125.942,9.371],[125.988,9.404],[125.984,9.322],[126.048,9.239],[126.207,9.306],[126.158,9.105],[126.307,8.956],[126.291,8.927],[126.325,8.919],[126.307,8.881],[126.335,8.841],[126.302,8.782],[126.213,8.734],[126.245,8.695],[126.188,8.699],[126.082,8.612],[126.143,8.529],[126.228,8.527],[126.188,8.546],[126.207,8.558],[126.288,8.529],[126.355,8.549],[126.351,8.52],[126.398,8.493],[126.397,8.468],[126.355,8.47],[126.348,8.428],[126.38,8.409],[126.318,8.353],[126.33,8.314],[126.383,8.292],[126.308,8.218],[126.344,8.183],[126.456,8.245],[126.426,8.111],[126.453,8.098],[126.406,8.01],[126.449,7.989],[126.374,7.942],[126.359,7.885],[126.384,7.829],[126.57,7.719],[126.559,7.578],[126.599,7.486],[126.595,7.449],[126.549,7.429],[126.578,7.395],[126.551,7.313],[126.605,7.289],[126.452,7.057],[126.459,6.995],[126.338,7.006],[126.282,6.929],[126.345,6.858],[126.35,6.803],[126.288,6.822],[126.302,6.862],[126.27,6.928],[126.206,6.954],[126.189,6.88],[126.155,6.906],[126.26,6.752],[126.221,6.637],[126.226,6.435],[126.193,6.269],[126.187,6.339],[126.136,6.388],[126.151,6.419],[126.084,6.531],[126.08,6.847],[125.987,6.914],[125.991,7.014],[125.884,7.126],[125.893,7.166],[125.838,7.255],[125.852,7.361],[125.81,7.366],[125.65,7.244],[125.65,7.096],[125.489,6.985],[125.49,6.921],[125.379,6.806],[125.372,6.724],[125.387,6.603],[125.444,6.578],[125.43,6.633],[125.52,6.555],[125.524,6.517],[125.551,6.535],[125.595,6.499],[125.583,6.439],[125.703,6.213],[125.715,6.103],[125.661,5.921],[125.513,5.749],[125.414,5.573],[125.332,5.555],[125.294,5.583],[125.286,5.694],[125.174,5.799],[125.214,5.887],[125.273,5.919],[125.292,5.982],[125.264,6.089],[125.159,6.098],[125.073,5.858],[124.924,5.86],[124.322,6.115],[124.185,6.211],[124.077,6.39],[124.056,6.378],[124.02,6.523],[124.064,6.545],[124.036,6.553],[124.052,6.627],[124.016,6.717],[124.041,6.758],[124.012,6.794],[123.976,6.768],[123.959,6.789],[123.957,6.911],[124.047,7.123],[124.157,7.175],[124.209,7.252],[124.202,7.352],[124.256,7.348],[124.26,7.376],[124.235,7.418],[124.155,7.402],[124.18,7.415],[124.128,7.446],[124.118,7.51],[124.014,7.647],[123.876,7.703],[123.773,7.704],[123.691,7.813],[123.569,7.852],[123.423,7.815],[123.42,7.768],[123.482,7.729],[123.478,7.668],[123.463,7.63],[123.385,7.606],[123.388,7.556],[123.356,7.58],[123.336,7.552],[123.382,7.535],[123.394,7.458],[123.451,7.435],[123.452,7.372],[123.406,7.358],[123.285,7.467],[123.301,7.532],[123.224,7.54],[123.177,7.466],[123.116,7.514],[123.102,7.557],[123.131,7.58],[123.097,7.603],[123.137,7.576],[123.197,7.591],[123.175,7.645],[123.131,7.655],[123.145,7.699],[123.114,7.736],[123.084,7.677],[123.034,7.658],[123.057,7.626],[123.026,7.627],[122.992,7.458],[122.905,7.545],[122.858,7.499],[122.874,7.464],[122.815,7.434],[122.818,7.48],[122.779,7.475],[122.787,7.539],[122.828,7.522],[122.782,7.678],[122.812,7.746],[122.692,7.789],[122.624,7.777],[122.544,7.734],[122.432,7.588],[122.506,7.579],[122.473,7.523],[122.435,7.499],[122.468,7.538],[122.439,7.546],[122.422,7.503],[122.354,7.469],[122.343,7.397],[122.393,7.39],[122.34,7.314],[122.292,7.325],[122.28,7.231],[122.248,7.206],[122.257,7.111],[122.204,7.068],[122.159,6.916],[122.113,6.888],[121.938,6.965],[121.902,7.145],[121.972,7.247],[122.064,7.296],[122.031,7.356],[122.09,7.497],[122.073,7.521],[122.143,7.574],[122.105,7.597],[122.135,7.669],[122.086,7.737],[122.125,7.756],[122.102,7.779],[122.16,7.859],[122.226,7.907],[122.224,7.958],[122.345,8.039],[122.583,8.083],[122.662,8.162],[122.685,8.121],[122.743,8.111],[122.922,8.152],[122.996,8.214],[122.937,8.307],[122.983,8.328],[122.98,8.413],[123.026,8.484],[123.183,8.533],[123.304,8.522],[123.351,8.635],[123.414,8.636],[123.38,8.727],[123.452,8.684],[123.501,8.701],[123.487,8.644],[123.564,8.618],[123.567,8.571],[123.588,8.669],[123.755,8.6],[123.744,8.576],[123.837,8.43],[123.866,8.16],[123.76,8.051],[123.634,8.021],[123.664,7.998],[123.641,7.963],[123.676,7.951],[123.848,8.112],[123.899,8.114],[123.96,8.171],[124.032,8.199],[124.167,8.186],[124.23,8.218],[124.312,8.536],[124.387,8.594],[124.468,8.625],[124.471,8.591],[124.578,8.519],[124.7,8.472],[124.745,8.496],[124.772,8.595],[124.74,8.692],[124.777,8.718],[124.772,8.965],[124.802,8.997],[124.878,9.016],[125.024,8.919],[125.086,8.828],[125.167,8.851],[125.171,9.01],[125.208,9.094],[125.237,9.031],[125.331,8.97],[125.522,9.008],[125.531,9.194],[125.391,9.656],[125.401,9.767],[125.441,9.824]]],[[[123.2,11.001],[123.32,10.948],[123.429,10.951],[123.465,10.916],[123.493,10.935],[123.532,10.837],[123.566,10.844],[123.568,10.794],[123.509,10.708],[123.464,10.522],[123.358,10.438],[123.281,10.129],[123.132,9.839],[123.157,9.632],[123.124,9.657],[123.105,9.63],[123.164,9.578],[123.133,9.585],[123.118,9.547],[123.154,9.548],[123.308,9.341],[123.293,9.231],[123.203,9.094],[123.128,9.046],[123.074,9.067],[123.016,9.038],[122.94,9.077],[122.909,9.137],[122.87,9.326],[122.674,9.38],[122.552,9.475],[122.466,9.625],[122.443,9.62],[122.457,9.662],[122.408,9.659],[122.42,9.702],[122.381,9.706],[122.404,9.804],[122.376,9.836],[122.436,9.904],[122.451,9.976],[122.661,9.977],[122.784,10.075],[122.823,10.061],[122.868,10.095],[122.838,10.229],[122.867,10.379],[122.793,10.519],[122.88,10.564],[122.95,10.681],[122.952,10.894],[123.072,10.913],[123.2,11.001]]],[[[125.146,12.585],[125.34,12.405],[125.299,12.397],[125.286,12.337],[125.32,12.327],[125.293,12.29],[125.335,12.318],[125.317,12.274],[125.338,12.269],[125.382,12.302],[125.366,12.27],[125.439,12.273],[125.515,12.192],[125.437,12.126],[125.516,12.06],[125.426,11.956],[125.435,11.827],[125.474,11.793],[125.413,11.757],[125.439,11.738],[125.462,11.759],[125.492,11.671],[125.452,11.669],[125.439,11.607],[125.475,11.591],[125.47,11.545],[125.528,11.475],[125.492,11.448],[125.523,11.454],[125.632,11.356],[125.611,11.302],[125.547,11.26],[125.534,11.195],[125.627,11.196],[125.597,11.232],[125.665,11.198],[125.756,11.011],[125.673,11.083],[125.699,11.108],[125.661,11.143],[125.579,11.107],[125.573,11.15],[125.535,11.153],[125.511,11.081],[125.461,11.126],[125.407,11.082],[125.297,11.143],[125.234,11.086],[125.151,11.275],[124.978,11.284],[124.997,11.427],[124.902,11.471],[124.893,11.51],[124.89,11.463],[124.84,11.465],[124.819,11.516],[124.894,11.539],[124.881,11.577],[124.953,11.573],[124.994,11.615],[124.973,11.67],[125.043,11.752],[124.997,11.78],[124.886,11.753],[124.86,11.811],[124.829,11.795],[124.836,11.83],[124.775,11.863],[124.799,11.871],[124.789,11.904],[124.824,11.89],[124.793,11.914],[124.737,11.897],[124.745,11.931],[124.696,11.954],[124.692,12.01],[124.483,12.1],[124.39,12.196],[124.261,12.55],[124.289,12.584],[124.329,12.535],[124.391,12.567],[124.429,12.53],[124.467,12.546],[124.463,12.521],[124.676,12.509],[124.86,12.531],[124.883,12.565],[124.859,12.585],[124.957,12.584],[125.028,12.53],[125.081,12.541],[125.073,12.579],[125.146,12.585]]],[[[121.955,11.939],[122.087,11.834],[122.222,11.814],[122.308,11.745],[122.385,11.735],[122.493,11.609],[122.402,11.653],[122.42,11.592],[122.45,11.609],[122.487,11.572],[122.443,11.58],[122.452,11.552],[122.482,11.555],[122.508,11.592],[122.574,11.564],[122.58,11.509],[122.635,11.522],[122.642,11.572],[122.686,11.545],[122.715,11.614],[122.826,11.611],[122.864,11.541],[122.931,11.516],[122.88,11.463],[122.901,11.431],[122.917,11.483],[123.009,11.492],[123.149,11.598],[123.162,11.556],[123.117,11.513],[123.165,11.469],[123.128,11.416],[123.151,11.382],[123.133,11.343],[123.099,11.329],[123.093,11.225],[123.127,11.171],[123.079,11.178],[123.089,11.146],[123.036,11.172],[122.952,11.034],[122.924,11.067],[122.905,11.021],[122.782,10.988],[122.76,10.946],[122.785,10.861],[122.734,10.786],[122.611,10.775],[122.58,10.687],[122.207,10.639],[122.096,10.575],[121.961,10.406],[121.913,10.447],[121.915,10.504],[121.958,10.55],[121.978,10.675],[121.923,10.764],[122.054,11.032],[122.052,11.261],[122.027,11.299],[122.058,11.344],[122.052,11.469],[122.084,11.497],[122.102,11.649],[122.067,11.739],[121.844,11.763],[121.885,11.899],[121.955,11.939]]],[[[119.477,11.425],[119.505,11.415],[119.51,11.332],[119.554,11.34],[119.569,11.293],[119.5,11.133],[119.536,11.068],[119.561,11.084],[119.551,11.062],[119.57,11.007],[119.502,11.008],[119.484,10.873],[119.534,10.812],[119.6,10.822],[119.571,10.664],[119.658,10.675],[119.668,10.656],[119.622,10.66],[119.625,10.622],[119.716,10.507],[119.587,10.422],[119.57,10.373],[119.456,10.375],[119.322,10.311],[119.233,10.181],[119.197,10.048],[118.75,9.929],[118.773,9.729],[118.732,9.73],[118.721,9.789],[118.69,9.758],[118.694,9.712],[118.729,9.709],[118.705,9.68],[118.731,9.7],[118.761,9.667],[118.722,9.658],[118.49,9.295],[118.43,9.278],[118.348,9.179],[118.128,9.148],[118.002,8.879],[117.884,8.827],[117.742,8.687],[117.62,8.656],[117.567,8.674],[117.501,8.501],[117.456,8.521],[117.447,8.494],[117.372,8.494],[117.182,8.333],[117.255,8.609],[117.333,8.673],[117.359,8.745],[117.425,8.758],[117.491,8.889],[117.621,8.999],[117.63,9.048],[117.689,9.089],[117.746,9.068],[117.776,9.165],[117.906,9.261],[117.953,9.251],[117.982,9.281],[117.984,9.244],[118.019,9.243],[118.127,9.343],[118.127,9.398],[118.185,9.408],[118.197,9.472],[118.329,9.581],[118.34,9.649],[118.406,9.663],[118.606,9.871],[118.605,9.915],[118.663,9.975],[118.645,10.003],[118.723,10.036],[118.76,10.131],[118.774,10.07],[118.741,10.076],[118.777,10.022],[118.808,10.028],[118.84,10.107],[118.805,10.121],[118.806,10.192],[118.938,10.207],[118.937,10.264],[118.963,10.27],[118.932,10.289],[119.028,10.339],[119.015,10.376],[118.975,10.346],[118.987,10.407],[119.064,10.388],[119.064,10.423],[119.105,10.434],[119.074,10.451],[119.083,10.481],[119.115,10.484],[119.113,10.411],[119.142,10.382],[119.216,10.481],[119.256,10.484],[119.269,10.513],[119.23,10.548],[119.264,10.537],[119.317,10.589],[119.343,10.731],[119.318,10.771],[119.274,10.765],[119.26,10.834],[119.209,10.849],[119.259,10.885],[119.214,10.905],[119.221,10.954],[119.244,10.91],[119.284,10.936],[119.299,10.892],[119.266,10.87],[119.308,10.871],[119.283,10.847],[119.357,10.821],[119.346,10.798],[119.391,10.791],[119.43,10.719],[119.463,10.725],[119.434,10.8],[119.451,10.85],[119.348,10.871],[119.362,10.937],[119.31,10.943],[119.332,10.95],[119.303,11.007],[119.319,11.035],[119.347,10.99],[119.367,11.009],[119.329,11.037],[119.326,11.107],[119.369,11.045],[119.418,11.037],[119.429,11.136],[119.4,11.133],[119.375,11.183],[119.417,11.21],[119.41,11.312],[119.473,11.363],[119.477,11.425]]],[[[120.414,13.531],[120.761,13.465],[120.993,13.523],[120.955,13.496],[121.036,13.419],[121.141,13.405],[121.2,13.438],[121.379,13.239],[121.441,13.228],[121.442,13.144],[121.509,13.151],[121.557,13.12],[121.487,13.022],[121.476,12.777],[121.539,12.696],[121.557,12.605],[121.437,12.515],[121.413,12.396],[121.453,12.359],[121.384,12.363],[121.397,12.286],[121.345,12.326],[121.333,12.295],[121.276,12.285],[121.245,12.207],[121.191,12.245],[121.109,12.243],[121.093,12.288],[121.118,12.337],[121.085,12.328],[120.976,12.428],[120.925,12.506],[120.928,12.615],[120.856,12.717],[120.789,12.734],[120.76,12.839],[120.784,12.931],[120.654,13.188],[120.523,13.224],[120.458,13.418],[120.391,13.411],[120.382,13.375],[120.31,13.42],[120.313,13.477],[120.414,13.531]]],[[[124.314,11.563],[124.474,11.376],[124.481,11.461],[124.537,11.426],[124.585,11.305],[124.702,11.305],[124.807,11.385],[124.815,11.432],[124.881,11.408],[124.88,11.442],[124.899,11.397],[124.941,11.428],[124.98,11.399],[124.962,11.28],[125.02,11.208],[125.031,11.238],[125.007,11.158],[125.04,11.064],[125.011,10.758],[125.041,10.717],[125.117,10.696],[125.113,10.659],[125.187,10.591],[125.164,10.534],[125.18,10.427],[125.258,10.372],[125.268,10.3],[125.217,10.247],[125.131,10.277],[125.125,10.162],[125.025,10.369],[124.97,10.377],[125.028,10.005],[124.889,10.121],[124.758,10.156],[124.791,10.319],[124.733,10.377],[124.721,10.486],[124.804,10.662],[124.783,10.776],[124.684,10.939],[124.59,11.014],[124.538,10.978],[124.551,10.93],[124.516,10.868],[124.431,10.891],[124.416,10.951],[124.414,10.912],[124.375,10.924],[124.414,10.986],[124.369,11.063],[124.402,11.109],[124.403,11.24],[124.39,11.299],[124.342,11.314],[124.361,11.365],[124.33,11.379],[124.349,11.405],[124.318,11.414],[124.289,11.493],[124.314,11.563]]],[[[124.064,11.286],[124.035,11.147],[123.982,11.073],[124.043,11.056],[124.03,10.929],[124.054,10.882],[124.004,10.755],[124.036,10.552],[123.998,10.414],[124.021,10.383],[123.959,10.359],[123.97,10.331],[123.885,10.289],[123.863,10.248],[123.766,10.226],[123.681,10.086],[123.64,10.084],[123.609,9.875],[123.537,9.805],[123.466,9.571],[123.354,9.425],[123.302,9.417],[123.344,9.786],[123.4,9.881],[123.371,9.994],[123.403,9.972],[123.415,10.052],[123.515,10.148],[123.583,10.264],[123.586,10.339],[123.715,10.497],[123.742,10.634],[123.831,10.733],[123.923,10.952],[123.934,10.994],[123.901,11.034],[123.934,11.107],[123.969,11.081],[123.944,11.187],[123.999,11.271],[124.064,11.286]]],[[[124.29,10.173],[124.547,10.041],[124.57,9.977],[124.544,9.977],[124.537,9.922],[124.576,9.913],[124.514,9.849],[124.597,9.805],[124.593,9.756],[124.52,9.722],[124.484,9.761],[124.408,9.71],[124.4,9.653],[124.259,9.598],[124.056,9.589],[123.854,9.637],[123.866,9.716],[123.787,9.74],[123.802,9.842],[123.882,9.929],[123.891,9.91],[124.028,9.967],[124.063,10.069],[124.099,10.064],[124.152,10.153],[124.29,10.173]]],[[[123.237,12.601],[123.379,12.541],[123.338,12.539],[123.361,12.484],[123.323,12.467],[123.329,12.432],[123.383,12.465],[123.371,12.506],[123.444,12.517],[123.538,12.448],[123.555,12.462],[123.61,12.382],[123.582,12.353],[123.627,12.379],[123.697,12.331],[123.783,12.195],[123.799,12.244],[123.854,12.195],[123.894,12.21],[124.052,11.968],[124.048,11.948],[123.998,12.012],[124.07,11.853],[124.07,11.723],[123.927,11.862],[123.722,11.932],[123.742,11.984],[123.65,12.048],[123.662,12.08],[123.601,12.075],[123.615,12.095],[123.54,12.213],[123.43,12.202],[123.297,12.022],[123.16,11.906],[123.143,11.934],[123.218,12.132],[123.246,12.121],[123.282,12.163],[123.27,12.198],[123.301,12.206],[123.298,12.238],[123.287,12.215],[123.267,12.245],[123.228,12.217],[123.217,12.238],[123.289,12.422],[123.251,12.457],[123.237,12.601]]],[[[124.207,14.1],[124.312,13.897],[124.352,13.94],[124.387,13.872],[124.408,13.879],[124.422,13.796],[124.384,13.715],[124.417,13.666],[124.342,13.641],[124.345,13.549],[124.311,13.589],[124.256,13.593],[124.21,13.559],[124.208,13.517],[124.048,13.602],[124.023,13.663],[124.096,13.705],[124.136,13.796],[124.127,14.06],[124.17,14.051],[124.207,14.1]]],[[[122.064,6.751],[122.094,6.713],[122.136,6.717],[122.143,6.67],[122.3,6.647],[122.327,6.617],[122.212,6.581],[122.193,6.461],[121.957,6.407],[121.87,6.506],[121.87,6.576],[121.798,6.598],[121.795,6.63],[121.831,6.679],[121.931,6.666],[121.988,6.732],[122.064,6.751]]],[[[119.894,12.329],[119.926,12.318],[119.93,12.27],[120.015,12.254],[120.063,12.19],[120.109,12.194],[120.086,12.17],[120.163,12.119],[120.214,12.133],[120.217,12.226],[120.246,12.131],[120.274,12.144],[120.333,12.092],[120.341,12.055],[120.307,12.029],[120.336,11.992],[120.253,12.007],[120.224,11.982],[120.132,12.033],[120.127,11.991],[120.096,12.003],[120.119,11.978],[120.1,11.96],[120.053,12.02],[120.021,11.988],[119.978,12.01],[119.997,12.024],[119.938,12.073],[119.897,12.203],[119.852,12.148],[119.861,12.255],[119.917,12.273],[119.867,12.268],[119.894,12.329]]],[[[121.867,13.57],[121.919,13.525],[121.966,13.529],[121.972,13.559],[121.967,13.529],[121.999,13.522],[122.009,13.549],[122.041,13.486],[122.127,13.455],[122.101,13.422],[122.151,13.371],[122.047,13.277],[122.028,13.199],[121.866,13.285],[121.82,13.345],[121.811,13.453],[121.867,13.57]]],[[[121.017,6.087],[121.154,6.078],[121.206,5.996],[121.394,6.011],[121.425,5.959],[121.383,5.937],[121.385,5.904],[121.354,5.919],[121.284,5.856],[121.196,5.955],[121.069,5.898],[121.076,5.878],[121.024,5.928],[120.94,5.889],[120.88,5.92],[120.918,6.025],[121.017,6.087]]],[[[125.645,10.471],[125.682,10.392],[125.644,10.185],[125.676,10.168],[125.661,10.121],[125.698,10.06],[125.657,9.948],[125.707,9.891],[125.701,9.865],[125.678,9.868],[125.667,9.852],[125.641,9.888],[125.645,9.936],[125.591,9.955],[125.617,9.96],[125.606,9.994],[125.56,9.991],[125.576,10.044],[125.604,10.044],[125.59,10.077],[125.508,10.063],[125.473,10.135],[125.489,10.117],[125.496,10.182],[125.526,10.184],[125.498,10.209],[125.543,10.203],[125.512,10.242],[125.537,10.281],[125.514,10.321],[125.559,10.32],[125.551,10.385],[125.597,10.366],[125.645,10.471]]],[[[122.111,12.674],[122.162,12.632],[122.122,12.62],[122.139,12.538],[122.088,12.313],[122.04,12.229],[122.069,12.181],[122.018,12.144],[122.014,12.099],[121.959,12.191],[121.968,12.238],[121.989,12.189],[122.019,12.233],[121.92,12.313],[121.941,12.391],[122.006,12.444],[122.002,12.597],[122.076,12.622],[122.111,12.674]]],[[[121.936,15.059],[122.05,15.006],[122.056,14.965],[122.012,14.989],[121.991,14.958],[122.019,14.968],[122.021,14.921],[121.967,14.907],[122.037,14.715],[121.939,14.627],[121.903,14.679],[121.905,14.724],[121.938,14.712],[121.909,14.803],[121.835,14.955],[121.831,14.928],[121.801,14.936],[121.837,15.039],[121.867,15.022],[121.936,15.059]]],[[[120.21,5.349],[120.255,5.257],[120.224,5.124],[120.166,5.145],[120.191,5.183],[120.158,5.163],[120.118,5.208],[120.096,5.151],[120.051,5.185],[119.995,5.156],[119.967,5.079],[119.822,5.054],[119.83,5.15],[119.943,5.188],[119.979,5.237],[120.031,5.232],[120.21,5.349]]],[[[122.658,10.754],[122.722,10.693],[122.727,10.616],[122.683,10.502],[122.627,10.435],[122.582,10.429],[122.582,10.454],[122.514,10.407],[122.507,10.469],[122.475,10.481],[122.544,10.54],[122.511,10.583],[122.658,10.754]]],[[[124.427,11.707],[124.537,11.675],[124.617,11.543],[124.606,11.489],[124.473,11.461],[124.445,11.483],[124.334,11.676],[124.427,11.707]]],[[[122.545,12.506],[122.655,12.484],[122.699,12.402],[122.634,12.267],[122.425,12.433],[122.461,12.487],[122.545,12.506]]],[[[122.995,13.159],[123.045,13.135],[123.182,12.914],[123.277,12.888],[123.287,12.82],[123.385,12.694],[123.262,12.832],[123.138,12.893],[123.064,12.999],[122.945,13.026],[122.96,13.085],[122.928,13.113],[122.981,13.116],[122.995,13.159]]],[[[126.062,10.062],[126.121,9.879],[126.091,9.849],[126.169,9.81],[126.113,9.748],[126.027,9.768],[126.032,9.745],[125.95,9.847],[126.062,10.062]]],[[[119.872,11.97],[119.967,11.945],[119.945,11.91],[120.012,11.934],[120.03,11.914],[119.988,11.897],[120.075,11.863],[120.02,11.841],[120.051,11.84],[120.03,11.806],[120.074,11.788],[120.035,11.758],[120.058,11.756],[120.049,11.718],[119.981,11.667],[119.958,11.695],[119.957,11.659],[119.939,11.73],[119.979,11.713],[119.955,11.743],[120.003,11.787],[119.963,11.8],[119.963,11.764],[119.93,11.76],[119.907,11.793],[119.915,11.844],[119.846,11.948],[119.891,11.924],[119.872,11.97]]],[[[119.828,10.653],[119.904,10.598],[119.983,10.6],[120.003,10.565],[119.931,10.504],[119.884,10.551],[119.924,10.483],[119.856,10.485],[119.874,10.461],[119.805,10.441],[119.762,10.464],[119.742,10.55],[119.793,10.547],[119.828,10.653]]],[[[123.622,12.693],[123.725,12.614],[123.79,12.338],[123.579,12.631],[123.582,12.653],[123.615,12.633],[123.599,12.677],[123.622,12.693]]],[[[123.618,9.3],[123.687,9.221],[123.657,9.189],[123.702,9.145],[123.559,9.101],[123.452,9.193],[123.47,9.224],[123.561,9.227],[123.618,9.3]]],[[[117.066,8.08],[117.078,8.005],[117.052,7.991],[117.075,7.992],[117.086,7.906],[117.012,7.804],[116.929,7.936],[116.967,7.952],[116.967,8.054],[116.969,8.015],[116.997,8.063],[117.066,8.08]]],[[[125.709,7.198],[125.798,7.117],[125.775,7.032],[125.793,6.938],[125.766,6.893],[125.723,6.964],[125.712,7.069],[125.679,7.063],[125.664,7.094],[125.709,7.198]]],[[[124.703,9.258],[124.779,9.203],[124.806,9.118],[124.775,9.08],[124.635,9.17],[124.643,9.233],[124.703,9.258]]],[[[125.117,10.158],[125.213,10.128],[125.287,9.912],[125.256,9.914],[125.187,10.037],[125.135,10.062],[125.117,10.158]]],[[[121.391,19.391],[121.488,19.367],[121.524,19.388],[121.539,19.267],[121.512,19.244],[121.403,19.283],[121.347,19.357],[121.391,19.391]]],[[[121.93,14.236],[122.128,14.087],[122.187,14.006],[121.985,14.112],[121.914,14.188],[121.93,14.236]]],[[[120.091,13.864],[120.223,13.821],[120.288,13.735],[120.251,13.719],[120.295,13.686],[120.267,13.671],[120.1,13.785],[120.091,13.864]]],[[[124.437,10.718],[124.514,10.656],[124.442,10.627],[124.383,10.646],[124.313,10.587],[124.275,10.591],[124.316,10.709],[124.375,10.69],[124.383,10.646],[124.437,10.718]]],[[[122.899,7.442],[122.975,7.362],[122.925,7.372],[122.949,7.338],[122.917,7.348],[122.817,7.284],[122.787,7.353],[122.803,7.423],[122.848,7.426],[122.875,7.365],[122.899,7.442]]],[[[121.867,18.974],[121.945,19.003],[121.992,18.961],[121.852,18.813],[121.828,18.875],[121.864,18.882],[121.867,18.974]]],[[[117.307,8.331],[117.352,8.291],[117.347,8.211],[117.292,8.177],[117.263,8.21],[117.265,8.299],[117.307,8.331]]],[[[125.914,9.756],[125.965,9.743],[125.96,9.688],[125.99,9.665],[125.941,9.56],[125.888,9.612],[125.927,9.654],[125.914,9.756]]],[[[123.733,11.299],[123.774,11.197],[123.808,11.152],[123.721,11.137],[123.688,11.227],[123.733,11.299]]],[[[119.815,11.519],[119.872,11.493],[119.82,11.376],[119.802,11.401],[119.825,11.427],[119.774,11.395],[119.712,11.464],[119.728,11.479],[119.771,11.437],[119.776,11.494],[119.794,11.456],[119.835,11.457],[119.848,11.486],[119.815,11.519]]],[[[125.694,10.824],[125.728,10.798],[125.719,10.746],[125.811,10.731],[125.811,10.697],[125.752,10.689],[125.67,10.744],[125.66,10.791],[125.694,10.824]]],[[[121.415,18.906],[121.482,18.876],[121.346,18.842],[121.275,18.858],[121.285,18.885],[121.415,18.906]]],[[[123.837,9.644],[123.87,9.605],[123.8,9.552],[123.752,9.546],[123.718,9.588],[123.837,9.644]]],[[[120.596,6.395],[120.577,6.25],[120.479,6.253],[120.518,6.263],[120.557,6.374],[120.596,6.395]]],[[[122.094,14.842],[122.214,14.841],[122.192,14.806],[122.259,14.788],[122.256,14.725],[122.115,14.8],[122.094,14.842]]],[[[119.455,4.914],[119.507,4.762],[119.458,4.642],[119.471,4.764],[119.455,4.914]]],[[[124.727,11.733],[124.807,11.645],[124.795,11.6],[124.85,11.6],[124.824,11.53],[124.766,11.574],[124.761,11.609],[124.79,11.606],[124.717,11.673],[124.727,11.733]]],[[[122.284,12.625],[122.327,12.54],[122.302,12.478],[122.244,12.572],[122.284,12.625]]],[[[121.86,20.836],[121.876,20.759],[121.8,20.689],[121.783,20.722],[121.86,20.836]]],[[[122.003,20.489],[122.035,20.465],[121.962,20.413],[121.972,20.367],[121.915,20.347],[121.957,20.47],[122.003,20.489]]],[[[123.977,13.292],[123.986,13.259],[124.009,13.287],[124.029,13.258],[124.041,13.279],[124.099,13.259],[124.022,13.217],[123.952,13.234],[123.908,13.286],[123.977,13.292]]],[[[119.99,16.35],[120.023,16.313],[119.996,16.219],[119.949,16.285],[119.922,16.285],[119.917,16.299],[119.943,16.331],[119.99,16.35]]],[[[120.245,11.987],[120.277,11.936],[120.249,11.908],[120.262,11.807],[120.192,11.937],[120.245,11.987]]],[[[121.97,19.574],[121.994,19.513],[121.959,19.476],[121.893,19.545],[121.97,19.574]]],[[[123.851,13.354],[123.93,13.328],[123.885,13.281],[123.912,13.237],[123.884,13.224],[123.839,13.273],[123.851,13.354]]],[[[121.382,12.126],[121.427,12.029],[121.389,11.983],[121.354,12.055],[121.382,12.071],[121.343,12.088],[121.382,12.126]]],[[[121.074,12.297],[121.136,12.166],[121.121,12.154],[121.038,12.225],[121.043,12.29],[121.074,12.297]]],[[[124.13,13.236],[124.204,13.211],[124.217,13.176],[124.058,13.207],[124.13,13.236]]],[[[124.044,10.334],[123.984,10.259],[123.932,10.25],[123.943,10.311],[124.044,10.334]]],[[[120.851,5.592],[120.908,5.536],[120.857,5.488],[120.812,5.545],[120.851,5.592]]],[[[118.507,7.049],[118.536,6.964],[118.408,7.021],[118.478,7.028],[118.507,7.049]]],[[[125.642,9.916],[125.644,9.862],[125.688,9.849],[125.592,9.805],[125.578,9.839],[125.642,9.916]]],[[[121.218,19.171],[121.248,19.105],[121.249,19.013],[121.197,19.067],[121.218,19.171]]],[[[121.052,10.905],[121.082,10.858],[121.065,10.808],[121.022,10.8],[120.995,10.83],[121.052,10.905]]],[[[125.397,5.438],[125.43,5.42],[125.42,5.366],[125.329,5.389],[125.397,5.438]]],[[[121.765,6.095],[121.853,6.019],[121.948,6.052],[121.854,5.999],[121.765,6.095]]],[[[119.586,11.099],[119.624,11.086],[119.634,10.995],[119.629,11.024],[119.61,11.005],[119.561,11.044],[119.586,11.099]]],[[[122.406,14.733],[122.436,14.695],[122.307,14.676],[122.334,14.711],[122.406,14.733]]],[[[117.232,8.339],[117.257,8.288],[117.176,8.256],[117.163,8.286],[117.232,8.339]]],[[[121.147,5.85],[121.194,5.836],[121.206,5.8],[121.139,5.788],[121.147,5.85]]],[[[124.616,10.153],[124.586,10.11],[124.604,10.087],[124.561,10.092],[124.535,10.055],[124.525,10.118],[124.576,10.111],[124.616,10.153]]],[[[119.81,5.122],[119.817,5.058],[119.742,5.036],[119.765,5.094],[119.81,5.122]]],[[[121.427,11.868],[121.513,11.861],[121.53,11.844],[121.414,11.835],[121.427,11.868]]],[[[120.271,5.256],[120.319,5.207],[120.272,5.171],[120.242,5.191],[120.271,5.256]]],[[[119.789,4.917],[119.853,4.901],[119.852,4.863],[119.804,4.855],[119.789,4.917]]],[[[120.794,5.57],[120.805,5.53],[120.758,5.498],[120.761,5.556],[120.794,5.57]]],[[[124.823,11.71],[124.89,11.679],[124.882,11.625],[124.835,11.633],[124.823,11.71]]],[[[120.831,13.687],[120.934,13.655],[120.946,13.638],[120.873,13.635],[120.831,13.687]]],[[[120.805,5.7],[120.888,5.685],[120.798,5.664],[120.805,5.7]]],[[[122.273,6.999],[122.273,6.958],[122.199,6.919],[122.214,6.98],[122.273,6.999]]],[[[123.645,13.978],[123.678,13.943],[123.601,13.914],[123.595,13.946],[123.607,13.962],[123.658,13.944],[123.645,13.978]]],[[[121.845,20.356],[121.889,20.313],[121.863,20.261],[121.841,20.287],[121.845,20.356]]],[[[121.756,13.943],[121.79,13.939],[121.792,13.88],[121.786,13.909],[121.742,13.892],[121.756,13.943]]],[[[124.168,12.077],[124.237,12.082],[124.237,12.058],[124.175,12.031],[124.145,12.046],[124.168,12.077]]],[[[119.601,11.196],[119.625,11.162],[119.562,11.138],[119.556,11.173],[119.601,11.196]]],[[[125.063,12.686],[125.074,12.621],[125.089,12.603],[125.033,12.62],[125.06,12.637],[125.031,12.672],[125.063,12.686]]],[[[120.911,5.76],[120.935,5.718],[120.891,5.694],[120.886,5.742],[120.911,5.76]]],[[[124.142,12.483],[124.193,12.412],[124.182,12.381],[124.139,12.432],[124.142,12.483]]],[[[125.478,5.496],[125.5,5.468],[125.472,5.389],[125.452,5.436],[125.478,5.496]]],[[[122.033,12.95],[122.099,12.956],[122.069,12.905],[122.033,12.95]]],[[[122.134,18.582],[122.157,18.58],[122.153,18.523],[122.115,18.501],[122.134,18.582]]],[[[117.033,8.13],[117.062,8.084],[117.016,8.071],[116.99,8.098],[117.033,8.13]]],[[[120.29,13.836],[120.336,13.807],[120.312,13.774],[120.261,13.807],[120.29,13.836]]],[[[124.501,10.761],[124.568,10.812],[124.501,10.729],[124.501,10.761]]],[[[119.913,16.422],[119.963,16.404],[119.962,16.37],[119.911,16.385],[119.913,16.422]]],[[[124.333,11.96],[124.311,11.902],[124.279,11.898],[124.28,11.929],[124.333,11.96]]],[[[121.595,6.683],[121.632,6.652],[121.619,6.559],[121.584,6.665],[121.595,6.683]]],[[[124.318,11.817],[124.35,11.803],[124.325,11.76],[124.293,11.788],[124.318,11.817]]],[[[124.994,12.643],[125.016,12.595],[125.07,12.573],[125.054,12.553],[125.004,12.572],[124.994,12.643]]],[[[120.305,13.682],[120.412,13.655],[120.423,13.627],[120.387,13.633],[120.305,13.682]]],[[[125.67,6.945],[125.721,6.937],[125.713,6.898],[125.67,6.945]]],[[[123.229,11.516],[123.235,11.465],[123.206,11.461],[123.199,11.503],[123.229,11.516]]],[[[119.269,11.019],[119.305,11.016],[119.288,10.98],[119.292,10.948],[119.269,11.019]]],[[[121.937,12.097],[121.962,12.065],[121.954,12.031],[121.911,12.063],[121.937,12.097]]],[[[124.247,12.459],[124.28,12.414],[124.276,12.363],[124.25,12.404],[124.247,12.459]]],[[[121.672,6.056],[121.728,6.031],[121.667,5.988],[121.687,6.028],[121.672,6.056]]],[[[121.538,11.949],[121.583,11.906],[121.554,11.891],[121.538,11.949]]],[[[121.681,12.929],[121.736,12.929],[121.717,12.896],[121.681,12.929]]],[[[124.444,11.933],[124.467,11.891],[124.45,11.88],[124.411,11.897],[124.444,11.933]]],[[[117.132,8.174],[117.19,8.179],[117.206,8.154],[117.149,8.151],[117.132,8.174]]],[[[123.766,13.407],[123.827,13.368],[123.852,13.369],[123.833,13.344],[123.766,13.407]]],[[[122.088,12.837],[122.06,12.784],[122.019,12.796],[122.088,12.837]]],[[[121.408,6.057],[121.433,6.038],[121.424,6.014],[121.381,6.026],[121.408,6.057]]],[[[124.077,7.376],[124.046,7.313],[124.021,7.297],[124.027,7.344],[124.077,7.376]]]]};      // simplified country outline for the national map (data/ph_outline.json)
 const CAMPUS_BY_ID=Object.fromEntries(CAMPUSES.map(c=>[c.id,c]));
 const isCampus=id=>!!CAMPUS_BY_ID[id];
-const PILOTS=["tv","berkeley"];
+const PILOTS=["tv","sjq","berkeley"];   // sjq: Brgy. San Joaquin, Mabalacat City, Pampanga (2026-09-29)
 const SITE_IDS=new Set([...PILOTS,...CAMPUSES.map(c=>c.id)]);
 const LEGACY_SITES={diliman:"upd"};  // old tabs → where they live now
 const DATA_BASE="data/";             // one file per site, fetched when the site is opened
@@ -972,7 +1226,7 @@ function initSite(id){
     const sus=Math.min(2.6,Math.max(0.15,0.35+0.5*lowness+0.45*wNoah));
     const r=mulberry32(500+k)();
     return {id:s.id,idx:k,name:"Household unit · "+(s.hn?s.hn+" ":"")+(s.bld||s.street),street:s.street,bld:s.bld||null,
-      x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,gRef,hn:s.hn||"",near:s.bld?shortSt(s.street):(s.near||null),
+      x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,gRef,hn:s.hn||"",near:s.bld?(s.bld.includes(shortSt(s.street))?null:shortSt(s.street)):(s.near||null),   // campus labels already say "near <street>": no second "near"
       short:s.short||null,labelPos:s.lp||(s.id==="BW-H06"?"above":(s.id==="BW-H01"||s.id==="BW-H02")?"left":"right"),
       noahCls:Math.max(h5,h25,h100),sus,expos:0.92+r*0.2,readings:[],depth:0,rate:0,status:"ok"};
   });
@@ -1261,6 +1515,14 @@ function waterLUT(P,pub){
 }
 // Returns {cv, x0, y0}: only the rectangle of cells that can hold water is painted (x0, y0: its corner in fine pixels),
 // so a small flood costs little to paint and to draw onto the map.
+// The legend's water spectrum: the drawing's own colour table (waterLUT) from dry to deep, shallow edge faded as on the map
+function waterGradient(pub){
+  const L=waterLUT(mapPal(),pub),max=pub?0.6:0.8,st=[];
+  for(let v=0;v<=max+1e-9;v+=0.02){const k=Math.min(255,Math.round(v*100))*4;st.push(`rgba(${L[k]},${L[k+1]},${L[k+2]},${(0.88*L[k+3]/255).toFixed(3)}) ${(v/max*100).toFixed(1)}%`);}
+  return `linear-gradient(90deg,${st.join(",")})`;
+}
+function paintLegends(){const a=document.getElementById("p-grad"),b=document.getElementById("lg-grad");
+  if(a)a.style.background=waterGradient(true);if(b)b.style.background=waterGradient(false);}
 function paintWater(F,GW,GH,FK,LUT,alphaOf){
   const N=GW*GH,act=new Uint8Array(N);let bx0=GW,by0=GH,bx1=-1,by1=-1;
   for(let i=0;i<N;i++)if(F[i]>0){const x=i%GW,y=(i/GW)|0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<GW&&Y<GH)act[Y*GW+X]=1;}
@@ -2023,13 +2285,14 @@ function loop(now){
 const themeBtn=document.getElementById("theme-toggle");
 function setTheme(t,render){
   document.documentElement.dataset.theme=t;
+  paintLegends();
   if(render)bwThemeChanged(t);        // not on the boot call: the map code below hasn't run yet (NATGL would be in its TDZ)
   STATUS_COL=t==="dark"?STATUS_COL_DARK:STATUS_COL_LIGHT;
   try{localStorage.setItem("bw-theme",t);}catch(e){}
   themeBtn.textContent=t==="dark"?"☀":"☾";
   themeBtn.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");
   themeBtn.setAttribute("aria-pressed",t==="dark"?"true":"false");
-  for(const pt of [document.getElementById("p-theme"),document.getElementById("nat-theme")])if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
+  for(const pt of [document.getElementById("p-theme"),document.getElementById("nat-theme"),document.getElementById("ab-theme")])if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
   if(render&&siteBooted){renderBase();renderNoah();renderFlood();drawMap();}   // on the national map no site is drawn yet
 }
 let savedTheme=null;try{savedTheme=localStorage.getItem("bw-theme");}catch(e){}
@@ -2332,7 +2595,7 @@ function exitTry(nextSite,fromHash){
   syncLiveUI();syncTabs();
 }
 function selectTab(key){
-  if(key==="ph"){location.hash="#ph";return;}
+  if(key==="ph"||key==="about"){if(location.hash!=="#"+key)location.hash="#"+key;else if(key==="about")aboutEnter("");return;}
   if(ROUTE!=="site"||!DATA_ALL[key==="try"?"tv":key]){location.hash="#"+key;return;}   // needs a fetch or leaves the national map: the router does it
   if(key==="try"){if(!TRY)enterTry();return;}
   if(TRY){exitTry(key);writeHash();return;}
@@ -3067,7 +3330,7 @@ function renderPublic(){
   $("p-all").innerHTML=sorted.map(s=>rowHTML(s)).join("");
   // figure shows the selected street, else my street, else the deepest
   renderFigure(selected||mine||sorted[0]);
-  $("p-lg1").textContent=L.lg[0];$("p-lg2").textContent=L.lg[1];$("p-lg3").textContent=L.lg[2];$("p-lg4").textContent=L.lg[3];$("p-lg5").textContent=L.lg[4];
+  paintLegends();$("p-lg1").textContent=L.lg[0];$("p-lg2").textContent=L.lg[1];$("p-lg3").textContent=L.lg[2];$("p-lg4").textContent=L.lg[3];$("p-lg5").textContent=L.lg[4];
   $("p-lg6").textContent=NL().sea;$("p-lg-sea").hidden=!HAS_SEA;$("lg-sea").hidden=!HAS_SEA;$("lg-sea-t").textContent=NL().sea;
   const coach=$("p-coach");coach.textContent=L.mapHint;
   let seen=false;try{seen=localStorage.getItem("bw-coach")==="1";}catch(e){}
@@ -3216,6 +3479,7 @@ $("p-theme").addEventListener("click",()=>setTheme(document.documentElement.data
 function parseHash(){
   const raw=(location.hash||"").replace(/^#/,"");
   TRY=raw==="try";if(TRY){LIVE=false;return {route:"site",site:"tv",view:"public"};}
+  if(/^about(\/|$)/.test(raw)){LIVE=false;return {route:"about",sec:raw.split("/")[1]||""};}
   const tok=raw.match(/^p\.([a-z]+)\.(s|b)\.([A-Za-z0-9-]+)$/);
   if(tok){const site=LEGACY_SITES[tok[1]]||tok[1];
     if(SITE_IDS.has(site)){SHARE_TOKEN_SEEN=true;SHARED_PLACE=site+":"+tok[2]+":"+tok[3];return {route:"site",site,view:"public"};}}
@@ -3227,11 +3491,11 @@ function parseHash(){
   return {route:"site",site:m[0],view:m[1]==="details"?"details":"public"};
 }
 function writeHash(){
-  const h=ROUTE==="ph"?"":TRY?"#try":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
+  const h=ROUTE==="ph"?"":ROUTE==="about"?"#about"+(ABOUT_SEC?"/"+ABOUT_SEC:""):TRY?"#try":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
   history.replaceState(null,"",h||location.pathname+location.search);
   try{localStorage.setItem("bw-last-hash",h);}catch(e){}   // Add to Home Screen: relaunch (?source=pwa, no hash) restores this
 }
-function syncTabs(){const cur=TRY?"try":(ROUTE==="ph"||isCampus(SITE))?"ph":SITE;
+function syncTabs(){const cur=ROUTE==="about"?"about":TRY?"try":(ROUTE==="ph"||isCampus(SITE))?"ph":SITE;
   document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=b.dataset.site===cur;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
 document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
   b.addEventListener("click",()=>selectTab(b.dataset.site));
@@ -3246,7 +3510,7 @@ document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
 const NAT_LANGS={"en":{"loading":"Loading {name}…","fail":"{name} didn't load. Check your connection.","retry":"Try again","back":"‹ All campuses","title":"PhilDev partner campuses","intro":"Choose a campus to see what a BahaWatch partnership would look like there: eight household water-level units, the barangays they cover, and the flood hazard around the campus.","mapL":"Map of PhilDev partner campuses","desc":"Map of the Philippines with {n} PhilDev partner campuses: {luzon} in Luzon, {visayas} in Visayas, {mindanao} in Mindanao. The campus list has the same campuses.","search":"Find a campus","count0":"No campus matches “{q}”.","count1":"1 campus matches.","countN":"{n} campuses match.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"State university or college","LUC":"Local university or college","Private":"Private"},"typesShort":{"SUC":"State","LUC":"Local","Private":"Private"},"cluster":"{n} campuses: {names}. Zoom in","zin":"Zoom in","zout":"Zoom out","home":"Show the whole country","open":"Open {short}","mapNote":"The detailed map can't be shown on this device.","mapLoading":"Loading the detailed map…","sea":"Sea","credit":"© OpenStreetMap contributors · Open Buildings (Google, Microsoft, VIDA) · MapLibre","coop":{"win":"Use Ctrl + scroll to zoom the map","mac":"Use ⌘ + scroll to zoom the map","mobile":"Use two fingers to move the map"},"wholeCountry":"Whole country","backFlood":"Back to the flood map","countryL":"{site}, zoomed out","countryPh":"Map of the Philippines. A dashed box marks the simulated area of {site}. Pins mark the PhilDev partner campuses in view, out of {n} across the country. Zoom in on the box, or use Back to the flood map, to return.","countryUs":"Map of the San Francisco Bay Area and beyond. A dashed box marks the simulated area of {site}. There are no PhilDev campuses here. Zoom in on the box, or use Back to the flood map, to return.","countryOff":"The simulated area of {site}, zoomed out.","simArea":"Simulated area","change":"Change campus (now {name})","sim":"Simulation: sensor readings are simulated; unit spots are proposals. Terrain: FABDEM (30 m). Not a forecast; not for emergency use.","cardH":"What a partnership looks like","unitsH":"Proposed units: {n} household water-level units, placed automatically","onCampus":"on campus","brgyH":"Barangays covered","brgy1":"1 barangay","brgyN":"{n} barangays","noahH":"NOAH flood hazard in this area (share of the land in a hazard zone)","noahRp":"{rp}-year rain","noahNA":"not available from NOAH","noah0":"no hazard zone mapped in this area","roleH":"University role","role":["Students install and look after the units with residents.","Faculty check the data.","The campus hosts one unit and the local dashboard."],"foot":"Campus list: PhilDev partners across the Philippines (PhilDev Starter Pack). Map: PSA/NAMRIA administrative boundaries via OCHA HDX (CC BY-IGO), simplified. Main campuses are shown where a university has several.","stormOn":"Simulate a typhoon","stormOff":"Stop the typhoon","stormNow":"Simulated typhoon · {t}","simWeather":"Simulated weather","simPlay":"Play the simulation","simPause":"Pause the simulation","simTimeline":"Simulation timeline","simClock":"{d} · simulated {tz}"},"fil":{"_review":true,"loading":"Nilo-load ang {name}…","fail":"Hindi na-load ang {name}. Tingnan ang iyong koneksyon.","retry":"Subukan muli","back":"‹ Lahat ng kampus","title":"Mga kampus na katuwang ng PhilDev","intro":"Pumili ng kampus para makita kung ano ang magiging hitsura ng pakikipagtulungan sa BahaWatch doon: walong water-level unit sa mga bahay, ang mga barangay na saklaw nila, at ang panganib ng baha sa paligid ng kampus.","mapL":"Mapa ng mga kampus na katuwang ng PhilDev","desc":"Mapa ng Pilipinas na may {n} kampus na katuwang ng PhilDev: {luzon} sa Luzon, {visayas} sa Visayas, {mindanao} sa Mindanao. Nasa listahan ng kampus ang parehong mga kampus.","search":"Maghanap ng kampus","count0":"Walang kampus na tugma sa “{q}”.","count1":"1 kampus ang tugma.","countN":"{n} kampus ang tugma.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad o kolehiyo ng estado","LUC":"Lokal na unibersidad o kolehiyo","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"cluster":"{n} kampus: {names}. I-zoom in","zin":"Palakihin","zout":"Paliitin","home":"Ipakita ang buong bansa","open":"Buksan ang {short}","mapNote":"Hindi maipakita ang detalyadong mapa sa device na ito.","mapLoading":"Nilo-load ang detalyadong mapa…","sea":"Dagat","credit":"© OpenStreetMap contributors · Open Buildings (Google, Microsoft, VIDA) · MapLibre","coop":{"win":"Pindutin ang Ctrl habang nag-i-scroll para i-zoom ang mapa","mac":"Pindutin ang ⌘ habang nag-i-scroll para i-zoom ang mapa","mobile":"Gumamit ng dalawang daliri para igalaw ang mapa"},"wholeCountry":"Buong bansa","backFlood":"Bumalik sa mapa ng baha","countryL":"{site}, naka-zoom out","countryPh":"Mapa ng Pilipinas. Ang kahong putol-putol ang guhit ang lugar ng simulasyon ng {site}. May pin ang mga kampus na katuwang ng PhilDev na nasa tanaw, mula sa {n} sa buong bansa. Para bumalik, mag-zoom in sa kahon o pindutin ang Bumalik sa mapa ng baha.","countryUs":"Mapa ng San Francisco Bay Area at paligid nito. Ang kahong putol-putol ang guhit ang lugar ng simulasyon ng {site}. Walang kampus ng PhilDev dito. Para bumalik, mag-zoom in sa kahon o pindutin ang Bumalik sa mapa ng baha.","countryOff":"Ang lugar ng simulasyon ng {site}, naka-zoom out.","simArea":"Lugar ng simulasyon","change":"Palitan ang kampus (ngayon: {name})","sim":"Simulasyon: kunwari lamang ang mga reading ng sensor; mungkahi lamang ang mga puwesto ng unit. Terrain: FABDEM (30 m). Hindi ito forecast; hindi para sa emergency.","cardH":"Ganito ang isang pakikipagtulungan","unitsH":"Mga mungkahing unit: {n} water-level unit sa mga bahay, awtomatikong inilagay","onCampus":"nasa kampus","brgyH":"Mga barangay na saklaw","brgy1":"1 barangay","brgyN":"{n} barangay","noahH":"Panganib ng baha ayon sa NOAH sa lugar na ito (bahagi ng lupa na nasa hazard zone)","noahRp":"{rp}-taong ulan","noahNA":"walang datos mula sa NOAH","noah0":"walang naka-mapang hazard zone sa lugar na ito","roleH":"Papel ng unibersidad","role":["Ang mga estudyante ang nagkakabit at nag-aalaga ng mga unit kasama ang mga residente.","Sinusuri ng mga guro ang datos.","Ang kampus ang may hawak ng isang unit at ng lokal na dashboard."],"foot":"Listahan ng kampus: mga katuwang ng PhilDev sa buong Pilipinas (PhilDev Starter Pack). Mapa: mga hangganang administratibo ng PSA/NAMRIA mula sa OCHA HDX (CC BY-IGO), pinasimple. Ipinapakita ang pangunahing kampus kung may ilang kampus ang unibersidad.","stormOn":"Mag-simulate ng bagyo","stormOff":"Itigil ang bagyo","stormNow":"Kunwaring bagyo · {t}","simWeather":"Kunwaring panahon","simPlay":"I-play ang simulation","simPause":"I-pause ang simulation","simTimeline":"Timeline ng simulation","simClock":"{d} · kunwaring {tz}"},"ceb":{"_review":true,"loading":"Gikarga ang {name}…","fail":"Wala makarga ang {name}. Susiha ang imong koneksyon.","retry":"Sulayi pag-usab","back":"‹ Tanang kampus","title":"Mga kampus nga kauban sa PhilDev","intro":"Pagpili og kampus aron makita kon unsa ang dagway sa pakigtambayayong sa BahaWatch didto: walo ka water-level unit sa mga balay, ang mga barangay nga ilang nasakpan, ug ang peligro sa baha palibot sa kampus.","mapL":"Mapa sa mga kampus nga kauban sa PhilDev","desc":"Mapa sa Pilipinas nga adunay {n} ka kampus nga kauban sa PhilDev: {luzon} sa Luzon, {visayas} sa Visayas, {mindanao} sa Mindanao. Anaa sa lista sa kampus ang samang mga kampus.","search":"Pangitaa ang kampus","count0":"Walay kampus nga mohaom sa “{q}”.","count1":"1 ka kampus ang mohaom.","countN":"{n} ka kampus ang mohaom.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad o kolehiyo sa estado","LUC":"Lokal nga unibersidad o kolehiyo","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"cluster":"{n} ka kampus: {names}. I-zoom in","zin":"Padakua","zout":"Pagamya","home":"Ipakita ang tibuok nasod","open":"Ablihi ang {short}","mapNote":"Dili mapakita ang detalyado nga mapa niining device.","mapLoading":"Gikarga ang detalyado nga mapa…","sea":"Dagat","credit":"© OpenStreetMap contributors · Open Buildings (Google, Microsoft, VIDA) · MapLibre","coop":{"win":"Pugngi ang Ctrl samtang nag-scroll aron ma-zoom ang mapa","mac":"Pugngi ang ⌘ samtang nag-scroll aron ma-zoom ang mapa","mobile":"Gamita ang duha ka tudlo aron malihok ang mapa"},"wholeCountry":"Tibuok nasod","backFlood":"Balik sa mapa sa baha","countryL":"{site}, gi-zoom out","countryPh":"Mapa sa Pilipinas. Ang kahon nga putol-putol ang linya mao ang dapit sa simulasyon sa {site}. Adunay pin ang mga kampus nga kauban sa PhilDev nga makita karon, gikan sa {n} sa tibuok nasod. Aron mobalik, i-zoom in ang kahon o pindota ang Balik sa mapa sa baha.","countryUs":"Mapa sa San Francisco Bay Area ug sa palibot niini. Ang kahon nga putol-putol ang linya mao ang dapit sa simulasyon sa {site}. Walay kampus sa PhilDev dinhi. Aron mobalik, i-zoom in ang kahon o pindota ang Balik sa mapa sa baha.","countryOff":"Ang dapit sa simulasyon sa {site}, gi-zoom out.","simArea":"Dapit sa simulasyon","change":"Usba ang kampus (karon: {name})","sim":"Simulasyon: dili tinuod ang mga basa sa sensor; sugyot lamang ang mga dapit sa unit. Terrain: FABDEM (30 m). Dili kini forecast; dili para sa emerhensya.","cardH":"Ingon niini ang usa ka pakigtambayayong","unitsH":"Gisugyot nga mga unit: {n} ka water-level unit sa mga balay, awtomatikong gibutang","onCampus":"sulod sa kampus","brgyH":"Mga barangay nga nasakpan","brgy1":"1 ka barangay","brgyN":"{n} ka barangay","noahH":"Peligro sa baha sumala sa NOAH niini nga dapit (bahin sa yuta nga anaa sa hazard zone)","noahRp":"{rp}-ka-tuig nga ulan","noahNA":"walay datos gikan sa NOAH","noah0":"walay hazard zone nga namapa niini nga dapit","roleH":"Papel sa unibersidad","role":["Ang mga estudyante ang mobutang ug moatiman sa mga unit uban sa mga residente.","Ang mga magtutudlo ang mosusi sa datos.","Ang kampus ang magkupot og usa ka unit ug sa lokal nga dashboard."],"foot":"Lista sa kampus: mga kauban sa PhilDev sa tibuok Pilipinas (PhilDev Starter Pack). Mapa: mga utlanan sa administrasyon gikan sa PSA/NAMRIA pinaagi sa OCHA HDX (CC BY-IGO), gipasimple. Gipakita ang main campus kon daghan og kampus ang unibersidad.","stormOn":"Sulayi og bagyo","stormOff":"Hunonga ang bagyo","stormNow":"Sinulayan nga bagyo · {t}","simWeather":"Sinulayan nga panahon","simPlay":"Padagana ang simulasyon","simPause":"Hunonga ang simulasyon","simTimeline":"Timeline sa simulasyon","simClock":"{d} · sinulayan nga {tz}"},"ilo":{"_review":true,"loading":"Ikarkarga ti {name}…","fail":"Saan a naikarga ti {name}. Kitaem ti koneksionmo.","retry":"Padasen manen","back":"‹ Amin a kampus","title":"Dagiti kampus a kadua ti PhilDev","intro":"Mangpili iti kampus tapno makitam no kasano ti panagtitinnulong iti BahaWatch sadiay: walo a water-level unit kadagiti balay, dagiti barangay a sakupenda, ken ti peggad ti layus iti aglawlaw ti kampus.","mapL":"Mapa dagiti kampus a kadua ti PhilDev","desc":"Mapa ti Filipinas nga addaan iti {n} a kampus a kadua ti PhilDev: {luzon} idiay Luzon, {visayas} idiay Visayas, {mindanao} idiay Mindanao. Adda iti listaan ti kampus dagiti isu met laeng a kampus.","search":"Agbiruk iti kampus","count0":"Awan ti kampus a maitunos iti “{q}”.","count1":"1 a kampus ti maitunos.","countN":"{n} a kampus ti maitunos.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad wenno kolehio ti estado","LUC":"Lokal nga unibersidad wenno kolehio","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"cluster":"{n} a kampus: {names}. I-zoom in","zin":"Padakkelen","zout":"Pabassiten","home":"Ipakita ti intero a pagilian","open":"Luktan ti {short}","mapNote":"Saan a maipakita ti detalyado a mapa iti daytoy a device.","mapLoading":"Ikarkarga ti detalyado a mapa…","sea":"Baybay","credit":"© OpenStreetMap contributors · Open Buildings (Google, Microsoft, VIDA) · MapLibre","coop":{"win":"Pinduten ti Ctrl bayat ti panag-scroll tapno mai-zoom ti mapa","mac":"Pinduten ti ⌘ bayat ti panag-scroll tapno mai-zoom ti mapa","mobile":"Usaren ti dua a ramay tapno maiyakar ti mapa"},"wholeCountry":"Intero a pagilian","backFlood":"Agsubli iti mapa ti layus","countryL":"{site}, naka-zoom out","countryPh":"Mapa ti Filipinas. Ti kahon a putput-ol ti linia ket ti lugar ti simulasion ti {site}. Adda pin dagiti kampus a kadua ti PhilDev a makita, manipud kadagiti {n} iti intero a pagilian. Tapno agsubli, i-zoom in ti kahon wenno pindoten ti Agsubli iti mapa ti layus.","countryUs":"Mapa ti San Francisco Bay Area ken ti aglawlawna. Ti kahon a putput-ol ti linia ket ti lugar ti simulasion ti {site}. Awan ti kampus ti PhilDev ditoy. Tapno agsubli, i-zoom in ti kahon wenno pindoten ti Agsubli iti mapa ti layus.","countryOff":"Ti lugar ti simulasion ti {site}, naka-zoom out.","simArea":"Lugar ti simulasion","change":"Sukatan ti kampus (ita: {name})","sim":"Simulasion: saan a pudno dagiti basa ti sensor; singasing laeng dagiti lugar ti unit. Terrain: FABDEM (30 m). Saan daytoy a forecast; saan a para iti emerhensia.","cardH":"Kastoy ti maysa a panagtitinnulong","unitsH":"Dagiti maisingasing a unit: {n} a water-level unit kadagiti balay, awtomatiko a naikabil","onCampus":"adda iti kampus","brgyH":"Dagiti barangay a nasakupan","brgy1":"1 a barangay","brgyN":"{n} a barangay","noahH":"Peggad ti layus segun iti NOAH iti daytoy a lugar (paset ti daga nga adda iti hazard zone)","noahRp":"{rp}-a-tawen a tudo","noahNA":"awan ti datos manipud iti NOAH","noah0":"awan ti hazard zone a namapa iti daytoy a lugar","roleH":"Akem ti unibersidad","role":["Dagiti estudiante ti mangikabil ken mangaywan kadagiti unit a kadua dagiti residente.","Dagiti mannursuro ti mangsukimat iti datos.","Ti kampus ti mangtengngel iti maysa a unit ken ti lokal a dashboard."],"foot":"Listaan dagiti kampus: dagiti kadua ti PhilDev iti intero a Filipinas (PhilDev Starter Pack). Mapa: dagiti administratibo a beddeng ti PSA/NAMRIA manipud iti OCHA HDX (CC BY-IGO), napasimple. Maipakita ti kangrunaan a kampus no adu ti kampus ti unibersidad.","stormOn":"Iyaramid ti simulasion a bagyo","stormOff":"Isardeng ti bagyo","stormNow":"Simulasion a bagyo · {t}","simWeather":"Simulasion ti panahon","simPlay":"I-play ti simulasion","simPause":"I-pause ti simulasion","simTimeline":"Timeline ti simulasion","simClock":"{d} · simulasion {tz}"},"hil":{"_review":true,"loading":"Ginakarga ang {name}…","fail":"Wala makarga ang {name}. Tan-awa ang imo koneksyon.","retry":"Tilawi liwat","back":"‹ Tanan nga kampus","title":"Mga kampus nga kaupod sang PhilDev","intro":"Magpili sang kampus agod makita kon ano ang itsura sang pagbinuligay sa BahaWatch didto: walo ka water-level unit sa mga balay, ang mga barangay nga ila nasakop, kag ang katalagman sang baha sa palibot sang kampus.","mapL":"Mapa sang mga kampus nga kaupod sang PhilDev","desc":"Mapa sang Pilipinas nga may {n} ka kampus nga kaupod sang PhilDev: {luzon} sa Luzon, {visayas} sa Visayas, {mindanao} sa Mindanao. Ara sa listahan sang kampus ang amo man nga mga kampus.","search":"Mangita sang kampus","count0":"Wala sing kampus nga nagapareho sa “{q}”.","count1":"1 ka kampus ang nagapareho.","countN":"{n} ka kampus ang nagapareho.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad ukon kolehiyo sang estado","LUC":"Lokal nga unibersidad ukon kolehiyo","Private":"Pribado"},"typesShort":{"SUC":"Estado","LUC":"Lokal","Private":"Pribado"},"cluster":"{n} ka kampus: {names}. I-zoom in","zin":"Padakua","zout":"Pagamya","home":"Ipakita ang bug-os nga pungsod","open":"Buksi ang {short}","mapNote":"Indi mapakita ang detalyado nga mapa sa sini nga device.","mapLoading":"Ginakarga ang detalyado nga mapa…","sea":"Dagat","credit":"© OpenStreetMap contributors · Open Buildings (Google, Microsoft, VIDA) · MapLibre","coop":{"win":"Pinduta ang Ctrl samtang nagascroll para ma-zoom ang mapa","mac":"Pinduta ang ⌘ samtang nagascroll para ma-zoom ang mapa","mobile":"Gamita ang duha ka tudlo para mahulag ang mapa"},"wholeCountry":"Bug-os nga pungsod","backFlood":"Balik sa mapa sang baha","countryL":"{site}, naka-zoom out","countryPh":"Mapa sang Pilipinas. Ang kahon nga putol-putol ang linya amo ang lugar sang simulasyon sang {site}. May pin ang mga kampus nga kaupod sang PhilDev nga makita, halin sa {n} sa bug-os nga pungsod. Para magbalik, i-zoom in ang kahon ukon pindota ang Balik sa mapa sang baha.","countryUs":"Mapa sang San Francisco Bay Area kag sang palibot sini. Ang kahon nga putol-putol ang linya amo ang lugar sang simulasyon sang {site}. Wala sing kampus sang PhilDev diri. Para magbalik, i-zoom in ang kahon ukon pindota ang Balik sa mapa sang baha.","countryOff":"Ang lugar sang simulasyon sang {site}, naka-zoom out.","simArea":"Lugar sang simulasyon","change":"Ilisan ang kampus (subong: {name})","sim":"Simulasyon: indi matuod ang mga basa sang sensor; panugda lang ang mga lugar sang unit. Terrain: FABDEM (30 m). Indi ini forecast; indi para sa emerhensya.","cardH":"Amo ini ang isa ka pagbinuligay","unitsH":"Ginapanugda nga mga unit: {n} ka water-level unit sa mga balay, awtomatiko nga ginbutang","onCampus":"sa sulod sang kampus","brgyH":"Mga barangay nga nasakop","brgy1":"1 ka barangay","brgyN":"{n} ka barangay","noahH":"Katalagman sang baha suno sa NOAH sa sini nga lugar (bahin sang duta nga ara sa hazard zone)","noahRp":"{rp}-ka-tuig nga ulan","noahNA":"wala sing datos halin sa NOAH","noah0":"wala sing hazard zone nga namapa sa sini nga lugar","roleH":"Papel sang unibersidad","role":["Ang mga estudyante ang magabutang kag magaatipan sang mga unit upod ang mga residente.","Ang mga manunudlo ang magausisa sang datos.","Ang kampus ang magauyat sang isa ka unit kag sang lokal nga dashboard."],"foot":"Listahan sang kampus: mga kaupod sang PhilDev sa bug-os nga Pilipinas (PhilDev Starter Pack). Mapa: mga administratibo nga dulunan halin sa PSA/NAMRIA paagi sa OCHA HDX (CC BY-IGO), ginpasimple. Ginapakita ang main campus kon madamo ang kampus sang unibersidad.","stormOn":"Himuan sang simulasyon nga bagyo","stormOff":"Untata ang bagyo","stormNow":"Simulasyon sang bagyo · {t}","simWeather":"Simulasyon sang panahon","simPlay":"I-play ang simulasyon","simPause":"I-pause ang simulasyon","simTimeline":"Timeline sang simulasyon","simClock":"{d} · simulasyon {tz}"},"pam":{"_review":true,"loading":"Iloload ya ing {name}…","fail":"E melyari ing pamag-load king {name}. Lawan me ing koneksyun mu.","retry":"Subukan ya pasibayu","back":"‹ Deng eganagang kampus","title":"Deng kampus a kayabe ning PhilDev","intro":"Mamili kang kampus ban akit mu nung makananu ing pamikiabe king BahaWatch karin: walung water-level unit kareng bale, deng barangay a sasakupan da, ampo ing panganib ning albug king palibut ning kampus.","mapL":"Mapa da reng kampus a kayabe ning PhilDev","desc":"Mapa ning Filipinas a atin {n} a kampus a kayabe ning PhilDev: {luzon} king Luzon, {visayas} king Visayas, {mindanao} king Mindanao. Atyu king listaan da reng kampus deng pareung kampus.","search":"Manintun kang kampus","count0":"Alang kampus a tutugma king “{q}”.","count1":"1 a kampus ing tutugma.","countN":"{n} a kampus ing tutugma.","groups":{"Luzon":"Luzon","Visayas":"Visayas","Mindanao":"Mindanao"},"types":{"SUC":"Unibersidad o kolehiyu ning estadu","LUC":"Lokal a unibersidad o kolehiyu","Private":"Pribadu"},"typesShort":{"SUC":"Estadu","LUC":"Lokal","Private":"Pribadu"},"cluster":"{n} a kampus: {names}. I-zoom in","zin":"Palagwan","zout":"Paditak","home":"Ipakit ing sablang bansa","open":"Buksan ya ing {short}","mapNote":"Ali mapakit ing detalyadung mapa king device a iti.","mapLoading":"Iloload ya ing detalyadung mapa…","sea":"Dayat","credit":"© OpenStreetMap contributors · Open Buildings (Google, Microsoft, VIDA) · MapLibre","coop":{"win":"Pinduten me ing Ctrl kabang mag-scroll ka ban ma-zoom ing mapa","mac":"Pinduten me ing ⌘ kabang mag-scroll ka ban ma-zoom ing mapa","mobile":"Gamitan me ing adwang taludtud ban kumilus ing mapa"},"wholeCountry":"Sablang bansa","backFlood":"Mibalik king mapa ning albug","countryL":"{site}, mekazoom out","countryPh":"Mapa ning Pilipinas. Ing kahun a putul-putul ing guhit ya ing lugal ning simulasyun ning {site}. Atin pin deng kampus a kayabe ning PhilDev a akakit, manibat king {n} king sablang bansa. Ban mibalik, i-zoom in ing kahun o pindutan ing Mibalik king mapa ning albug.","countryUs":"Mapa ning San Francisco Bay Area ampo ing palibut na. Ing kahun a putul-putul ing guhit ya ing lugal ning simulasyun ning {site}. Alang kampus ning PhilDev keni. Ban mibalik, i-zoom in ing kahun o pindutan ing Mibalik king mapa ning albug.","countryOff":"Ing lugal ning simulasyun ning {site}, mekazoom out.","simArea":"Lugal ning simulasyun","change":"Sukatan ya ing kampus (ngeni: {name})","sim":"Simulasyun: e tutu deng basa ning sensor; mungkai mu deng lugal ning unit. Terrain: FABDEM (30 m). E ini forecast; e para king emerhensya.","cardH":"Makanini ing metung a pamikiabe","unitsH":"Deng mungkaing unit: {n} a water-level unit kareng bale, awtomatikung mikabit","onCampus":"keng kampus","brgyH":"Deng barangay a sasakupan","brgy1":"1 a barangay","brgyN":"{n} a barangay","noahH":"Panganib ning albug agpang king NOAH keng lugal a iti (bage ning gabun a atyu king hazard zone)","noahRp":"{rp}-banuang uran","noahNA":"alang datos manibat king NOAH","noah0":"alang hazard zone a mipamapa keng lugal a iti","roleH":"Papel ning unibersidad","role":["Deng estudyanti ing mangabit at mangalaga kareng unit kayabe da reng residenti.","Deng maestru ing manyusi king datos.","Ing kampus ing mamyalaga king metung a unit ampo king lokal a dashboard."],"foot":"Listaan da reng kampus: deng kayabe ning PhilDev king sablang Filipinas (PhilDev Starter Pack). Mapa: deng administratibung hanggan ning PSA/NAMRIA manibat king OCHA HDX (CC BY-IGO), pepasimple. Ipakit ya ing main campus nung dakal ya kampus ing unibersidad.","stormOn":"Gawan ing simulasyun a bagyu","stormOff":"Pundahan ing bagyu","stormNow":"Simulasyun a bagyu · {t}","simWeather":"Simulasyun ning panahun","simPlay":"I-play ing simulasyun","simPause":"I-pause ing simulasyun","simTimeline":"Timeline ning simulasyun","simClock":"{d} · simulasyun {tz}"}};
 const NAT_EN=NAT_LANGS.en;
 const NL=()=>NAT_LANGS[LANG]||NAT_EN;
-const siteLabel=id=>CAMPUS_BY_ID[id]?CAMPUS_BY_ID[id].short:{tv:"Teachers Village",berkeley:"UC Berkeley"}[id]||id;
+const siteLabel=id=>CAMPUS_BY_ID[id]?CAMPUS_BY_ID[id].short:{tv:"Teachers Village",sjq:"San Joaquin",berkeley:"UC Berkeley"}[id]||id;
 // The vector basemap (spec §4.2, §4.3): the vendored MapLibre GL JS opens our own vector tiles (PMTiles archives in
 // shared/tiles/, built by tools/build_basemap.py — no outside tile server) in our own style, with a
 // hard limit — no WebGL, a failed library or style, or no tile within 8 s, and the caller keeps its outline map.
@@ -3446,6 +3710,9 @@ function natInit(){
   $("nat-q").addEventListener("input",natList);
   $("nat-pins").addEventListener("click",natPinClick);
   $("nat-list").addEventListener("click",natRowClick);
+  // remember what the person opens or closes (a click or Enter/Space on a summary; the toggle event also fires for re-renders)
+  $("nat-list").addEventListener("click",e=>{const s=e.target.closest("summary"),d=s&&s.parentElement;if(!d||!d.dataset.key||$("nat-q").value.trim())return;
+    if(d.open)NAT_OPEN.delete(d.dataset.key);else NAT_OPEN.add(d.dataset.key);});
   for(const [ev,on] of [["pointerover",1],["focusin",1],["pointerout",0],["focusout",0]])
     $("nat-list").addEventListener(ev,e=>{const a=on&&e.target.closest(".nat-item");natHighlight(a?a.dataset.id:null);});
   $("nat-zin").addEventListener("click",()=>natZoomBy(1.5));
@@ -3630,7 +3897,7 @@ function natZoomTo(ids){
 }
 // Choose a campus on the map: fly to it, outline its 3 km box, offer "Open <short>" (spec §4.2).
 function natSelect(id){
-  const c=CAMPUS_BY_ID[id];NAT.sel=id;
+  const c=CAMPUS_BY_ID[id];NAT.sel=id;natReveal(id);
   const b=bwCampusBox(c.lat,c.lon);
   if(NATGL.state==="on")NATGL.map.fitBounds(b,{padding:60,maxZoom:15,duration:natDur(1200)});
   else{const [x0,y0]=natProj(b[0][0],b[1][1]),[x1,y1]=natProj(b[1][0],b[0][1]),p=(x1-x0)*6,W=natBox().clientWidth;
@@ -3679,20 +3946,33 @@ function bwThemeChanged(t){
   siteGLStyle();
 }
 let natAnnounceT=null,natLastQ="";
+// The campus list is a tree of drop-downs: island group › province › campuses (2026-09-29 feedback). Closed by default;
+// a search opens every branch with a match. What the person opened survives re-renders (language, search cleared).
+const NAT_OPEN=new Set();
 function natList(){
   const q=$("nat-q").value,n=norm(q.trim()),L=NL();
   const ms=n?CAMPUSES.filter(c=>[c.name,c.short,c.city,c.province,c.id].some(f=>norm(f).includes(n))):CAMPUSES;
+  const op=k=>n||NAT_OPEN.has(k)?" open":"";
   let html="";
   for(const g of ["Luzon","Visayas","Mindanao"]){
     const all=CAMPUSES.filter(c=>c.group===g).length,cs=ms.filter(c=>c.group===g);
     if(!cs.length)continue;
-    html+=`<h2 class="nat-g" data-group="${g}" data-n="${all}">${esc(L.groups[g])} (${all})</h2><ul class="nat-ul">`+cs.map(c=>
-      `<li><a class="nat-item" href="#${c.id}" data-id="${c.id}" aria-label="${esc(pinLabel(c))}"><span class="pin-shape pin-${c.type.toLowerCase()}" aria-hidden="true"></span><span class="nat-name"><b>${esc(c.short)}</b> ${esc(c.name)}</span><span class="nat-where">${esc(c.city)}, ${esc(c.province)}</span></a></li>`).join("")+"</ul>";
+    const provs=[...new Set(cs.map(c=>c.province))].sort((a,b)=>a.localeCompare(b));
+    html+=`<details class="nat-grp" data-key="${g}" data-group="${g}" data-n="${all}"${op(g)}><summary><h2 class="nat-g">${esc(L.groups[g])} <span class="nat-n">(${all})</span></h2></summary>`+
+      provs.map(p=>{const pc=cs.filter(c=>c.province===p),k=g+"/"+p;
+        return `<details class="nat-prov" data-key="${esc(k)}"${op(k)}><summary><h3 class="nat-p">${esc(p)} <span class="nat-n">(${CAMPUSES.filter(c=>c.province===p).length})</span></h3></summary><ul class="nat-ul">`+pc.map(c=>
+      `<li><a class="nat-item" href="#${c.id}" data-id="${c.id}" aria-label="${esc(pinLabel(c))}"><span class="pin-shape pin-${c.type.toLowerCase()}" aria-hidden="true"></span><span class="nat-name"><b>${esc(c.short)}</b> ${esc(c.name)}</span><span class="nat-where">${esc(c.city)}</span></a></li>`).join("")+"</ul></details>";}).join("")+"</details>";
   }
   $("nat-list").innerHTML=html||`<p>${esc(fill(L.count0,{q}))}</p>`;
   clearTimeout(natAnnounceT);                         // announce once the typing pauses, and only when the query changed
   natAnnounceT=setTimeout(()=>{if(q===natLastQ)return;natLastQ=q;
     $("nat-count").textContent=!n?"":ms.length===0?fill(L.count0,{q}):ms.length===1?L.count1:fill(L.countN,{n:ms.length});},400);
+}
+// open the branches down to a campus's row (a pin chosen on the map shows where it sits in the list)
+function natReveal(id){
+  const c=CAMPUS_BY_ID[id];if(!c)return;NAT_OPEN.add(c.group);NAT_OPEN.add(c.group+"/"+c.province);
+  const a=$("nat-list").querySelector(`.nat-item[data-id="${id}"]`);if(!a)return;
+  for(let d=a.closest("details");d;d=d.parentElement.closest("details"))d.open=true;
 }
 function natRender(){
   natInit();
@@ -3703,8 +3983,7 @@ function natRender(){
   $("nat-legend").innerHTML=["SUC","LUC","Private"].map(t=>`<li><span class="pin-shape pin-${t.toLowerCase()}" aria-hidden="true"></span>${esc(L.typesShort[t])}</li>`).join("")+
     `<li><span class="sea-sw" aria-hidden="true"></span>${esc(L.sea)}</li>`+
     // the storm's own key: the water and the sensor shapes the campus pages use (their words, from the page's language table)
-    (NSIM.on?(()=>{const G=(LANGS[LANG]||LANGS.en).lg,P=mapPal();return `<li class="lg-storm"><i class="lg-w" style="background:${P.bands[1]}"></i>${esc(G[0])}</li>`+
-      `<li class="lg-storm"><i class="lg-w" style="background:${P.bands[2]}"></i>${esc(G[1])}</li>`+
+    (NSIM.on?(()=>{const G=(LANGS[LANG]||LANGS.en).lg;return `<li class="lg-storm"><span class="lg-grad">${esc(G[0])}<i style="background:${waterGradient(true)}"></i>${esc(G[1])}</span></li>`+
       [["ok",2],["warn",3],["alert",4]].map(([k,i])=>`<li class="lg-storm"><span class="shape ${k}" aria-hidden="true"></span>${esc(G[i])}</li>`).join("");})():"");
   $("nat-credit").textContent=L.credit;$("nat-credit").hidden=NATGL.state!=="on";   // the tiles' credit, only under the tiles
   if(typeof nsimSync==="function")nsimSync();
@@ -3852,6 +4131,76 @@ function syncCampusUI(){
 }
 document.addEventListener("click",e=>{if(e.target.closest(".c-pick")){natFocusSearch=true;location.hash="#ph";}});
 
+/* ---------- "?" toggletips (About page and Details): <span class="tt" data-term="…">note</span> becomes a "?" button
+   followed by its note. Click or tap pins the note, hover shows it, Escape / a click elsewhere / tabbing away close it. ---------- */
+let ttSeq=0,TT=null,ttHideT=0;                  // TT: the open note {el, pinned}
+const TT_HOVER=matchMedia("(hover:hover) and (pointer:fine)");
+function tipsInit(root){
+  root.querySelectorAll(".tt:not([data-tt])").forEach(el=>{
+    el.dataset.tt="1";const id="tt-"+(++ttSeq);
+    // keep the "?" on the same line as the word before it (and any punctuation right after it)
+    const pv=el.previousSibling,nx=el.nextSibling,mw=pv&&pv.nodeType===3&&/(\S+)$/.exec(pv.data);
+    if(mw){pv.data=pv.data.slice(0,-mw[1].length);const w=document.createElement("span");w.className="tt-w";w.textContent=mw[1];el.before(w);w.append(el);
+      const mp=nx&&nx.nodeType===3&&/^[.,;:)”]+/.exec(nx.data);if(mp){nx.data=nx.data.slice(mp[0].length);w.append(mp[0]);}}
+    const p=document.createElement("span");p.className="tt-p";p.id=id;p.hidden=true;
+    while(el.firstChild)p.appendChild(el.firstChild);
+    const b=document.createElement("button");b.type="button";b.className="tt-b";b.textContent="?";
+    b.setAttribute("aria-label","More about "+el.dataset.term);b.setAttribute("aria-expanded","false");b.setAttribute("aria-controls",id);
+    el.append(b,p);
+    b.addEventListener("click",e=>{e.stopPropagation();if(TT&&TT.el===el&&TT.pinned)tipHide(false);else tipShow(el,true);});
+    el.addEventListener("mouseenter",()=>{clearTimeout(ttHideT);if(TT_HOVER.matches&&!(TT&&TT.pinned))tipShow(el,false);});
+    el.addEventListener("mouseleave",()=>{if(TT&&TT.el===el&&!TT.pinned){clearTimeout(ttHideT);ttHideT=setTimeout(()=>tipHide(false),200);}});
+    el.addEventListener("focusout",e=>{if(TT&&TT.el===el&&!el.contains(e.relatedTarget))tipHide(false);});
+  });
+}
+function tipShow(el,pin){
+  if(TT&&TT.el!==el)tipHide(false);
+  const b=el.querySelector(".tt-b"),p=el.querySelector(".tt-p");
+  TT={el,pinned:pin||!!(TT&&TT.pinned)};b.setAttribute("aria-expanded","true");
+  if(p.hidden){p.hidden=false;tipPlace();void p.offsetWidth;p.classList.add("on");}else tipPlace();
+}
+function tipHide(refocus){
+  if(!TT)return;const el=TT.el;TT=null;clearTimeout(ttHideT);
+  const b=el.querySelector(".tt-b"),p=el.querySelector(".tt-p");
+  b.setAttribute("aria-expanded","false");p.classList.remove("on");p.hidden=true;if(refocus)b.focus();
+}
+// below the "?" (above it when there is no room), kept 16 px inside the window; closes once its "?" scrolls away
+function tipPlace(){
+  if(!TT)return;const b=TT.el.querySelector(".tt-b"),p=TT.el.querySelector(".tt-p"),r=b.getBoundingClientRect();
+  const vw=document.documentElement.clientWidth,vh=window.innerHeight;
+  if(r.bottom<0||r.top>vh||!r.width){tipHide(false);return;}
+  const w=p.offsetWidth,h=p.offsetHeight,x=Math.max(16,Math.min(r.left+r.width/2-28,vw-16-w));
+  let y=r.bottom+10;if(y+h>vh-8&&r.top-10-h>=8)y=r.top-10-h;
+  p.style.left=Math.round(x)+"px";p.style.top=Math.round(y)+"px";
+}
+document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!TT)return;e.stopImmediatePropagation();tipHide(TT.el.contains(document.activeElement));},true);
+document.addEventListener("click",e=>{if(TT&&!TT.el.contains(e.target))tipHide(false);});
+window.addEventListener("scroll",tipPlace,{passive:true,capture:true});
+window.addEventListener("resize",tipPlace);
+
+/* ---------- About (#about, #about/<section>) ---------- */
+const ABOUT_SECS=["what","how","data","sensors","limits","next","faq"];
+let ABOUT_SEC="";
+function aboutEnter(sec,from){
+  ABOUT_SEC=ABOUT_SECS.includes(sec)?sec:"";
+  if(ABOUT_SEC){const h=document.getElementById("ab-"+ABOUT_SEC+"-h");
+    h.scrollIntoView({behavior:reducedMotion||from!=="about"?"auto":"smooth",block:"start"});h.focus({preventScroll:true});}
+  else window.scrollTo(0,0);
+  aboutSpy(ABOUT_SEC||"what");
+}
+// the rail marks the section being read: the last one whose heading has passed the top third of the window
+function aboutSpy(force){
+  let cur=force;
+  if(!cur){cur="what";for(const s of ABOUT_SECS){const h=document.getElementById("ab-"+s+"-h");if(h.getBoundingClientRect().top<=window.innerHeight/3)cur=s;}
+    if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-2)cur=ABOUT_SECS[ABOUT_SECS.length-1];}
+  document.querySelectorAll(".ab-rail a").forEach(a=>{if(a.dataset.sec===cur)a.setAttribute("aria-current","true");else a.removeAttribute("aria-current");});
+}
+let abSpyQ=0;
+window.addEventListener("scroll",()=>{if(ROUTE!=="about"||abSpyQ)return;abSpyQ=requestAnimationFrame(()=>{abSpyQ=0;aboutSpy();});},{passive:true});
+document.querySelectorAll(".ab-rail a").forEach(a=>a.addEventListener("click",e=>{if(location.hash===a.getAttribute("href")){e.preventDefault();aboutEnter(a.dataset.sec,"about");}}));
+$("ab-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
+tipsInit(document);
+
 let ROUTE=null, siteBooted=false, navSeq=0, lastNav=null;
 function showRoute(r){ROUTE=r;document.body.dataset.route=r;}
 function markReady(id){document.body.dataset.ready=id;}        // tests and timings wait for this
@@ -3864,6 +4213,11 @@ function go(h,ctx){
     countryBack(true);
     if(siteBooted){if(ctx.wasTry)exitTry(SITE,true);setPlay(false);}
     showRoute("ph");natEnter();syncTabs();writeHash();markReady("ph");
+    return Promise.resolve();
+  }
+  if(h.route==="about"){
+    if(siteBooted){if(ctx.wasTry)exitTry(SITE,true);setPlay(false);}
+    const from=ROUTE;showRoute("about");aboutEnter(h.sec,from);syncTabs();writeHash();markReady("about");
     return Promise.resolve();
   }
   if(!DATA_ALL[h.site]&&siteBooted){TRY=ctx.wasTry;LIVE=ctx.wasLive;}   // until the new file arrives, the page still shows the old site

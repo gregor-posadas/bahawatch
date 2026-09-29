@@ -6,6 +6,7 @@ const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else co
 const U=BASE+'bahawatch_dashboard.html';
 const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{timeout:15000});
 const settle=pg=>pg.waitForFunction(()=>!natBusy(),null,{timeout:10000}).then(()=>pg.waitForTimeout(80));
+const openRow=(pg,id)=>pg.evaluate(id=>{const a=document.querySelector('#nat-list a[data-id="'+id+'"]');for(let d=a.closest('details');d;d=d.parentElement.closest('details'))d.open=true;},id);   // the list is a tree of drop-downs (2026-09-29)
 const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",null,{timeout:15000}).then(()=>pg.evaluate(()=>NATGL.state));
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
@@ -35,13 +36,23 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
     if(mode==="vector")assert(s.creditShown&&s.credit==="© OpenStreetMap contributors · Open Buildings (Google, Microsoft, VIDA) · MapLibre",`${mode}: map credits shown`);
     else assert(!s.creditShown,`outline: no OpenStreetMap/OpenFreeMap/MapLibre credit under the outline`);
     assert(s.desc==="Map of the Philippines with 25 PhilDev partner campuses: 17 in Luzon, 5 in Visayas, 3 in Mindanao. The campus list has the same campuses.",`${mode}: screen-reader description`);
-    assert(s.tabs.join()==="ph*,tv,berkeley,try"&&/PhilDev partner campuses/.test(s.title),`${mode}: tabs and title`);
-    s=await pg.evaluate(()=>[...document.querySelectorAll('#nat-list h2')].map(h=>h.dataset.group+h.dataset.n+":"+h.nextElementSibling.children.length));
-    assert(s.join()==="Luzon17:17,Visayas5:5,Mindanao3:3",`${mode}: list grouped Luzon 17, Visayas 5, Mindanao 3`);
+    assert(s.tabs.join()==="ph*,tv,sjq,berkeley,try,about"&&/PhilDev partner campuses/.test(s.title),`${mode}: tabs and title`);
+    s=await pg.evaluate(()=>[...document.querySelectorAll('#nat-list details.nat-grp')].map(d=>d.dataset.group+d.dataset.n+":"+d.querySelectorAll('.nat-item').length+(d.open?"open":"")));
+    assert(s.join()==="Luzon17:17,Visayas5:5,Mindanao3:3",`${mode}: list grouped Luzon 17, Visayas 5, Mindanao 3, closed until opened: ${s}`);
+    // drop-downs: island group › province › campuses (2026-09-29 feedback)
+    await pg.click('.nat-grp[data-group="Visayas"] > summary');await pg.click('.nat-prov[data-key="Visayas/Cebu"] > summary');
+    s=await pg.evaluate(()=>({provs:[...document.querySelectorAll('.nat-grp[data-group="Visayas"] .nat-prov')].map(d=>d.dataset.key),shown:[...document.querySelectorAll('#nat-list .nat-item')].filter(a=>a.checkVisibility()).map(a=>a.dataset.id).join()}));
+    assert(s.provs.join()==="Visayas/Cebu"&&s.shown==="ctu,usc,llcc,mcc,upc",`${mode}: Visayas › Cebu opens to its five campuses: ${JSON.stringify(s)}`);
+    await pg.fill('#nat-q','Xavier');await pg.waitForTimeout(450);
+    s=await pg.evaluate(()=>[...document.querySelectorAll('#nat-list .nat-item')].filter(a=>a.checkVisibility()).map(a=>a.dataset.id).join());
+    assert(s==="xu",`${mode}: a search opens the branches with a match: ${s}`);
+    await pg.fill('#nat-q','');await pg.waitForTimeout(450);
+    s=await pg.evaluate(()=>[...document.querySelectorAll('#nat-list details[open]')].map(d=>d.dataset.key).join());
+    assert(s==="Visayas,Visayas/Cebu",`${mode}: clearing the search restores what was open: ${s}`);
     s=await pg.evaluate(()=>({pilots:!!document.getElementById('nat-pilots-h')||[...document.querySelectorAll('#nat a')].some(a=>/^#(tv|berkeley|try)$/.test(a.getAttribute('href')||"")),
       rows:[...document.querySelectorAll('#nat-list .nat-item')].slice(0,2).map(a=>a.textContent)}));
     assert(!s.pilots,`${mode}: no Pilot sites or Try reporting in the list (they are tabs)`);
-    assert(s.rows.every(t=>!/ · /.test(t))&&s.rows[0]==="BatStateU Batangas State UniversityBatangas City, Batangas",`${mode}: list rows are two plain lines: ${s.rows[0]}`);
+    assert(s.rows.every(t=>!/ · /.test(t))&&s.rows[0]==="BatStateU Batangas State UniversityBatangas City",`${mode}: list rows are two plain lines: ${s.rows[0]}`);
     // search: accents, case, city names; announced once typing pauses
     const find=async q=>{await pg.fill('#nat-q',q);await pg.waitForTimeout(500);return pg.evaluate(()=>({ids:[...document.querySelectorAll('#nat-list .nat-item')].map(a=>a.dataset.id),count:document.getElementById('nat-count').textContent,none:document.getElementById('nat-list').textContent}));};
     for(const [q,want] of [["Xavier",["xu"]],["xavier",["xu"]],["UPLB",["uplb"]],["banos",["uplb"]],["mapua",["mapua"]],["Iligan",["msuiit"]],["cebu city",["ctu","usc","upc"]]]){
@@ -75,7 +86,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
     await pg.click('#nat-zout');await settle(pg);
     assert(Math.abs(await zoomState()-z0)<0.05,`${mode}: − zooms back out`);
     // a list row flies the map to the campus, outlines its box and offers "Open XU"; Open opens the campus
-    await pg.click('#nat-list a[data-id="xu"]');await settle(pg);
+    await openRow(pg,"xu");await pg.click('#nat-list a[data-id="xu"]');await settle(pg);
     s=await pg.evaluate(()=>{const o=document.getElementById('nat-open'),bx=document.getElementById('nat-box').getBoundingClientRect(),m=document.getElementById('nat-map').getBoundingClientRect(),
       pin=document.querySelector('#nat-pins .pin[data-id="xu"]');
       return {route:ROUTE,open:!o.hidden&&o.textContent==="Open XU"&&o.getAttribute('href')==="#xu",focus:document.activeElement===o,
@@ -141,7 +152,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
   {const ctx=await b.newContext({viewport:{width:1280,height:900}});const pg=await ctx.newPage();await pg.goto(U);await ready(pg,"ph");await glUp(pg);await settle(pg);
    const mark=cls=>pg.evaluate(c=>{const e=[...document.querySelectorAll('#nat-pins > *')].find(e=>(e.dataset.id||e.dataset.ids).split(",").includes("bsu"));
      return {kind:e&&e.className.split(" ")[0],on:!!e&&e.classList.contains(c),ring:!!e&&getComputedStyle(e,'::before').borderTopStyle==="solid",others:document.querySelectorAll('#nat-pins .'+c).length};},cls);
-   await pg.hover('#nat-list a[data-id="bsu"]');let s=await mark("pin-hl");
+   await openRow(pg,"bsu");await pg.hover('#nat-list a[data-id="bsu"]');let s=await mark("pin-hl");
    assert(s.on&&s.ring&&s.others===1,"hovering the BatStateU row marks its pin or cluster with a ring: "+JSON.stringify(s));
    await pg.mouse.move(5,5);await pg.focus('#nat-list a[data-id="bsu"]');s=await mark("pin-hl");
    assert(s.on&&s.ring&&s.others===1,"focusing the BatStateU row marks its pin or cluster: "+JSON.stringify(s));
@@ -195,10 +206,10 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    await pg.click('#nat-storm');await pg.waitForTimeout(6000);
    const st=await pg.evaluate(()=>({on:NSIM.on,pressed:document.getElementById('nat-storm').getAttribute('aria-pressed'),t:document.getElementById('nat-storm-t').textContent,
      sites:Object.keys(NSIM.sites).length,wet:Object.values(NSIM.sites).some(m=>m.hh.some(h=>h.status!=="ok")),
-     lg:[...document.querySelectorAll('#nat-legend .lg-storm')].length,units:document.querySelectorAll('#nat-units .nat-unit').length}));
+     lg:[...document.querySelectorAll('#nat-legend .lg-storm')].length,grad:/linear-gradient/.test((document.querySelector('#nat-legend .lg-grad i')||{}).style?.background||""),units:document.querySelectorAll('#nat-units .nat-unit').length}));
    assert(st.on&&st.pressed==="true"&&/^Simulated typhoon · \d+:\d\d$/.test(st.t),"the storm runs on a shared clock: "+st.t);
    assert(st.sites>=5&&st.wet,`every campus in view floods at once (${st.sites} campuses, some sensors wet)`);
-   assert(st.lg===5&&st.units===0,"the legend explains the water and the three sensor shapes; the plain unit rings give way to status shapes");
+   assert(st.lg===4&&st.grad&&st.units===0,"the legend explains the water (one depth spectrum) and the three sensor shapes; the plain unit rings give way to status shapes");
    // the campus pages' water drawing (2026-09-29): a campus big on screen is painted 4× finer with a faded margin
    await pg.evaluate(()=>{const c=CAMPUS_BY_ID.upd;NATGL.map.jumpTo({center:[c.lon,c.lat],zoom:14.2});});await pg.waitForTimeout(4000);
    const wd=await pg.evaluate(()=>{const m=Object.values(NSIM.sites).find(m=>m.fk>1&&m.FS.depth.some(d=>d>0.03));if(!m)return {fks:Object.values(NSIM.sites).map(m=>m.fk+":"+m.id)};
@@ -227,7 +238,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
   {const ctx=await b.newContext({viewport:{width:390,height:844}});const pg=await ctx.newPage();await pg.goto(U);await ready(pg,"ph");
    const s=await pg.evaluate(()=>({mapTop:document.querySelector('.nat-mapcol').getBoundingClientRect().top,listTop:document.querySelector('.nat-listcol').getBoundingClientRect().top,sw:document.documentElement.scrollWidth}));
    assert(s.mapTop<s.listTop&&s.sw<=390,"390 px: the map sits above the list, no sideways scroll");
-   await pg.click('#nat-list a[data-id="xu"]');await ready(pg,"xu");
+   await openRow(pg,"xu");await pg.click('#nat-list a[data-id="xu"]');await ready(pg,"xu");
    assert(await pg.evaluate(()=>location.hash==="#xu"),"390 px: a list row opens the campus directly");
    await ctx.close();}
   // finding 1 (whole-branch review): on a phone, a one-finger drag over the map scrolls the page; moving the map takes two

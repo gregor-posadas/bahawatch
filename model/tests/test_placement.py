@@ -45,6 +45,13 @@ class Pick(unittest.TestCase):
     def test_falls_back_to_closer_spacing_then_fails(self):
         chosen, sp = P.pick(self.line(8, 260.0, oc_at=0)); self.assertEqual(sp, 250.0)
         with self.assertRaises(ValueError): P.pick(self.line(8, 150.0, oc_at=0))
+    def test_all_inside_takes_every_unit_inside_the_outline(self):
+        # a barangay pilot (San Joaquin, 2026-09-29): eight units, all inside its outline, none of the better ones outside
+        cs = [cand(i, i * 400.0, 0.0, 1.0, oc=False) for i in range(10)] + [cand(100 + i, i * 400.0, 900.0, 0.5, oc=True) for i in range(9)]
+        chosen, sp = P.pick(cs, all_inside=True)
+        self.assertEqual(len(chosen), 8); self.assertTrue(all(c["oc"] for c in chosen)); self.assertEqual(sp, 300.0)
+        chosen, _ = P.pick(cs)                          # the campus rule on the same candidates: only unit 01 inside
+        self.assertEqual(sum(c["oc"] for c in chosen), 1)
     def test_no_campus_candidate_fails(self):
         with self.assertRaises(ValueError): P.pick(self.line(20, 400.0))
     def test_ok_rejects_are_skipped_and_ties_break_by_fid(self):

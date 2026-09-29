@@ -12,7 +12,9 @@ M_PER_DEG_LAT = 110640.0     # the same constants build_data.py uses
 GROUPS = ("Luzon", "Visayas", "Mindanao")
 TYPES = ("SUC", "LUC", "Private")
 ID_RE = re.compile(r"^[a-z]+$")   # share tokens #p.<id>.… accept lowercase letters only
-PILOT_BOXES = {"tv": (121.0470, 14.6300, 121.0755, 14.6545)}   # Teachers Village keeps its own frame
+PILOT_BOXES = {"tv": (121.0470, 14.6300, 121.0755, 14.6545),   # Teachers Village keeps its own frame
+               # Brgy. San Joaquin, Mabalacat City, Pampanga (PSA PH0305409022): 3 km around its PSA centre (2026-09-29)
+               "sjq": (120.545552, 15.207867, 120.573482, 15.234982)}
 
 
 def m_per_deg_lon(lat):

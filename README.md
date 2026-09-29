@@ -1,12 +1,17 @@
-# BahaWatch — Flood Monitor (25 PhilDev partner campuses · Teachers Village · UC Berkeley)
+# BahaWatch — Flood Monitor (25 PhilDev partner campuses · Teachers Village · San Joaquin · UC Berkeley)
 
 A web dashboard demonstrating how a network of low-cost household
 water-level sensors can produce **live, sensor-driven flood extent maps** for
 real places. It opens on a **national map of the 25 PhilDev partner
 campuses**; each campus has its own page (a 3 km box around the campus, eight
-proposed sensor spots, a partnership card). Two pilot sites keep their own
-tabs: **Teachers Village**, Quezon City (the original neighbourhood build) and
-**UC Berkeley** around Strawberry Creek (where the real demo unit lives). The
+proposed sensor spots, a partnership card). Three pilot sites keep their own
+tabs: **Teachers Village**, Quezon City (the original neighbourhood build),
+**San Joaquin**, Mabalacat City, Pampanga (added 2026-09-29, cut like a campus,
+all eight units inside the barangay) and **UC Berkeley** around Strawberry Creek
+(where the real demo unit lives). An **About** tab (`#about`, `#about/<section>`)
+explains the dashboard in plain language for talks such as GHTC: how it works,
+the data, the sensor units and their assumed mounting, accuracy and biases,
+future work and an FAQ, with "?" notes on terms. The
 old UP Diliman tab is now the `upd` campus page, and old `#diliman` links go
 there. §2.5 explains how the campus data are made; §6.5 how the pages work.
 
@@ -636,8 +641,9 @@ shows.
 
 ### 6.5 Sites and tabs
 
-A tab bar under the header — **PhilDev campuses · Teachers Village · UC
-Berkeley · Try reporting** — sits in both views (`role="tablist"`, arrow keys
+A tab bar under the header — **PhilDev campuses · Teachers Village · San
+Joaquin · UC Berkeley · Try reporting · About** — sits in both views (it wraps to a
+second row on a phone) (`role="tablist"`, arrow keys
 move between tabs; place names are not translated). On a campus page a campus
 bar under it names the campus, says the readings are simulated, and links back
 to the national map.
@@ -645,7 +651,9 @@ to the national map.
 **The national map** (`#ph`, or no hash) is the "PhilDev campuses" tab: one
 screen, a full-window vector map (§2.6) with the 25 campuses as pins by
 group, clustered where they crowd (Metro Manila, Cebu), and a list with
-search that ignores accents and case ("mapua", "banos") beside it. On
+search that ignores accents and case ("mapua", "banos") beside it. The list is a
+tree of drop-downs, island group › province › campus, closed at first; a search
+opens every branch with a match, and choosing a pin opens its branch. On
 screens 900 px and wider, a list row flies the map to that campus, outlines
 its 3 km box and shows "Open <short>"; narrower than 900 px the map sits
 off-screen above the list, so a row opens the campus page directly instead

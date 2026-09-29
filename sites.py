@@ -70,6 +70,17 @@ SITES = {
    tz="PHT", utc="+08:00",
    scen=PH_SCEN, emergency="911 or your barangay", attribution=FAB_ATTR, terrain=FAB_TERRAIN),
 
+ # Brgy. San Joaquin, Mabalacat City, Pampanga (2026-09-29): a pilot beside Teachers Village, cut like a campus
+ # (pipeline/common.py PILOT_BOXES["sjq"]); 8 units placed automatically, all inside the barangay (its outline; units_inside)
+ "sjq": dict(id="sjq", name="San Joaquin", place="Brgy. San Joaquin, Mabalacat City, Pampanga",
+   bbox=(120.545552, 15.207867, 120.573482, 15.234982), W=1200, H=1200, GW=400, GH=400, elev_factor=2,
+   dem="inputs/campuses/sjq/dem.tif", dem_kind="dtm", min_filter=None, sigma=1.0, carve=0.5, sea=True,
+   osm="inputs/campuses/sjq/osm.geojson", buildings="inputs/campuses/sjq/buildings.geojson", noah="geojson",
+   noah_dir="inputs/campuses/sjq", barangays="inputs/campuses/sjq/barangays.geojson",
+   outline="inputs/campuses/sjq/outline.geojson", sensors="auto", site_by="auto", labels="auto", units_inside=True,
+   road_class=ROAD_CAMPUS, creek_tags={"river", "stream", "drain", "canal", "ditch"}, profile="street",
+   langs="all", units="metric", tz="PHT", utc="+08:00", scen=PH_SCEN, emergency="911 or your barangay",
+   attribution=FAB_ATTR, terrain=FAB_TERRAIN),
  "berkeley": dict(id="berkeley", name="UC Berkeley", place="UC Berkeley, California",
    bbox=(-122.2700,37.8660,-122.2480,37.8790), W=1200, H=880, GW=240, GH=180,
    dem="sites/berkeley/output_USGS1m.tif", dem_kind="dtm", min_filter=None, sigma=0.8, carve=0.25,

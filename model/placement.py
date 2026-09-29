@@ -50,9 +50,10 @@ def score(elev, noah, creek_dist, cell_m, valid=None):
             + W_WATER * near_water(creek_dist))
 
 
-def pick(cands, n=N_UNITS, spacings=SPACINGS, ok=lambda c: True):
+def pick(cands, n=N_UNITS, spacings=SPACINGS, ok=lambda c: True, all_inside=False):
     """cands: dicts with fid, x_m, y_m, score, oc (on campus). Unit 1 is the best on-campus candidate; the rest are
-    off-campus houses taken best-first at least `spacing` metres from every unit already chosen. ok(c) is asked only of a candidate
+    off-campus houses (or, with all_inside, houses inside the outline) taken best-first at least `spacing` metres from
+    every unit already chosen. ok(c) is asked only of a candidate
     about to be chosen (naming it is slow). Returns (chosen, spacing used)."""
     order = sorted(cands, key=lambda c: (-c["score"], c["fid"]))
     bad = set()
@@ -74,8 +75,8 @@ def pick(cands, n=N_UNITS, spacings=SPACINGS, ok=lambda c: True):
         for c in order:
             if len(chosen) == n:
                 break
-            if c is first or c["oc"]:                 # spec §7.1: exactly one unit, unit 01, inside the campus outline
-                continue
+            if c is first or c["oc"] != all_inside:   # spec §7.1: exactly one unit, unit 01, inside the campus outline;
+                continue                              # all_inside (a barangay pilot, sjq): every unit inside it
             if all(math.hypot(c["x_m"] - o["x_m"], c["y_m"] - o["y_m"]) >= sp for o in chosen) and good(c):
                 chosen.append(c)
         if len(chosen) == n:

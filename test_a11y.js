@@ -24,6 +24,7 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   await pg.click('#nat-theme');await pg.click('#nat-theme');
   assert(errs.length===0&&await pg.evaluate(()=>document.documentElement.dataset.theme==="light"),"the theme button works on the national map before any site is opened");
   // wide screens: the national tab is one screen; only the campus list scrolls (spec §4.1)
+  await pg.evaluate(()=>document.querySelectorAll('#nat-list details').forEach(d=>d.open=true));   // every drop-down open: the list is long
   const one=await pg.evaluate(()=>{const l=document.querySelector('#nat .nat-listcol'),cs=getComputedStyle(l);return {page:document.scrollingElement.scrollHeight,vh:innerHeight,list:l.scrollHeight>l.clientHeight,ov:cs.overflowY};});
   assert(one.page<=one.vh+1&&one.list&&one.ov==="auto","1280 px national tab: the page doesn't scroll, the campus list does: "+JSON.stringify(one));
   // spec §7: pin labels are labels, not credits: 14 px
@@ -31,8 +32,8 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   assert(pinPx.length>0&&pinPx.every(v=>v>=14),"national map: pin labels are 14 px, not 12: "+pinPx.join());
   // keyboard: the search box, the list and the pins are reachable with Tab, and focus is visible
   await pg.focus('#nat-q');await pg.keyboard.press('Tab');
-  let s=await pg.evaluate(()=>({cls:document.activeElement.className,ol:getComputedStyle(document.activeElement).outlineStyle}));
-  assert(s.cls==="nat-item"&&s.ol!=="none","Tab from the search box reaches the campus list, with a visible focus ring");
+  let s=await pg.evaluate(()=>({cls:document.activeElement.className,tag:document.activeElement.tagName,ol:getComputedStyle(document.activeElement).outlineStyle}));
+  assert((s.cls==="nat-item"||s.tag==="SUMMARY")&&s.ol!=="none","Tab from the search box reaches the campus list, with a visible focus ring: "+JSON.stringify(s));
   s=await pg.evaluate(()=>[...document.querySelectorAll('#nat-pins a, #nat-pins button')].every(e=>e.tabIndex===0));
   assert(s,"every pin and cluster is in the Tab order");
   await pg.focus('#nat-pins .pin');
@@ -102,6 +103,7 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   const cdp=await slow.context().newCDPSession(slow);
   await cdp.send('Network.enable');
   await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:562.5,downloadThroughput:1.6*1024*1024/8*0.9,uploadThroughput:750*1024/8*0.9});
+  await slow.evaluate(()=>{const a=document.querySelector('#nat-list a[href="#uplb"]');for(let d=a.closest('details');d;d=d.parentElement.closest('details'))d.open=true;});
   await slow.click('#nat-list a[href="#uplb"]');     // at 1280 px a list row flies the map to the campus; "Open UPLB" opens it
   const t0=Date.now();await slow.click('#nat-open');await ready(slow,"uplb");const dt=Date.now()-t0;
   assert(dt<=3000,`UPLB appears in ${dt} ms on Fast 3G (≤ 3000)`);

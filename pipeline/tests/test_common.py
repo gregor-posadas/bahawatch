@@ -40,7 +40,7 @@ class Boxes(unittest.TestCase):
     def test_boxes_include_pilots_and_skip_unresolved(self):
         rows = [dict(id="aa", lat=None, lon=None), dict(id="bb", lat=14.6, lon=121.0)]
         bx = C.boxes(rows)
-        self.assertEqual(set(bx), {"bb", "tv"})
+        self.assertEqual(set(bx), {"bb", "tv", "sjq"})
 
 if __name__ == "__main__":
     unittest.main()

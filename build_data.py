@@ -241,7 +241,7 @@ def auto_units():
     cell_m=(LON1-LON0)*MDEG_X/GW
     score=placement.score(elev,noah,grids.dist_m(creek,cell_m),cell_m,valid=~SEA)
     geom=shape(json.load(open(CFG["outline"],encoding="utf-8"))["features"][0]["geometry"])
-    has_outline=geom.geom_type in ("Polygon","MultiPolygon"); c=CFG["campus"]
+    has_outline=geom.geom_type in ("Polygon","MultiPolygon"); c=CFG.get("campus")   # pilots (sjq) have an outline, no campus
     def on_campus(lon,lat):
         if has_outline: return geom.contains(Point(lon,lat))
         return math.hypot((lon-c["lon"])*MDEG_X,(lat-c["lat"])*MDEG_Y)<=150
@@ -260,7 +260,7 @@ def auto_units():
         if not st or dn>200 or b==0 or cell is None or SEA[cell[1],cell[0]]: return False
         cd["street"],cd["brgy"],cd["cell"]=st,bnames[b-1],cell
         return True
-    chosen,spacing=placement.pick(cands,ok=ok)
+    chosen,spacing=placement.pick(cands,ok=ok,all_inside=CFG.get("units_inside",False))
     out=[]
     for k,cd in enumerate(chosen,1):
         cx,cy=cd["cell"]
