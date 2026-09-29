@@ -156,7 +156,23 @@ review and reports"). Commits `62a9601` → `efbb216`:
    reports as constraints; uncertainty bands; later LiPAD 1 m and a pre-run 2D scenario library or a GPU shallow-water
    model (the model is static: a level pool per sensor with a 1 cm/cell decay, 80 cells max).
 
-**Agreed next (2026-09-29):** (a) run the model on a finer grid (≈ 5 m) with building footprints as obstacles
+11. **7.5 m model grid** (2026-09-29, Gregor chose 7.5 m). Teachers Village and the 25 campuses run the flood fill on
+   7.5 m cells (400×400; tv 400×354); UC Berkeley stays on its own grid. The file keeps the terrain on the 15 m grid
+   (`EW`/`EH`, identical to before; the DEM is 30 m) and NOAH on it too (`noah_ef: 2`, highest class per 2×2); the
+   street, obstacle, sea and building-count masks are 7.5 m. `model/grids.py fine_elev()` and `shared/flood.js
+   fineElev()` rebuild the fine terrain identically (bilinear, streets carved 0.5 m below the lowest cell of a 5×5
+   window = the same ~40 m as the old 3×3; tested against the same numbers). `fillFlood` works in metres (`g.cellM`:
+   1 cm per 15 m, ≤ 1.2 km). Units are kept from `data/<site>.json` (`PLACE_UNITS=1` re-places them). Raw file cap
+   750 → 950 KB; the gzip budget (≤ 250 KB) is unchanged and met; UPLB loads in 2.75–3.0 s on Fast 3G (≤ 3 s, as tight
+   as before). Water is drawn 4× the grid (~1.9 m) only in the rectangle that holds water (redraw ~50 ms at a TV peak).
+   **Effect at the same typhoon moment:** more land counts as solid building (TV 115 → 179 ha, UPD 90 → 143, UST 183 →
+   289) and the flooded area shrinks where buildings are dense (TV 15.3 → 14.5 ha, UPD 45.3 → 39.2, **UST 90.2 → 47.5**):
+   water now keeps to the streets. Not validated: Open Buildings merges tightly packed houses (closing real alleys) and
+   real houses let water in, so dense campuses may now understate the spread. A first attempt carved streets over a
+   22.5 m window, which raised sensor ground 0.05–0.28 m and grew the flood 55 % — fixed by the 5×5 window.
+   Test fix found on the way: `test_flood_look.js` used the horizontal pixel scale for rows (tv cells are not square).
+
+**Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
 outline, not the centroid; (b) **FABDEM scored 2026-09-29** against 17,936 ICESat-2 ground points in all 26 boxes (`analysis/dem_check/`: NMAD
 1.39 m, median +0.66 m, 46 % within 1 m; open campuses 0.4–0.8 m; old Manila core ~2 m high). Still to do: the same

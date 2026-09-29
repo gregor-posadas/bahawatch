@@ -929,7 +929,13 @@ const RES=2.2;
 /* Site state — everything below is rebuilt by initSite(id) when a tab changes. */
 let SITE="tv", DATA=null, SITE_CFG=null;
 let W,H,GW,GH,N, elev,NOAH,STREETMASK,BLDS,HOUSEHOLD,SCEN, depth,srcIdx,fillGen,fillDist,fq, eMinD,eMaxD,tLo,tHi, SEG_SAMPLES;
-let BLOCK=null, SEA=null, BC=null, HAS_SEA=false;    // per-cell grids: water may not enter / sea / building footprints (Philippine sites)
+let BLOCK=null, SEA=null, BC=null, HAS_SEA=false, CELL_M=15, NB=1;   // metres per model cell; NOAH neighbourhood radius in cells
+// a NOAH layer on the model grid: stored there, or on the coarse terrain grid (noah_ef) and expanded, nearest cell
+function noahGrid(d,s,gw,gh){const ew=d.noah_ef?d.EW:gw,eh=d.noah_ef?d.EH:gh,b=b64bytes(s),c=new Uint8Array(ew*eh);let o=0;
+  for(let i=0;i<b.length;i+=2){c.fill(b[i+1],o,o+b[i]);o+=b[i];}
+  if(!d.noah_ef)return c;const g=new Uint8Array(gw*gh);
+  for(let y=0;y<gh;y++){const r=Math.floor(y*eh/gh)*ew;for(let x=0;x<gw;x++)g[y*gw+x]=c[r+Math.floor(x*ew/gw)];}return g;}
+const cellMetres=(b,gw)=>(b[2]-b[0])*111320*Math.cos((b[1]+b[3])/2*Math.PI/180)/gw;    // per-cell grids: water may not enter / sea / building footprints (Philippine sites)
 let baseCv=document.createElement("canvas"), noahCv=document.createElement("canvas"), floodCv=document.createElement("canvas");
 function b64bytes(s){const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
 function unrle(s){const b=b64bytes(s);const g=new Uint8Array(N);let o=0;for(let i=0;i<b.length;i+=2){g.fill(b[i+1],o,o+b[i]);o+=b[i];}return g;}
@@ -937,9 +943,9 @@ const cellAt=(x,y)=>Math.min(GH-1,Math.max(0,(y/H*GH)|0))*GW+Math.min(GW-1,Math.
 const mulberry32=a=>function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 
 /* ---------- sensors: real sites, NOAH-calibrated response ---------- */
-function noah3x3(grid,gx,gy){
+function noah3x3(grid,gx,gy){   // the highest NOAH class within ~15 m (one 15 m cell each way, NB cells on a finer grid)
   let m=0;
-  for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+  for(let dy=-NB;dy<=NB;dy++)for(let dx=-NB;dx<=NB;dx++){
     const x=gx+dx,y=gy+dy;
     if(x<0||y<0||x>=GW||y>=GH)continue;
     m=Math.max(m,grid[y*GW+x]);
@@ -949,9 +955,13 @@ function noah3x3(grid,gx,gy){
 function initSite(id){
   SITE=id; DATA=DATA_ALL[id]; SITE_CFG=DATA.site;
   W=DATA.W;H=DATA.H;GW=DATA.GW;GH=DATA.GH;N=GW*GH;
-  elev=(()=>{const v=new Int16Array(b64bytes(DATA.elev).buffer);const f=new Float32Array(N);for(let i=0;i<N;i++)f[i]=v[i]/10;return f;})();
-  NOAH={};for(const k of ["5","25","100"])NOAH[k]=DATA.noah&&DATA.noah[k]?unrle(DATA.noah[k]):new Uint8Array(N);   // a missing NOAH map reads as no hazard
   STREETMASK=unrle(DATA.street);
+  // terrain: stored on the coarse grid (EW×EH) and rebuilt on the model's 7.5 m grid with streets carved (fineElev);
+  // older files store it on the model grid itself
+  elev=DATA.EW?fineElev(new Int16Array(b64bytes(DATA.elev).buffer),DATA.EW,DATA.EH,GW,GH,STREETMASK,DATA.carve,DATA.carve_win||3)
+    :(()=>{const v=new Int16Array(b64bytes(DATA.elev).buffer);const f=new Float32Array(N);for(let i=0;i<N;i++)f[i]=v[i]/10;return f;})();
+  CELL_M=cellMetres(DATA.bbox,GW);NB=Math.max(1,Math.round(15/CELL_M));
+  NOAH={};for(const k of ["5","25","100"])NOAH[k]=DATA.noah&&DATA.noah[k]?noahGrid(DATA,DATA.noah[k],GW,GH):new Uint8Array(N);   // a missing NOAH map reads as no hazard
   BLDS=(()=>{const v=new Uint16Array(b64bytes(DATA.blds).buffer);const a=[];for(let i=0;i<v.length;i+=2)a.push([v[i]/10,v[i+1]/10]);return a;})();
   // storm-response reference: the site's median sensor street elevation (was the constant 56 m)
   const gs=DATA.sensors.map(s=>s.g).sort((a,b)=>a-b), gRef=SITE_CFG.g_ref!=null?SITE_CFG.g_ref:gs[Math.floor(gs.length/2)];
@@ -1018,8 +1028,11 @@ const MAX_STEPS = 80;
 // g: {elev: Float32Array, block: Uint8Array|null, GW, GH}
 // sources: [{idx, cx, cy, gElev, depth}] (depth in metres)
 // s: scratch reused between calls {depth: Float32Array, src: Int8Array, gen: Int32Array, dist: Int32Array, q: Int32Array, g: number}
+// g.cellM (metres per cell) makes the decay and the reach metric — 1 cm per 15 m, at most 1.2 km — so a finer grid
+// changes where water can go (obstacles), not how far it spreads; without it, the original per-cell values.
 function fillFlood(g, sources, s) {
   const { elev, block, GW, GH } = g, N = GW * GH;
+  const DECAY = g.cellM ? DECAY_PER_CELL * g.cellM / 15 : DECAY_PER_CELL, STEPS = g.cellM ? Math.round(MAX_STEPS * 15 / g.cellM) : MAX_STEPS;
   s.depth.fill(0); s.src.fill(-1);
   for (const w of sources) {
     if (w.depth <= 0.02) continue;
@@ -1031,10 +1044,10 @@ function fillFlood(g, sources, s) {
     s.gen[start] = s.g; s.dist[start] = 0; s.q[qt++] = start;
     while (qh < qt) {
       const i = s.q[qh++], x = i % GW, dstep = s.dist[i];
-      const d = WSE - DECAY_PER_CELL * dstep - elev[i];
+      const d = WSE - DECAY * dstep - elev[i];
       if (d <= 0.02 || d > cap) continue;   // dry ground, or far below the observed surface: no claim, no traverse
       if (d > s.depth[i]) { s.depth[i] = d; s.src[i] = w.idx; }
-      if (dstep >= MAX_STEPS) continue;
+      if (dstep >= STEPS) continue;
       for (const j of [i - 1, i + 1, i - GW, i + GW]) {
         if (j < 0 || j >= N) continue;
         if ((j === i - 1 && x === 0) || (j === i + 1 && x === GW - 1)) continue;
@@ -1054,7 +1067,8 @@ function scratch(N) {
 // The drawn water: a signed field on the model grid. Wet cells carry their depth; a dry cell next to water carries the
 // neighbouring water surface minus its own ground (negative), so the edge — drawn where the field crosses zero between
 // cells — lands where the surface meets the terrain, not on a cell boundary. A dry cell the surface would still cover
-// (the fill stopped short of it) stays just below zero: the drawing never floods more than the model did. Built cells
+// (the fill stopped short of it) mirrors the water depth, so the edge sits on the cell boundary: the drawing never
+// floods more than the model did. Built cells
 // (≥ 75 %) take the neighbouring depth only when `open` (the building footprints will be cut out of the drawing, so the
 // water shows in the alleys between them); the sea is never flood.
 function shoreField(g, depth, open) {
@@ -1072,7 +1086,8 @@ function shoreField(g, depth, open) {
     }
     if (surf === -Infinity) { F[i] = -0.3; continue; }
     if (open && block && block[i]) { F[i] = Math.min(deep, surf - elev[i]); continue; }
-    F[i] = Math.min(-0.01, surf - elev[i]);
+    const v = surf - elev[i];
+    F[i] = v < -0.01 ? v : -deep;   // terrain stops the water: its own crossing; the fill stopped short: the cell boundary
   }
   return F;
 }
@@ -1083,8 +1098,39 @@ function bilerp(F, GW, GH, gx, gy) {
   return (F[i] * (1 - tx) + F[i + 1] * tx) * (1 - ty) + (F[i + GW] * (1 - tx) + F[i + GW + 1] * tx) * ty;
 }
 
+// The model's terrain on its fine grid: bilinear interpolation of the file's coarse elevation (decimetres) at fine
+// cell centres, street cells carved `carve` m below the lowest cell of the win×win window around them (3 at 15 m, 5 at
+// 7.5 m: about the same 40 m). model/grids.py fine_elev()
+// does the same arithmetic (tested against the same numbers).
+function fineElev(coarseDm, EW, EH, GW, GH, street, carve, win = 3) {
+  const e = new Float64Array(GW * GH);
+  const axis = (nf, nc) => { const i0 = new Int32Array(nf), t = new Float64Array(nf);
+    for (let k = 0; k < nf; k++) { const u = Math.max(0, Math.min(nc - 1, (k + 0.5) * nc / nf - 0.5)); i0[k] = Math.min(Math.floor(u), Math.max(nc - 2, 0)); t[k] = u - i0[k]; }
+    return [i0, t]; };
+  const [x0, tx] = axis(GW, EW), [y0, ty] = axis(GH, EH), c = (x, y) => coarseDm[y * EW + x] / 10;
+  for (let y = 0; y < GH; y++) {
+    const ya = y0[y], yb = Math.min(ya + 1, EH - 1);
+    for (let x = 0; x < GW; x++) {
+      const xa = x0[x], xb = Math.min(xa + 1, EW - 1);
+      const top = c(xa, ya) * (1 - tx[x]) + c(xb, ya) * tx[x], bot = c(xa, yb) * (1 - tx[x]) + c(xb, yb) * tx[x];
+      e[y * GW + x] = top * (1 - ty[y]) + bot * ty[y];
+    }
+  }
+  const out = Float32Array.from(e);
+  if (street && carve) {   // only street cells, each from the uncarved terrain (so the order doesn't matter)
+    for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+      if (!street[y * GW + x]) continue;
+      let m = Infinity; const r = (win - 1) >> 1;
+      for (let dy = -r; dy <= r; dy++) { const Y = Math.max(0, Math.min(GH - 1, y + dy)) * GW;
+        for (let dx = -r; dx <= r; dx++) m = Math.min(m, e[Y + Math.max(0, Math.min(GW - 1, x + dx))]); }
+      out[y * GW + x] = m - carve;
+    }
+  }
+  return out;
+}
+
 let FS=null;                          // the fill's scratch buffers, sized per site in initSite()
-function computeFlood(t){fillFlood({elev,block:BLOCK,GW,GH},HOUSEHOLD,FS);}
+function computeFlood(t){fillFlood({elev,block:BLOCK,GW,GH,cellM:CELL_M},HOUSEHOLD,FS);}
 const depthAtWorld=(x,y)=>(x<0||y<0||x>=W||y>=H)?0:depth[cellAt(x,y)];
 
 /* ---------- map theming ---------- */
@@ -1200,7 +1246,7 @@ function renderNoah(){
 // follows the terrain instead of the cells; colour blends between the legend's depth bands and the shallowest ~8 cm
 // fade out; with the detailed map on, the building footprints that touch water are cut out of it. Never more water than
 // the model. (A shimmer was tried and removed at Gregor's request, 2026-09-29.)
-const FK=4;
+let FK=4;   // drawn water ~3.75 m: 4× a 15 m grid, 2× a 7.5 m grid (set per site)
 // The water painter shared by the campus map and the national typhoon: the signed field F (shoreField) sampled FK× finer
 // (bilerp), coloured and faded by depth from a per-centimetre table, only around cells that hold water.
 function waterLUT(P,pub){
@@ -1213,35 +1259,44 @@ function waterLUT(P,pub){
   for(let k=0;k<256;k++){const v=k/100,c=colAt(v),f=Math.min(1,v/0.08);LUT[k*4]=c[0];LUT[k*4+1]=c[1];LUT[k*4+2]=c[2];LUT[k*4+3]=Math.round(255*f*f*(3-2*f));}
   return LUT;
 }
+// Returns {cv, x0, y0}: only the rectangle of cells that can hold water is painted (x0, y0: its corner in fine pixels),
+// so a small flood costs little to paint and to draw onto the map.
 function paintWater(F,GW,GH,FK,LUT,alphaOf){
-  const N=GW*GH,FW=GW*FK,FH=GH*FK,cv=document.createElement("canvas");cv.width=FW;cv.height=FH;
-  const c2=cv.getContext("2d"),img=c2.createImageData(FW,FH),px=img.data,act=new Uint8Array(N);
-  for(let i=0;i<N;i++)if(F[i]>0){const x=i%GW,y=(i/GW)|0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<GW&&Y<GH)act[Y*GW+X]=1;}}
-  for(let cy=0;cy<GH;cy++)for(let cx=0;cx<GW;cx++){
+  const N=GW*GH,act=new Uint8Array(N);let bx0=GW,by0=GH,bx1=-1,by1=-1;
+  for(let i=0;i<N;i++)if(F[i]>0){const x=i%GW,y=(i/GW)|0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<GW&&Y<GH)act[Y*GW+X]=1;}
+    if(x<bx0)bx0=x;if(x>bx1)bx1=x;if(y<by0)by0=y;if(y>by1)by1=y;}
+  const cv=document.createElement("canvas");
+  if(bx1<0){cv.width=cv.height=1;return {cv,x0:0,y0:0};}
+  bx0=Math.max(0,bx0-1);by0=Math.max(0,by0-1);bx1=Math.min(GW-1,bx1+1);by1=Math.min(GH-1,by1+1);
+  const FW=(bx1-bx0+1)*FK,FH=(by1-by0+1)*FK,ox=bx0*FK,oy=by0*FK;cv.width=FW;cv.height=FH;
+  const c2=cv.getContext("2d"),img=c2.createImageData(FW,FH),px=img.data;
+  for(let cy=by0;cy<=by1;cy++)for(let cx=bx0;cx<=bx1;cx++){
     if(!act[cy*GW+cx])continue;   // only cells with water in or next to them can hold drawn water
     for(let py=cy*FK;py<cy*FK+FK;py++){
       const gy=(py+0.5)/FK-0.5,ry=Math.max(0,Math.min(GH-1,Math.round(gy)));
       for(let qx=cx*FK;qx<cx*FK+FK;qx++){
         const gx=(qx+0.5)/FK-0.5,v=bilerp(F,GW,GH,gx,gy);
         if(v<=0)continue;
-        const L=Math.min(255,Math.round(v*100))*4,ci=ry*GW+Math.max(0,Math.min(GW-1,Math.round(gx))),o=(py*FW+qx)*4;
+        const L=Math.min(255,Math.round(v*100))*4,ci=ry*GW+Math.max(0,Math.min(GW-1,Math.round(gx))),o=((py-oy)*FW+qx-ox)*4;
         px[o]=LUT[L];px[o+1]=LUT[L+1];px[o+2]=LUT[L+2];px[o+3]=alphaOf(ci)*LUT[L+3]/255;
       }
     }
   }
-  c2.putImageData(img,0,0);return cv;
+  c2.putImageData(img,0,0);return {cv,x0:ox,y0:oy};
 }
 let FOOT={site:null,n:0,xy:null,start:null,cell:null,pts:[],open:false,z:0,at:0};
 function renderFlood(){
   const P=mapPal(),ctx=floodCv.getContext("2d");
   ctx.setTransform(1,0,0,1,0,0);
   ctx.clearRect(0,0,floodCv.width,floodCv.height);
+  FK=4;   // drawn water 4× the model grid (~1.9 m at 7.5 m): fewer samples per cell and the edge can't follow the terrain inside a cell
   const foot=FOOT.site===SITE&&FOOT.xy;
   const F=shoreField({elev,block:BLOCK,sea:SEA,GW,GH},depth,!!(foot&&FOOT.open));
   const selIdx=(selected&&selected.idx!==undefined)?selected.idx:-1;
-  const tmp=paintWater(F,GW,GH,FK,waterLUT(P,VIEW==="public"),ci=>selIdx>=0?(srcIdx[ci]===selIdx?240:120):225);
+  const w=paintWater(F,GW,GH,FK,waterLUT(P,VIEW==="public"),ci=>selIdx>=0?(srcIdx[ci]===selIdx?240:120):225);
+  const sx=floodCv.width/(GW*FK),sy=floodCv.height/(GH*FK);
   ctx.imageSmoothingEnabled=true;
-  ctx.drawImage(tmp,0,0,floodCv.width,floodCv.height);
+  ctx.drawImage(w.cv,w.x0*sx,w.y0*sy,w.cv.width*sx,w.cv.height*sy);
   if(foot){   // cut out the buildings that touch water (drawn straight on the canvas: a big Path2D takes seconds to build)
     const R=floodCv.width/W,{xy,start,cell}=FOOT,near=i=>F[i]>-0.05;
     ctx.globalCompositeOperation="destination-out";ctx.beginPath();
@@ -3469,9 +3524,10 @@ const NSIM_SCEN="typhoon",NSIM_T0=120,NSIM_T1=900,NSIM_MIN_PER_S=24;
 function nsimModel(d){
   const GWn=d.GW,GHn=d.GH,Nn=GWn*GHn;
   const un=s=>{const b=b64bytes(s),g=new Uint8Array(Nn);let o=0;for(let i=0;i<b.length;i+=2){g.fill(b[i+1],o,o+b[i]);o+=b[i];}return g;};
-  const ev=new Int16Array(b64bytes(d.elev).buffer),el=new Float32Array(Nn);for(let i=0;i<Nn;i++)el[i]=ev[i]/10;
-  const NO={};for(const k of ["5","25","100"])NO[k]=d.noah&&d.noah[k]?un(d.noah[k]):new Uint8Array(Nn);
-  const n3=(g,gx,gy)=>{let m=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const x=gx+dx,y=gy+dy;if(x>=0&&y>=0&&x<GWn&&y<GHn)m=Math.max(m,g[y*GWn+x]);}return m;};
+  const ev=new Int16Array(b64bytes(d.elev).buffer),el=d.EW?fineElev(ev,d.EW,d.EH,GWn,GHn,un(d.street),d.carve,d.carve_win||3):Float32Array.from(ev,v=>v/10);
+  const cm=cellMetres(d.bbox,GWn),nb=Math.max(1,Math.round(15/cm));
+  const NO={};for(const k of ["5","25","100"])NO[k]=d.noah&&d.noah[k]?noahGrid(d,d.noah[k],GWn,GHn):new Uint8Array(Nn);
+  const n3=(g,gx,gy)=>{let m=0;for(let dy=-nb;dy<=nb;dy++)for(let dx=-nb;dx<=nb;dx++){const x=gx+dx,y=gy+dy;if(x>=0&&y>=0&&x<GWn&&y<GHn)m=Math.max(m,g[y*GWn+x]);}return m;};
   const gs=d.sensors.map(q=>q.g).sort((a,b)=>a-b),gRef=d.site.g_ref!=null?d.site.g_ref:gs[Math.floor(gs.length/2)];
   const hh=d.sensors.map((q,k)=>{const gx=Math.min((q.x/d.W*GWn)|0,GWn-1),gy=Math.min((q.y/d.H*GHn)|0,GHn-1);
     const wN=n3(NO["5"],gx,gy)*0.5+n3(NO["25"],gx,gy)*0.3+n3(NO["100"],gx,gy)*0.2;   // the campus page's weighting (initSite)
@@ -3479,7 +3535,7 @@ function nsimModel(d){
       expos:0.92+mulberry32(500+k)()*0.2,depth:0,status:"ok"};});
   const sea=d.sea?un(d.sea):null,block=d.block?un(d.block):sea;
   const cv=document.createElement("canvas");cv.width=GWn;cv.height=GHn;
-  return {id:d.site&&d.site.id,bbox:d.bbox,g:{elev:el,block,GW:GWn,GH:GHn},sea,fk:1,hh,scen:d.site.scen[NSIM_SCEN],cv,t:-1,
+  return {id:d.site&&d.site.id,bbox:d.bbox,g:{elev:el,block,GW:GWn,GH:GHn,cellM:cm},sea,fk:1,hh,scen:d.site.scen[NSIM_SCEN],cv,t:-1,
     FS:{depth:new Float32Array(Nn),src:new Int8Array(Nn),gen:new Int32Array(Nn),dist:new Int32Array(Nn),q:new Int32Array(Nn),g:0}};
 }
 // the campus pages' pulse and sensor depth (pulse(), hhDepth()), for this campus's own typhoon scenario
@@ -3489,7 +3545,8 @@ function nsimStep(m,t){
   for(const s of m.hh){const P=m.scen.P*nsimPulse(m.scen,t,10+(s.gRef-s.gElev)*4);s.depth=Math.min(0.9,Math.max(0,(P*s.sus-0.02)*s.expos));s.status=statusOf(s);}
   fillFlood(m.g,m.hh,m.FS);
   const F=shoreField({...m.g,sea:m.sea},m.FS.depth,false);
-  m.cv=paintWater(F,m.g.GW,m.g.GH,m.fk||1,waterLUT(mapPal(),true),()=>225);   // the campus page's drawing, same colours
+  const w=paintWater(F,m.g.GW,m.g.GH,m.fk||1,waterLUT(mapPal(),true),()=>225);   // the campus page's drawing, same colours
+  m.cv=w.cv;m.cvAt=[w.x0/(m.g.GW*(m.fk||1)),w.y0/(m.g.GH*(m.fk||1)),w.cv.width/(m.g.GW*(m.fk||1)),w.cv.height/(m.g.GH*(m.fk||1))];
 }
 // the campuses whose box is in view and big enough to show water, as [campus, box px, fade]
 function nsimVisible(){
@@ -3514,9 +3571,10 @@ function nsimDraw(){
     const md=NSIM.sites[c.id];
     if(!md){if(!NSIM.want.has(c.id)){NSIM.want.add(c.id);loadSiteData(c.id).then(d=>{NSIM.sites[c.id]=nsimModel(d);nsimDraw();},()=>{});}continue;}
     const b=md.bbox,a=map.project([b[0],b[3]]),z=map.project([b[2],b[1]]);
-    const fk=z.x-a.x>md.g.GW*1.5?4:1;if(fk!==md.fk){md.fk=fk;md.t=-1;}   // fine shorelines only when the campus is big on screen
+    const fine=Math.max(1,Math.round(4*md.g.cellM/15)),fk=z.x-a.x>300?fine:1;if(fk!==md.fk){md.fk=fk;md.t=-1;}   // fine once the 3 km box spans 300 px   // fine shorelines only when the campus is big on screen
     nsimStep(md,t);
-    ctx.globalAlpha=fade;ctx.imageSmoothingEnabled=true;ctx.drawImage(md.cv,a.x,a.y,z.x-a.x,z.y-a.y);
+    const [fx,fy,fw,fh]=md.cvAt||[0,0,1,1],bw=z.x-a.x,bh=z.y-a.y;   // the painted rectangle inside the campus box
+    ctx.globalAlpha=fade;ctx.imageSmoothingEnabled=true;ctx.drawImage(md.cv,a.x+fx*bw,a.y+fy*bh,fw*bw,fh*bh);
     for(const s of md.hh){const p=map.project([s.lon,s.lat]);drawMarker(ctx,p.x,p.y,5,s.status,STATUS_COL[s.status],P,false);}
   }
   ctx.globalAlpha=1;

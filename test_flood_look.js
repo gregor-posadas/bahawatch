@@ -22,23 +22,25 @@ const storm=pg=>pg.evaluate(()=>{document.querySelector('.p-scen [data-sc="typho
   // 1. the edge lands where the water surface meets the terrain: across a wet cell and a dry, higher neighbour, the
   //    drawn water fades out near the model's zero crossing, not at the cell boundary halfway between
   let s=await pg.evaluate(()=>{
-    const F=shoreField({elev,block:null,sea:SEA,GW,GH},depth,false),c=floodCv.getContext('2d'),k=floodCv.width/GW;
-    const a=(gx,gy)=>c.getImageData(Math.floor((gx+0.5)*k),Math.floor((gy+0.5)*k),1,1).data[3];
+    const F=shoreField({elev,block:null,sea:SEA,GW,GH},depth,false),c=floodCv.getContext('2d'),k=floodCv.width/GW,ky=floodCv.height/GH;   // cells need not be square on the canvas
+    const a=(gx,gy)=>c.getImageData(Math.floor((gx+0.5)*k),Math.floor((gy+0.5)*ky),1,1).data[3];
     let tried=0,good=0;
-    for(let i=0;i<N&&tried<40;i++){const x=i%GW,y=(i/GW)|0;if(x>=GW-1||!(depth[i]>0.1)||depth[i+1]>0.03||(BLOCK&&BLOCK[i+1])||(SEA&&SEA[i+1]))continue;
+    for(let i=GW;i<N-GW&&tried<40;i++){const x=i%GW,y=(i/GW)|0;if(x>=GW-1||!(depth[i]>0.1)||depth[i+1]>0.03||(BLOCK&&BLOCK[i+1])||(SEA&&SEA[i+1]))continue;
       const t=F[i]/(F[i]-F[i+1]);if(t>0.35&&t<0.65)continue;           // only pairs where the two answers differ
+      if(!(F[i-GW]>0&&F[i+GW]>0&&F[i-GW+1]<0&&F[i+GW+1]<0))continue;   // a straight stretch of shoreline (not a notch or a corner)
+      if(a(x,y)===0)continue;                                          // a building cut out of the water at the sample point
       tried++;let last=0;for(let s=0;s<=20;s++){if(a(x+s/20,y)>0)last=s/20;}   // how far the drawn water reaches
-      if(Math.abs(last-t)<0.2)good++;}
+      if(Math.abs(last-t)*CELL_M<3&&Math.abs(last-t)<Math.abs(last-0.5))good++;}   // within 3 m (as at 15 m: 0.2 cell), nearer the crossing than the cell boundary
     return {tried,good};});
-  assert(s.tried>=5&&s.good/s.tried>=0.8,"the drawn shoreline follows the terrain (edge within 0.2 cell of the model's crossing): "+JSON.stringify(s));
+  assert(s.tried>=5&&s.good/s.tried>=0.8,"the drawn shoreline follows the terrain (edge within 3 m of the model's crossing, nearer it than the cell boundary): "+JSON.stringify(s));
   // never more water than the model: a pixel at the centre of a dry, unbuilt cell far from water is clear
-  s=await pg.evaluate(()=>{const c=floodCv.getContext('2d'),k=floodCv.width/GW;let bad=0,n=0;
+  s=await pg.evaluate(()=>{const c=floodCv.getContext('2d'),k=floodCv.width/GW,ky=floodCv.height/GH;let bad=0,n=0;
     for(let i=0;i<N;i++){const x=i%GW,y=(i/GW)|0;if(depth[i]>0.03||x<1||y<1||x>=GW-1||y>=GH-1)continue;
-      if([i-1,i+1,i-GW,i+GW].some(j=>depth[j]>0.03))continue;n++;if(c.getImageData(Math.floor((x+0.5)*k),Math.floor((y+0.5)*k),1,1).data[3]>0)bad++;}
+      if([i-1,i+1,i-GW,i+GW].some(j=>depth[j]>0.03))continue;n++;if(c.getImageData(Math.floor((x+0.5)*k),Math.floor((y+0.5)*ky),1,1).data[3]>0)bad++;}
     return {n,bad};});
   assert(s.n>100&&s.bad===0,"no water drawn on dry ground away from the flood: "+JSON.stringify(s));
   // 3. shaded by depth: the shallow margin is fainter than deep water
-  s=await pg.evaluate(()=>{const c=floodCv.getContext('2d'),k=floodCv.width/GW,A=i=>c.getImageData(Math.floor((i%GW+0.5)*k),Math.floor(((i/GW|0)+0.5)*k),1,1).data[3];
+  s=await pg.evaluate(()=>{const c=floodCv.getContext('2d'),k=floodCv.width/GW,ky=floodCv.height/GH,A=i=>c.getImageData(Math.floor((i%GW+0.5)*k),Math.floor(((i/GW|0)+0.5)*ky),1,1).data[3];
     let sh=null,dp=null;for(let i=0;i<N;i++){if(BLOCK&&BLOCK[i])continue;const d=depth[i];if(d>0.035&&d<0.06&&sh===null)sh=A(i);if(d>0.4&&dp===null)dp=A(i);}return {sh,dp};});
   assert(s.sh!==null&&s.dp!==null&&s.sh<s.dp,"the shallowest water is drawn fainter than deep water: "+JSON.stringify(s));
   // 2. cut around buildings: the detailed map's footprints are cleared from the water

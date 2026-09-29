@@ -22,7 +22,7 @@ const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else co
   assert(r.mid.eMin>45&&r.mid.eMax>300,"elevation range is Berkeley's");
   assert(r.mid.scen==="Dry day|Winter storm|Atmospheric river","scenario labels come from the site");
   assert(r.mid.profile==="path"&&r.mid.hazard===false,"site config exposed");
-  assert(r.after.site==="tv"&&r.after.units===8&&r.after.n===35400,"initSite(tv) restores");
+  assert(r.after.site==="tv"&&r.after.units===8&&r.after.n===141600,"initSite(tv) restores (400×354 model grid, 7.5 m cells since 2026-09-29)");
   const nd=await pg.evaluate(()=>{try{initSite("uplb");return "no error";}catch(e){return e.message;}});
   assert(nd!=="no error","initSite needs the site's data file first (it isn't fetched here)");
   const sw=await pg.evaluate(()=>{

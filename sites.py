@@ -54,7 +54,7 @@ FAB_TERRAIN = "FABDEM V1-2 (30 m, buildings and trees removed)"
 
 SITES = {
  "tv": dict(id="tv", name="Teachers Village", place="Teachers Village, Quezon City",
-   bbox=(121.0470,14.6300,121.0755,14.6545), W=1200, H=1059, GW=200, GH=177,
+   bbox=(121.0470,14.6300,121.0755,14.6545), W=1200, H=1059, GW=400, GH=354, elev_factor=2,   # 7.5 m model cells, terrain on 15 m (2026-09-29)
    dem="inputs/campuses/tv/dem.tif", dem_kind="dtm", min_filter=None, sigma=1.0, carve=0.5, sea=True,
    buildings="inputs/campuses/tv/buildings.geojson",
    osm="inputs/export.geojson", noah=NOAH,
@@ -106,7 +106,7 @@ def campus_site(r, root=None):
     ident = {k: r[k] for k in ("id", "short", "name", "campus", "group", "type", "city", "province")}
     ident.update(lat=r["lat"], lon=r["lon"])
     return dict(id=r["id"], name=r["short"], place=f"{r['name']} · {r['city']}, {r['province']}", campus=ident,
-                bbox=box_around(r["lat"], r["lon"]), W=1200, H=1200, GW=200, GH=200,
+                bbox=box_around(r["lat"], r["lon"]), W=1200, H=1200, GW=400, GH=400, elev_factor=2,   # 7.5 m model cells, terrain on 15 m (2026-09-29)
                 dem=f"{d}/dem.tif", dem_kind="dtm", min_filter=None, sigma=1.0, carve=0.5, sea=True,
                 osm=f"{d}/osm.geojson", buildings=f"{d}/buildings.geojson", noah="geojson", noah_dir=d,
                 barangays=f"{d}/barangays.geojson", outline=f"{d}/outline.geojson",

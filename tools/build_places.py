@@ -42,7 +42,12 @@ LOOKAHEAD_MIN = read_lookahead_min()   # RULE.LOOKAHEAD_MIN
 
 def b64(s): return base64.b64decode(s)
 def elev_grid(d):
-    return (np.frombuffer(b64(d["elev"]), dtype="<i2").astype(np.float32) / 10.0).reshape(d["GH"], d["GW"])
+    """The model's terrain: on the model grid itself, or (7.5 m grids) rebuilt from the coarse terrain like the page."""
+    raw = np.frombuffer(b64(d["elev"]), dtype="<i2")
+    if "EW" in d:
+        street = unrle(d["street"], d["GW"] * d["GH"]).reshape(d["GH"], d["GW"]).astype(bool)
+        return grids.fine_elev(raw, d["EW"], d["EH"], d["GW"], d["GH"], street, d["carve"], d.get("carve_win", 3)).astype(np.float32)
+    return (raw.astype(np.float32) / 10.0).reshape(d["GH"], d["GW"])
 def unrle(s, n):
     b = b64(s); g = np.zeros(n, np.uint8); o = 0
     for i in range(0, len(b), 2):
@@ -71,7 +76,11 @@ def noah_layers(d):
     """The site's NOAH 5-yr/25-yr hazard grids, and whether it is hazard-mapped at all (spec §7)."""
     GH, GW = d["GH"], d["GW"]; N = GH * GW
     hazard = bool(d["site"].get("hazard"))
-    layers = {k: (unrle(d["noah"][k], N).reshape(GH, GW) if hazard else np.zeros((GH, GW), np.uint8)) for k in ("5", "25")}
+    def layer(k):
+        if not hazard: return np.zeros((GH, GW), np.uint8)
+        if d.get("noah_ef"): return grids.expand(unrle(d["noah"][k], d["EW"] * d["EH"]), d["EW"], d["EH"], GW, GH)
+        return unrle(d["noah"][k], N).reshape(GH, GW)
+    layers = {k: layer(k) for k in ("5", "25")}
     return layers, hazard
 
 def barangay_cells(d, feature):

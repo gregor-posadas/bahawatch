@@ -12,7 +12,7 @@ sys.path.insert(0, ROOT); sys.path.insert(0, os.path.join(ROOT, "pipeline"))
 from model import grids, placement  # noqa: E402
 import common as C  # noqa: E402
 
-MAX_BYTES = 750_000          # raw; what matters on the wire is MAX_GZ (GitHub Pages serves gzip)
+MAX_BYTES = 950_000          # raw (7.5 m masks since 2026-09-29); what matters on the wire is MAX_GZ (GitHub Pages serves gzip)
 MAX_GZ = 250 * 1024
 DATA_DIR = os.environ.get("BW_DATA_DIR", os.path.join(ROOT, "data"))
 CAMPUS_INPUTS = os.environ.get("CAMPUS_INPUTS", os.path.join(ROOT, "inputs", "campuses"))
@@ -33,7 +33,8 @@ def check(path, rows):
     if gz > MAX_GZ: errs.append(f"{gz} bytes gzipped > {MAX_GZ}")
     if "places" not in d: errs.append("no places (run tools/build_places.py)")
     e = np.frombuffer(base64.b64decode(d["elev"]), dtype="<i2") / 10.0
-    if e.size != N: errs.append("terrain grid has the wrong size")
+    if e.size != (d["EW"] * d["EH"] if "EW" in d else N): errs.append("terrain grid has the wrong size")
+    if "EW" in d: e = grids.fine_elev(np.frombuffer(base64.b64decode(d["elev"]), dtype="<i2"), d["EW"], d["EH"], GW, GH).ravel()
     sea = grids.unrle(d["sea"], N).astype(bool) if "sea" in d else np.zeros(N, bool)
     if d["elev_min"] < -5 or e[~sea].max() > 3000: errs.append(f"implausible terrain {d['elev_min']:.1f}–{e[~sea].max():.1f} m")
     if sid not in rows:

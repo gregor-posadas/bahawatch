@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fillFlood, scratch, shoreField, bilerp } from './flood.js';
+import { fillFlood, scratch, shoreField, bilerp, fineElev } from './flood.js';
 
 const GW = 20, GH = 20, N = GW * GH;
 const flat = () => new Float32Array(N);                       // flat ground at 0 m
@@ -63,10 +63,11 @@ test('shoreField: wet cells carry their depth; a dry neighbour carries the water
   assert.ok(Math.abs(F[5 * GW + 6] - (0.3 - 0.5)) < 1e-6);   // surface 0.3 m, ground 0.5 m: 0.2 m above the water
   assert.ok(F[5 * GW + 6] < 0 && F[0] < 0);                  // dry stays dry, and far cells are dry
 });
-test('shoreField: a dry cell the surface would reach (outside the fill) stays dry, just below zero', () => {
-  const depth = new Float32Array(N); depth[5 * GW + 5] = 0.3;  // flat ground: the neighbour is below the surface
+test('shoreField: a dry cell the surface would reach (the fill stopped short) mirrors the water, so the edge sits on the cell boundary', () => {
+  const depth = new Float32Array(N); depth[5 * GW + 5] = 0.9;  // flat ground: the neighbour is below the surface
   const F = shoreField({ elev: flat(), block: null, sea: null, GW, GH }, depth, false);
-  assert.ok(F[5 * GW + 6] < 0 && F[5 * GW + 6] > -0.05);
+  assert.ok(Math.abs(F[5 * GW + 6] + 0.9) < 1e-6);            // not "just below zero": deep water must not bleed into it
+  assert.ok(Math.abs(bilerp(F, GW, GH, 5.5, 5)) < 1e-6);
 });
 test('shoreField: built cells are dry unless footprints will be cut out; the sea is never water', () => {
   const block = new Uint8Array(N), sea = new Uint8Array(N); block[5 * GW + 6] = 1; block[5 * GW + 4] = 1; sea[5 * GW + 4] = 1;
@@ -82,4 +83,26 @@ test('bilerp: exact at cell centres, linear between, clamped at the edges', () =
   assert.equal(bilerp(F, GW, GH, 5, 5), 1);
   assert.ok(Math.abs(bilerp(F, GW, GH, 5.5, 5)) < 1e-6);     // the zero crossing halfway between +1 and -1
   assert.equal(bilerp(F, GW, GH, -3, -3), F[0]);
+});
+
+// The 7.5 m grid (2026-09-29): terrain rebuilt from the file's coarse elevation. model/tests/test_grids.py checks
+// model/grids.py fine_elev() against these same numbers, so the page and the Python tools agree.
+export const FINE_CASE = { coarse: [100, 120, 140, 110, 130, 150], EW: 3, EH: 2, GW: 6, GH: 4, street: [8], carve: 0.5,
+  expect: [[10.0, 10.5, 11.5, 12.5, 13.5, 14.0], [10.25, 10.75, 10.0, 12.75, 13.75, 14.25], [10.75, 11.25, 12.25, 13.25, 14.25, 14.75], [11.0, 11.5, 12.5, 13.5, 14.5, 15.0]] };
+test('fineElev: bilinear at fine cell centres, street cells carved below their lowest neighbour (same numbers as Python)', () => {
+  const c = FINE_CASE, st = new Uint8Array(c.GW * c.GH); for (const i of c.street) st[i] = 1;
+  const e = fineElev(Int16Array.from(c.coarse), c.EW, c.EH, c.GW, c.GH, st, c.carve);
+  for (let y = 0; y < c.GH; y++) for (let x = 0; x < c.GW; x++) assert.ok(Math.abs(e[y * c.GW + x] - c.expect[y][x]) < 1e-4, `(${x},${y})`);
+});
+test('fillFlood: distances are in metres — at half the cell size the water reaches the same distance', () => {
+  const run = (n, cellM) => { const N = n * n, s = scratch(N);
+    fillFlood({ elev: new Float32Array(N), block: null, GW: n, GH: n, cellM }, [{ idx: 0, cx: 0, cy: (n / 2) | 0, gElev: 0, depth: 0.3 }], s);
+    let far = 0; for (let x = 0; x < n; x++) if (s.depth[((n / 2) | 0) * n + x] > 0.02) far = x; return (far + 0.5) * cellM; };
+  const a = run(120, 15), b = run(240, 7.5);
+  assert.ok(Math.abs(a - b) <= 15, `reach ${a} m at 15 m cells vs ${b} m at 7.5 m cells`);
+});
+test('fineElev: a 5×5 carve window (7.5 m grids) matches Python too', () => {
+  const c = FINE_CASE, st = new Uint8Array(c.GW * c.GH); for (const i of c.street) st[i] = 1;
+  const e = fineElev(Int16Array.from(c.coarse), c.EW, c.EH, c.GW, c.GH, st, c.carve, 5), expect = [[10.0, 10.5, 11.5, 12.5, 13.5, 14.0], [10.25, 10.75, 9.5, 12.75, 13.75, 14.25], [10.75, 11.25, 12.25, 13.25, 14.25, 14.75], [11.0, 11.5, 12.5, 13.5, 14.5, 15.0]];
+  for (let y = 0; y < c.GH; y++) for (let x = 0; x < c.GW; x++) assert.ok(Math.abs(e[y * c.GW + x] - expect[y][x]) < 1e-4, `(${x},${y})`);
 });

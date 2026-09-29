@@ -81,19 +81,25 @@ def dem_at(lon,lat):
     q=[dem[r0,c0],dem[r0,min(c0+1,ds.width-1)],dem[min(r0+1,ds.height-1),c0],dem[min(r0+1,ds.height-1),min(c0+1,ds.width-1)]]
     if any(np.isnan(v) for v in q): return np.nan
     return q[0]*(1-fc)*(1-fr)+q[1]*fc*(1-fr)+q[2]*(1-fc)*fr+q[3]*fc*fr
-elev=np.zeros((GH,GW))
-for gy in range(GH):
-    for gx in range(GW):
-        elev[gy,gx]=dem_at(*cell_ll(gx,gy))
-raw=elev.copy()                                   # before any filling: sea detection needs the gaps
-hole=np.isnan(elev)
-if hole.any():
+# the terrain is sampled and smoothed on the coarse grid (EW×EH, 15 m: the DEM is 30 m) and stored there; the model's
+# fine grid (GW×GH, 7.5 m since 2026-09-29) interpolates it (grids.fine_elev, the same arithmetic as the page)
+EF=CFG.get("elev_factor",1); EW,EH=GW//EF,GH//EF; assert EW*EF==GW and EH*EF==GH, "grid must divide by elev_factor"
+def cell_llE(ex,ey): return (LON0+(ex+0.5)/EW*(LON1-LON0), LAT1-(ey+0.5)/EH*(LAT1-LAT0))
+coarse=np.array([[dem_at(*cell_llE(ex,ey)) for ex in range(EW)] for ey in range(EH)])
+chole=np.isnan(coarse)
+if chole.any():
     from scipy.ndimage import distance_transform_edt
-    idx=distance_transform_edt(hole,return_distances=False,return_indices=True)
-    elev=elev[tuple(idx)]
-    print(f"  filled {int(hole.sum())} nodata cells from nearest neighbours")
-if DSM_MIN_FILTER: elev=minimum_filter(elev,size=DSM_MIN_FILTER)
-elev=gaussian_filter(elev,sigma=DSM_SMOOTH_SIGMA)
+    idx=distance_transform_edt(chole,return_distances=False,return_indices=True)
+    coarse=coarse[tuple(idx)]
+    print(f"  filled {int(chole.sum())} nodata cells from nearest neighbours")
+if DSM_MIN_FILTER: coarse=minimum_filter(coarse,size=DSM_MIN_FILTER)
+coarse=gaussian_filter(coarse,sigma=DSM_SMOOTH_SIGMA)
+ELEV_DM=np.clip(np.round(coarse*10),0,32000).astype("<i2")          # what the file stores
+raw=np.array([[dem_at(*cell_ll(gx,gy)) for gx in range(GW)] for gy in range(GH)])   # fine, unfilled: sea and holes
+hole=np.isnan(raw)
+elev=grids.fine_elev(ELEV_DM,EW,EH,GW,GH)                           # streets are carved once they are known
+CELL_M=(LON1-LON0)*111320*math.cos(math.radians((LAT0+LAT1)/2))/GW
+print(f"  {CELL_M:.1f} m model cells; terrain stored on {EW}×{EH}")
 SEA=grids.sea_mask(raw) if CFG.get("sea") else np.zeros((GH,GW),bool)
 if SEA.any(): print(f"  sea: {int(SEA.sum())} cells")
 
@@ -148,8 +154,8 @@ for r in roads:
                 if wide:
                     for dx,dy in ((1,0),(-1,0),(0,1),(0,-1)):
                         if 0<=gx+dx<GW and 0<=gy+dy<GH: street[gy+dy,gx+dx]=True
-mn=minimum_filter(elev,size=3)
-elev[street]=mn[street]-STREET_CARVE_M
+CARVE_WIN=2*round(15/CELL_M)+1                                      # the same ~40 m as a 3×3 window of 15 m cells
+elev=grids.fine_elev(ELEV_DM,EW,EH,GW,GH,street,STREET_CARVE_M,CARVE_WIN)    # streets carved as flow paths
 
 # creek mask: water may always run along a creek, however built-up its banks are
 creek=np.zeros((GH,GW),bool)
@@ -330,8 +336,29 @@ for sid,st,lon,lat in ([] if SENSOR_TARGETS=="auto" else SENSOR_TARGETS):
     sensors.append(rec)
     print(f"  {sid} → {bld or b.get('hn','')} {street_name}  ({dst:.0f} m from {'creek' if bld else 'street'}; near {near}, {dnear:.0f} m)")
 
+def reuse_units(prev):
+    """Keep the units already placed (same houses, ids and names) and only re-reference each to the nearest street cell
+    of this grid, so no unit moves when the grid changes (2026-09-29, 15 m → 7.5 m)."""
+    from shapely.geometry import shape
+    out=[]
+    for u in prev["sensors"]:
+        gx=min(int(u["x"]/W*GW),GW-1); gy=min(int(u["y"]/H*GH),GH-1)
+        cell=nearest_cell(street&~SEA,gx,gy,R=40); assert cell, f"{u['id']}: no street cell near"
+        v=dict(u); v["cx"],v["cy"]=int(cell[0]),int(cell[1]); v["g"]=round(float(elev[cell[1],cell[0]]),2); out.append(v)
+    bfeats=json.load(open(CFG["barangays"],encoding="utf-8"))["features"]
+    bgrid=grids.label_polys([f["geometry"] for f in bfeats],(LON0,LAT0,LON1,LAT1),GW,GH)
+    geom=shape(json.load(open(CFG["outline"],encoding="utf-8"))["features"][0]["geometry"])
+    pts=[(u["x"]*MX,u["y"]*MY) for u in out]
+    spacing=min(math.hypot(a[0]-b[0],a[1]-b[1]) for i,a in enumerate(pts) for b in pts[i+1:])
+    print(f"  kept {len(out)} placed units; spacing {spacing:.0f} m")
+    return out,spacing,bgrid,[f["properties"]["name"] for f in bfeats],geom.geom_type in ("Polygon","MultiPolygon")
 if SENSOR_TARGETS=="auto":
-    sensors,SPACING,BGRID,BNAMES,HAS_OUTLINE=auto_units()
+    # the units are placed once (and approved); later builds keep them, from data/<site>.json, unless PLACE_UNITS=1
+    UNITS_FROM=os.environ.get("UNITS_FROM",f"data/{SITE_ID}.json")
+    if not os.environ.get("PLACE_UNITS") and os.path.exists(UNITS_FROM):
+        sensors,SPACING,BGRID,BNAMES,HAS_OUTLINE=reuse_units(json.load(open(UNITS_FROM,encoding="utf-8")))
+    else:
+        sensors,SPACING,BGRID,BNAMES,HAS_OUTLINE=auto_units()
 
 # ------------------------------------------------------------------ 5. labels + encode
 print("5/5 labels + encoding ...")
@@ -359,11 +386,12 @@ for wt in waters:
 
 noah_ok={k:v for k,v in noah.items() if v is not None}
 data={"W":W,"H":H,"GW":GW,"GH":GH,"bbox":[LON0,LAT0,LON1,LAT1],
-      "elev":b64(np.clip(np.round(elev*10),0,32000).astype("<i2")),
+      "elev":b64(ELEV_DM),"EW":EW,"EH":EH,"carve":STREET_CARVE_M,"carve_win":CARVE_WIN,
       "elev_min":float(elev.min()),"elev_max":float(elev.max()),
       "blds":"","nb":len(blds),
       "roads":roads,"waters":waters,"labels":labels,"sensors":sensors,
-      "noah":{k:rle(v) for k,v in noah_ok.items()},"street":rle(street.astype(np.uint8))}
+      "noah":{k:rle(v.reshape(EH,EF,EW,EF).max(axis=(1,3)) if EF>1 else v) for k,v in noah_ok.items()},"street":rle(street.astype(np.uint8))}
+if EF>1: data["noah_ef"]=EF   # NOAH stored on the coarse grid (highest class of each EF×EF block); readers expand it
 if CFG.get("sea"): data["sea"]=rle(SEA.astype(np.uint8))
 if CFG.get("buildings"): data["block"]=rle(BLOCK.astype(np.uint8)); data["bc"]=rle(BC)
 data["site"]={k:CFG[k] for k in ("id","name","place","profile","langs","units","emergency","attribution","tz","utc")}

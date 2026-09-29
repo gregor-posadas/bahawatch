@@ -76,3 +76,31 @@ def counts(cells, GW, GH):
     for cx, cy in cells:
         g[cy, cx] += 1
     return np.minimum(g, 255).astype(np.uint8)
+
+
+def fine_elev(coarse_dm, EW, EH, GW, GH, street=None, carve=0.0, win=3):
+    """The model's terrain on its fine grid (2026-09-29): the file keeps the elevation on the coarse grid (EW×EH, in
+    decimetres, as the 30 m DEM carries no more detail); the fine grid (GW×GH) is its bilinear interpolation at cell
+    centres, with street cells carved `carve` m below the lowest cell of the win×win window around them (win 3 at 15 m,
+    5 at 7.5 m: about the same 40 m either way). shared/flood.js fineElev()
+    does the same arithmetic, so the page, the places and the checks all see one terrain."""
+    c = np.asarray(coarse_dm, dtype=np.float64).reshape(EH, EW) / 10.0
+    def axis(n_f, n_c):
+        u = np.clip((np.arange(n_f) + 0.5) * n_c / n_f - 0.5, 0, n_c - 1)
+        i0 = np.minimum(np.floor(u).astype(int), max(n_c - 2, 0)); return i0, u - i0
+    x0, tx = axis(GW, EW); y0, ty = axis(GH, EH)
+    x1 = np.minimum(x0 + 1, EW - 1); y1 = np.minimum(y0 + 1, EH - 1)
+    top = c[y0][:, x0] * (1 - tx) + c[y0][:, x1] * tx
+    bot = c[y1][:, x0] * (1 - tx) + c[y1][:, x1] * tx
+    e = top * (1 - ty)[:, None] + bot * ty[:, None]
+    if street is not None and carve:
+        from scipy.ndimage import minimum_filter
+        s = np.asarray(street, bool).reshape(GH, GW); mn = minimum_filter(e, size=win, mode="nearest")
+        e[s] = mn[s] - carve
+    return e
+
+
+def expand(coarse, EW, EH, GW, GH):
+    """A coarse grid (EW×EH) on the fine grid (GW×GH), nearest cell (NOAH layers stored with noah_ef)."""
+    c = np.asarray(coarse).reshape(EH, EW)
+    return c[(np.arange(GH) * EH // GH)[:, None], (np.arange(GW) * EW // GW)[None, :]]
