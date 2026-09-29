@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fillFlood, scratch } from './flood.js';
+import { fillFlood, scratch, shoreField, bilerp } from './flood.js';
 
 const GW = 20, GH = 20, N = GW * GH;
 const flat = () => new Float32Array(N);                       // flat ground at 0 m
@@ -50,4 +50,36 @@ test('with no obstacles it matches the fill the page used before (same depths, s
   const L = legacy(elev, sources);
   assert.deepEqual(Array.from(s.depth), Array.from(L.depth));
   assert.deepEqual(Array.from(s.src), Array.from(L.srcIdx));
+});
+
+// The drawn water (2026-09-29): a signed field on the model grid — the depth where wet, and where dry the (negative)
+// height of the neighbouring water surface above this cell's ground — so the edge, drawn where the field crosses zero
+// between cells, sits where the water surface meets the terrain instead of on a cell boundary.
+test('shoreField: wet cells carry their depth; a dry neighbour carries the water surface minus its own ground', () => {
+  const elev = flat(); elev[5 * GW + 6] = 0.5;               // a step up beside the water
+  const depth = new Float32Array(N); depth[5 * GW + 5] = 0.3;
+  const F = shoreField({ elev, block: null, sea: null, GW, GH }, depth, false);
+  assert.ok(Math.abs(F[5 * GW + 5] - 0.3) < 1e-6);
+  assert.ok(Math.abs(F[5 * GW + 6] - (0.3 - 0.5)) < 1e-6);   // surface 0.3 m, ground 0.5 m: 0.2 m above the water
+  assert.ok(F[5 * GW + 6] < 0 && F[0] < 0);                  // dry stays dry, and far cells are dry
+});
+test('shoreField: a dry cell the surface would reach (outside the fill) stays dry, just below zero', () => {
+  const depth = new Float32Array(N); depth[5 * GW + 5] = 0.3;  // flat ground: the neighbour is below the surface
+  const F = shoreField({ elev: flat(), block: null, sea: null, GW, GH }, depth, false);
+  assert.ok(F[5 * GW + 6] < 0 && F[5 * GW + 6] > -0.05);
+});
+test('shoreField: built cells are dry unless footprints will be cut out; the sea is never water', () => {
+  const block = new Uint8Array(N), sea = new Uint8Array(N); block[5 * GW + 6] = 1; block[5 * GW + 4] = 1; sea[5 * GW + 4] = 1;
+  const depth = new Float32Array(N); depth[5 * GW + 5] = 0.3;
+  const g = { elev: flat(), block, sea, GW, GH };
+  assert.ok(shoreField(g, depth, false)[5 * GW + 6] < 0);    // no footprints to cut out: the built cell stays dry
+  const open = shoreField(g, depth, true);
+  assert.ok(Math.abs(open[5 * GW + 6] - 0.3) < 1e-6);        // footprints will be cut out: water runs between the buildings
+  assert.ok(open[5 * GW + 4] < 0);                           // sea: never drawn as flood
+});
+test('bilerp: exact at cell centres, linear between, clamped at the edges', () => {
+  const F = new Float32Array(N); F[5 * GW + 5] = 1; F[5 * GW + 6] = -1;
+  assert.equal(bilerp(F, GW, GH, 5, 5), 1);
+  assert.ok(Math.abs(bilerp(F, GW, GH, 5.5, 5)) < 1e-6);     // the zero crossing halfway between +1 and -1
+  assert.equal(bilerp(F, GW, GH, -3, -3), F[0]);
 });

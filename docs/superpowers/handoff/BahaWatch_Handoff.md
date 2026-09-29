@@ -137,6 +137,19 @@ review and reports"). Commits `62a9601` → `efbb216`:
    via `window.BW_BASEMAP_STYLE='shared/basemap-style.json?real'`). Note: the other page suites run on the offline
    fixture style, so they never touch the real tile files; new tile-path tests should use the real style.
 
+9. **How the flood is drawn** (2026-09-29, Gregor's items 1–4). `renderFlood` samples the model grid 4× finer through
+   a signed field (`shoreField` in `shared/flood.js`: depth where wet; neighbouring water surface minus own ground where
+   dry), so the edge follows the terrain; colours blend between the legend's bands; the shallowest ~8 cm fade out; with
+   the detailed map on, building footprints from the site tiles (`footLoad`, `querySourceFeatures`, zoom ≥ 13) are cut
+   out of the water, and at zoom ≥ 14.5 water shows in the alleys of fully built cells; a gentle non-directional shimmer
+   (`drawShimmer`, off under reduced motion; non-directional because the model has no flow direction). Never more water
+   than the model (tested). Test: `test_flood_look.js`. The model itself is unchanged.
+   **Discussed, not done:** a benchmark against observed floods (Sentinel-1 / Copernicus EMS / geotagged photos) before
+   changing the model; FathomDEM (Uhe et al. 2025, ERL 20 034002; CC BY-NC-SA, covers PH) in place of FABDEM (Hawker et
+   al. 2022, ERL 17 024016); sensor ground from its surroundings; water surface sloping between sensors; resident
+   reports as constraints; uncertainty bands; later LiPAD 1 m and a pre-run 2D scenario library or a GPU shallow-water
+   model (the model is static: a level pool per sensor with a 1 cm/cell decay, 80 cells max).
+
 **Still to do for round 2:**
 - **Push the hidden-page fix**, then **check the live site**: tiles and fonts load (`.pmtiles` range requests, `.mjs` served as
   JavaScript), dark vector style, campus zoom-out, the new timeline. Claude has not seen the real dark style or the demo in
@@ -201,9 +214,9 @@ Demo chip `demoChip(L)`; weather buttons `.scen-group [data-sc=clear|monsoon|typ
 **Worker** (Cloudflare Workers + D1 + Turnstile): written, not deployed, unchanged in round 2.
 
 **Tests** (all green at `efbb216`):
-- Page suites: `./test_pages.sh` (20 suites, incl. `test_hidden.js`, `test_tiles_corrupt.js`,, incl. `test_zoomout.js` 26 checks and `test_zoomout_fallback.js`), served on
+- Page suites: `./test_pages.sh` (21 suites, incl. `test_flood_look.js`, `test_hidden.js`, `test_tiles_corrupt.js`,, incl. `test_zoomout.js` 26 checks and `test_zoomout_fallback.js`), served on
   8765 with `BW_TEST_BASEMAP=offline`. One suite: `./test_pages.sh test_x.js`; logs in `/tmp/bw_test_x.js.log`.
-- `node --test --no-warnings shared/*.test.js sw.test.js` (50); `(cd worker && node --test --no-warnings test/*.test.js)`
+- `node --test --no-warnings shared/*.test.js sw.test.js` (54); `(cd worker && node --test --no-warnings test/*.test.js)`
   (46); `python3 -m unittest tools.test_basemap_style`; `./test_build.sh`.
 - **Gotchas:** a probe server left running on 8765 (started without `BW_TEST_BASEMAP=offline`) makes `test_noaccount`
   and others fail: kill it by PID before `./test_pages.sh`. Never `pkill -f`/`pgrep -f` a pattern that appears in the
