@@ -1,7 +1,7 @@
 # BahaWatch: handoff for a new chat
 
 Last updated: 2026-09-29, early morning Pacific. GitHub `main` is at `6f15922` (the 7.5 m grid, pushed by Gregor).
-**On top, committed on `phildev-ui-round2` and sent as `bahawatch-about.bundle` (6f15922..phildev-ui-round2: `70494e6` plus this handoff, 0.5 MB):** the About
+**On top, committed on `phildev-ui-round2` and sent as `bahawatch-about.bundle` (6f15922..phildev-ui-round2: `70494e6`, `49e4154` and this handoff):** the About
 tab for Noam's GHTC talk, the San Joaquin pilot tab, the campus list as drop-downs, the depth-spectrum legends and shorter
 Details text (§3 item 12). Check `git ls-remote https://github.com/gregor-posadas/bahawatch` to see whether it is pushed.
 
@@ -57,7 +57,7 @@ model and answers residents' question **"Babaha ba?"** ("Will it flood?") for th
 | Public site (GitHub Pages, serves `main`) | https://gregor-posadas.github.io/bahawatch/ (`index.html` redirects to `bahawatch_dashboard.html`) |
 | Repo (public) | `gregor-posadas/bahawatch`. Gregor pushes; Claude has no GitHub credentials |
 | Gregor's clone on Windows | `C:\Users\grego\bahawatch` (SSH key set up) |
-| Private demo artifact | https://claude.ai/artifact/Mjsm9genvWF9sFdXxuKis9 (version 40; update in place; list its files before republishing) |
+| Private demo artifact | https://claude.ai/artifact/Mjsm9genvWF9sFdXxuKis9 (version 41; update in place; list its files before republishing) |
 | Flowchart artifact (the answer rule) | https://claude.ai/artifact/6EmnCVpoKj743RrE9PSFfL |
 | Data folder on Gregor's PC | `C:\Users\grego\OneDrive\Desktop\Research\BahaWatch\Nationwide Update` (device_bash: `$HOME/mnt/Nationwide Update`) |
 
@@ -196,7 +196,18 @@ review and reports"). Commits `62a9601` → `efbb216`:
      (`units_inside=True` → `placement.pick(all_inside=True)`), 4,430 buildings, NOAH 5/25/100, 17 places,
      `site-sjq.pmtiles`. Inputs are in `inputs/campuses/sjq/` (not in git) and on the PC under `bahawatch-data/campuses/`.
    - Tabs wrap to a second row on phones (six tabs); the Details header wraps at ≤ 900 px (was 1 px too wide at 375).
-   - Tests: new `test_about.js` (48 checks); `test_national`/`test_a11y`/`test_try` updated for the tabs and the tree;
+   - **Same morning, before the push (commit `49e4154`):** the "?" buttons became the terms themselves (bold, underlined
+     buttons; `<span class="tt"><span class="tt-t">term</span>note</span>`); About now says the demo is synthetic and
+     that in a real deployment sensors send readings to the dashboard's server, which runs the same model and data;
+     Berkeley is "an experiment, not a planned site"; no test unit is mentioned. **Typeface: Atkinson Hyperlegible Next**
+     everywhere (Gregor's files, unaltered, in `shared/fonts/atkinson/`; Mono for the API feed; canvases use
+     `CANVAS_FONT` and redraw on `document.fonts.ready`); map labels use glyph PBFs made by `tools/build_glyphs.py` from
+     the OFL release (google/fonts; Noto fills missing code points), styles now name "Atkinson Hyperlegible Next
+     Regular/Medium". The Braille Institute files' own licence forbids derivatives, hence the OFL source for glyphs. The
+     Berkeley zoomed-out world view still uses OpenFreeMap's Noto labels. **San Joaquin unit 01 is fixed at 71 Imelda
+     Marcos St** (Gregor's coordinate 15.230665, 120.571040; `pin_units` in `sites.py`, `placement.pick(pinned=…)`); the
+     other seven were re-placed around it. Unit labels flip to the other side near a map edge.
+   - Tests: new `test_about.js` (51 checks); `test_national`/`test_a11y`/`test_try` updated for the tabs and the tree;
      pipeline tests know the sjq box; a placement test for `all_inside`. All suites green (`test_init` and the UPLB
      Fast-3G timing are flaky only when another heavy job runs at the same time).
 
@@ -217,6 +228,7 @@ N10E123, N13E121, N14E120, N14E121, N15E120 (Zenodo 14511570; check how the reco
 - When Gregor asks: the detailed review and reports (PDF) for the follow-up changes, and a refreshed build report.
 - Gregor said more feedback items are coming.
 - Gregor to confirm the About page's sensor mounting assumptions (2 m, clear patch, pings, cost) before the GHTC talk.
+- San Joaquin shows "71 Imelda Marcos St" publicly once pushed; drop `hn`/`label` in `pin_units` for a street-only label.
 
 **Push this round (PowerShell):**
 
