@@ -50,11 +50,12 @@ def score(elev, noah, creek_dist, cell_m, valid=None):
             + W_WATER * near_water(creek_dist))
 
 
-def pick(cands, n=N_UNITS, spacings=SPACINGS, ok=lambda c: True, all_inside=False):
+def pick(cands, n=N_UNITS, spacings=SPACINGS, ok=lambda c: True, all_inside=False, pinned=()):
     """cands: dicts with fid, x_m, y_m, score, oc (on campus). Unit 1 is the best on-campus candidate; the rest are
     off-campus houses (or, with all_inside, houses inside the outline) taken best-first at least `spacing` metres from
     every unit already chosen. ok(c) is asked only of a candidate
-    about to be chosen (naming it is slow). Returns (chosen, spacing used)."""
+    about to be chosen (naming it is slow). pinned: units fixed in advance (dicts with x_m, y_m), taken first and in
+    place of unit 01; the rest keep the spacing from them. Returns (chosen, spacing used)."""
     order = sorted(cands, key=lambda c: (-c["score"], c["fid"]))
     bad = set()
 
@@ -66,12 +67,13 @@ def pick(cands, n=N_UNITS, spacings=SPACINGS, ok=lambda c: True, all_inside=Fals
         bad.add(c["fid"])
         return False
 
-    first = next((c for c in order if c["oc"] and good(c)), None)
-    if first is None:
+    first = None if pinned else next((c for c in order if c["oc"] and good(c)), None)
+    if first is None and not pinned:
         raise ValueError("no usable candidate on campus")
-    best = [first]
+    start = list(pinned) or [first]
+    best = start
     for sp in spacings:
-        chosen = [first]
+        chosen = list(start)
         for c in order:
             if len(chosen) == n:
                 break

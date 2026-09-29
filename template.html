@@ -7,7 +7,16 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#232120">
+<link rel="preload" href="shared/fonts/atkinson/AtkinsonHyperlegibleNext-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="shared/fonts/atkinson/AtkinsonHyperlegibleNext-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+/* Atkinson Hyperlegible Next (Braille Institute), for readers with low vision (Gregor, 2026-09-29); the files are the
+   Braille Institute's own, unaltered. Glyphs it lacks (☾ ☀ ▾ ⌂) fall back to the system font. */
+@font-face{font-family:"Atkinson Hyperlegible Next"; src:url("shared/fonts/atkinson/AtkinsonHyperlegibleNext-Regular.woff2") format("woff2"); font-weight:400; font-style:normal; font-display:swap}
+@font-face{font-family:"Atkinson Hyperlegible Next"; src:url("shared/fonts/atkinson/AtkinsonHyperlegibleNext-RegularItalic.woff2") format("woff2"); font-weight:400; font-style:italic; font-display:swap}
+@font-face{font-family:"Atkinson Hyperlegible Next"; src:url("shared/fonts/atkinson/AtkinsonHyperlegibleNext-SemiBold.woff2") format("woff2"); font-weight:600; font-style:normal; font-display:swap}
+@font-face{font-family:"Atkinson Hyperlegible Next"; src:url("shared/fonts/atkinson/AtkinsonHyperlegibleNext-Bold.woff2") format("woff2"); font-weight:700; font-style:normal; font-display:swap}
+@font-face{font-family:"Atkinson Hyperlegible Mono"; src:url("shared/fonts/atkinson/AtkinsonHyperlegibleMono-Regular.woff2") format("woff2"); font-weight:400; font-style:normal; font-display:swap}
 :root{
   /* Mini Motorways paper */
   --bg:#f8f4ec; --panel:#fffdf8; --panel-2:#f1ebdf; --ink:#232120; --ink-2:#6b6660;
@@ -25,10 +34,12 @@
   --map-bg:#242220; --marker-fill:#262421;
 }
 *{box-sizing:border-box; margin:0}
+:root{--font:"Atkinson Hyperlegible Next","Helvetica Neue",Helvetica,Arial,sans-serif; --mono:"Atkinson Hyperlegible Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+input,select,textarea,button{font-family:inherit}
 html,body{height:100%}
 body{
   background:var(--bg); color:var(--ink);
-  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-family:var(--font);
   font-size:14px; line-height:1.4; -webkit-font-smoothing:antialiased;
   display:flex; flex-direction:column; min-height:100vh;
 }
@@ -52,7 +63,7 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .ab-rail-faq{margin-top:16px}
 .ab-rail a:focus-visible{outline:3px solid var(--brand); outline-offset:2px}
 .ab-rail-tip{font-size:14px; color:var(--ink-2); margin:16px 0 0; max-width:24ch}
-.ab-q{display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border:1.5px solid var(--ink-2); border-radius:50%; font-weight:700}
+.ab-u{text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px}
 .ab-main{font-size:16px; line-height:1.5; min-width:0}
 .ab-main > section{padding-bottom:24px; border-bottom:1px solid var(--line); margin-bottom:32px}
 .ab-main h2{font-size:25px; font-weight:700; line-height:1.2; margin:0 0 12px; scroll-margin-top:16px}
@@ -97,12 +108,12 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
    closes it. The note is the button's next sibling (read in order), placed in fixed position so no panel clips it. */
 .tt{display:inline}
 .tt-w{white-space:nowrap}
-.tt-b{position:relative; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin:0 1px 0 4px;
-  border:1.5px solid var(--ink-2); border-radius:50%; color:var(--ink-2); font-size:14px; font-weight:700; line-height:1; vertical-align:2px}
-.tt-b::after{content:""; position:absolute; inset:-14px}
-.tt-b:hover,.tt-b[aria-expanded="true"]{color:var(--ink); border-color:var(--ink)}
-.tt-b[aria-expanded="true"]{background:var(--ink); color:var(--bg)}
-.tt-b:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:50%}
+.tt-b{position:relative; display:inline; padding:0; margin:0; border:0; background:none; color:inherit; font:inherit; font-weight:700;
+  text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px; cursor:pointer; text-align:inherit; line-height:inherit}
+.tt-b::after{content:""; position:absolute; inset:-11px -2px}
+.tt-b:hover{text-decoration-thickness:3px}
+.tt-b[aria-expanded="true"]{background:var(--panel-2); box-shadow:0 0 0 2px var(--panel-2); border-radius:2px}
+.tt-b:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:2px}
 .tt-p{position:fixed; z-index:80; left:0; top:0; width:max-content; max-width:min(340px,calc(100vw - 32px)); padding:12px 14px;
   background:var(--panel); color:var(--ink); border:1px solid var(--ink); border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.18);
   font-size:14px; font-weight:400; font-style:normal; line-height:1.45; text-align:left; white-space:normal; opacity:0; transition:opacity .15s ease-out}
@@ -388,7 +399,7 @@ details[open] summary::after{content:"–"}
 .api-url{font-size:12px; color:var(--ink-2); word-break:break-all; margin-bottom:8px}
 pre#api-json{
   background:var(--panel-2); border-radius:7px;
-  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font:12px/1.55 var(--mono);
   padding:10px 12px; overflow-x:auto; color:var(--ink); white-space:pre;
 }
 #log-list{list-style:none; padding:0 0 12px; font-size:12px; color:var(--ink-2); max-height:168px; overflow-y:auto}
@@ -742,7 +753,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <li><a href="#about/next" data-sec="next">Future work</a></li>
       <li class="ab-rail-faq"><a href="#about/faq" data-sec="faq">FAQ</a></li>
     </ul>
-    <p class="ab-rail-tip">Tap <span class="ab-q" aria-hidden="true">?</span> after a term for a short explanation.</p>
+    <p class="ab-rail-tip">Tap an <b class="ab-u">underlined term</b> for a short explanation.</p>
    </nav>
    <article class="ab-main">
 
@@ -750,24 +761,25 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <h2 id="ab-what-h" tabindex="-1">What it is</h2>
       <p class="ab-lead">BahaWatch answers one question for a street or barangay: <i>Babaha ba?</i> — “Is it flooding here?” — and says how deep the water is for someone walking, riding a motorcycle or driving.</p>
       <div class="ab-note" role="note">
-        <p><b>Everything moving on the dashboard is simulated.</b> Streets, buildings, terrain and flood hazard maps are real open data. Sensor readings, storms and neighbour reports are simulated.</p>
+        <p><b>This demo runs on synthetic data.</b> Streets, buildings, terrain and flood hazard maps are real open data. The sensor readings, storms and neighbour reports are made up by a storm generator.</p>
+        <p><b>In a real deployment</b>, the dashboard is connected to real sensors. Each unit sends its water level to the dashboard’s server every 10 minutes, and the server combines those readings with the flood model and the datasets below to estimate what is happening on the ground, street by street. Only the source of the readings changes; the model, the rule and the maps are the same code.</p>
         <p>Not a forecast. Not for emergency use. Follow PAGASA and local government advisories.</p>
       </div>
       <h3>The sites</h3>
       <ul class="ab-list">
         <li><b>25 PhilDev partner campuses</b> in Luzon, the Visayas and Mindanao. Each has a 3 km map with eight proposed sensor spots.</li>
         <li><b>Two neighbourhood pilots:</b> Teachers Village, Quezon City, and Brgy. San Joaquin, Mabalacat City, Pampanga.</li>
-        <li><b>UC Berkeley</b>, California: a check site with very accurate terrain<span class="tt" data-term="the Berkeley terrain">The US Geological Survey’s 1 m lidar map: an aircraft laser survey of the bare ground. Nothing like it is openly available for most of the Philippines, so Berkeley shows how the method behaves when the ground heights are right.</span> and one real test sensor on Strawberry Creek.</li>
+        <li><b>UC Berkeley</b>, California: an experiment, not a planned site. We ran the same method on <span class="tt" data-term="the Berkeley terrain"><span class="tt-t">very accurate terrain</span>The US Geological Survey’s 1 m lidar map: an aircraft laser survey of the bare ground. Nothing like it is openly available for most of the Philippines, so Berkeley shows how the method behaves when the ground heights are right.</span> to see how it behaves when the ground heights are right.</li>
       </ul>
     </section>
 
     <section id="ab-how" aria-labelledby="ab-how-h">
       <h2 id="ab-how-h" tabindex="-1">How it works</h2>
       <ol class="ab-steps">
-        <li><b>Sensors measure water on the street.</b> Each household unit<span class="tt" data-term="household units">A small ultrasonic sensor on a gate post at the street’s edge, hosted by a household. It points down at the road and measures the distance to the surface: less distance, more water. See Sensor units below.</span> sends the water depth in front of it every 10 minutes over LoRaWAN<span class="tt" data-term="LoRaWAN">A long-range, low-power radio network for small sensors. One gateway can hear units a few kilometres away in a city, each reading is only a few bytes, and it does not depend on mobile data, which often jams during storms.</span>.</li>
-        <li><b>The model spreads that water over the map.</b> At each wet sensor it sets a water level (ground height + measured depth) and lets it spread to nearby lower ground, until the ground rises above it. It fades with distance<span class="tt" data-term="how the spread is limited">The water level drops 1 cm for every 15 m it travels, and spreading stops after about 1.2 km. Water also never spreads into ground more than 45 cm deeper than the sensor saw, so a 20 cm reading on a slope can’t flood a whole valley below it. Both rules keep the map on the cautious side.</span> and goes around buildings<span class="tt" data-term="buildings on the map">The map is a grid of 7.5 m squares. A square at least 75% covered by building footprints blocks water; streets and creeks never block. Streets are cut 0.5 m into the terrain so they carry water, as real streets do.</span>. No reading, no flood on the map.</li>
-        <li><b>A rule gives the answer.</b> The <i>Babaha ba?</i> rule<span class="tt" data-term="the Babaha ba? rule">Checked in order; the first match wins. Nothing newer than 20 minutes: “No fresh data”. The sensor here reads 5 cm or more, or is rising to it within an hour: <i>Oo</i> (yes). Three or more neighbours report flooding within 1 km in the last hour, or heavy rain falls on a mapped hazard zone: <i>Baka</i> (maybe). One or two reports, or a trace at the sensor: <i>Baka</i>. Otherwise <i>Hindi</i> (no). Reports alone never give <i>Oo</i>; only a sensor can.</span> combines sensors, neighbour reports and rain into <i>Oo</i>, <i>Baka</i>, <i>Hindi</i> or “No fresh data”.</li>
-        <li><b>Depth becomes something you can act on.</b> Water is described as gutter-, half-knee-, knee- or waist-deep, and as passable or not for cars<span class="tt" data-term="the car levels">From the MMDA Flood Gauge: half-tire (33 cm) is not passable to light vehicles, tire level (66 cm) is not passable to any vehicle. From 25 cm we say “drive slowly”, where Mamuyac et al. (2025) saw lane closures begin in MMDA CCTV footage.</span> and motorcycles<span class="tt" data-term="the motorcycle levels">Our own rule, because the MMDA gauge has none for motorcycles: slow from 15 cm, where the engine sits; not passable from 30 cm, the height of the exhaust and footpegs, where bikes stall.</span>.</li>
+        <li><b>Sensors measure water on the street</b> (simulated in this demo). Each <span class="tt" data-term="household units"><span class="tt-t">household unit</span>A small ultrasonic sensor on a gate post at the street’s edge, hosted by a household. It points down at the road and measures the distance to the surface: less distance, more water. See Sensor units below.</span> sends the water depth in front of it every 10 minutes over <span class="tt" data-term="LoRaWAN"><span class="tt-t">LoRaWAN</span>A long-range, low-power radio network for small sensors. One gateway can hear units a few kilometres away in a city, each reading is only a few bytes, and it does not depend on mobile data, which often jams during storms.</span>.</li>
+        <li><b>The model spreads that water over the map.</b> At each wet sensor it sets a water level (ground height + measured depth) and lets it spread to nearby lower ground, until the ground rises above it. It <span class="tt" data-term="how the spread is limited"><span class="tt-t">fades with distance</span>The water level drops 1 cm for every 15 m it travels, and spreading stops after about 1.2 km. Water also never spreads into ground more than 45 cm deeper than the sensor saw, so a 20 cm reading on a slope can’t flood a whole valley below it. Both rules keep the map on the cautious side.</span> and <span class="tt" data-term="buildings on the map"><span class="tt-t">goes around buildings</span>The map is a grid of 7.5 m squares. A square at least 75% covered by building footprints blocks water; streets and creeks never block. Streets are cut 0.5 m into the terrain so they carry water, as real streets do.</span>. No reading, no flood on the map.</li>
+        <li><b>A rule gives the answer.</b> The <span class="tt" data-term="the Babaha ba? rule"><span class="tt-t"><i>Babaha ba?</i> rule</span>Checked in order; the first match wins. Nothing newer than 20 minutes: “No fresh data”. The sensor here reads 5 cm or more, or is rising to it within an hour: <i>Oo</i> (yes). Three or more neighbours report flooding within 1 km in the last hour, or heavy rain falls on a mapped hazard zone: <i>Baka</i> (maybe). One or two reports, or a trace at the sensor: <i>Baka</i>. Otherwise <i>Hindi</i> (no). Reports alone never give <i>Oo</i>; only a sensor can.</span> combines sensors, neighbour reports and rain into <i>Oo</i>, <i>Baka</i>, <i>Hindi</i> or “No fresh data”.</li>
+        <li><b>Depth becomes something you can act on.</b> Water is described as gutter-, half-knee-, knee- or waist-deep, and as passable or not for <span class="tt" data-term="the car levels"><span class="tt-t">cars</span>From the MMDA Flood Gauge: half-tire (33 cm) is not passable to light vehicles, tire level (66 cm) is not passable to any vehicle. From 25 cm we say “drive slowly”, where Mamuyac et al. (2025) saw lane closures begin in MMDA CCTV footage.</span> and <span class="tt" data-term="the motorcycle levels"><span class="tt-t">motorcycles</span>Our own rule, because the MMDA gauge has none for motorcycles: slow from 15 cm, where the engine sits; not passable from 30 cm, the height of the exhaust and footpegs, where bikes stall.</span>.</li>
       </ol>
       <p>Two views: the <b>simple view</b> for residents (one answer, the street list, a map) and <b>Details</b> for operators and researchers (storm scenarios, a 36-hour timeline, each sensor’s readings, the NOAH layer).</p>
     </section>
@@ -776,14 +788,14 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <h2 id="ab-data-h" tabindex="-1">Data</h2>
       <p>All open data, cut to each site by our pipeline and stored with the page.</p>
       <dl class="ab-ds">
-        <div><dt>Ground height</dt><dd>FABDEM<span class="tt" data-term="FABDEM">A global map of ground height with buildings and trees removed (Hawker et al. 2022, University of Bristol), made from the 30 m Copernicus satellite elevation map with machine learning. Bare ground is what water flows over. Free for non-commercial use.</span>, 30 m, smoothed onto the 7.5 m grid. USGS 1 m lidar at Berkeley.<span class="ab-use">Where water can go.</span></dd></div>
-        <div><dt>Buildings</dt><dd>Footprints from Google Open Buildings, Microsoft and OpenStreetMap, combined by VIDA<span class="tt" data-term="the building footprints">Building outlines traced from satellite images by Google and Microsoft, merged with OpenStreetMap. They can miss small, new or informal buildings, and can’t tell a house from a warehouse or count floors.</span>.<span class="ab-use">What blocks water; buildings counted in flooded areas; the map.</span></dd></div>
-        <div><dt>Streets, creeks, names</dt><dd>OpenStreetMap<span class="tt" data-term="OpenStreetMap">A free world map drawn by volunteers, like a Wikipedia for maps. Coverage in Philippine cities is good; small alleys and creeks can be missing.</span>.<span class="ab-use">Streets cut into the terrain as water paths; street names in answers; the map.</span></dd></div>
-        <div><dt>Flood hazard</dt><dd>UP Project NOAH<span class="tt" data-term="the NOAH hazard maps">Flood hazard maps from the University of the Philippines (Project NOAH, now the UP Resilience Institute), modelled for rain heavy enough to come once in 5, 25 or 100 years on average. They show mostly river and overland flooding; ponding from blocked drains often doesn’t appear.</span> 5-, 25- and 100-year maps.<span class="ab-use">A reference layer to compare with; the rain rule; choosing sensor spots; shaping the simulated storms. Never used to draw the flood.</span></dd></div>
+        <div><dt>Ground height</dt><dd><span class="tt" data-term="FABDEM"><span class="tt-t">FABDEM</span>A global map of ground height with buildings and trees removed (Hawker et al. 2022, University of Bristol), made from the 30 m Copernicus satellite elevation map with machine learning. Bare ground is what water flows over. Free for non-commercial use.</span>, 30 m, smoothed onto the 7.5 m grid. USGS 1 m lidar at Berkeley.<span class="ab-use">Where water can go.</span></dd></div>
+        <div><dt>Buildings</dt><dd><span class="tt" data-term="the building footprints"><span class="tt-t">Footprints</span>Building outlines traced from satellite images by Google and Microsoft, merged with OpenStreetMap. They can miss small, new or informal buildings, and can’t tell a house from a warehouse or count floors.</span> from Google Open Buildings, Microsoft and OpenStreetMap, combined by VIDA.<span class="ab-use">What blocks water; buildings counted in flooded areas; the map.</span></dd></div>
+        <div><dt>Streets, creeks, names</dt><dd><span class="tt" data-term="OpenStreetMap"><span class="tt-t">OpenStreetMap</span>A free world map drawn by volunteers, like a Wikipedia for maps. Coverage in Philippine cities is good; small alleys and creeks can be missing.</span>.<span class="ab-use">Streets cut into the terrain as water paths; street names in answers; the map.</span></dd></div>
+        <div><dt>Flood hazard</dt><dd><span class="tt" data-term="the NOAH hazard maps"><span class="tt-t">UP Project NOAH</span>Flood hazard maps from the University of the Philippines (Project NOAH, now the UP Resilience Institute), modelled for rain heavy enough to come once in 5, 25 or 100 years on average. They show mostly river and overland flooding; ponding from blocked drains often doesn’t appear.</span> 5-, 25- and 100-year maps.<span class="ab-use">A reference layer to compare with; the rain rule; choosing sensor spots; shaping the simulated storms. Never used to draw the flood.</span></dd></div>
         <div><dt>Barangays</dt><dd>PSA and NAMRIA boundaries, via OCHA HDX.<span class="ab-use">“My barangay” answers.</span></dd></div>
         <div><dt>Depth levels</dt><dd>MMDA Flood Gauge; Mamuyac et al. 2025, <i>Natural Hazards</i>.<span class="ab-use">Depth words and passability.</span></dd></div>
         <div><dt>Rain</dt><dd>Open-Meteo hourly rain, in live mode only (not switched on yet).<span class="ab-use">The rain step of the rule.</span></dd></div>
-        <div><dt>Terrain check</dt><dd>NASA ICESat-2<span class="tt" data-term="ICESat-2">A NASA satellite laser that measures ground height along narrow tracks, to within tens of centimetres on open ground. We used 17,936 of its ground points at 26 sites as the reference to test FABDEM.</span> ground heights, 2019–2026.<span class="ab-use">Measuring how wrong the terrain is (see Accuracy).</span></dd></div>
+        <div><dt>Terrain check</dt><dd>NASA <span class="tt" data-term="ICESat-2"><span class="tt-t">ICESat-2</span>A NASA satellite laser that measures ground height along narrow tracks, to within tens of centimetres on open ground. We used 17,936 of its ground points at 26 sites as the reference to test FABDEM.</span> ground heights, 2019–2026.<span class="ab-use">Measuring how wrong the terrain is (see Accuracy).</span></dd></div>
         <div><dt>Simulated</dt><dd>Sensor readings, storms, neighbour reports.<span class="ab-use">Everything that moves.</span></dd></div>
       </dl>
       <p class="ab-small">Code: MIT licence. FABDEM’s licence is non-commercial (CC BY-NC-SA 4.0), so the Philippine site files are too. Full list in the repository’s DATA-LICENSE.md.</p>
@@ -791,20 +803,20 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 
     <section id="ab-sensors" aria-labelledby="ab-sensors-h">
       <h2 id="ab-sensors-h" tabindex="-1">Sensor units</h2>
-      <p class="ab-lead">None are installed in the Philippines yet. This is what the dashboard assumes about a unit, written down so it can be checked in the field.</p>
+      <p class="ab-lead">No units are installed yet. This is what the dashboard assumes about a unit, written down so it can be checked in the field.</p>
       <h3>The device</h3>
-      <p>An ultrasonic distance sensor<span class="tt" data-term="ultrasonic sensors">It sends a short sound pulse, too high to hear, and times the echo from the surface below. Nothing touches the floodwater, so there is less dirt and damage than with a sensor sitting in the water.</span> pointing down at the street, with a LoRaWAN radio and a battery. About US$210 per unit (our estimate). Each reading carries only the unit’s ID, the time, the water depth and the unit’s location.</p>
+      <p>An <span class="tt" data-term="ultrasonic sensors"><span class="tt-t">ultrasonic distance sensor</span>It sends a short sound pulse, too high to hear, and times the echo from the surface below. Nothing touches the floodwater, so there is less dirt and damage than with a sensor sitting in the water.</span> pointing down at the street, with a LoRaWAN radio and a battery. About US$210 per unit (our estimate). Each reading carries only the unit’s ID, the time, the water depth and the unit’s location.</p>
       <h3>How it is mounted <span class="ab-tag">Our assumptions, not yet field-tested</span></h3>
       <dl class="ab-ds">
         <div><dt>Where</dt><dd>On a household gate post or front wall at the street’s edge, with the household’s consent.</dd></div>
         <div><dt>Looking at</dt><dd>Street pavement straight below: not the yard, a canal or a drain opening. A clear patch about half a metre wide, where cars don’t usually park.</dd></div>
-        <div><dt>Height</dt><dd>About 2 m above the road<span class="tt" data-term="the 2 m height">Low-cost ultrasonic sensors can’t see closer than about 25–30 cm. At 2 m a unit still reads water up to about 1.5 m deep, past the waist-deep level the dashboard shows, and it sits above most heads and splashes. A person or vehicle passing under gives a short false reading, so a unit should report the median of several pings.</span>.</dd></div>
+        <div><dt>Height</dt><dd><span class="tt" data-term="the 2 m height"><span class="tt-t">About 2 m above the road</span>Low-cost ultrasonic sensors can’t see closer than about 25–30 cm. At 2 m a unit still reads water up to about 1.5 m deep, past the waist-deep level the dashboard shows, and it sits above most heads and splashes. A person or vehicle passing under gives a short false reading, so a unit should report the median of several pings.</span>.</dd></div>
         <div><dt>Zero point</dt><dd>At install, on a dry day, the unit records the distance to dry pavement. Water depth = that distance − the distance now.</dd></div>
         <div><dt>Ground height</dt><dd>Taken from the terrain map at the unit’s street square, not surveyed. Terrain error shifts the unit’s water level by the same amount.</dd></div>
         <div><dt>Radio</dt><dd>Within range of a LoRaWAN gateway; one reading every 10 minutes.</dd></div>
       </dl>
       <h3>Where the spots come from</h3>
-      <p>Teachers Village’s eight units were placed by hand along its low streets. Everywhere else a rule picks them<span class="tt" data-term="the placement rule">Candidates are houses within 25 m of a street and at least 300 m inside the map’s edge. Each gets a score: 0.5 × how low it sits (the share of ground within 300 m that is higher) + 0.3 × NOAH hazard + 0.2 × closeness to a creek or river (zero at 300 m). The best eight are picked at least 300 m apart (250 m, then 200 m, if eight don’t fit).</span>: low ground, mapped hazard, near water, spread apart. On a campus, unit 01 is on campus and the rest are in the barangays around it; in San Joaquin all eight are inside the barangay.</p>
+      <p>Teachers Village’s eight units were placed by hand along its low streets. Everywhere else <span class="tt" data-term="the placement rule"><span class="tt-t">a rule picks them</span>Candidates are houses within 25 m of a street and at least 300 m inside the map’s edge. Each gets a score: 0.5 × how low it sits (the share of ground within 300 m that is higher) + 0.3 × NOAH hazard + 0.2 × closeness to a creek or river (zero at 300 m). The best eight are picked at least 300 m apart (250 m, then 200 m, if eight don’t fit).</span>: low ground, mapped hazard, near water, spread apart. On a campus, unit 01 is on campus and the rest are in the barangays around it; in San Joaquin all eight are inside the barangay.</p>
       <p><b>The spots are proposals</b>, not surveyed or agreed with residents.</p>
     </section>
 
@@ -814,7 +826,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <h3>Terrain error, measured</h3>
       <p>We compared FABDEM with 17,936 ICESat-2 ground points at 26 sites:</p>
       <ul class="ab-list ab-nums">
-        <li>Typical error about <b>1.4 m</b> (NMAD<span class="tt" data-term="NMAD">Normalised median absolute deviation: a measure of typical error that isn’t thrown off by a few wild points. For roughly normal errors, about two-thirds of points fall within ±1 NMAD.</span>); median +0.66 m (the map sits a little above the ground).</li>
+        <li>Typical error about <b>1.4 m</b> (<span class="tt" data-term="NMAD"><span class="tt-t">NMAD</span>Normalised median absolute deviation: a measure of typical error that isn’t thrown off by a few wild points. For roughly normal errors, about two-thirds of points fall within ±1 NMAD.</span>); median +0.66 m (the map sits a little above the ground).</li>
         <li>46% of points within 1 m, 72% within 2 m.</li>
         <li><b>Open campuses</b> (CLSU, LLCC, MSU-IIT, CMU): 0.4–0.8 m.</li>
         <li><b>Old Manila core</b> (UST, FEU Tech, Mapúa, UDM): the map is about 2 m too high; only 2–12% of points within 1 m.</li>
@@ -838,7 +850,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <ul class="ab-list">
         <li><b>Real sensors.</b> Bench-test the unit, then a pilot street in Teachers Village or San Joaquin; replay a recorded storm on the dashboard.</li>
         <li><b>Check against real floods.</b> Compare mapped extents with observed flooding from a past typhoon: MMDA flood reports, geotagged photos, barangay records.</li>
-        <li><b>Better terrain.</b> Test FathomDEM<span class="tt" data-term="FathomDEM">A newer bare-earth elevation map (Fathom, 2025) built for flood modelling. Its authors report smaller errors than FABDEM, including in cities; we have asked for access and will run the same ICESat-2 check on it.</span> (access requested) and 1 m Phil-LiDAR maps where available; survey each unit’s ground height at install.</li>
+        <li><b>Better terrain.</b> Test <span class="tt" data-term="FathomDEM"><span class="tt-t">FathomDEM</span>A newer bare-earth elevation map (Fathom, 2025) built for flood modelling. Its authors report smaller errors than FABDEM, including in cities; we have asked for access and will run the same ICESat-2 check on it.</span> (access requested) and 1 m Phil-LiDAR maps where available; survey each unit’s ground height at install.</li>
         <li><b>Water that moves.</b> Try a simple two-dimensional flow model for direction and timing, and add drainage where it is mapped.</li>
         <li><b>Count flooded buildings by outline</b>, not by grid square.</li>
         <li><b>Go live.</b> Switch on the server for real answers, rain and reports; add SMS for phones without data.</li>
@@ -850,7 +862,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <section id="ab-faq" aria-labelledby="ab-faq-h">
       <h2 id="ab-faq-h" tabindex="-1">FAQ</h2>
       <div class="ab-faq">
-        <details><summary>Is any of this real?</summary><p>The map is: streets, buildings, terrain, barangays and NOAH hazard layers all come from open data. The sensor readings, storms and neighbour reports are simulated, and every page says so. One real test unit exists, at UC Berkeley; its readings are not yet connected to the page.</p></details>
+        <details><summary>Is any of this real?</summary><p>The map is: streets, buildings, terrain, barangays and NOAH hazard layers all come from open data. The sensor readings, storms and neighbour reports are synthetic, and every page says so. In a real deployment, sensors send their readings to the dashboard’s server, and everything after that (the model, the answer rule, the maps) runs exactly as in the demo.</p></details>
         <details><summary>Why not just use the NOAH hazard maps?</summary><p>NOAH shows where floods <i>can</i> happen in a storm of a given size, not what is happening now. It is modelled mainly for rivers and overland flow, so it often misses street ponding from blocked drains; in Teachers Village it is blank across the Maginhawa interior, which is known to flood. BahaWatch keeps NOAH as a layer to compare against.</p></details>
         <details><summary>How accurate is the flood map?</summary><p>At a sensor, as accurate as the sensor. Away from it, the spread depends on terrain, which is typically about 1.4 m off and about 2 m too high in old Manila. Read the extents as a guide to where water is likely, not a street-by-street survey. Details under Accuracy and limits.</p></details>
         <details><summary>Is it a forecast?</summary><p>No. It maps water measured now. Its only look-ahead is one hour: a sensor rising fast enough to reach 5 cm within the hour already counts as <i>Oo</i>. For warnings, follow PAGASA and your local government.</p></details>
@@ -861,7 +873,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <details><summary>What does it cost to run?</summary><p>The site is plain files on GitHub Pages, with its own map tiles: no running cost. The live server is designed for Cloudflare’s free plan (not switched on yet). Hardware: about US$210 per unit (our estimate), plus a LoRaWAN gateway per area.</p></details>
         <details><summary>Does it work on cheap phones and slow connections?</summary><p>A campus page loaded in about 3 seconds on a simulated fast 3G connection in our tests; each site’s data is at most 250 KB compressed. Once opened, the page opens again without signal. It comes in six languages, uses shapes as well as colours, and has screen-reader text for every map.</p></details>
         <details><summary>Can it be set up somewhere new?</summary><p>Yes, anywhere the open datasets cover: give the pipeline a map box and it cuts terrain, buildings, streets, NOAH layers and barangays, then proposes sensor spots. San Joaquin was added this way. NOAH coverage and footprint quality vary by province.</p></details>
-        <details><summary>Why is UC Berkeley on a Philippine dashboard?</summary><p>It has 1 m lidar terrain and the real test unit, so it is where the method can be checked on well-known ground. It also shows the dashboard working with US units and wording.</p></details>
+        <details><summary>Why is UC Berkeley on a Philippine dashboard?</summary><p>It was an experiment. Berkeley has 1 m lidar terrain, so we ran the same method there to see how it behaves on well-known ground, and to try the dashboard with US units and wording. It is not a planned deployment.</p></details>
         <details><summary>Why a 7.5 m grid?</summary><p>Barangay streets are often 4–8 m wide. With 15 m squares, houses and streets merged and water leaked through blocks. Buildings and streets are now on 7.5 m squares; the terrain keeps FABDEM’s detail, since finer squares add no height information.</p></details>
       </div>
     </section>
@@ -1077,7 +1089,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <div id="map-tooltip"></div>
     <div class="p-coach" id="p-coach" role="note"></div>
     <div class="map-attr">Map data © OpenStreetMap contributors · Terrain: Copernicus GLO-30 © ESA/DLR/Airbus via OpenTopography · Hazard: UP Project NOAH (ODbL)</div>
-    <div class="map-note">Map help<span class="tt" data-term="the map controls">Scroll or pinch to zoom, drag to pan, and point at the water for its depth. Keys: + and − zoom, the arrow keys pan, 0 resets the view.</span></div>
+    <div class="map-note"><span class="tt" data-term="the map controls"><span class="tt-t">Map help</span>Scroll or pinch to zoom, drag to pan, and point at the water for its depth. Keys: + and − zoom, the arrow keys pan, 0 resets the view.</span></div>
     <div class="zoom-ctl" aria-label="Map zoom">
       <button id="zoom-in" aria-label="Zoom in">+</button>
       <button id="zoom-out" aria-label="Zoom out">−</button>
@@ -1101,7 +1113,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <canvas id="f-spark" width="620" height="92"></canvas>
     </div>
 
-    <h2 class="rail-h">Household units<span class="tt" data-term="household units">Each card is one unit: the water depth on the street below its gate-post sensor, and its status. Real units would report every 10 minutes over LoRaWAN; here the readings are simulated.</span></h2>
+    <h2 class="rail-h"><span class="tt" data-term="household units"><span class="tt-t">Household units</span>Each card is one unit: the water depth on the street below its gate-post sensor, and its status. Real units would report every 10 minutes over LoRaWAN; here the readings are simulated.</span></h2>
     <div class="house-grid" id="house-cards"></div>
 
     <div class="stats">
@@ -1132,7 +1144,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <ul id="rep-log"></ul>
     </details>
 
-    <p class="foot-note">Real map data; simulated sensor readings. Not a forecast; not for emergency use.<span class="tt" data-term="how this map is made">Built from OpenStreetMap streets, <span id="foot-nb"></span> building footprints and <span id="foot-terrain"></span> terrain (streets carved as flow paths<span id="foot-block">; water goes around squares that are at least 75% built</span>), with Project NOAH flood hazard as a reference layer. Each unit’s reading sets a local water level (ground + measured depth) that spreads only where the terrain allows, fading with distance. No reading, no flood.<span id="foot-limits"> FABDEM heights can be 1–3 m off in dense cities, and this is not a hydraulic model.</span> Simulated storms are tuned per site from NOAH hazard and local elevation.</span> <a href="#about">How it works</a></p>
+    <p class="foot-note">Real map data; simulated sensor readings. Not a forecast; not for emergency use. <span class="tt" data-term="how this map is made"><span class="tt-t">How the map is made</span>Built from OpenStreetMap streets, <span id="foot-nb"></span> building footprints and <span id="foot-terrain"></span> terrain (streets carved as flow paths<span id="foot-block">; water goes around squares that are at least 75% built</span>), with Project NOAH flood hazard as a reference layer. Each unit’s reading sets a local water level (ground + measured depth) that spreads only where the terrain allows, fading with distance. No reading, no flood.<span id="foot-limits"> FABDEM heights can be 1–3 m off in dense cities, and this is not a hydraulic model.</span> Simulated storms are tuned per site from NOAH hazard and local elevation.</span> · <a href="#about">About</a></p>
   </aside>
 </main>
 
@@ -1148,6 +1160,8 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 </div>
 
 <script>
+// the page's typeface on the map canvases too (Atkinson Hyperlegible Next, 2026-09-29); canvases redraw once it has loaded
+const CANVAS_FONT='"Atkinson Hyperlegible Next", Helvetica, Arial, sans-serif';
 "use strict";
 /* =========================================================================
    BahaWatch — Teachers Village on real data
@@ -1226,7 +1240,7 @@ function initSite(id){
     const sus=Math.min(2.6,Math.max(0.15,0.35+0.5*lowness+0.45*wNoah));
     const r=mulberry32(500+k)();
     return {id:s.id,idx:k,name:"Household unit · "+(s.hn?s.hn+" ":"")+(s.bld||s.street),street:s.street,bld:s.bld||null,
-      x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,gRef,hn:s.hn||"",near:s.bld?(s.bld.includes(shortSt(s.street))?null:shortSt(s.street)):(s.near||null),   // campus labels already say "near <street>": no second "near"
+      x:s.x,y:s.y,cx:s.cx,cy:s.cy,lon:s.lon,lat:s.lat,gElev:s.g,gRef,hn:s.hn||"",near:s.bld?(s.hn||s.bld.includes(shortSt(s.street))?null:shortSt(s.street)):(s.near||null),   // campus labels already say "near <street>", and an address needs no cross-street
       short:s.short||null,labelPos:s.lp||(s.id==="BW-H06"?"above":(s.id==="BW-H01"||s.id==="BW-H02")?"left":"right"),
       noahCls:Math.max(h5,h25,h100),sus,expos:0.92+r*0.2,readings:[],depth:0,rate:0,status:"ok"};
   });
@@ -1730,19 +1744,19 @@ function drawOverlayInner(ctx){
     const X=wx(L.x),Y=wy(L.y);
     if(X<-80||Y<-40||X>view.w+80||Y>view.h+40)continue;
     ctx.save();ctx.translate(X,Y);ctx.rotate(L.a);
-    ctx.font=(L.w?"italic 600 12.5px":"600 12px")+" Helvetica, Arial, sans-serif";
+    ctx.font=(L.w?"italic 600 12.5px":"600 12px")+" "+CANVAS_FONT;
     ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(L.n,0,-9);
     ctx.fillStyle=L.w?P.creekLabel:P.label;ctx.fillText(L.n,0,-9);ctx.restore();
   }
   const corner={tv:"UP Diliman ▴"}[SITE];                       // off-frame orientation cue, where one helps
   if(VIEW!=="public"&&corner){ctx.save();ctx.translate(wx(W-120),wy(26));
-  ctx.font="600 12px Helvetica, Arial, sans-serif";
+  ctx.font="600 12px "+CANVAS_FONT;
   ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(corner,0,0);
   ctx.fillStyle=P.label;ctx.fillText(corner,0,0);ctx.restore();}
   const sl=selectedStreetLabel();
   if(sl){
     ctx.save();ctx.translate(wx(sl.x),wy(sl.y));ctx.rotate(sl.a);
-    ctx.font="700 14px Helvetica, Arial, sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.font="700 14px "+CANVAS_FONT;ctx.textAlign="center";ctx.textBaseline="middle";
     ctx.lineWidth=6;ctx.strokeStyle=P.labelHalo;ctx.strokeText(sl.n,0,-14);
     ctx.fillStyle=P.markerInk;ctx.fillText(sl.n,0,-14);ctx.restore();
   }
@@ -1756,7 +1770,7 @@ function drawOverlayInner(ctx){
   if(TRY){                                                      // the Try tab: one pretend sensor, status from the switch
     const h=HOUSEHOLD.find(s=>s.id===TRY_SENSOR),st=statusOf({depth:tryState.sensorCm/100}),X=wx(h.x),Y=wy(h.y);
     drawMarker(ctx,X,Y,9*1.45,st,STATUS_COL[st],P,true);mapDrawn.statusMarkers=1;
-    ctx.font="700 12.5px Helvetica, Arial, sans-serif";ctx.textAlign="left";ctx.textBaseline="middle";
+    ctx.font="700 12.5px "+CANVAS_FONT;ctx.textAlign="left";ctx.textBaseline="middle";
     ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText("22 Malingap",X+22,Y);
     ctx.fillStyle=P.markerInk;ctx.fillText("22 Malingap",X+22,Y);
     return;
@@ -1777,15 +1791,17 @@ function drawOverlayInner(ctx){
     }
     drawMarker(ctx,X,Y,R*(s===selected?1.45:1),s.status,col,P,s===selected);
     if(VIEW!=="public"){
-      ctx.font="700 12px Helvetica, Arial, sans-serif";ctx.textAlign="center";
+      ctx.font="700 12px "+CANVAS_FONT;ctx.textAlign="center";
       ctx.lineWidth=4;ctx.strokeStyle=P.labelHalo;ctx.strokeText(s.id,X,Y-R-9);
       ctx.fillStyle=P.label;ctx.fillText(s.id,X,Y-R-9);
     }else{
       // station-style: the sensor carries the street name, so the map stays a diagram
       // building name on the campuses (short form for the map), house number + street in Teachers Village
       const nm=s.short||(s.bld?s.bld:(s.hn?s.hn+" ":"")+s.street.replace(" Street","").replace(" Road","").replace(" Avenue",""));
-      ctx.font="700 12.5px Helvetica, Arial, sans-serif";
-      const lp=s.labelPos;
+      ctx.font="700 12.5px "+CANVAS_FONT;
+      let lp=s.labelPos;
+      if(lp!=="above"&&lp!=="below"){const tw=ctx.measureText(nm).width+R+9;   // near an edge, the label goes to the other side
+        if(lp!=="left"&&X+tw>view.w-8)lp="left";else if(lp==="left"&&X-tw<8)lp="right";}
       ctx.textAlign=lp==="left"?"right":(lp==="above"||lp==="below")?"center":"left";ctx.textBaseline="middle";
       const Rl=R*(s===selected?1.45:1);
       const lx=lp==="left"?X-Rl-9:(lp==="above"||lp==="below")?X:X+Rl+9, ly=lp==="above"?Y-Rl-13:lp==="below"?Y+Rl+13:Y;
@@ -1800,7 +1816,7 @@ function drawPlaceMarker(ctx,X,Y,P,name){
   ctx.beginPath();ctx.arc(X,Y,9,0,7);ctx.lineWidth=7;ctx.strokeStyle=P.markerFill;ctx.stroke();
   ctx.fillStyle=P.markerInk;ctx.fill();
   ctx.beginPath();ctx.arc(X,Y,3.5,0,7);ctx.fillStyle=P.markerFill;ctx.fill();
-  ctx.font="700 12.5px Helvetica, Arial, sans-serif";ctx.textBaseline="middle";
+  ctx.font="700 12.5px "+CANVAS_FONT;ctx.textBaseline="middle";
   const left=X+18+ctx.measureText(name).width>view.w-8;       // near the right edge: label on the left, never clipped
   ctx.textAlign=left?"right":"left";const lx=left?X-18:X+18;
   ctx.lineWidth=5;ctx.strokeStyle=P.labelHalo;ctx.strokeText(name,lx,Y);
@@ -3046,11 +3062,11 @@ function figureSVG(){
   const cS=(FIG.childCm*FIG.pxPerCm-2*10.5-3)/183, cHeadR=10.5;
   const cNeckY=FIG.groundY-183*cS, cHeadC=cNeckY-cHeadR-1;
   const ruler=[];
-  for(let cm=0;cm<=150;cm+=25)ruler.push(`<line x1="${FIG.rulerX-5}" x2="${FIG.rulerX}" y1="${cmY(cm)}" y2="${cmY(cm)}" stroke="${ink}" stroke-width="1"/><text x="${FIG.rulerX-8}" y="${cm===0?cmY(0)+9.5:cmY(cm)+3.2}" text-anchor="end" font-size="13" fill="${dim}">${cm}</text>`);
+  for(let cm=0;cm<=150;cm+=25)ruler.push(`<line x1="${FIG.rulerX-5}" x2="${FIG.rulerX}" y1="${cmY(cm)}" y2="${cmY(cm)}" stroke="${ink}" stroke-width="1"/><text x="${FIG.rulerX-8}" y="${cm===0?cmY(0)+9.5:cmY(cm)+3.2}" text-anchor="end" font-size="13.5" fill="${dim}">${cm}</text>`);
   for(let ft=1;ft<=5;ft++){const y=cmY(ft*30.48);ruler.push(`<line class="ft" x1="${FIG.rulerX}" x2="${FIG.rulerX+5}" y1="${y}" y2="${y}" stroke="${ink}" stroke-width="1"/><text class="ft" x="${FIG.rulerX+8}" y="${y+3.6}" font-size="11" fill="${dim}">${ft} ft</text>`);}
   return `<svg viewBox="-46 0 812 250" role="img" aria-labelledby="fig-title fig-desc" focusable="false">
     <title id="fig-title"></title><desc id="fig-desc"></desc>
-    <g font-family="Helvetica, Arial, sans-serif">
+    <g font-family="Atkinson Hyperlegible Next, Helvetica, Arial, sans-serif">
       <text id="fig-adult-w" x="${FIG.adultX}" y="${aHeadC-aHeadR-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${ink}"></text>
       <text x="${FIG.adultX}" y="${aHeadC-aHeadR-4}" text-anchor="middle" font-size="11" fill="${dim}">1.60 m · ${ftIn(160)}</text>
       <text id="fig-child-w" x="${FIG.childX}" y="${cHeadC-cHeadR-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${ink}"></text>
@@ -3068,7 +3084,7 @@ function figureSVG(){
     <g id="fig-bike" fill="var(--panel-2)" stroke="${ink}" stroke-width="2" stroke-linejoin="round">
       ${bikeSVG(ink)}
     </g>
-    <g id="fig-bike-ticks" font-family="Helvetica, Arial, sans-serif" font-size="13">
+    <g id="fig-bike-ticks" font-family="Atkinson Hyperlegible Next, Helvetica, Arial, sans-serif" font-size="13">
       ${[[15,"engine 6″"],[30,"exhaust 12″"]].map(([cm,lab])=>`<line x1="${FIG.bikeX-45}" x2="${FIG.bikeX-37}" y1="${cmY(cm)}" y2="${cmY(cm)}" stroke="${ink}" stroke-width="1"/><text x="${FIG.bikeX-48}" y="${cmY(cm)+3.6}" text-anchor="end" fill="${dim}" data-bike="${cm}">${lab}</text>`).join("")}
       <text id="fig-bike-w" x="${FIG.bikeX}" y="${cmY(121)-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${ink}"></text>
       <text x="${FIG.bikeX}" y="${cmY(121)-4}" text-anchor="middle" font-size="11" fill="${dim}">1.00 m · ${ftIn(100)}</text>
@@ -3079,15 +3095,15 @@ function figureSVG(){
     <g id="fig-face-child" data-mood="happy" transform="translate(${FIG.childX},${cHeadC})" fill="${ink}" stroke="${ink}" stroke-width="1.5" stroke-linecap="round">
       <circle cx="-3.5" cy="-2.5" r="1.2" stroke="none"/><circle cx="3.5" cy="-2.5" r="1.2" stroke="none"/><path class="mouth" fill="none" d="M-3.5 2.5 q3.5 3.5 7 0"/>
     </g>
-    <g id="fig-ticks" font-family="Helvetica, Arial, sans-serif" font-size="10.5">
+    <g id="fig-ticks" font-family="Atkinson Hyperlegible Next, Helvetica, Arial, sans-serif" font-size="10.5">
       ${words.map(([cm,i])=>`<line x1="${FIG.adultX-40}" x2="${FIG.adultX-30}" y1="${cmY(cm)}" y2="${cmY(cm)}" stroke="${ink}" stroke-width="1"/><text x="${FIG.adultX-43}" y="${cmY(cm)+3.2}" text-anchor="end" data-mark="${i}"></text>`).join("")}
     </g>
-    <g id="fig-car-ticks" font-family="Helvetica, Arial, sans-serif" font-size="13">
+    <g id="fig-car-ticks" font-family="Atkinson Hyperlegible Next, Helvetica, Arial, sans-serif" font-size="13">
       ${[[15,"clr"],[33,"half-tire 13″"],[66,"tire 26″"],[75,"clr"]].map(([cm,lab])=>`<line x1="${FIG.carX+FIG.carW/2+4}" x2="${FIG.carX+FIG.carW/2+12}" y1="${cmY(cm)}" y2="${cmY(cm)}" stroke="${ink}" stroke-width="1"/><text x="${FIG.carX+FIG.carW/2+15}" y="${cmY(cm)+3.2}" fill="${dim}" data-car="${cm}">${lab==="clr"?"":lab}</text>`).join("")}
       <text id="fig-car-w" x="${FIG.carX}" y="${cmY(147)-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${ink}"></text>
       <text x="${FIG.carX}" y="${cmY(147)-4}" text-anchor="middle" font-size="11" fill="${dim}">1.47 m · ${ftIn(147)}</text>
     </g>
-    <g id="fig-ruler" font-family="Helvetica, Arial, sans-serif">
+    <g id="fig-ruler" font-family="Atkinson Hyperlegible Next, Helvetica, Arial, sans-serif">
       <line x1="${FIG.rulerX}" x2="${FIG.rulerX}" y1="${cmY(160)}" y2="${FIG.groundY}" stroke="${ink}" stroke-width="1.2"/>
       ${ruler.join("")}
       <text x="${FIG.rulerX-8}" y="${cmY(160)-2}" text-anchor="end" font-size="11" font-weight="700" fill="${ink}">cm</text>
@@ -3801,22 +3817,24 @@ function syncCampusUI(){
 }
 document.addEventListener("click",e=>{if(e.target.closest(".c-pick")){natFocusSearch=true;location.hash="#ph";}});
 
-/* ---------- "?" toggletips (About page and Details): <span class="tt" data-term="…">note</span> becomes a "?" button
-   followed by its note. Click or tap pins the note, hover shows it, Escape / a click elsewhere / tabbing away close it. ---------- */
+/* ---------- term notes (About page and Details): <span class="tt" data-term="…"><span class="tt-t">term</span>note</span>
+   becomes the term as a bold, underlined button followed by its note (2026-09-29: the "?" buttons were too big). Click or
+   tap pins the note, hover shows it, Escape / a click elsewhere / tabbing away close it. ---------- */
 let ttSeq=0,TT=null,ttHideT=0;                  // TT: the open note {el, pinned}
 const TT_HOVER=matchMedia("(hover:hover) and (pointer:fine)");
 function tipsInit(root){
   root.querySelectorAll(".tt:not([data-tt])").forEach(el=>{
     el.dataset.tt="1";const id="tt-"+(++ttSeq);
-    // keep the "?" on the same line as the word before it (and any punctuation right after it)
-    const pv=el.previousSibling,nx=el.nextSibling,mw=pv&&pv.nodeType===3&&/(\S+)$/.exec(pv.data);
-    if(mw){pv.data=pv.data.slice(0,-mw[1].length);const w=document.createElement("span");w.className="tt-w";w.textContent=mw[1];el.before(w);w.append(el);
-      const mp=nx&&nx.nodeType===3&&/^[.,;:)”]+/.exec(nx.data);if(mp){nx.data=nx.data.slice(mp[0].length);w.append(mp[0]);}}
+    const term=el.querySelector(":scope > .tt-t");
+    const b=document.createElement("button");b.type="button";b.className="tt-b";
+    if(term){while(term.firstChild)b.appendChild(term.firstChild);term.remove();}else b.textContent=el.dataset.term;
+    b.setAttribute("aria-expanded","false");b.setAttribute("aria-controls",id);
     const p=document.createElement("span");p.className="tt-p";p.id=id;p.hidden=true;
     while(el.firstChild)p.appendChild(el.firstChild);
-    const b=document.createElement("button");b.type="button";b.className="tt-b";b.textContent="?";
-    b.setAttribute("aria-label","More about "+el.dataset.term);b.setAttribute("aria-expanded","false");b.setAttribute("aria-controls",id);
     el.append(b,p);
+    // punctuation right after the term stays on its line
+    const nx=el.nextSibling,mp=nx&&nx.nodeType===3&&/^[.,;:)”]+/.exec(nx.data);
+    if(mp){nx.data=nx.data.slice(mp[0].length);const w=document.createElement("span");w.className="tt-w";el.before(w);w.append(el,mp[0]);}
     b.addEventListener("click",e=>{e.stopPropagation();if(TT&&TT.el===el&&TT.pinned)tipHide(false);else tipShow(el,true);});
     el.addEventListener("mouseenter",()=>{clearTimeout(ttHideT);if(TT_HOVER.matches&&!(TT&&TT.pinned))tipShow(el,false);});
     el.addEventListener("mouseleave",()=>{if(TT&&TT.el===el&&!TT.pinned){clearTimeout(ttHideT);ttHideT=setTimeout(()=>tipHide(false),200);}});
@@ -3839,7 +3857,7 @@ function tipPlace(){
   if(!TT)return;const b=TT.el.querySelector(".tt-b"),p=TT.el.querySelector(".tt-p"),r=b.getBoundingClientRect();
   const vw=document.documentElement.clientWidth,vh=window.innerHeight;
   if(r.bottom<0||r.top>vh||!r.width){tipHide(false);return;}
-  const w=p.offsetWidth,h=p.offsetHeight,x=Math.max(16,Math.min(r.left+r.width/2-28,vw-16-w));
+  const w=p.offsetWidth,h=p.offsetHeight,x=Math.max(16,Math.min(r.left,vw-16-w));
   let y=r.bottom+10;if(y+h>vh-8&&r.top-10-h>=8)y=r.top-10-h;
   p.style.left=Math.round(x)+"px";p.style.top=Math.round(y)+"px";
 }
@@ -3952,6 +3970,7 @@ requestAnimationFrame(loop);
 }
 if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 go(parseHash(),{wasLive:false,wasTry:false});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(siteBooted){drawMap();drawOverlayCanvas();}});
 </script>
 </body>
 </html>

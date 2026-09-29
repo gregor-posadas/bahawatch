@@ -9,7 +9,7 @@ import glob, json, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TILES = "https://tiles.openfreemap.org/planet"
 WORLD_GLYPHS = "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf"
-GLYPHS = "shared/fonts/{fontstack}/{range}.pbf"
+GLYPHS = "shared/fonts/{fontstack}/{range}.pbf"   # Atkinson Hyperlegible Next, from tools/build_glyphs.py (2026-09-29)
 OWN_ATTRIBUTION = "© OpenStreetMap contributors · buildings: Open Buildings (Google, Microsoft, via VIDA)"
 ATTRIBUTION = "OpenFreeMap © OpenMapTiles Data from OpenStreetMap"
 PALETTES = {
@@ -79,15 +79,15 @@ def style(theme):
         layers += roads("site-" + sid, "streets", 12)
     for sid in sites:
         layers.append({"id": "road-label-" + sid, "type": "symbol", "source": "site-" + sid, "source-layer": "streets", "minzoom": 15,
-                       "layout": {"symbol-placement": "line", "text-field": ["get", "name"], "text-font": ["Noto Sans Regular"], "text-size": 12},
+                       "layout": {"symbol-placement": "line", "text-field": ["get", "name"], "text-font": ["Atkinson Hyperlegible Next Regular"], "text-size": 12},
                        "paint": label_paint(p)})
     layers += [
         {"id": "road-label", "type": "symbol", "source": "base", "source-layer": "roads", "minzoom": 12,
          "filter": cls("motorway", "trunk", "primary"),
-         "layout": {"symbol-placement": "line", "text-field": ["get", "name"], "text-font": ["Noto Sans Regular"], "text-size": 12},
+         "layout": {"symbol-placement": "line", "text-field": ["get", "name"], "text-font": ["Atkinson Hyperlegible Next Regular"], "text-size": 12},
          "paint": label_paint(p)},
         {"id": "place-label", "type": "symbol", "source": "base", "source-layer": "places",
-         "layout": {"text-field": ["get", "name"], "text-font": ["Noto Sans Medium"],
+         "layout": {"text-field": ["get", "name"], "text-font": ["Atkinson Hyperlegible Next Medium"],
                     "text-size": ["match", ["get", "place"], "city", 14, 12]},
          "paint": label_paint(p)},
     ]

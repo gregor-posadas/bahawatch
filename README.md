@@ -7,11 +7,12 @@ campuses**; each campus has its own page (a 3 km box around the campus, eight
 proposed sensor spots, a partnership card). Three pilot sites keep their own
 tabs: **Teachers Village**, Quezon City (the original neighbourhood build),
 **San Joaquin**, Mabalacat City, Pampanga (added 2026-09-29, cut like a campus,
-all eight units inside the barangay) and **UC Berkeley** around Strawberry Creek
+all eight units inside the barangay; unit 01 fixed at 71 Imelda Marcos St by
+`pin_units` in `sites.py`, the rest placed around it) and **UC Berkeley** around Strawberry Creek
 (where the real demo unit lives). An **About** tab (`#about`, `#about/<section>`)
 explains the dashboard in plain language for talks such as GHTC: how it works,
 the data, the sensor units and their assumed mounting, accuracy and biases,
-future work and an FAQ, with "?" notes on terms. The
+future work and an FAQ; underlined terms open a short note. The
 old UP Diliman tab is now the `upd` campus page, and old `#diliman` links go
 there. §2.5 explains how the campus data are made; §6.5 how the pages work.
 
@@ -947,8 +948,12 @@ The fourth tab, **Try reporting** (`#try`), shows how neighbour reports work wit
 Mini Motorways in spirit: warm paper ground (`#f8f4ec`), white streets with
 sand casings, soft tan building squares, pastel creeks, hairline dividers
 instead of cards, uppercase tracked section labels, and the map as the
-dominant element. Fonts: Helvetica Neue / Helvetica / Arial (no web fonts, so
-the file stays self-contained). Brand blues from the logo: `#0030a0` (controls,
+dominant element. Typeface: **Atkinson Hyperlegible Next** (Braille Institute),
+for readers with low vision (2026-09-29): the page, the canvas labels and the depth
+figure load the unaltered web fonts in `shared/fonts/atkinson/` (Mono for the API
+feed); the map labels use glyphs rendered from its OFL release by
+`tools/build_glyphs.py` (Noto Sans fills the code points it lacks). Glyphs the
+font lacks on the page (☾ ☀ ▾ ⌂) fall back to Helvetica / Arial. Brand blues from the logo: `#0030a0` (controls,
 deepest water band, selection ring) and `#70c0e0` (creeks; the brand color in
 dark theme).
 

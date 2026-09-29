@@ -53,7 +53,7 @@ class Styles(unittest.TestCase):
         self.assertEqual((src["type"], src["url"]), ("vector", "pmtiles://shared/tiles/ph-base.pmtiles"))
         self.assertIn("OpenStreetMap", src["attribution"]); self.assertIn("Open Buildings", src["attribution"])
         self.assertEqual(s["glyphs"], "shared/fonts/{fontstack}/{range}.pbf")
-        for f in ("Noto Sans Regular", "Noto Sans Medium"):
+        for f in ("Atkinson Hyperlegible Next Regular", "Atkinson Hyperlegible Next Medium"):
             self.assertTrue(os.path.exists(os.path.join(ROOT, "shared", "fonts", f, "0-255.pbf")), f)
         for k, v in s["sources"].items():                     # every archive the style names is in the repo
             self.assertTrue(os.path.exists(os.path.join(ROOT, v["url"][len("pmtiles://"):])), k)

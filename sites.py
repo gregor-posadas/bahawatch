@@ -78,6 +78,7 @@ SITES = {
    osm="inputs/campuses/sjq/osm.geojson", buildings="inputs/campuses/sjq/buildings.geojson", noah="geojson",
    noah_dir="inputs/campuses/sjq", barangays="inputs/campuses/sjq/barangays.geojson",
    outline="inputs/campuses/sjq/outline.geojson", sensors="auto", site_by="auto", labels="auto", units_inside=True,
+   pin_units=[dict(label="71 Imelda Marcos St", hn="71", lon=120.57104012030234, lat=15.230664731843266)],   # Gregor, 2026-09-29
    road_class=ROAD_CAMPUS, creek_tags={"river", "stream", "drain", "canal", "ditch"}, profile="street",
    langs="all", units="metric", tz="PHT", utc="+08:00", scen=PH_SCEN, emergency="911 or your barangay",
    attribution=FAB_ATTR, terrain=FAB_TERRAIN),

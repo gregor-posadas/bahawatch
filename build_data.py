@@ -260,14 +260,24 @@ def auto_units():
         if not st or dn>200 or b==0 or cell is None or SEA[cell[1],cell[0]]: return False
         cd["street"],cd["brgy"],cd["cell"]=st,bnames[b-1],cell
         return True
-    chosen,spacing=placement.pick(cands,ok=ok,all_inside=CFG.get("units_inside",False))
+    # units fixed in advance at a coordinate (sjq: 71 Imelda Marcos St, from Gregor, 2026-09-29): on the nearest street
+    # cell, named after the nearest street, labelled with the address given
+    pins=[]
+    for pu in CFG.get("pin_units",()):
+        x,y=wx(pu["lon"]),wy(pu["lat"]);cx,cy=min(int(x/W*GW),GW-1),min(int(y/H*GH),GH-1)
+        dn,st=nearest_other_street(x,y,"");cell=nearest_cell(street,cx,cy);b=int(bgrid[cy,cx])
+        assert st and dn<60 and cell and b, f"pinned unit at {pu}: {dn:.0f} m from {st}, barangay {b}"
+        pins.append(dict(fid=None,px=pu["lon"],py=pu["lat"],x=x,y=y,cx=cx,cy=cy,x_m=x*MX,y_m=y*MY,oc=on_campus(pu["lon"],pu["lat"]),
+                         score=float(score[cy,cx]),street=st,brgy=bnames[b-1],cell=cell,hn=pu.get("hn",""),label=pu.get("label")))
+    chosen,spacing=placement.pick(cands,ok=ok,all_inside=CFG.get("units_inside",False),pinned=pins)
     out=[]
     for k,cd in enumerate(chosen,1):
         cx,cy=cd["cell"]
-        out.append({"id":f"BW-{SITE_ID.upper()}-{k:02d}","street":cd["street"],"hn":"","near":None,
+        out.append({"id":f"BW-{SITE_ID.upper()}-{k:02d}","street":cd["street"],"hn":cd.get("hn",""),"near":None,
                     "x":round(float(cd["x"]),1),"y":round(float(cd["y"]),1),"cx":cx,"cy":cy,
                     "lon":round(cd["px"],5),"lat":round(cd["py"],5),"g":round(float(elev[cy,cx]),2),
-                    "bld":f"near {shortSt(cd['street'])} · {cd['brgy']}","short":shortSt(cd["street"]),
+                    "bld":f"{cd['label']} · {cd['brgy']}" if cd.get("label") else f"near {shortSt(cd['street'])} · {cd['brgy']}",
+                    "short":cd["label"] if cd.get("label") else shortSt(cd["street"]),
                     "oc":bool(cd["oc"]),"brgy":cd["brgy"],"fid":cd["fid"]})
         print(f"  {out[-1]['id']} → {out[-1]['bld']}{' (on campus)' if cd['oc'] else ''} score {cd['score']:.2f}")
     print(f"  {len(cands)} candidate houses; spacing {spacing:.0f} m")

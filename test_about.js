@@ -1,5 +1,5 @@
 // The About tab (2026-09-29, for Noam's GHTC talk): how the dashboard works, the data, the sensor units and their assumed
-// mounting, accuracy and biases, future work, and an FAQ, with "?" toggletips on terms. Also the San Joaquin tab and the
+// mounting, accuracy and biases, future work, and an FAQ, with notes on underlined terms (first "?" buttons; the terms themselves since Gregor found the "?" too big). Also the San Joaquin tab and the
 // Details text trimmed behind the same tips. Run: ./test_pages.sh test_about.js
 const {chromium}=require('playwright');
 const BASE=process.env.BW_BASE||'http://127.0.0.1:8765/';
@@ -26,6 +26,8 @@ const openTips=pg=>pg.evaluate(()=>[...document.querySelectorAll('.tt-p')].filte
     // the sensor placement and mounting assumptions are written down, and marked as assumptions
     s=await pg.evaluate(()=>{const t=document.getElementById('ab-sensors').textContent;return {tag:/Our assumptions, not yet field-tested/.test(t),h:/About 2 m above the road/.test(t),zero:/dry pavement/.test(t),rule:/0\.5 × how low it sits/.test(t),prop:/proposals/.test(t)};});
     assert(Object.values(s).every(Boolean),`${w}: Sensor units states the mounting height, zero point and placement rule, labelled as assumptions: ${JSON.stringify(s)}`);
+    s=await pg.evaluate(()=>{const t=document.getElementById('about').textContent;return {synth:/This demo runs on synthetic data/.test(t),real:/In a real deployment/.test(t)&&/dashboard’s server/.test(t),exp:/UC Berkeley, California: an experiment/.test(t),noUnit:!/test (unit|sensor)/.test(t)};});
+    assert(Object.values(s).every(Boolean),`${w}: About says the demo is synthetic, how real sensors would feed the server, that Berkeley was an experiment, and names no test unit: ${JSON.stringify(s)}`);
     s=await pg.evaluate(()=>{const t=document.getElementById('ab-limits').textContent;return /17,936/.test(t)&&/1\.4 m/.test(t)&&/2 m too high/.test(t)&&/by design/.test(t);});
     assert(s,`${w}: Accuracy and limits gives the ICESat-2 check and the demo's built-in agreement with NOAH`);
     // deep links: #about/<section> scrolls there, focuses its heading and marks the rail
@@ -42,16 +44,16 @@ const openTips=pg=>pg.evaluate(()=>[...document.querySelectorAll('.tt-p')].filte
     await pg.goto(U+'#about/how');await ready(pg,"about");await pg.waitForTimeout(300);
     const tip=pg.locator('#ab-how .tt-b').nth(2);
     s=await pg.evaluate(()=>{const b=document.querySelectorAll('#ab-how .tt-b')[2],p=document.getElementById(b.getAttribute('aria-controls'));
-      return {label:b.getAttribute('aria-label'),exp:b.getAttribute('aria-expanded'),hidden:p.hidden,next:b.nextElementSibling===p,glued:getComputedStyle(b.closest('.tt-w')).whiteSpace};});
-    assert(s.label==="More about how the spread is limited"&&s.exp==="false"&&s.hidden&&s.next&&s.glued==="nowrap",`${w}: a "?" is a labelled button, its note hidden and next in reading order, kept on the line of its word: ${JSON.stringify(s)}`);
+      const cs=getComputedStyle(b);return {name:b.textContent,exp:b.getAttribute('aria-expanded'),hidden:p.hidden,next:b.nextElementSibling===p,bold:+cs.fontWeight>=700,under:/underline/.test(cs.textDecorationLine),q:document.querySelectorAll('.tt-b').length>0&&[...document.querySelectorAll('.tt-b')].every(x=>x.textContent!=="?")};});
+    assert(s.name==="fades with distance"&&s.exp==="false"&&s.hidden&&s.next&&s.bold&&s.under&&s.q,`${w}: the term itself is the button, bold and underlined, its note hidden and next in reading order; no "?" left: ${JSON.stringify(s)}`);
     await tip.click();await pg.waitForTimeout(250);
     s=await pg.evaluate(()=>{const b=document.querySelectorAll('#ab-how .tt-b')[2],p=document.getElementById(b.getAttribute('aria-controls')),r=p.getBoundingClientRect(),br=b.getBoundingClientRect();
-      return {exp:b.getAttribute('aria-expanded'),op:getComputedStyle(p).opacity,in:r.left>=15&&r.right<=innerWidth-15,below:r.top>br.bottom||r.bottom<br.top,px:parseFloat(getComputedStyle(p).fontSize),text:/1 cm for every 15 m/.test(p.textContent),sw:document.documentElement.scrollWidth,hit:(()=>{const a=getComputedStyle(b,'::after');return parseFloat(a.width)||b.offsetWidth+28;})()};});
-    assert(s.exp==="true"&&s.op==="1"&&s.in&&s.below&&s.px>=14&&s.text&&s.sw<=w,`${w}: the note fades in beside its "?", inside the window, 14 px: ${JSON.stringify(s)}`);
-    assert(s.hit>=48,`${w}: the "?" has a 48 px hit area (${s.hit})`);
+      return {exp:b.getAttribute('aria-expanded'),op:getComputedStyle(p).opacity,in:r.left>=15&&r.right<=innerWidth-15,below:r.top>br.bottom||r.bottom<br.top,px:parseFloat(getComputedStyle(p).fontSize),text:/1 cm for every 15 m/.test(p.textContent),sw:document.documentElement.scrollWidth,hit:(()=>{const a=getComputedStyle(b,'::after');return b.getBoundingClientRect().height+2*Math.abs(parseFloat(a.top));})()};});
+    assert(s.exp==="true"&&s.op==="1"&&s.in&&s.below&&s.px>=14&&s.text&&s.sw<=w,`${w}: the note fades in beside its term, inside the window, 14 px: ${JSON.stringify(s)}`);
+    assert(s.hit>=40,`${w}: the term's tap area reaches past its text (${s.hit} px tall)`);
     await pg.keyboard.press('Escape');
-    s=await pg.evaluate(()=>({open:[...document.querySelectorAll('.tt-p')].filter(p=>!p.hidden).length,f:document.activeElement.getAttribute('aria-label')}));
-    assert(s.open===0&&s.f==="More about how the spread is limited",`${w}: Escape closes the note and focus returns to its "?": ${JSON.stringify(s)}`);
+    s=await pg.evaluate(()=>({open:[...document.querySelectorAll('.tt-p')].filter(p=>!p.hidden).length,f:document.activeElement.textContent}));
+    assert(s.open===0&&s.f==="fades with distance",`${w}: Escape closes the note and focus returns to its "?": ${JSON.stringify(s)}`);
     await tip.click();await pg.locator('#ab-how .tt-b').nth(0).click();
     assert(await openTips(pg)===1&&await pg.evaluate(()=>document.querySelectorAll('#ab-how .tt-b')[0].getAttribute('aria-expanded')==="true"),`${w}: opening another note closes the first`);
     await pg.mouse.click(5,Math.round(900*0.9));
@@ -97,11 +99,13 @@ const openTips=pg=>pg.evaluate(()=>[...document.querySelectorAll('.tt-p')].filte
    const s=await pg.evaluate(()=>({site:SITE,place:document.getElementById('p-place').textContent,units:HOUSEHOLD.length,ids:HOUSEHOLD.map(h=>h.id).join(),inside:DATA.sensors.every(u=>/San Joaquin/.test(u.brgy||u.bld||"")),
      sel:document.querySelector('#public .site-tabs [aria-selected=true]').dataset.site,noah:["5","25","100"].every(k=>DATA.noah&&DATA.noah[k])}));
    assert(s.site==="sjq"&&s.sel==="sjq"&&/San Joaquin/.test(s.place)&&/Mabalacat/.test(s.place),"the San Joaquin tab opens Brgy. San Joaquin, Mabalacat City: "+s.place);
+   const pin=await pg.evaluate(()=>{const u=HOUSEHOLD.find(h=>h.id==="BW-SJQ-01");return u&&{bld:u.bld,near:u.near,lon:u.lon,lat:u.lat};});
+   assert(pin&&pin.bld==="71 Imelda Marcos St · San Joaquin"&&pin.near===null&&Math.abs(pin.lon-120.57104)<1e-4&&Math.abs(pin.lat-15.23066)<1e-4,"San Joaquin: unit 01 at 71 Imelda Marcos St, where Gregor placed it: "+JSON.stringify(pin));
    assert(s.units===8&&/^BW-SJQ-01,.*BW-SJQ-08$/.test(s.ids)&&s.inside&&s.noah,"San Joaquin: eight units, all inside the barangay, with NOAH 5/25/100-year layers: "+JSON.stringify(s));
    await pg.click('#p-details');await pg.waitForTimeout(500);
    const d=await pg.evaluate(()=>{const f=document.querySelector('.foot-note');return {words:f.firstChild.textContent.trim().split(/\s+/).length,tip:!!f.querySelector('.tt-b'),nb:!!f.querySelector('#foot-nb'),link:f.querySelector('a[href="#about"]')?.textContent,
-     rail:[...document.querySelectorAll('.rail-h')].map(h=>{const c=h.cloneNode(true);c.querySelectorAll('.tt-p,.tt-b').forEach(e=>e.remove());return c.textContent.trim();}).join("|"),hint:document.querySelector('#legend .hint').textContent};});
-   assert(d.words<=14&&d.tip&&d.nb&&d.link==="How it works","Details: the footnote is one short line; the rest is behind a \"?\" and a link to About: "+JSON.stringify(d));
+     rail:[...document.querySelectorAll('.rail-h')].map(h=>{const c=h.cloneNode(true);c.querySelectorAll('.tt-p').forEach(e=>e.remove());return c.textContent.trim();}).join("|"),hint:document.querySelector('#legend .hint').textContent};});
+   assert(d.words<=14&&d.tip&&d.nb&&d.link==="About","Details: the footnote is one short line; the rest is behind a \"?\" and a link to About: "+JSON.stringify(d));
    assert(/^Selected unit\|Household units\|/.test(d.rail)&&d.hint.split(/\s+/).length<=14,"Details: shorter headings and legend hint: "+JSON.stringify(d));
    await ctx.close();}
   assert(errs.length===0,"no page errors: "+errs.join("; "));

@@ -52,6 +52,13 @@ class Pick(unittest.TestCase):
         self.assertEqual(len(chosen), 8); self.assertTrue(all(c["oc"] for c in chosen)); self.assertEqual(sp, 300.0)
         chosen, _ = P.pick(cs)                          # the campus rule on the same candidates: only unit 01 inside
         self.assertEqual(sum(c["oc"] for c in chosen), 1)
+    def test_pinned_unit_comes_first_and_keeps_the_spacing(self):
+        # San Joaquin (2026-09-29): Gregor fixed one unit at 71 Imelda Marcos St; the rule places the other seven around it
+        pin = {"fid": None, "x_m": 0.0, "y_m": 0.0, "score": 0.0, "oc": True}
+        cs = [cand(i, 100.0 + i * 400.0, 0.0, 1.0 - i / 100, oc=True) for i in range(10)]
+        chosen, sp = P.pick(cs, all_inside=True, pinned=[pin])
+        self.assertIs(chosen[0], pin); self.assertEqual(len(chosen), 8); self.assertEqual(sp, 300.0)
+        self.assertNotIn(0, [c["fid"] for c in chosen])     # 100 m from the pin: too close
     def test_no_campus_candidate_fails(self):
         with self.assertRaises(ValueError): P.pick(self.line(20, 400.0))
     def test_ok_rejects_are_skipped_and_ties_break_by_fid(self):
