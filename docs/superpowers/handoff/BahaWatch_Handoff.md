@@ -142,13 +142,26 @@ review and reports"). Commits `62a9601` → `efbb216`:
    dry), so the edge follows the terrain; colours blend between the legend's bands; the shallowest ~8 cm fade out; with
    the detailed map on, building footprints from the site tiles (`footLoad`, `querySourceFeatures`, zoom ≥ 13) are cut
    out of the water, and at zoom ≥ 14.5 water shows in the alleys of fully built cells; a gentle non-directional shimmer
-   (`drawShimmer`, off under reduced motion; non-directional because the model has no flow direction). Never more water
-   than the model (tested). Test: `test_flood_look.js`. The model itself is unchanged.
+   was tried and **removed at Gregor's request**. Never more water than the model (tested). Test: `test_flood_look.js`.
+   The model itself is unchanged. **Speed (same day):** building the outlines as one `Path2D` took 12 s (216k points);
+   now they are stored as typed arrays and only buildings touching water are drawn onto the canvas (outline read
+   ~0.12–0.23 s once, redraw 6–55 ms). One painter (`waterLUT`, `paintWater`) serves the campus map and the national
+   typhoon; there each campus is painted 4× finer only when it is > 1.5× its grid width on screen, and redrawn every
+   5 simulated minutes. No building cut-outs on the national map yet.
+10. **Page loads re-check the server** (`sw.js`: navigations fetch with `cache:'no-cache'`, `redirect:'manual'`), so a
+   push shows on a normal reload instead of after GitHub Pages' 10-minute browser copy expires.
    **Discussed, not done:** a benchmark against observed floods (Sentinel-1 / Copernicus EMS / geotagged photos) before
    changing the model; FathomDEM (Uhe et al. 2025, ERL 20 034002; CC BY-NC-SA, covers PH) in place of FABDEM (Hawker et
    al. 2022, ERL 17 024016); sensor ground from its surroundings; water surface sloping between sensors; resident
    reports as constraints; uncertainty bands; later LiPAD 1 m and a pre-run 2D scenario library or a GPU shallow-water
    model (the model is static: a level pool per sensor with a 1 cm/cell decay, 80 cells max).
+
+**Agreed next (2026-09-29):** (a) run the model on a finer grid (≈ 5 m) with building footprints as obstacles
+(pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
+outline, not the centroid; (b) test FABDEM vs FathomDEM against ICESat-2 ATL08 ground points in the 26 boxes (Gregor to
+make a free NASA Earthdata account; heights need EGM2008 ↔ ellipsoid conversion); FathomDEM needs 6 tiles: N08E124,
+N10E123, N13E121, N14E120, N14E121, N15E120 (Zenodo 14511570; check how the record packages them), and
+`pipeline/cut.py` `fabdem_tiles_for` takes FABDEM file names only.
 
 **Still to do for round 2:**
 - **Push the hidden-page fix**, then **check the live site**: tiles and fonts load (`.pmtiles` range requests, `.mjs` served as

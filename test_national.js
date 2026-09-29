@@ -199,6 +199,12 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    assert(st.on&&st.pressed==="true"&&/^Simulated typhoon · \d+:\d\d$/.test(st.t),"the storm runs on a shared clock: "+st.t);
    assert(st.sites>=5&&st.wet,`every campus in view floods at once (${st.sites} campuses, some sensors wet)`);
    assert(st.lg===5&&st.units===0,"the legend explains the water and the three sensor shapes; the plain unit rings give way to status shapes");
+   // the campus pages' water drawing (2026-09-29): a campus big on screen is painted 4× finer with a faded margin
+   await pg.evaluate(()=>{const c=CAMPUS_BY_ID.upd;NATGL.map.jumpTo({center:[c.lon,c.lat],zoom:14.2});});await pg.waitForTimeout(4000);
+   const wd=await pg.evaluate(()=>{const m=Object.values(NSIM.sites).find(m=>m.fk===4&&m.FS.depth.some(d=>d>0.03));if(!m)return {fks:Object.values(NSIM.sites).map(m=>m.fk+":"+m.id)};
+     const a=m.cv.getContext('2d').getImageData(0,0,m.cv.width,m.cv.height).data;let soft=0,full=0;for(let i=3;i<a.length;i+=4){if(a[i]>0&&a[i]<200)soft++;else if(a[i]>=200)full++;}
+     return {w:m.cv.width,gw:m.g.GW,soft,full};});
+   assert(wd&&wd.w===wd.gw*4&&wd.soft>0&&wd.full>0,"zoomed in on a campus, its typhoon water uses the campus pages' drawing (4× finer, faded shallow margin): "+JSON.stringify(wd));
    await pg.click('#nat-storm');
    assert(await pg.evaluate(()=>!NSIM.on&&document.getElementById('nat-storm-t').textContent===""&&!document.querySelector('#nat-legend .lg-storm')),"'Stop the typhoon' ends it");
    // a chosen campus lets go when you zoom back out to the country; the map keeps the Philippines in view

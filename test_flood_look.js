@@ -1,6 +1,6 @@
 // How the flood is drawn (2026-09-29, Gregor): smooth shorelines where the water surface meets the terrain, water cut
-// around every building footprint, depth shaded with a faded shallow margin, and a gentle shimmer (off under reduced
-// motion). The drawing must never show more water than the model. Run: ./test_pages.sh test_flood_look.js
+// around the building footprints that touch it, depth shaded with a faded shallow margin; and fast enough for a demo
+// (the outline read once took 12 s). The drawing must never show more water than the model. Run: ./test_pages.sh test_flood_look.js
 const {chromium}=require('playwright');
 const BASE=process.env.BW_BASE||'http://127.0.0.1:8765/';
 const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else console.log("ok  ",m);};
@@ -47,16 +47,12 @@ const storm=pg=>pg.evaluate(()=>{document.querySelector('.p-scen [data-sc="typho
     for(const p of FOOT.pts){const i=cellAt(p[0],p[1]);if(!(depth[i]>0.1))continue;inW++;if(c.getImageData(Math.floor(p[0]*R),Math.floor(p[1]*R),1,1).data[3]===0)clear++;if(inW>=60)break;}
     return {n:FOOT.n,inW,clear};});
   assert(s.n>1000&&s.inW>=10&&s.clear/s.inW>=0.9,"water is cut around building footprints (building points in deep water left clear): "+JSON.stringify(s));
-  // 4. shimmer: on, and drawn only on water
-  await pg.waitForTimeout(400);
-  s=await pg.evaluate(()=>({on:mapDrawn.shimmer}));
-  assert(s.on===true,"a gentle shimmer plays on the water");
+  // speed: reading the outlines and redrawing the water stay well under a frame budget's worth of seconds
+  s=await pg.evaluate(()=>{const T=f=>{const a=performance.now();f();return performance.now()-a;};
+    const foot=T(()=>{FOOT.at=-1e9;FOOT.n=0;footLoad();}),rf=[0,1,2].map(()=>T(renderFlood));return {foot:Math.round(foot),render:Math.round(Math.max(...rf))};});
+  assert(s.foot<800&&s.render<120,"reading 42,000 building outlines and redrawing the water are quick (ms): "+JSON.stringify(s));
+  assert(await pg.evaluate(()=>typeof drawShimmer==="undefined"),"no shimmer (removed at Gregor's request)");
   assert(errs.length===0,"no page errors: "+errs.join("; "));
   await ctx.close();
-  // reduced motion: no shimmer, same water
-  const ctx2=await mk({reducedMotion:'reduce'});const pg2=await ctx2.newPage();
-  await pg2.goto(U+'#tv');await up(pg2);await storm(pg2);await pg2.waitForTimeout(400);
-  s=await pg2.evaluate(()=>({on:mapDrawn.shimmer}));
-  assert(s.on===false,"under reduced motion the water holds still (no shimmer)");
   await b.close();
 })();

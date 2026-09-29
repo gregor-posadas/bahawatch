@@ -43,3 +43,20 @@ test('tiles and fonts from OpenFreeMap are left to the network: never cached, ne
     handlers.fetch({ request: { method: 'GET', url, mode: 'cors' }, respondWith: () => { answered = true; } });
   assert.equal(answered, false);
 });
+// After a push, a normal reload must show the new page: the browser keeps GitHub Pages' HTML for 10 minutes, so the
+// page itself is always re-checked with the server (a tiny "not modified" when nothing changed). Seen 2026-09-29: the
+// page loaded 39 s before the push went live stayed on the old version until the 10 minutes ran out.
+test('a page navigation re-checks the server instead of taking the 10-minute browser copy; data files do not', async () => {
+  const seen = [];
+  const handlers = {};
+  const ctx = { self: { addEventListener: (t, f) => { handlers[t] = f; }, skipWaiting() {}, clients: { claim() {} } },
+    location: { origin: 'https://bw.test' }, URL, Response,
+    fetch: (req, o) => { seen.push({ url: typeof req === 'string' ? req : req.url, cache: o && o.cache }); return Promise.resolve({ status: 304 }); },
+    caches: { open: async () => ({ put: async () => {} }), keys: async () => [], match: async () => null } };
+  vm.runInNewContext(fs.readFileSync(__dirname + '/sw.js', 'utf8'), ctx);
+  const go = (url, mode) => new Promise((resolve) => handlers.fetch({ request: { method: 'GET', url, mode, headers: { has: () => false } }, respondWith: (p) => resolve(p) }));
+  await go('https://bw.test/bahawatch_dashboard.html#tv', 'navigate');
+  await go('https://bw.test/data/xu.json', 'cors');
+  assert.equal(seen[0].cache, 'no-cache');
+  assert.equal(seen[1].cache, undefined);
+});
