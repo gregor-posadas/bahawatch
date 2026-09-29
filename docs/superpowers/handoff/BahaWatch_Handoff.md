@@ -1,13 +1,12 @@
 # BahaWatch: handoff for a new chat
 
-Last updated: 2026-09-28, 2 a.m. Pacific. **PhilDev UI round 2 is live on GitHub Pages** (`main` at `efbb216`, pushed by
-Gregor 2026-09-28 00:05). A **fix on top** (maps no longer give up while the page is hidden; §3 item 7) is committed on
-`phildev-ui-round2` and sent as a small bundle; check `git ls-remote https://github.com/gregor-posadas/bahawatch` to see
-whether Gregor has pushed it.
+Last updated: 2026-09-29, early morning Pacific. GitHub `main` is at `6f15922` (the 7.5 m grid, pushed by Gregor).
+**On top, committed on `phildev-ui-round2` and sent as `bahawatch-about.bundle` (6f15922..phildev-ui-round2: `70494e6` plus this handoff, 0.5 MB):** the About
+tab for Noam's GHTC talk, the San Joaquin pilot tab, the campus list as drop-downs, the depth-spectrum legends and shorter
+Details text (§3 item 12). Check `git ls-remote https://github.com/gregor-posadas/bahawatch` to see whether it is pushed.
 
-Kept as `claude/BahaWatch_Handoff.md` in the "Berkeley PhD" Project. The repo copy
-(`docs/superpowers/handoff/BahaWatch_Handoff.md`) is older and should be replaced with this text and committed in the
-next session.
+Kept as `claude/BahaWatch_Handoff.md` in the "Berkeley PhD" Project and as
+`docs/superpowers/handoff/BahaWatch_Handoff.md` in the repo (same text).
 
 ---
 
@@ -27,7 +26,7 @@ once Gregor has pushed:
 ```bash
 git clone https://github.com/gregor-posadas/bahawatch /home/claude/work
 cd /home/claude/work && git config user.name "Gregor" && git config user.email "gregor500man.gerp@gmail.com"
-git log --oneline -5          # main should be at efbb216 or later
+git log --oneline -5          # main should be at 6f15922 or later
 ```
 
 If `main` is still at `9bf8529` (push not done), ask Gregor to attach `bahawatch-round2.part0/1/2.bin` (or the rejoined
@@ -58,7 +57,7 @@ model and answers residents' question **"Babaha ba?"** ("Will it flood?") for th
 | Public site (GitHub Pages, serves `main`) | https://gregor-posadas.github.io/bahawatch/ (`index.html` redirects to `bahawatch_dashboard.html`) |
 | Repo (public) | `gregor-posadas/bahawatch`. Gregor pushes; Claude has no GitHub credentials |
 | Gregor's clone on Windows | `C:\Users\grego\bahawatch` (SSH key set up) |
-| Private demo artifact | https://claude.ai/artifact/Mjsm9genvWF9sFdXxuKis9 (version 34; update in place) |
+| Private demo artifact | https://claude.ai/artifact/Mjsm9genvWF9sFdXxuKis9 (version 40; update in place; list its files before republishing) |
 | Flowchart artifact (the answer rule) | https://claude.ai/artifact/6EmnCVpoKj743RrE9PSFfL |
 | Data folder on Gregor's PC | `C:\Users\grego\OneDrive\Desktop\Research\BahaWatch\Nationwide Update` (device_bash: `$HOME/mnt/Nationwide Update`) |
 
@@ -172,6 +171,35 @@ review and reports"). Commits `62a9601` → `efbb216`:
    22.5 m window, which raised sensor ground 0.05–0.28 m and grew the flood 55 % — fixed by the 5×5 window.
    Test fix found on the way: `test_flood_look.js` used the horizontal pixel scale for rows (tv cells are not square).
 
+12. **GHTC feedback round** (2026-09-29, Gregor, for Noam's talk; unattended overnight, commit `70494e6`).
+   - **About tab** (`#about`, `#about/<what|how|data|sensors|limits|next|faq>`): a reading page (route type "About": site
+     tabs, a contents rail with FAQ at its foot, one ≤ 72ch column). Sections: what it is (everything moving is
+     simulated), how it works (4 steps), data (each dataset and what it is used for), **sensor units** (device; **mounting
+     assumptions, labelled "not yet field-tested"**: gate post or front wall at the street edge, looking straight down at
+     pavement with ~0.5 m clear, **about 2 m above the road** (keeps the ~25–30 cm ultrasonic blind zone above ~1.5 m of
+     water; median of several pings), zero point measured on dry pavement at install, ground height from the terrain
+     map; placement rule), accuracy and limits (ICESat-2 numbers; no moving water; 7.5 m unvalidated; footprints miss
+     informal homes; the demo agrees with NOAH by design; spots favour low ground; who gets heard), future work, 13 FAQ
+     items. English only. **The 2 m height, the 0.5 m clear patch, the median-of-pings and "~US$210" are Claude's proposed
+     assumptions for Gregor to confirm.**
+   - **"?" toggletips** (`.tt` spans → `tipsInit()`): click/tap pins, hover shows, Escape (returns focus), click elsewhere
+     or tabbing away closes; fixed-position note kept inside the window; the "?" stays on the line of its word; fade off
+     under reduced motion. Also used in Details (footnote, "Household units", "Map help").
+   - **Fewer words:** Details footnote is one line + "?" + "How it works" link; legend hint and rail heading shortened;
+     map help behind "?" (also fixed its overlap with the credits); campus street rows no longer repeat "near <street>".
+   - **Depth legends** are one colour spectrum built from the water LUT (`waterGradient`, `paintLegends`), simple view,
+     Details and the national typhoon legend.
+   - **Campus list as drop-downs:** island group › province › campuses, closed at first; search opens matching branches;
+     choosing a pin opens its branch (`natReveal`); what was opened is kept (`NAT_OPEN`, recorded on summary clicks).
+   - **San Joaquin, Mabalacat City, Pampanga** (`sjq`, tab after Teachers Village): cut on the PC like a campus
+     (`PILOT_BOXES["sjq"]` in `pipeline/common.py`, PSA PH0305409022), 400×400 at 7.5 m, all 8 units inside the barangay
+     (`units_inside=True` → `placement.pick(all_inside=True)`), 4,430 buildings, NOAH 5/25/100, 17 places,
+     `site-sjq.pmtiles`. Inputs are in `inputs/campuses/sjq/` (not in git) and on the PC under `bahawatch-data/campuses/`.
+   - Tabs wrap to a second row on phones (six tabs); the Details header wraps at ≤ 900 px (was 1 px too wide at 375).
+   - Tests: new `test_about.js` (48 checks); `test_national`/`test_a11y`/`test_try` updated for the tabs and the tree;
+     pipeline tests know the sjq box; a placement test for `all_inside`. All suites green (`test_init` and the UPLB
+     Fast-3G timing are flaky only when another heavy job runs at the same time).
+
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
 outline, not the centroid; (b) **FABDEM scored 2026-09-29** against 17,936 ICESat-2 ground points in all 26 boxes (`analysis/dem_check/`: NMAD
@@ -183,11 +211,23 @@ N10E123, N13E121, N14E120, N14E121, N15E120 (Zenodo 14511570; check how the reco
 `pipeline/cut.py` `fabdem_tiles_for` takes FABDEM file names only.
 
 **Still to do for round 2:**
-- **Push the hidden-page fix**, then **check the live site**: tiles and fonts load (`.pmtiles` range requests, `.mjs` served as
+- **Push `bahawatch-about.bundle`** (below), then **check the live site**: tiles and fonts load (`.pmtiles` range requests, `.mjs` served as
   JavaScript), dark vector style, campus zoom-out, the new timeline. Claude has not seen the real dark style or the demo in
   a signed-in browser.
 - When Gregor asks: the detailed review and reports (PDF) for the follow-up changes, and a refreshed build report.
 - Gregor said more feedback items are coming.
+- Gregor to confirm the About page's sensor mounting assumptions (2 m, clear patch, pings, cost) before the GHTC talk.
+
+**Push this round (PowerShell):**
+
+```powershell
+cd C:\Users\grego\bahawatch
+git checkout main
+git pull
+git fetch $HOME\Downloads\bahawatch-about.bundle phildev-ui-round2:phildev-ui-round2
+git merge --ff-only phildev-ui-round2
+git push origin main phildev-ui-round2
+```
 
 ---
 
@@ -214,7 +254,7 @@ N10E123, N13E121, N14E120, N14E121, N15E120 (Zenodo 14511570; check how the reco
 
 **Build.** `template.html` is the only page source; `python3 build_html.py` writes `bahawatch_dashboard.html`
 (placeholders `__CAMPUSES__`, `__PH_OUTLINE__`, `__NAT_I18N__`, `/*__VERDICT_JS__*/`, `/*__FLOOD_JS__*/`,
-`/*__BASEMAP_JS__*/`). Site data: `data/<id>.json` (25 campuses 200×200, tv 200×177, berkeley 240×180).
+`/*__BASEMAP_JS__*/`). Site data: `data/<id>.json` (25 campuses and sjq 400×400 at 7.5 m, tv 400×354, berkeley 240×180).
 National/campus strings: `i18n/nat.json` (compact format: keep 1-space language indent, 2-space keys).
 
 **Maps.**
@@ -245,10 +285,10 @@ Demo chip `demoChip(L)`; weather buttons `.scen-group [data-sc=clear|monsoon|typ
 
 **Worker** (Cloudflare Workers + D1 + Turnstile): written, not deployed, unchanged in round 2.
 
-**Tests** (all green at `efbb216`):
-- Page suites: `./test_pages.sh` (21 suites, incl. `test_flood_look.js`, `test_hidden.js`, `test_tiles_corrupt.js`,, incl. `test_zoomout.js` 26 checks and `test_zoomout_fallback.js`), served on
+**Tests** (all green at `70494e6`):
+- Page suites: `./test_pages.sh` (22 suites, incl. `test_about.js`, incl. `test_flood_look.js`, `test_hidden.js`, `test_tiles_corrupt.js`,, incl. `test_zoomout.js` 26 checks and `test_zoomout_fallback.js`), served on
   8765 with `BW_TEST_BASEMAP=offline`. One suite: `./test_pages.sh test_x.js`; logs in `/tmp/bw_test_x.js.log`.
-- `node --test --no-warnings shared/*.test.js sw.test.js` (54); `(cd worker && node --test --no-warnings test/*.test.js)`
+- `node --test --no-warnings shared/*.test.js sw.test.js` (58); `(cd worker && node --test --no-warnings test/*.test.js)`
   (46); `python3 -m unittest tools.test_basemap_style`; `./test_build.sh`.
 - **Gotchas:** a probe server left running on 8765 (started without `BW_TEST_BASEMAP=offline`) makes `test_noaccount`
   and others fail: kill it by PID before `./test_pages.sh`. Never `pkill -f`/`pgrep -f` a pattern that appears in the
