@@ -158,7 +158,10 @@ review and reports"). Commits `62a9601` → `efbb216`:
 
 **Agreed next (2026-09-29):** (a) run the model on a finer grid (≈ 5 m) with building footprints as obstacles
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
-outline, not the centroid; (b) test FABDEM vs FathomDEM against ICESat-2 ATL08 ground points in the 26 boxes (Gregor to
+outline, not the centroid; (b) **FABDEM scored 2026-09-29** against 17,936 ICESat-2 ground points in all 26 boxes (`analysis/dem_check/`: NMAD
+1.39 m, median +0.66 m, 46 % within 1 m; open campuses 0.4–0.8 m; old Manila core ~2 m high). Still to do: the same
+for FathomDEM — its Zenodo record is **restricted** (log in, request access with an academic email, CC BY-NC-SA) and
+ships 30°×30° zips, so all 6 tiles are in the N0–N30/E120–E150 archive; originally planned as: test FABDEM vs FathomDEM against ICESat-2 ATL08 ground points in the 26 boxes (Gregor to
 make a free NASA Earthdata account; heights need EGM2008 ↔ ellipsoid conversion); FathomDEM needs 6 tiles: N08E124,
 N10E123, N13E121, N14E120, N14E121, N15E120 (Zenodo 14511570; check how the record packages them), and
 `pipeline/cut.py` `fabdem_tiles_for` takes FABDEM file names only.
