@@ -287,7 +287,7 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .gl-p-key li > :first-child{width:24px; display:inline-flex; justify-content:center}
 .gl-p-key svg{flex:none}
 .gl-p-list{list-style:none; margin:16px 0; padding:0}
-.gl-p-row{margin:0 0 16px; font-size:14px; line-height:1.4; color:var(--ink)}
+.gl-p-row{margin:0 0 12px; padding:10px 11px 12px; border:1px solid var(--line); border-radius:4px; background:var(--panel); font-size:14px; line-height:1.4; color:var(--ink)}   /* each flood its own light card (Gregor, 2026-10-01) */
 .gl-p-lab{font-weight:700}
 .gl-viz .gl-yr{display:inline; margin-right:4px; font-size:14px}
 .gl-p-n{font-weight:700; font-variant-numeric:tabular-nums}
@@ -328,8 +328,8 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
   .gl-ev:not(.gl-solo) .gl-txt p,.gl-split .gl-txt p{max-width:none}
 }
 @media (min-width:1600px){
-  #history .ab-body{grid-template-columns:200px minmax(0,calc(1100px + 48px + 340px))}
-  #history .ab-main{display:grid; grid-template-columns:minmax(0,1100px) 340px; column-gap:48px; align-items:start}
+  #history .ab-body{grid-template-columns:200px minmax(0,calc(1100px + 48px + 360px))}
+  #history .ab-main{display:grid; grid-template-columns:minmax(0,1100px) 360px; column-gap:48px; align-items:start}   /* 360 = 336 px of figures + card padding */
   #history .ab-main > section{grid-column:1}
   #history .gl-viz{grid-column:2; grid-row:1 / span 5; align-self:stretch; border:0; margin:0; padding:0}
   #history .gl-viz-in{border-top:3px solid var(--ink); padding-top:12px}

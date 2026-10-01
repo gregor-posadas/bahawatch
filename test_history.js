@@ -64,6 +64,13 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
     assert(fams.length>=9&&fams.every(r=>r.barW>0&&Math.abs(r.barW/big.barW-r.fam.v/maxF)<0.02&&/famil/.test(r.famText)),`${w}: families affected have a bar to scale and say so in words: ${JSON.stringify(fams.map(r=>[r.fam.v,Math.round(r.barW)]))}`);
     assert(s.rows.filter(r=>!r.fam).every(r=>/no count/i.test(r.famText)&&r.barW===null),`${w}: where no count of families was found, the row says so and draws no bar`);
     assert(s.rows.every(r=>[r.dead,r.miss,r.inj,r.fam].filter(Boolean).every(n=>n.src)&&r.hidden),`${w}: every number links its source; figures and bars are hidden from screen readers`);
+    // each flood is its own light card (Gregor: "a super light outline" around each event, "easier visually to look at the
+    // data"): a hairline border in the line colour on the panel colour, padded, with space between cards
+    const cards=await pg.evaluate(()=>{const rs=[...document.querySelectorAll('#history .gl-p-row')],root=getComputedStyle(document.documentElement);
+      const st=rs.map(r=>{const c=getComputedStyle(r);return {bw:c.borderTopWidth,bs:c.borderTopStyle,bc:c.borderTopColor,bg:c.backgroundColor,pad:parseFloat(c.paddingLeft),r:r.getBoundingClientRect()};});
+      const probe=document.createElement('div');probe.style.cssText='color:var(--line);background:var(--panel)';document.body.append(probe);const pc=getComputedStyle(probe),line=pc.color,panel=pc.backgroundColor;probe.remove();
+      return {ok:st.every(x=>x.bw==="1px"&&x.bs==="solid"&&x.bc===line&&x.bg===panel&&x.pad>=8),gaps:st.slice(1).map((x,i)=>Math.round(x.r.top-st[i].r.bottom)),first:st[0]};});
+    assert(cards.ok&&cards.gaps.every(g=>g>=8),`${w}: each flood sits in its own light card, spaced apart: ${JSON.stringify({ok:cards.ok,gaps:cards.gaps,first:cards.first})}`);
     // dead and missing are told apart by place and tone, not by an outline too thin to see at 8 px (Gregor: "quite difficult
     // to distinguish between the dead vs missing symbols"): the missing start on their own line below the dead, and are a
     // different lightness (contrast between the two ≥ 3:1), each ≥ 3:1 against the page

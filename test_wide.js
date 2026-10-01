@@ -46,6 +46,8 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
     if(w===1920)assert(s.beside&&s.top>=0&&s.top<500&&s.right>=16,`${w}: the Lives lost chart fills the space to the right of the stories, starting at the top: ${JSON.stringify(s)}`);
     else assert(!s.beside&&s.after,`${w}: the Lives lost chart follows the flood stories: ${JSON.stringify(s)}`);
     if(w===1920){
+      const fw=await pg.evaluate(()=>Math.round(document.querySelector('#history .gl-p-ppl').getBoundingClientRect().width));
+      assert(fw===336,`${w}: inside its card the figures keep their full size (Ormoc's block ${fw} px wide)`);
       await pg.evaluate(()=>document.getElementById('hi-politics').querySelector('.gl-time li:nth-child(6)').scrollIntoView({block:'center'}));await pg.waitForTimeout(300);
       s=await pg.evaluate(()=>{const f=document.querySelector('#hi-politics .gl-figs').getBoundingClientRect(),t=document.querySelector('#hi-politics .gl-time').getBoundingClientRect();
         return {visible:f.top<innerHeight&&f.bottom>0,beside:f.left>=t.right};});

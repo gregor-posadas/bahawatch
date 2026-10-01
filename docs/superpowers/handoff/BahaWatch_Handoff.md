@@ -336,6 +336,9 @@ review and reports"). Commits `62a9601` → `efbb216`:
    filled orange (`--miss-fig` #CF5921, Baker palette's second colour) and start on their own line below the dead: place
    plus lightness, readable in grayscale and under a Machado deuteranopia simulation; contrast ≥ 3:1 dead-vs-missing and
    against the page in both themes (tested). Key glyphs are drawn at 16 × 20 so they can be read.
+   Then (Gregor: "a super light outline" around each event, to make the data easier to look at): each flood is a light card,
+   1px `--line` border, `--panel` background, 4px radius, 10–12px padding, 12px apart. The wide-screen column is 360px so
+   the figures keep their 336px inside the padding (`test_wide.js` checks it).
 
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
