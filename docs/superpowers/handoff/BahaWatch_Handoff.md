@@ -307,6 +307,19 @@ review and reports"). Commits `62a9601` → `efbb216`:
    beside the political timeline. Below 1200 px nothing changes. `test_wide.js` (1920, 1280, 375).
    Then (Gregor: "some of the pages are eating up too much horizontality … a happy medium"): `.ab-main` is capped at
    1100 px, lists use 2 columns (not 3), and boxed notes (`.ab-note`) fit their text (41rem + padding).
+   Then, reading About and Accessibility (Gregor: "too much horizontality can be a bad thing… let's stick with best
+   practices and keep things centered like before"): About and Accessibility are back to one reading column, now
+   `200px minmax(0,42rem)` centred on the screen (`justify-content:center`); lists, steps, data blocks and the FAQ are
+   one column again. Flood history keeps its photos beside their stories (`200px minmax(0,1100px)`, also centred).
+
+21. **Lives lost chart** (2026-10-01, Gregor: "rows of little people to demonstrate how many lives have been lost due to
+   flooding", for the empty space right of the Flood history stories). `lives()` in `tools/build_history.py`: one row per
+   flood on the page, same order and same official tolls as the stories (`DEAD`, each linked to its source), one figure =
+   100 deaths, 21 to a line, the remainder a part-figure filled from the left over a faint outline; total "At least
+   13,657". Figures are `aria-hidden`; the exact numbers are the text. The note says the counts cover all causes for each
+   storm or monsoon, and that the missing (3,000 after Ormoc, 1,061 after Yolanda) are not drawn. Placement: after the
+   introduction below 1600 px; from 1600 px a 340 px column right of the stories, sticky only when the screen is at least
+   960 px tall (the chart is ~910 px). Ink on paper, no colour meaning. `test_history.js`, `test_wide.js`.
 
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their

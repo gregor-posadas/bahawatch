@@ -226,6 +226,59 @@ FLOODS = [
   + L("y2026", "33 dead and 8.8 million people affected") + " by 31 August, the national disaster council said.", []),
 ]
 
+# ---- Lives lost: rows of little people (Gregor, 2026-10-01: "something like those rows of little people to demonstrate
+# how many lives have been lost due to flooding"). One row per flood above, same order, same official tolls and sources.
+# One figure = 100 deaths; the remainder is a part-figure, filled from the left over a faint outline. The figures are
+# decoration for sighted readers (aria-hidden); the exact number beside each row is the data, and links its source.
+DEAD = [
+ ("1991", "Ormoc (Uring)", 4922, "ormoc"),
+ ("2009", "Ondoy (Ketsana)", 464, "ondoy"),
+ ("2011", "Sendong (Washi)", 1268, "sendong"),
+ ("2012", "Habagat (monsoon) floods", 109, "hab12"),
+ ("2013", "Yolanda (Haiyan)", 6300, "yolanda"),
+ ("2020", "Ulysses (Vamco)", 101, "ulysses"),
+ ("2024", "Carina and the habagat (monsoon)", 46, "carina"),
+ ("2024", "Kristine and Leon", 145, "kristine"),
+ ("2025", "Tino (Kalmaegi)", 269, "tino"),
+ ("2026", "Monsoon and three storms", 33, "y2026"),
+]
+PER, CW, CH, ROW = 100, 16, 20, 21     # deaths per figure; cell width and height (SVG units); figures per line
+PERSON = ('<symbol id="gl-person" viewBox="0 0 16 20"><circle cx="8" cy="4" r="3.2"/>'
+          '<path d="M3.5 19V12Q3.5 8.4 8 8.4Q12.5 8.4 12.5 12V19H8.8V15H7.2V19Z"/></symbol>')
+
+def people(i, n):
+    full, rest = divmod(n, PER)
+    cells = full + (1 if rest else 0)
+    lines = max(1, -(-cells // ROW))
+    w, h = min(cells, ROW) * CW, lines * CH
+    out = []
+    for k in range(full):
+        out.append(f'<use class="gl-p-full" href="#gl-person" x="{k % ROW * CW}" y="{k // ROW * CH}" width="{CW}" height="{CH}"/>')
+    if rest:
+        x, y = full % ROW * CW, full // ROW * CH
+        out.append(f'<g class="gl-p-part"><clipPath id="gl-clip-{i}"><rect x="{x}" y="{y}" width="{round(CW * rest / PER, 2)}" height="{CH}"/></clipPath>'
+                   f'<use class="gl-p-ghost" href="#gl-person" x="{x}" y="{y}" width="{CW}" height="{CH}"/>'
+                   f'<use href="#gl-person" x="{x}" y="{y}" width="{CW}" height="{CH}" clip-path="url(#gl-clip-{i})"/></g>')
+    return (f'<svg class="gl-p-ppl" aria-hidden="true" focusable="false" viewBox="0 0 {w} {h}" width="{w}" height="{h}" '
+            f'style="max-width:{w}px">{"".join(out)}</svg>')
+
+def lives():
+    total = sum(d for _, _, d, _ in DEAD)
+    rows = "".join(
+        f'<li class="gl-p-row"><div class="gl-p-lab"><span><span class="gl-yr">{y}</span> {E(name)}</span> '
+        + L(k, f'<span class="gl-p-n">{d:,}</span><span class="sr-only"> dead</span>') + f'</div>{people(i, d)}</li>'
+        for i, (y, name, d, k) in enumerate(DEAD))
+    return (f'<div class="gl-viz" role="complementary" aria-labelledby="hi-viz-h"><div class="gl-viz-in">'
+            f'<svg width="0" height="0" class="gl-defs" aria-hidden="true" focusable="false">{PERSON}</svg>'
+            f'<h2 id="hi-viz-h">Lives lost</h2>'
+            f'<p class="gl-p-tot">At least <b>{total:,}</b> people died in the ten floods on this page.</p>'
+            f'<p class="gl-p-key"><svg aria-hidden="true" focusable="false" viewBox="0 0 16 20" width="16" height="20"><use href="#gl-person"/></svg>'
+            f'<span>= 100 people who died</span></p>'
+            f'<ol class="gl-p-list">{rows}</ol>'
+            f'<p class="gl-p-note">A part-figure stands for fewer than 100. Official counts for each storm or monsoon as a whole, including every death, not only drowning. '
+            f'Thousands more were reported missing (3,000 after Ormoc, 1,061 after Yolanda) and are not drawn.</p>'
+            f'</div></div>')
+
 WATER = (
  '<div class="gl-split"><div class="gl-txt"><p>For many families, flooding is not an event but a season, or a tide. Much of Metro Manila and the land around northern Manila Bay is sinking, '
  'largely because groundwater is pumped out faster than it returns. Between 2003 and 2011 parts of '
@@ -302,6 +355,7 @@ def build():
       <p class="ab-lead">Floods are part of life in the Philippines. Behind every number on this dashboard are families who wade to work, carry what they can, and wait on rooftops for rescue. This page remembers some of them.</p>
       <p class="gl-warn">Some photographs show homes destroyed by storms. None show people who died.</p>
     </section>
+    {lives()}
     <section id="hi-floods" aria-labelledby="hi-floods-h">
       <h2 id="hi-floods-h" tabindex="-1">The floods</h2>
       {floods}
