@@ -1,5 +1,5 @@
-// Wide screens (Gregor, 2026-10-01: "why is there so much blank space here?"): the reading pages (About,
-// Accessibility, Flood history) fill the screen. Prose keeps a readable line (about 72 characters); lists, FAQs, data
+// Wide screens (Gregor, 2026-10-01: "why is there so much blank space here?", then "maybe there's a happy medium"):
+// the reading pages (About, Accessibility, Flood history) grow to about 1100 px, no wider. Prose keeps a readable line (about 72 characters); lists, FAQs, data
 // blocks and photos use the width. Below 1200 px everything stacks as before. Run: ./test_pages.sh test_wide.js
 const {chromium}=require('playwright');
 const BASE=process.env.BW_BASE||'http://127.0.0.1:8765/';
@@ -18,7 +18,7 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
         const ch=parseFloat(getComputedStyle(m).fontSize)*0.55;   // rough width of one character
         const ps=[...m.querySelectorAll(':scope > section > p, .ab-lead')].filter(p=>p.offsetParent);
         return {main:Math.round(mr.width),right:Math.round(innerWidth-mr.right),maxP:Math.round(Math.max(...ps.map(p=>p.getBoundingClientRect().width))),limit:Math.round(80*ch),sw:document.documentElement.scrollWidth};},r);
-      if(w===1920)assert(s.main>=1500&&s.right<=40,`${w} #${r}: the reading column fills the screen (${s.main} px wide, ${s.right} px to spare)`);
+      if(w===1920)assert(s.main>=1000&&s.main<=1110,`${w} #${r}: the reading column is wide but capped at a happy medium (${s.main} px)`);
       assert(s.maxP<=s.limit,`${w} #${r}: prose keeps a readable line (${s.maxP} px ≤ ${s.limit})`);
       assert(s.sw<=w,`${w} #${r}: no sideways scroll`);
     }

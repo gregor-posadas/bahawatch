@@ -305,6 +305,8 @@ review and reports"). Commits `62a9601` → `efbb216`:
    and the FAQ into a grid, flow sub-steps into 2 columns; Flood history puts each story's text left (26rem) and its
    photos beside it (side by side when there are several, single photos ≤ 820 px), and the protest photos stay sticky
    beside the political timeline. Below 1200 px nothing changes. `test_wide.js` (1920, 1280, 375).
+   Then (Gregor: "some of the pages are eating up too much horizontality … a happy medium"): `.ab-main` is capped at
+   1100 px, lists use 2 columns (not 3), and boxed notes (`.ab-note`) fit their text (41rem + padding).
 
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
