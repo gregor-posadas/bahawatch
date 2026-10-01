@@ -267,7 +267,7 @@ review and reports"). Commits `62a9601` → `efbb216`:
    Because the note shortens the desktop map, the national map's east-west pan limit grew from 6° to 12° (with 6°,
    at 1280 × 844 the map could not zoom out far enough to show the whole country). Collaborators: + UP Resilience
    Institute (resilience.up.edu.ph, logo with its name under it), Project NOAH (noah.up.edu.ph), Development Engineering
-   at UC Berkeley (developmentengineering.berkeley.edu; logo from Gregor, `shared/home/logo-deveng.jpg`); a two-column grid on phones. The #1 figure now cites the WorldRiskReport 2026 (ReliefWeb, 23 Sept 2026:
+   at UC Berkeley (developmentengineering.berkeley.edu; logo from Gregor, `shared/home/logo-deveng.jpg`); PhilDev (phildev.org, `shared/home/logo-phildev.png`, captioned "In talks" until a partnership is agreed — Gregor's goodwill gesture; drop the caption once it is); a two-column grid on phones. The #1 figure now cites the WorldRiskReport 2026 (ReliefWeb, 23 Sept 2026:
    the Philippines has the highest overall risk and tops the first storm-risk ranking), with 2025 as also-first.
    **Listen** button beside "Baha" in the hero: plays `BAHA_AUDIO` when set (a native speaker's recording; none yet),
    otherwise the device's own Filipino voice (`fil`/`tl`) via speechSynthesis; hidden when the device has neither, so an
