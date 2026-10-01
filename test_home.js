@@ -9,7 +9,6 @@ const U=BASE+'bahawatch_dashboard.html';
 const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{timeout:15000});
 const TABS="home,ph,tv,sjq,berkeley,try,about,access";
 (async()=>{
-  let s2;
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
   const errs=[];
   for(const w of [1280,375]){
@@ -23,12 +22,18 @@ const TABS="home,ph,tv,sjq,berkeley,try,about,access";
     assert(s.route==="home"&&s.hash===""&&s.shown!=="none"&&s.nat==="none"&&s.h1==="BahaWatch"&&/BahaWatch/.test(s.title),`${w}: a plain link opens the homepage, alone`);
     assert(s.tabs.length===6&&s.tabs.every(t=>t===TABS.replace("home","home*")),`${w}: every tab bar starts with Home and ends with Accessibility: ${s.tabs[0]}`);
     assert(s.sw<=w&&files.length===0,`${w}: no sideways scroll; no site file fetched (${files})`);
-    // why: four figures, each with a reference, and the references link out
-    s=await pg.evaluate(()=>({stats:[...document.querySelectorAll('.hm-stats li')].map(l=>/\[\d\]/.test(l.textContent)),refs:[...document.querySelectorAll('.hm-refs a')].map(a=>a.href).filter(h=>/^https:/.test(h)).length,
-      cited:[...document.querySelectorAll('#hm-why .hm-ref')].map(r=>+r.textContent.replace(/\D/g,'')),n:document.querySelectorAll('.hm-refs > li').length}));
-    s2=await pg.evaluate(()=>({r1:document.querySelector('.hm-refs > li').textContent,h:document.querySelector('.hm-refs > li a').href,st:document.querySelector('.hm-stats li').textContent}));
-    assert(/WorldRiskReport 2026/.test(s2.r1)&&/reliefweb\.int/.test(s2.h)&&/storm/.test(s2.st),`${w}: the #1 figure cites the WorldRiskReport 2026, which also ranks storm risk: ${s2.r1.slice(0,80)}`);
-    assert(s.stats.length===4&&s.stats.every(Boolean)&&s.refs>=6&&s.cited.every(k=>k>=1&&k<=s.n),`${w}: every figure in "Why BahaWatch" cites one of ${s.n} linked references: ${JSON.stringify(s)}`);
+    // why: no reference list; each figure's key words link straight to its source (Gregor, 2026-10-01), the source is
+    // named on hover or focus and to screen readers
+    s=await pg.evaluate(()=>{const src=[...document.querySelectorAll('#hm-why a.src')];
+      return {list:document.querySelectorAll('.hm-refs,.hm-ref').length,stats:[...document.querySelectorAll('.hm-stats li')].map(l=>!!l.querySelector('a.src')),
+        links:src.map(a=>({h:a.href,src:a.dataset.src,sr:(a.querySelector('.sr-only')||{}).textContent||""})),wrr:(src.find(a=>/reliefweb\.int/.test(a.href))||{}).dataset};});
+    assert(s.list===0&&s.stats.length===4&&s.stats.every(Boolean),`${w}: no reference list; every figure in "Why BahaWatch" links its source in the text: ${JSON.stringify(s.stats)}`);
+    assert(s.links.length>=7&&s.links.every(l=>/^https:/.test(l.h)&&l.src&&/source/i.test(l.sr)),`${w}: each source link names its source, also for screen readers: ${JSON.stringify(s.links.filter(l=>!l.src||!/source/i.test(l.sr)))}`);
+    assert(s.wrr&&/WorldRiskReport 2026/.test(s.wrr.src),`${w}: the #1 figure links the WorldRiskReport 2026`);
+    if(w>600){await pg.hover('#hm-why a.src >> nth=1');await pg.waitForTimeout(250);}else{await pg.focus('#hm-why a.src >> nth=1');await pg.waitForTimeout(250);}
+    s=await pg.evaluate(()=>{const t=document.getElementById('src-tip'),r=t.getBoundingClientRect(),a=document.querySelectorAll('#hm-why a.src')[1];return {shown:!t.hidden,t:t.textContent,want:a.dataset.src,l:r.left,r:r.right,w:innerWidth,sw:document.documentElement.scrollWidth};});
+    assert(s.shown&&s.t.includes(s.want)&&s.l>=0&&s.r<=s.w&&s.sw<=s.w,`${w}: ${w>600?"hovering":"focusing"} a source link names the source in a note on screen: ${JSON.stringify(s)}`);
+    await pg.mouse.move(1,1);await pg.keyboard.press('Escape');
     // the team: LinkedIn, no email addresses on the cards
     s=await pg.evaluate(()=>[...document.querySelectorAll('.hm-team li')].map(li=>({n:li.querySelector('h3').textContent,img:li.querySelector('img').getAttribute('alt'),li:li.querySelector('a').getAttribute('href'),mail:!!li.querySelector('a[href^="mailto:"]')})));
     assert(s.map(x=>x.n).join()==="Noam Anglo,Tim Groeschel,Gregor Posadas"&&s.every(x=>x.img===x.n&&!x.mail),`${w}: the team is Noam, Tim and Gregor, photos named, no emails on the cards`);
@@ -152,7 +157,7 @@ const TABS="home,ph,tv,sjq,berkeley,try,about,access";
    const s=await pg.evaluate(()=>{const rgb=c=>c.match(/[\d.]+/g).slice(0,3).map(Number),L=c=>{const v=rgb(c).map(x=>{x/=255;return x<=0.03928?x/12.92:((x+0.055)/1.055)**2.4;});return 0.2126*v[0]+0.7152*v[1]+0.0722*v[2];},
      cr=(a,b)=>{const x=L(a),y=L(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);},bg=getComputedStyle(document.body).backgroundColor,g=e=>getComputedStyle(document.querySelector(e));
      return {theme:document.documentElement.dataset.theme,h1:cr(g('#hm-h').color,bg),note:cr(g('.hm-demo').color,bg),btn:cr(g('.hm-btn-p').color,g('.hm-btn-p').backgroundColor),stat:cr(g('.hm-stats span').color,g('.hm-stats').backgroundColor),
-       ref:cr(g('.hm-refs a').color,bg),card:cr(g('.hm-cards span').color,g('.hm-cards a').backgroundColor),fig:cr(g('.hm-fig figcaption p').color,g('.hm-fig').backgroundColor),mail:cr(g('#hm-mail').color,g('.hm-mail').backgroundColor)};});
+       ref:cr(g('#hm-why a.src').color,bg),card:cr(g('.hm-cards span').color,g('.hm-cards a').backgroundColor),fig:cr(g('.hm-fig figcaption p').color,g('.hm-fig').backgroundColor),mail:cr(g('#hm-mail').color,g('.hm-mail').backgroundColor)};});
    assert(s.theme==="dark"&&Object.entries(s).every(([k,v])=>k==="theme"||v>=4.5),"dark theme: homepage text, links, cards, figure caption and the main button ≥ 4.5:1: "+JSON.stringify(s));
    await ctx.close();}
   assert(errs.length===0,"no page errors: "+errs.join("; "));

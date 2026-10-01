@@ -267,7 +267,7 @@ review and reports"). Commits `62a9601` → `efbb216`:
    Because the note shortens the desktop map, the national map's east-west pan limit grew from 6° to 12° (with 6°,
    at 1280 × 844 the map could not zoom out far enough to show the whole country). Collaborators: + UP Resilience
    Institute (resilience.up.edu.ph, logo with its name under it), Project NOAH (noah.up.edu.ph), Development Engineering
-   at UC Berkeley (developmentengineering.berkeley.edu; logo from Gregor, `shared/home/logo-deveng.jpg`); PhilDev (phildev.org, `shared/home/logo-phildev.png`, captioned "In talks" until a partnership is agreed — Gregor's goodwill gesture; drop the caption once it is); a two-column grid on phones. The #1 figure now cites the WorldRiskReport 2026 (ReliefWeb, 23 Sept 2026:
+   at UC Berkeley (developmentengineering.berkeley.edu; wordmark logo from Gregor, `shared/home/logo-deveng.png`); PhilDev (phildev.org, `shared/home/logo-phildev.png`; no caption, Gregor's call); a two-column grid on phones. The #1 figure now cites the WorldRiskReport 2026 (ReliefWeb, 23 Sept 2026:
    the Philippines has the highest overall risk and tops the first storm-risk ranking), with 2025 as also-first.
    **Listen** button beside "Baha" in the hero: plays `shared/home/baha.mp3`, the Tagalog pronunciation by samurai19817
    (male, Philippines) on Forvo (forvo.com/word/baha/#tl; Forvo licence: non-commercial use; credited in the homepage
@@ -280,6 +280,12 @@ review and reports"). Commits `62a9601` → `efbb216`:
    narrower bottom cap. Redrawn in the homepage's Measure and Send icons and in the figure's side view (where it hangs
    above the water level); the plan view keeps the map's sensor circle. Measure now reads "A sensor in a white pipe,
    strapped to a gate post or a stake by a creek…". `test_home.js` checks the pipe is tall, white and above the water.
+
+18. **Sources inline** (2026-10-01, Gregor: the numbered list "feels kinda awkward"). The reference list and [n] markers
+   are gone; the cited words in "Why BahaWatch" are links (`a.src`, brand blue, underlined) straight to the source, with
+   `data-src` naming it: hover or keyboard focus shows a small "Source" note (`#src-tip`, kept on screen, follows a
+   scroll while hovered or focused), screen readers hear "(source: …)". Term notes (bold, ink) and source links (blue)
+   stay distinct.
 
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their

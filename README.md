@@ -11,11 +11,11 @@ all eight units inside the barangay; unit 01 fixed at 71 Imelda Marcos St by
 `pin_units` in `sites.py`, the rest placed around it) and **UC Berkeley** around Strawberry Creek
 (where the real demo unit lives). A plain link now opens the **homepage** (`#home`,
 `#home/how`, `#home/contact`; 2026-09-30, reworked the same day after Gregor's 18 notes): what BahaWatch is and why
-(sourced figures with a numbered reference list), an animated five-stop line from sensor to answer that repeats while on
+(each figure links its source from the cited words), an animated five-stop line from sensor to answer that repeats while on
 screen (no pause button, by Gregor's choice; still under reduced motion), a side-view-to-map figure showing how one reading
 becomes a flood map (FABDEM ground, the edges where ground rises above the water level, a walled-off dip that stays dry),
 raised explore cards that sink when pressed, the team with LinkedIn links, the collaborators' logos (Bike Scouts,
-University of the Philippines, UP Resilience Institute, Project NOAH, Blum Center, Development Engineering at UC Berkeley, UC Berkeley Disaster Lab, each linking to its site; PhilDev, captioned "In talks"), a call to partner,
+University of the Philippines, UP Resilience Institute, Project NOAH, Blum Center, Development Engineering at UC Berkeley, UC Berkeley Disaster Lab, each linking to its site; PhilDev), a call to partner,
 the timeline and contact (Noam's address as text with a Copy button, no mailto link). Sections fade in on scroll
 (off under reduced motion). Images are in `shared/home/`. A Listen button beside "Baha" plays a Tagalog speaker's recording (samurai19817 on Forvo, non-commercial licence, credited in the footer). The national map moved to `#ph`; it opens with a note that the PhilDev collaboration is still being discussed. Every page has the same header: the logo, "BahaWatch" in 20 px bold, the page or place in small grey, and a thick black rule. An **Accessibility** tab
 (`#access`, `#access/<section>`) lists the design-for-accessibility choices and what still falls short. While a site

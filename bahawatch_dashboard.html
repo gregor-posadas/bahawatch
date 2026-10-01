@@ -89,7 +89,6 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .hm-sec p{font-size:16px; line-height:1.5; margin:0 0 12px; max-width:72ch}
 .hm-lede{font-size:20px !important}
 .hm-note{color:var(--ink-2)}
-.hm-ref{font-size:14px; color:var(--ink-2); white-space:nowrap}
 .hm-stats{list-style:none; padding:0; margin:0 0 32px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border:2px solid var(--ink); background:var(--panel)}
 .hm-stats li{padding:16px 20px; border-left:1px solid var(--line)}
 .hm-stats li:first-child{border-left:0}
@@ -101,8 +100,6 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .hm-quote{margin:8px 0 8px; padding:16px 20px; border:2px solid var(--ink); background:var(--panel); max-width:72ch}
 .hm-quote p{font-size:20px !important; margin:0 0 4px !important}
 .hm-quote footer{font-size:14px; color:var(--ink-2)}
-.hm-refs{margin:24px 0 0; padding:12px 0 0 24px; border-top:1px solid var(--line); font-size:14px; color:var(--ink-2); max-width:90ch}
-.hm-refs li{margin-bottom:4px}
 /* the line: five stops on one track, a pulse travels along it (horizontal ≥ 900 px, vertical below) */
 .hm-line{position:relative; margin:24px 0 32px}
 .hm-track{position:absolute; left:10%; right:10%; top:118px; height:6px; background:var(--ink); overflow:hidden}
@@ -209,7 +206,6 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .hm-logos .hm-logo-c{flex-direction:column; gap:6px} .hm-logos .hm-logo-c img{max-height:64px}
 #home .hm-logos a{color:#232120; text-decoration:none}
 .hm-logos .hm-logo-c span{font-size:14px; font-weight:700; text-align:center}
-.hm-logos .hm-wide img.hm-logo-sq{max-height:92px}
 .hm-logos .hm-wide{flex:1 1 280px} .hm-logos .hm-wide img{max-height:64px}
 @media (max-width:600px){.hm-logos{display:grid; grid-template-columns:1fr 1fr} .hm-logos .hm-wide{grid-column:1/-1} .hm-logos a{height:112px; padding:12px}}
 .hm-ask{border:2px solid var(--ink); padding:20px 24px; background:var(--panel); max-width:80ch}
@@ -230,7 +226,7 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .hm-hear:hover{background:var(--panel-2)}
 .hm-copy:hover{background:var(--panel-2)}
 .hm-copied{font-size:14px; font-weight:600; color:var(--ok); min-width:6ch}
-.hm-sec a:not(.hm-btn):not(.hm-in):not([href^="#"]),.hm-foot a,.hm-note a,.hm-refs a{color:var(--brand); font-weight:600}
+.hm-sec a:not(.hm-btn):not(.hm-in):not([href^="#"]),.hm-foot a,.hm-note a{color:var(--brand); font-weight:600}
 .hm-foot{padding:32px 0 0; margin-top:32px; border-top:4px solid var(--ink)} .hm-foot p{font-size:14px; color:var(--ink-2); margin:0 0 8px; max-width:90ch}
 /* sections fade in as they scroll into view (not under reduced motion, and only once the script runs) */
 .fx-on .hm-fade{opacity:0; transform:translateY(16px); transition:opacity .3s ease-out, transform .3s ease-out}
@@ -348,6 +344,11 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
    closes it. The note is the button's next sibling (read in order), placed in fixed position so no panel clips it. */
 .tt{display:inline}
 .tt-w{white-space:nowrap}
+/* source links (Gregor, 2026-10-01): the cited words link straight to the source; hover or focus names it in a note */
+#src-tip{position:fixed; z-index:80; left:0; top:0; max-width:min(340px,calc(100vw - 32px)); padding:8px 12px; background:var(--panel); color:var(--ink);
+  border:1px solid var(--ink); border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.18); font-size:14px; line-height:1.4; pointer-events:none}
+#src-tip[hidden]{display:none}
+#src-tip b{display:block; font-size:12px; font-weight:600; color:var(--ink-2)}
 .tt-b{position:relative; display:inline; padding:0; margin:0; border:0; background:none; color:inherit; font:inherit; font-weight:700;
   text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px; cursor:pointer; text-align:inherit; line-height:inherit}
 .tt-b::after{content:""; position:absolute; inset:-11px -2px}
@@ -932,6 +933,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 </style>
 </head>
 <body data-view="public">
+<div id="src-tip" role="tooltip" hidden></div>
 <div class="busy" id="busy" role="progressbar" aria-label="Loading" hidden><span></span></div>
 <section id="nat" aria-labelledby="nat-h">
  <div class="nat-inner">
@@ -1037,20 +1039,20 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <section class="hm-sec hm-fade" id="hm-why" aria-labelledby="hm-why-h">
     <h2 id="hm-why-h">Why BahaWatch</h2>
     <ul class="hm-stats">
-      <li><b>#1</b><span>The Philippines’ rank in <span class="tt" data-term="disaster risk"><span class="tt-t">disaster risk</span>The WorldRiskIndex scores 193 countries on how exposed their people are to hazards such as storms, floods and earthquakes, and how vulnerable they are when one strikes. The Philippines had the highest overall risk in 2025 and again in 2026, and tops the 2026 report’s first ranking of storm risk.</span> worldwide, and in storm risk <span class="hm-ref">[1]</span></span></li>
-      <li><b>74%</b><span>of Filipinos are vulnerable to disasters <span class="hm-ref">[2]</span></span></li>
-      <li><b>~20</b><span><span class="tt" data-term="tropical cyclones"><span class="tt-t">tropical cyclones</span>Rotating storms that form over warm tropical seas: tropical depressions, tropical storms and, the strongest, typhoons. PAGASA, the national weather service, names each one that enters the Philippine area of responsibility.</span> enter Philippine waters every year; 8 or 9 cross the country <span class="hm-ref">[3]</span></span></li>
-      <li><b>269</b><span>people killed by one typhoon, <span class="tt" data-term="Tino (Kalmaegi)"><span class="tt-t">Tino (Kalmaegi)</span>Philippine storms have two names: a local one from PAGASA, the national weather service (Tino), and an international one from the regional Typhoon Committee’s list (Kalmaegi).</span>, in November 2025 <span class="hm-ref">[4]</span></span></li>
+      <li><b>#1</b><span>The Philippines’ rank in <span class="tt" data-term="disaster risk"><span class="tt-t">disaster risk</span>The WorldRiskIndex scores 193 countries on how exposed their people are to hazards such as storms, floods and earthquakes, and how vulnerable they are when one strikes. The Philippines had the highest overall risk in 2025 and again in 2026, and tops the 2026 report’s first ranking of storm risk.</span> worldwide, and in <a class="src" href="https://reliefweb.int/report/world/worldriskreport-2026-why-storms-turn-disasters" data-src="WorldRiskReport 2026: Why storms turn into disasters (Bündnis Entwicklung Hilft and IFHV, 23 Sept 2026)">storm risk<span class="sr-only"> (source: WorldRiskReport 2026: Why storms turn into disasters (Bündnis Entwicklung Hilft and IFHV, 23 Sept 2026))</span></a></span></li>
+      <li><b>74%</b><span>of Filipinos are <a class="src" href="https://give2asia.org/philippines-disaster-country-profile/" data-src="Give2Asia, DisasterLink country profile: the Philippines">vulnerable to disasters<span class="sr-only"> (source: Give2Asia, DisasterLink country profile: the Philippines)</span></a></span></li>
+      <li><b>~20</b><span><span class="tt" data-term="tropical cyclones"><span class="tt-t">tropical cyclones</span>Rotating storms that form over warm tropical seas: tropical depressions, tropical storms and, the strongest, typhoons. PAGASA, the national weather service, names each one that enters the Philippine area of responsibility.</span> <a class="src" href="https://www.pagasa.dost.gov.ph/climate/tropical-cyclone-information" data-src="PAGASA, Tropical cyclone information">enter Philippine waters every year<span class="sr-only"> (source: PAGASA, Tropical cyclone information)</span></a>; 8 or 9 cross the country</span></li>
+      <li><b>269</b><span><a class="src" href="https://www.gmanetwork.com/news/topstories/nation/966407/269-dead-523-injured-due-to-typhoon-tino-ocd/story/" data-src="GMA News, “269 dead, 523 injured due to Typhoon Tino — OCD”, 17 Nov 2025">people killed<span class="sr-only"> (source: GMA News, “269 dead, 523 injured due to Typhoon Tino — OCD”, 17 Nov 2025)</span></a> by one typhoon, <span class="tt" data-term="Tino (Kalmaegi)"><span class="tt-t">Tino (Kalmaegi)</span>Philippine storms have two names: a local one from PAGASA, the national weather service (Tino), and an international one from the regional Typhoon Committee’s list (Kalmaegi).</span>, in November 2025</span></li>
     </ul>
     <div class="hm-cols">
       <div>
         <h3>In a flood, minutes matter</h3>
         <p>Our partner on the ground, the <span class="tt" data-term="Bike Scouts Project"><span class="tt-t">Bike Scouts Project</span>A Philippine network of volunteer cyclists who carry messages, supplies and help when roads are blocked and phone lines are down after a disaster.</span>, is a volunteer network that helps families evacuate. They told us that even 15 minutes of warning is enough to move a family to higher ground instead of waiting on a rooftop for rescue.</p>
-        <p>Floods cost the Philippines an estimated US$500–625 million a year <span class="hm-ref">[5]</span>, and disasters kill more than 1,000 people in an average year <span class="hm-ref">[2]</span>.</p>
+        <p>Floods cost the Philippines an estimated <a class="src" href="https://globalclimaterisks.org/economic/philippines-floods/" data-src="Global Climate Risks, Philippines (floods), citing the World Bank Climate Change Knowledge Portal">US$500–625 million a year<span class="sr-only"> (source: Global Climate Risks, Philippines (floods), citing the World Bank Climate Change Knowledge Portal)</span></a>, and disasters kill <a class="src" href="https://give2asia.org/philippines-disaster-country-profile/" data-src="Give2Asia, DisasterLink country profile: the Philippines">more than 1,000 people in an average year<span class="sr-only"> (source: Give2Asia, DisasterLink country profile: the Philippines)</span></a>.</p>
       </div>
       <div>
         <h3>Sensors are too costly to reach everyone</h3>
-        <p>A standard government <span class="tt" data-term="stream gauge"><span class="tt-t">stream gauge</span>A permanent station on a river that records the water level every few minutes and sends it in for flood warnings. The costs here come from the US Geological Survey’s national network.</span> in the United States costs US$25,000–40,000 to install and US$16,500–32,000 a year to run <span class="hm-ref">[6]</span>. At that price, remote and low-income places go without, and when funding changes, sensors fall into disrepair. Warnings come late, or not at all.</p>
+        <p>A standard government <span class="tt" data-term="stream gauge"><span class="tt-t">stream gauge</span>A permanent station on a river that records the water level every few minutes and sends it in for flood warnings. The costs here come from the US Geological Survey’s national network.</span> in the United States costs US$25,000–40,000 to install and <a class="src" href="https://www.congress.gov/crs-product/R45695" data-src="Congressional Research Service, U.S. Geological Survey streamgaging network (R45695), 2021">US$16,500–32,000 a year to run<span class="sr-only"> (source: Congressional Research Service, U.S. Geological Survey streamgaging network (R45695), 2021)</span></a>. At that price, remote and low-income places go without, and when funding changes, sensors fall into disrepair. Warnings come late, or not at all.</p>
         <p>BahaWatch’s sensor is estimated at <b>about US$210</b>, built from parts sold in local hardware stores.</p>
       </div>
     </div>
@@ -1064,14 +1066,6 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <blockquote class="hm-quote"><p>“The Philippines does not have a technological problem, it’s a <b>governance</b> problem.”</p><footer>— a Filipino disaster researcher we interviewed</footer></blockquote>
     <h3 class="hm-h3">Our answer</h3>
     <p>Put flood sensing in local hands. BahaWatch pairs a <b>low-cost water-level sensor</b> that local governments and community groups can build, repair and run with a <b>free, open dashboard</b> that anyone can read. The hardware and software are <span class="tt" data-term="open source"><span class="tt-t">open source</span>The designs and code are published for anyone to use, repair, copy and change, so a network never depends on one company staying in business.</span>, and the data is open, so the readings also serve national hazard maps and warning systems. Through openness, BahaWatch aims to help bring climate justice to a world that must adapt.</p>
-    <ol class="hm-refs" aria-label="References">
-      <li>Bündnis Entwicklung Hilft and IFHV, Ruhr University Bochum, <a href="https://reliefweb.int/report/world/worldriskreport-2026-why-storms-turn-disasters">WorldRiskReport 2026: Why storms turn into disasters</a>, 23 Sept 2026. The 2025 edition, <a href="https://www.preventionweb.net/publication/documents-and-publications/world-risk-report-2025-focus-floods">focus on floods</a>, also ranked the Philippines first.</li>
-      <li>Give2Asia, <a href="https://give2asia.org/philippines-disaster-country-profile/">DisasterLink country profile: the Philippines</a>.</li>
-      <li>PAGASA, <a href="https://www.pagasa.dost.gov.ph/climate/tropical-cyclone-information">Tropical cyclone information</a>.</li>
-      <li>GMA News, <a href="https://www.gmanetwork.com/news/topstories/nation/966407/269-dead-523-injured-due-to-typhoon-tino-ocd/story/">“269 dead, 523 injured due to Typhoon Tino — OCD”</a>, 17 Nov 2025.</li>
-      <li>Global Climate Risks, <a href="https://globalclimaterisks.org/economic/philippines-floods/">Philippines (floods)</a>, citing the World Bank Climate Change Knowledge Portal.</li>
-      <li>Congressional Research Service, <a href="https://www.congress.gov/crs-product/R45695">U.S. Geological Survey streamgaging network: overview and issues for Congress</a> (R45695), 2021.</li>
-    </ol>
   </section>
 
   <section class="hm-sec hm-fade" id="hm-how" aria-labelledby="hm-how-h">
@@ -1279,9 +1273,8 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <li><a href="https://resilience.up.edu.ph/" class="hm-logo-c"><img src="shared/home/logo-upri.jpg" alt="UP Resilience Institute" loading="lazy"><span aria-hidden="true">UP Resilience Institute</span></a></li>
       <li><a href="https://noah.up.edu.ph/"><img src="shared/home/logo-noah.png" alt="Project NOAH" loading="lazy"></a></li>
       <li class="hm-wide"><a href="https://blumcenter.berkeley.edu/"><img src="shared/home/logo-blum-center.jpg" alt="Blum Center for Developing Economies" loading="lazy"></a></li>
-      <!-- PhilDev: in talks, not yet a partner (Gregor, 2026-10-01); the caption keeps that honest until it is agreed -->
-      <li class="hm-wide"><a href="https://www.phildev.org/" class="hm-logo-c"><img src="shared/home/logo-phildev.png" alt="PhilDev" loading="lazy"><span>In talks</span></a></li>
-      <li class="hm-wide"><a href="https://developmentengineering.berkeley.edu/"><img class="hm-logo-sq" src="shared/home/logo-deveng.jpg" alt="Development Engineering at UC Berkeley" loading="lazy"></a></li>
+      <li class="hm-wide"><a href="https://www.phildev.org/"><img src="shared/home/logo-phildev.png" alt="PhilDev" loading="lazy"></a></li>
+      <li class="hm-wide"><a href="https://developmentengineering.berkeley.edu/"><img src="shared/home/logo-deveng.png" alt="Development Engineering at UC Berkeley" loading="lazy"></a></li>
       <li class="hm-wide"><a href="https://disasterlab.berkeley.edu/"><img src="shared/home/logo-disaster-lab.jpg" alt="UC Berkeley Disaster Lab" loading="lazy"></a></li>
     </ul>
     <div class="hm-ask">
@@ -5114,6 +5107,18 @@ let abSpyQ=0;
 window.addEventListener("scroll",()=>{if(!READ[ROUTE]||abSpyQ)return;abSpyQ=requestAnimationFrame(()=>{abSpyQ=0;if(READ[ROUTE])readSpy(ROUTE);});},{passive:true});
 for(const route of Object.keys(READ))document.querySelectorAll("#"+route+" .ab-rail a").forEach(a=>a.addEventListener("click",e=>{if(location.hash===a.getAttribute("href")){e.preventDefault();readEnter(route,a.dataset.sec,route);}}));
 for(const id of ["ab-theme","ax-theme"])$(id).addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
+// source links: name the source in a small note on hover or keyboard focus (the link itself opens the source)
+{const tip=$("src-tip");let cur=null;
+ const show=a=>{cur=a;tip.innerHTML="<b>Source</b>";tip.append(a.dataset.src);tip.hidden=false;
+   const r=a.getBoundingClientRect(),t=tip.getBoundingClientRect(),m=16;
+   let x=Math.min(Math.max(m,r.left),innerWidth-m-t.width),y=r.top-t.height-8;if(y<m)y=r.bottom+8;
+   tip.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;};
+ const hide=()=>{cur=null;tip.hidden=true;};
+ document.querySelectorAll("a.src").forEach(a=>{
+   a.addEventListener("mouseenter",()=>show(a));a.addEventListener("mouseleave",()=>{if(document.activeElement!==a)hide();});
+   a.addEventListener("focus",()=>show(a));a.addEventListener("blur",hide);});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cur)hide();});
+ addEventListener("scroll",()=>{if(cur){if(document.activeElement===cur||cur.matches(":hover"))show(cur);else hide();}},{passive:true});}
 document.querySelectorAll("img.hdr-logo").forEach(i=>{i.src=document.querySelector(".p-head img").src;});
 tipsInit(document);
 
