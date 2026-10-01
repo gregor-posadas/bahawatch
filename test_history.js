@@ -45,28 +45,28 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
     // Lives lost (Gregor: "rows of little people to demonstrate how many lives have been lost due to flooding", then "include
     // records of injured and missing on the count + families affected"): one row per flood on the page, in the same order.
     // Each row states its dead, missing and injured and the families affected, every number linked to its source; one filled
-    // figure per 100 dead and one outlined figure per 100 missing (a part-figure for the rest); a bar for families affected,
+    // figure per 10 dead and one outlined figure per 10 missing (a part-figure for the rest); a bar for families affected,
     // to scale. The figures and bars are hidden from screen readers because the text carries the numbers.
     s=await pg.evaluate(()=>{const v=document.querySelector('#history .gl-viz');if(!v)return null;
       const num=(r,k)=>{const e=r.querySelector(`.gl-p-n[data-k="${k}"]`);return e?{v:+e.dataset.v,t:e.textContent,src:!!e.closest('a.src')}:null;};
       const rows=[...v.querySelectorAll('.gl-p-row')].map(r=>{const svg=r.querySelector('svg.gl-p-ppl'),bar=r.querySelector('.gl-p-bar');
-        const cnt=(sel)=>svg.querySelectorAll(sel).length,part=k=>svg.querySelectorAll(`.gl-p-part[data-k="${k}"]`).length;
+        const runs=k=>[...svg.querySelectorAll(`.gl-p-run[data-k="${k}"]`)].reduce((a,x)=>a+(+x.dataset.n),0),part=k=>svg.querySelectorAll(`.gl-p-part[data-k="${k}"]`).length;
         return {y:r.querySelector('.gl-yr').textContent,dead:num(r,"dead"),miss:num(r,"missing"),inj:num(r,"injured"),fam:num(r,"families"),
-          full:cnt('use.gl-p-full'),missFig:cnt('use.gl-p-miss'),pd:part("dead"),pm:part("missing"),
+          full:runs('dead'),missFig:runs('missing'),pd:part("dead"),pm:part("missing"),
           hidden:svg.getAttribute('aria-hidden')==="true"&&(!bar||!!bar.closest('[aria-hidden="true"]')),barW:bar?bar.getBoundingClientRect().width:null,famText:r.querySelector('.gl-p-fam').textContent};});
       const evs=[...document.querySelectorAll('#history .gl-ev')].map(e=>({y:e.querySelector('.gl-yr').textContent,t:e.textContent.replace(/\s+/g," ")}));
       return {h:v.querySelector('h2').textContent,label:v.getAttribute('aria-labelledby'),rows,evs,key:v.querySelector('.gl-p-key').textContent.replace(/\s+/g," "),tot:v.querySelector('.gl-p-tot').textContent.replace(/\s+/g," "),text:v.textContent.replace(/\s+/g," ")};});
     assert(s&&s.h==="Lives lost"&&s.label==="hi-viz-h",`${w}: a Lives lost chart, labelled by its heading: ${s&&s.h}`);
     assert(s.rows.length===s.evs.length&&s.rows.every((r,i)=>r.y===s.evs[i].y&&r.dead&&s.evs[i].t.includes(r.dead.v.toLocaleString("en-US"))),`${w}: one row per flood on the page, in order, each death toll matching the story: ${JSON.stringify(s.rows.map(r=>r.y+":"+(r.dead&&r.dead.v)))}`);
     assert(s.rows.every(r=>r.miss&&r.inj),`${w}: every row states its missing and injured`);
-    assert(s.rows.every(r=>r.full===Math.floor(r.dead.v/100)&&r.pd===(r.dead.v%100?1:0)&&r.missFig===Math.floor(r.miss.v/100)&&r.pm===(r.miss.v%100?1:0)),`${w}: one filled figure per 100 dead, one outlined per 100 missing, a part-figure for each remainder: ${JSON.stringify(s.rows.map(r=>[r.dead.v,r.full,r.pd,r.miss.v,r.missFig,r.pm]))}`);
+    assert(s.rows.every(r=>r.full===Math.floor(r.dead.v/10)&&r.pd===(r.dead.v%10?1:0)&&r.missFig===Math.floor(r.miss.v/10)&&r.pm===(r.miss.v%10?1:0)),`${w}: one filled figure per 10 dead, one outlined per 10 missing (Gregor: "10 people per 1 person symbol"), a part-figure for each remainder: ${JSON.stringify(s.rows.map(r=>[r.dead.v,r.full,r.pd,r.miss.v,r.missFig,r.pm]))}`);
     const fams=s.rows.filter(r=>r.fam),maxF=Math.max(...fams.map(r=>r.fam.v)),big=fams.find(r=>r.fam.v===maxF);
     assert(fams.length>=9&&fams.every(r=>r.barW>0&&Math.abs(r.barW/big.barW-r.fam.v/maxF)<0.02&&/famil/.test(r.famText)),`${w}: families affected have a bar to scale and say so in words: ${JSON.stringify(fams.map(r=>[r.fam.v,Math.round(r.barW)]))}`);
     assert(s.rows.filter(r=>!r.fam).every(r=>/no count/i.test(r.famText)&&r.barW===null),`${w}: where no count of families was found, the row says so and draws no bar`);
     assert(s.rows.every(r=>[r.dead,r.miss,r.inj,r.fam].filter(Boolean).every(n=>n.src)&&r.hidden),`${w}: every number links its source; figures and bars are hidden from screen readers`);
     const sum=k=>s.rows.reduce((a,r)=>a+r[k].v,0);
     assert([sum("dead"),sum("miss"),sum("inj")].every(n=>s.tot.includes(n.toLocaleString("en-US"))),`${w}: the headline gives the total dead (${sum("dead")}), missing (${sum("miss")}) and injured (${sum("inj")}): ${s.tot}`);
-    assert(/100 people who died/.test(s.key)&&/100 people missing/.test(s.key)&&/families affected/.test(s.key),`${w}: the key explains filled and outlined figures and the families bar: ${s.key}`);
+    assert(/= 10 people who died/.test(s.key)&&/= 10 people missing/.test(s.key)&&/families affected/.test(s.key),`${w}: the key explains filled and outlined figures and the families bar: ${s.key}`);
     assert(await pg.evaluate(()=>document.querySelectorAll('aside').length===1&&!document.querySelector('#history aside')),`${w}: the chart is not an <aside>, so the dashboard's side panel stays the only one`);
     assert(/not only drowning/.test(s.text)&&/more than once/.test(s.text),`${w}: the chart says what the tolls count and that families can be counted in more than one flood`);
     // every source link names its source

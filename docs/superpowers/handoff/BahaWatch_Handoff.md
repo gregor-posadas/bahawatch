@@ -328,6 +328,10 @@ review and reports"). Commits `62a9601` → `efbb216`:
    DROMIC 16 Nov 2025). Outlined figure = 100 missing. Totals: 13,657 dead, 4,451 missing, 39,109 injured. The chart is
    now ~1,530 px tall, so it is no longer sticky, and on narrow screens it follows the flood stories. Families bar colour
    `--fam-bar` (#385F96 light, #9EB8DB dark). Part-figure clips sit on a `<g>`: a clip on a `<use>` with x/y is offset.
+   Then (Gregor: "let's make it 10 people per 1 person symbol"): one figure = 10 people, 8 × 10 px, 42 to a line (~1,800
+   figures; Ormoc and Yolanda over 700 each). Whole figures are drawn as one patterned strip per line (`<pattern>` of the
+   person, `.gl-p-run` with `data-n`), so the page stays ~64 KB for this section instead of ~200 KB, and cheap phones draw
+   ~50 strips instead of ~1,800 figures. Chart ~1,700 px tall.
 
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their

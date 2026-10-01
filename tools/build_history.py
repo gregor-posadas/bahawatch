@@ -235,8 +235,8 @@ FLOODS = [
 # ---- Lives lost: rows of little people (Gregor, 2026-10-01: "something like those rows of little people to demonstrate
 # how many lives have been lost due to flooding", then "include records of injured and missing on the count + families
 # affected"). One row per flood above, same order, official counts (the latest we found), each number linked to its source.
-# Filled figure = 100 dead, outlined figure = 100 missing; the remainder is a part-figure, filled from the left. Injured are
-# numbers only (Yolanda alone would need 287 figures). Families affected: a bar to scale, and the number in words. Figures
+# Filled figure = 10 dead, outlined figure = 10 missing; the remainder is a part-figure, filled from the left. Injured are
+# numbers only (Yolanda alone would need 2,869 figures). Families affected: a bar to scale, and the number in words. Figures
 # and bars are aria-hidden; the text carries every number.
 # Each row: year, name, [(kind, value, shown, word, source)], families (value, shown, source) or None.
 DEAD = [
@@ -251,20 +251,27 @@ DEAD = [
  ("2025", "Tino (Kalmaegi)", [("dead", 269, "269", "dead", "tino"), ("missing", 113, "113", "missing", "tino"), ("injured", 523, "523", "injured", "tino")], (1592306, "1,592,306", "tinofam")),
  ("2026", "Monsoon and three storms", [("dead", 33, "33", "dead", "y2026"), ("missing", 3, "3", "missing", "y2026"), ("injured", 19, "19", "injured", "y2026")], (2500000, "about 2.5 million", "y2026")),
 ]
-PER, CW, CH, ROW = 100, 16, 20, 21     # people per figure; cell width and height (SVG units); figures per line
+PER, CW, CH, ROW = 10, 8, 10, 42       # people per figure (Gregor: "10 people per 1 person symbol"); cell size in px; figures per line
 BARW = 88                              # px for the largest families count
 FMAX = max(f[0] for *_, f in DEAD if f)
 PERSON = ('<symbol id="gl-person" viewBox="0 0 16 20"><circle cx="8" cy="4" r="3.2"/>'
           '<path d="M3.5 19V12Q3.5 8.4 8 8.4Q12.5 8.4 12.5 12V19H8.8V15H7.2V19Z"/></symbol>')
 
+PATTERNS = (f'<pattern id="gl-pat-dead" width="{CW}" height="{CH}" patternUnits="userSpaceOnUse"><use class="gl-p-full" href="#gl-person" width="{CW}" height="{CH}"/></pattern>'
+            f'<pattern id="gl-pat-missing" width="{CW}" height="{CH}" patternUnits="userSpaceOnUse"><use class="gl-p-miss" href="#gl-person" width="{CW}" height="{CH}"/></pattern>')
+
 def people(i, dead, missing):
-    """Dead (filled) then missing (outlined), 21 to a line; each remainder as a part-figure clipped from the left."""
+    """Dead (filled) then missing (outlined), 42 to a line. Whole figures are drawn as one patterned strip per line (light
+    on cheap phones: ~50 strips instead of ~1,800 figures); each remainder is a part-figure clipped from the left."""
     out, c = [], 0
-    def cell(cls, x, y): return f'<use class="{cls}" href="#gl-person" x="{x}" y="{y}" width="{CW}" height="{CH}"/>'
-    for kind, n, cls in (("dead", dead, "gl-p-full"), ("missing", missing, "gl-p-miss")):
+    for kind, n in (("dead", dead), ("missing", missing)):
         full, rest = divmod(n, PER)
-        for _ in range(full):
-            out.append(cell(cls, c % ROW * CW, c // ROW * CH)); c += 1
+        left = full
+        while left:
+            line, col = divmod(c, ROW)
+            run = min(left, ROW - col)
+            out.append(f'<rect class="gl-p-run" data-k="{kind}" data-n="{run}" x="{col * CW}" y="{line * CH}" width="{run * CW}" height="{CH}" fill="url(#gl-pat-{kind})"/>')
+            c += run; left -= run
         if rest:
             x, y = c % ROW * CW, c // ROW * CH
             # the clip sits on the group: a <use> with x/y would shift its own clip box as well
@@ -302,16 +309,16 @@ def lives():
         for i, (y, name, items, f) in enumerate(DEAD))
     fam_total = sum(f[0] for *_, f in DEAD if f)
     key = ('<ul class="gl-p-key">'
-           '<li><svg aria-hidden="true" focusable="false" viewBox="0 0 16 20" width="16" height="20"><use class="gl-p-full" href="#gl-person"/></svg>= 100 people who died</li>'
-           '<li><svg aria-hidden="true" focusable="false" viewBox="0 0 16 20" width="16" height="20"><use class="gl-p-miss" href="#gl-person"/></svg>= 100 people missing</li>'
+           f'<li><svg aria-hidden="true" focusable="false" viewBox="0 0 {CW} {CH}" width="{CW}" height="{CH}"><use class="gl-p-full" href="#gl-person" width="{CW}" height="{CH}"/></svg>= {PER} people who died</li>'
+           f'<li><svg aria-hidden="true" focusable="false" viewBox="0 0 {CW} {CH}" width="{CW}" height="{CH}"><use class="gl-p-miss" href="#gl-person" width="{CW}" height="{CH}"/></svg>= {PER} people missing</li>'
            '<li><span class="gl-p-barw gl-p-barkey" aria-hidden="true"><span class="gl-p-bar"></span></span>families affected, to scale</li></ul>')
     return (f'<div class="gl-viz" role="complementary" aria-labelledby="hi-viz-h"><div class="gl-viz-in">'
-            f'<svg width="0" height="0" class="gl-defs" aria-hidden="true" focusable="false">{PERSON}</svg>'
+            f'<svg width="0" height="0" class="gl-defs" aria-hidden="true" focusable="false">{PERSON}{PATTERNS}</svg>'
             f'<h2 id="hi-viz-h">Lives lost</h2>'
             f'<p class="gl-p-tot">In the ten floods on this page, at least <b>{tot["dead"]:,}</b> people died, <b>{tot["missing"]:,}</b> went missing '
             f'and <b>{tot["injured"]:,}</b> were injured.</p>'
             f'{key}<ol class="gl-p-list">{rows}</ol>'
-            f'<p class="gl-p-note">A part-figure stands for fewer than 100. These are official counts for each storm or monsoon as a whole, the latest we found: '
+            f'<p class="gl-p-note">A part-figure stands for fewer than {PER}. These are official counts for each storm or monsoon as a whole, the latest we found: '
             f'they include every death, not only drowning, and Ormoc’s injured come from the UN’s count. Families are counted flood by flood, so a family hit more than once '
             f'is counted more than once; together the counts pass {fam_total // 1_000_000} million. “Over” and “about” counts are drawn at the figure given.</p>'
             f'</div></div>')
