@@ -5,6 +5,7 @@ are derived from open datasets and remain under their source licences.
 
 | Files | Source | Licence |
 |---|---|---|
+| `shared/home/baha.mp3` (the homepage’s Listen button) | Pronunciation of “baha” in Tagalog by samurai19817 on [Forvo](https://forvo.com/word/baha/#tl) (cover image removed) | [Forvo licence](https://forvo.com/license/): any **non-commercial** use. Credited in the homepage footer. |
 | Street, creek and building-dot layers in `data/*.json`; `inputs/export.geojson`, `sites/*/export.geojson`, `places.json` (street names) | © OpenStreetMap contributors: the Geofabrik Philippines extract (campuses) and the Overpass API (Teachers Village, Berkeley) | [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/). These are derivative databases: any further redistribution must attribute OpenStreetMap and stay under ODbL. |
 | Building dots, per-cell counts and blocked cells in the Philippine `data/*.json` files | VIDA's combined building footprints: Google Open Buildings, Microsoft Building Footprints and OpenStreetMap | Google Open Buildings: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Microsoft Building Footprints: ODbL 1.0. OpenStreetMap: ODbL 1.0. |
 | The `elev` grids in the Philippine `data/*.json` files (the 25 campuses, Teachers Village and San Joaquin) | FABDEM V1-2 © University of Bristol (Hawker et al. 2022, *Environ. Res. Lett.* 17 024016), derived from Copernicus GLO-30 | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): **non-commercial use only**, attribution, share-alike. |

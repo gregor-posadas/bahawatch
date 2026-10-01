@@ -118,25 +118,20 @@ const TABS="home,ph,tv,sjq,berkeley,try,about,access";
    const after=await pg.evaluate(()=>({bar:!document.getElementById('busy').hidden,chip:!document.getElementById('site-busy').hidden}));
    assert(chipSeen&&!after.bar&&!after.chip,"while the detailed map loads its chip shows; once loaded, the bar and the chip go away: "+JSON.stringify({s,after}));
    await ctx.close();}
-  // "Listen" next to Baha: shown only when the device has a Filipino voice (or a recording is set), and it says "Baha"
+  // "Listen" next to Baha: a Tagalog speaker's recording from Forvo (credited in the footer) plays on any device,
+  // with no Filipino voice needed and nothing fetched from outside the site
   {const ctx=await b.newContext({viewport:{width:375,height:800}});
-   const pg=await ctx.newPage();pg.on('pageerror',e=>errs.push(e.message));
+   await ctx.addInitScript(()=>{window.__played=[];HTMLMediaElement.prototype.play=function(){__played.push(this.src);return Promise.resolve();};});
+   const pg=await ctx.newPage();pg.on('pageerror',e=>errs.push(e.message));const outside=[];pg.on('request',r=>{if(!r.url().startsWith(BASE)&&!r.url().startsWith('blob:'+BASE))outside.push(r.url());});
    await pg.goto(U);await ready(pg,"home");await pg.waitForTimeout(300);
-   const none=await pg.evaluate(()=>document.getElementById('hm-hear').hidden);
-   await ctx.close();
-   const ctx2=await b.newContext({viewport:{width:375,height:800}});
-   await ctx2.addInitScript(()=>{const v=[{name:"English",lang:"en-US"},{name:"Filipino",lang:"fil-PH"}];window.__said=[];
-     const ss={getVoices:()=>v,speak:u=>__said.push({t:u.text,v:u.voice&&u.voice.lang,l:u.lang}),cancel:()=>{},addEventListener:()=>{},onvoiceschanged:null};
-     Object.defineProperty(window,'speechSynthesis',{value:ss,configurable:true});
-     window.SpeechSynthesisUtterance=function(t){this.text=t;};});
-   const pg2=await ctx2.newPage();pg2.on('pageerror',e=>errs.push(e.message));
-   await pg2.goto(U);await ready(pg2,"home");await pg2.waitForTimeout(300);
-   const s=await pg2.evaluate(()=>{const bt=document.getElementById('hm-hear');const r=bt.getBoundingClientRect();return {shown:!bt.hidden,h:r.height,name:bt.getAttribute('aria-label'),near:/Baha/.test(bt.closest('p').textContent),sh:getComputedStyle(bt).boxShadow};});
-   await pg2.click('#hm-hear');
-   const said=await pg2.evaluate(()=>__said);
-   assert(none&&s.shown&&s.h>=48&&/baha/i.test(s.name)&&s.near&&/4px 4px 0px/.test(s.sh),`"Listen" sits next to Baha, raised, 48 px, named, and hidden on a device with no Filipino voice: ${JSON.stringify({none,...s})}`);
-   assert(said.length===1&&said[0].t==="Baha"&&said[0].v==="fil-PH",`pressing it says "Baha" in the Filipino voice: ${JSON.stringify(said)}`);
-   await ctx2.close();}
+   const s=await pg.evaluate(()=>{const bt=document.getElementById('hm-hear');const r=bt.getBoundingClientRect();return {shown:!bt.hidden,h:r.height,name:bt.getAttribute('aria-label'),near:/Baha/.test(bt.closest('p').textContent),sh:getComputedStyle(bt).boxShadow,credit:/Forvo/.test(document.querySelector('.hm-foot').textContent)};});
+   await pg.click('#hm-hear');await pg.waitForTimeout(500);
+   const played=await pg.evaluate(()=>__played);
+   const file=await pg.evaluate(async()=>{const r=await fetch('shared/home/baha.mp3');return {ok:r.ok,type:r.headers.get('content-type'),n:(await r.arrayBuffer()).byteLength};});
+   assert(s.shown&&s.h>=48&&/baha/i.test(s.name)&&s.near&&/4px 4px 0px/.test(s.sh)&&s.credit,`"Listen" sits next to Baha, raised, 48 px, named, with Forvo credited: ${JSON.stringify(s)}`);
+   assert(played.length===1&&/^blob:|baha\.mp3$/.test(played[0])&&file.ok&&/audio\/mpeg/.test(file.type)&&file.n>5000,`pressing it plays the Tagalog recording from our own site: ${JSON.stringify({played,file})}`);
+   assert(outside.length===0,"nothing is fetched from outside the site: "+outside.slice(0,2).join(", "));
+   await ctx.close();}
   // reduced motion: nothing moves, nothing fades
   {const ctx=await b.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'});const pg=await ctx.newPage();pg.on('pageerror',e=>errs.push(e.message));
    await pg.goto(U+'#home/how');await ready(pg,"home");await pg.waitForTimeout(300);

@@ -269,10 +269,11 @@ review and reports"). Commits `62a9601` → `efbb216`:
    Institute (resilience.up.edu.ph, logo with its name under it), Project NOAH (noah.up.edu.ph), Development Engineering
    at UC Berkeley (developmentengineering.berkeley.edu; logo from Gregor, `shared/home/logo-deveng.jpg`); PhilDev (phildev.org, `shared/home/logo-phildev.png`, captioned "In talks" until a partnership is agreed — Gregor's goodwill gesture; drop the caption once it is); a two-column grid on phones. The #1 figure now cites the WorldRiskReport 2026 (ReliefWeb, 23 Sept 2026:
    the Philippines has the highest overall risk and tops the first storm-risk ranking), with 2025 as also-first.
-   **Listen** button beside "Baha" in the hero: plays `BAHA_AUDIO` when set (a native speaker's recording; none yet),
-   otherwise the device's own Filipino voice (`fil`/`tl`) via speechSynthesis; hidden when the device has neither, so an
-   English voice never mispronounces it. To add a recording: put e.g. `shared/home/baha.mp3` in the repo and set
-   `BAHA_AUDIO` in `template.html`.
+   **Listen** button beside "Baha" in the hero: plays `shared/home/baha.mp3`, the Tagalog pronunciation by samurai19817
+   (male, Philippines) on Forvo (forvo.com/word/baha/#tl; Forvo licence: non-commercial use; credited in the homepage
+   footer and `DATA-LICENSE.md`). Gregor first sent the Oromo clip (`#om`), caught from its tags. The clip is fetched
+   whole on the first press so the service worker keeps it offline. The device-voice fallback remains if `BAHA_AUDIO`
+   is ever emptied. If BahaWatch turns commercial, this clip needs replacing (record Noam or Gregor).
 
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their

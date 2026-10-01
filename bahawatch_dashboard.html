@@ -1306,6 +1306,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 
   <footer class="hm-foot">
     <p>The dashboard’s code is open source (MIT) on <a href="https://github.com/gregor-posadas/bahawatch">GitHub</a>. Map data © OpenStreetMap contributors; terrain FABDEM © University of Bristol; hazard maps UP Project NOAH / UP Resilience Institute. Full list on the <a href="#about/data">About</a> page.</p>
+    <p>Pronunciation of <i>baha</i>: samurai19817 on <a href="https://forvo.com/word/baha/#tl">Forvo</a>.</p>
     <p>Not a forecast. Not for emergency use: follow PAGASA (the national weather service) and local government advisories.</p>
   </footer>
  </div>
@@ -5027,17 +5028,19 @@ function homeAnim(){$("hm-how").classList.toggle("hm-run",ROUTE==="home"&&hmSeen
 if(window.IntersectionObserver)new IntersectionObserver(es=>{hmSeen=es.some(e=>e.isIntersecting);homeAnim();}).observe($("hm-how"));else hmSeen=true;
 $("hm-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
 document.querySelectorAll('#home a[href^="#home/"]').forEach(a=>a.addEventListener("click",e=>{if(location.hash===a.getAttribute("href")){e.preventDefault();homeEnter(a.getAttribute("href").split("/")[1],"home");}}));
-// "Listen" next to Baha (Gregor, 2026-10-01). A recording plays when BAHA_AUDIO is set (works on every device);
-// until then the device's own Filipino voice says it, and the button stays hidden on devices without one, since an
-// English voice would get the word wrong.
-const BAHA_AUDIO=null;   // e.g. "shared/home/baha.mp3", once a native speaker's recording is in the repo
+// "Listen" next to Baha (Gregor, 2026-10-01): a Tagalog speaker's recording, samurai19817 on Forvo (non-commercial use,
+// credited in the footer). It is fetched whole on the first press, so the service worker keeps it for offline use
+// (media elements ask for byte ranges, which are never cached). Without BAHA_AUDIO the device's Filipino voice is used,
+// and the button hides on devices with none, since an English voice would get the word wrong.
+const BAHA_AUDIO="shared/home/baha.mp3";
 {const btn=$("hm-hear");
  const filVoice=()=>{try{return (window.speechSynthesis&&speechSynthesis.getVoices()||[]).find(v=>/^(fil|tl)([-_]|$)/i.test(v.lang))||null;}catch(e){return null;}};
  const check=()=>{btn.hidden=!(BAHA_AUDIO||filVoice());};
  check();
  if(!BAHA_AUDIO&&window.speechSynthesis){try{speechSynthesis.addEventListener("voiceschanged",check);}catch(e){}}
  btn.addEventListener("click",()=>{
-   if(BAHA_AUDIO){const a=new Audio(BAHA_AUDIO);a.play().catch(()=>{});return;}
+   if(BAHA_AUDIO){(btn._url?Promise.resolve(btn._url):fetch(BAHA_AUDIO).then(r=>{if(!r.ok)throw 0;return r.blob();}).then(bl=>btn._url=URL.createObjectURL(bl)))
+     .then(u=>new Audio(u).play()).catch(()=>{});return;}
    const v=filVoice();if(!v)return;
    try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance("Baha");u.voice=v;u.lang=v.lang;u.rate=0.8;speechSynthesis.speak(u);}catch(e){}
  });}

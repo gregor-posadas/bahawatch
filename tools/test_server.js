@@ -3,7 +3,8 @@
 const http = require('http'), fs = require('fs'), path = require('path'), zlib = require('zlib');
 const ROOT = path.resolve(__dirname, '..');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.json': 'application/json', '.js': 'text/javascript', '.png': 'image/png',
-  '.webmanifest': 'application/manifest+json', '.mjs': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
+  '.webmanifest': 'application/manifest+json', '.mjs': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml',
+  '.jpg': 'image/jpeg', '.mp3': 'audio/mpeg' };
 function start(port = Number(process.env.BW_PORT || 8765)) {
   const srv = http.createServer((req, res) => {
     const url = new URL(req.url, 'http://x');
