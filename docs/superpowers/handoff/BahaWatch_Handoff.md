@@ -320,6 +320,14 @@ review and reports"). Commits `62a9601` → `efbb216`:
    storm or monsoon, and that the missing (3,000 after Ormoc, 1,061 after Yolanda) are not drawn. Placement: after the
    introduction below 1600 px; from 1600 px a 340 px column right of the stories, sticky only when the screen is at least
    960 px tall (the chart is ~910 px). Ink on paper, no colour meaning. `test_history.js`, `test_wide.js`.
+   Then (Gregor: "include records of injured and missing on the count + families affected"): each row now gives dead,
+   missing and injured (latest official counts, each number linked; Ormoc's injured are the UN DHA count of 22 Nov 1991, whose
+   dead/missing differ, and the link's label says so; Sendong from the 10 Feb 2012 needs assessment) and families affected
+   (bar to scale, 88 px = the largest; Ormoc has no count; Yolanda "over 3 million" (Philstar 17 Apr 2014), Ulysses
+   "about 1.2 million", Carina "over 1.6 million", 2026 "about 2.5 million" are drawn at the figure given; Tino from DSWD
+   DROMIC 16 Nov 2025). Outlined figure = 100 missing. Totals: 13,657 dead, 4,451 missing, 39,109 injured. The chart is
+   now ~1,530 px tall, so it is no longer sticky, and on narrow screens it follows the flood stories. Families bar colour
+   `--fam-bar` (#385F96 light, #9EB8DB dark). Part-figure clips sit on a `<g>`: a clip on a `<use>` with x/y is offset.
 
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their

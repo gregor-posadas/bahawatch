@@ -42,23 +42,33 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
       innocent:/presumed innocent until a court decides/.test(p.textContent),asof:/As of 1 October 2026/.test(p.textContent),deny:(p.textContent.match(/denied|denies|not guilty/g)||[]).length};});
     assert(s.items.length>=10&&s.items.every(i=>i.src>=1),`${w}: the politics timeline has ${s.items.length} dated entries, each linked to reporting`);
     assert(s.innocent&&s.asof&&s.deny>=3,`${w}: the politics section says those charged are presumed innocent, gives denials and pleas, and dates where things stand: ${JSON.stringify({i:s.innocent,a:s.asof,d:s.deny})}`);
-    // Lives lost (Gregor: "rows of little people to demonstrate how many lives have been lost due to flooding"): one row per
-    // flood on the page, in the same order, each with its exact toll as text, linked to its source, and one figure per 100 deaths
-    // (a part-figure for the rest); the figures are hidden from screen readers because the text carries the numbers
+    // Lives lost (Gregor: "rows of little people to demonstrate how many lives have been lost due to flooding", then "include
+    // records of injured and missing on the count + families affected"): one row per flood on the page, in the same order.
+    // Each row states its dead, missing and injured and the families affected, every number linked to its source; one filled
+    // figure per 100 dead and one outlined figure per 100 missing (a part-figure for the rest); a bar for families affected,
+    // to scale. The figures and bars are hidden from screen readers because the text carries the numbers.
     s=await pg.evaluate(()=>{const v=document.querySelector('#history .gl-viz');if(!v)return null;
-      const rows=[...v.querySelectorAll('.gl-p-row')].map(r=>{const n=+r.querySelector('.gl-p-n').textContent.replace(/,/g,"");const svg=r.querySelector('svg');
-        const full=svg.querySelectorAll('use.gl-p-full').length,part=[...svg.querySelectorAll('.gl-p-part rect')].map(x=>+x.getAttribute('width'));
-        return {y:r.querySelector('.gl-yr').textContent,n,src:!!r.querySelector('.gl-p-n a.src, a.src .gl-p-n, a.src.gl-p-n'),hidden:svg.getAttribute('aria-hidden')==="true",full,part};});
+      const num=(r,k)=>{const e=r.querySelector(`.gl-p-n[data-k="${k}"]`);return e?{v:+e.dataset.v,t:e.textContent,src:!!e.closest('a.src')}:null;};
+      const rows=[...v.querySelectorAll('.gl-p-row')].map(r=>{const svg=r.querySelector('svg.gl-p-ppl'),bar=r.querySelector('.gl-p-bar');
+        const cnt=(sel)=>svg.querySelectorAll(sel).length,part=k=>svg.querySelectorAll(`.gl-p-part[data-k="${k}"]`).length;
+        return {y:r.querySelector('.gl-yr').textContent,dead:num(r,"dead"),miss:num(r,"missing"),inj:num(r,"injured"),fam:num(r,"families"),
+          full:cnt('use.gl-p-full'),missFig:cnt('use.gl-p-miss'),pd:part("dead"),pm:part("missing"),
+          hidden:svg.getAttribute('aria-hidden')==="true"&&(!bar||!!bar.closest('[aria-hidden="true"]')),barW:bar?bar.getBoundingClientRect().width:null,famText:r.querySelector('.gl-p-fam').textContent};});
       const evs=[...document.querySelectorAll('#history .gl-ev')].map(e=>({y:e.querySelector('.gl-yr').textContent,t:e.textContent.replace(/\s+/g," ")}));
-      return {h:v.querySelector('h2').textContent,label:v.getAttribute('aria-labelledby'),rows,evs,key:v.querySelector('.gl-p-key').textContent,text:v.textContent.replace(/\s+/g," ")};});
+      return {h:v.querySelector('h2').textContent,label:v.getAttribute('aria-labelledby'),rows,evs,key:v.querySelector('.gl-p-key').textContent.replace(/\s+/g," "),tot:v.querySelector('.gl-p-tot').textContent.replace(/\s+/g," "),text:v.textContent.replace(/\s+/g," ")};});
     assert(s&&s.h==="Lives lost"&&s.label==="hi-viz-h",`${w}: a Lives lost chart, labelled by its heading: ${s&&s.h}`);
-    assert(s.rows.length===s.evs.length&&s.rows.every((r,i)=>r.y===s.evs[i].y&&s.evs[i].t.includes(r.n.toLocaleString("en-US"))),`${w}: one row per flood on the page, in order, each toll matching the story: ${JSON.stringify(s.rows.map(r=>r.y+":"+r.n))}`);
-    assert(s.rows.every(r=>r.full===Math.floor(r.n/100)&&(r.n%100===0?r.part.length===0:r.part.length===1)),`${w}: one figure per 100 deaths, a part-figure for the remainder: ${JSON.stringify(s.rows.map(r=>[r.n,r.full,r.part]))}`);
-    assert(s.rows.every(r=>r.src&&r.hidden),`${w}: every toll links its source; the figures are hidden from screen readers`);
-    const tot=s.rows.reduce((a,r)=>a+r.n,0);
-    assert(/100 people/.test(s.key)&&s.text.includes(tot.toLocaleString("en-US")),`${w}: the key says one figure is 100 people, and the total (${tot}) is stated: ${s.key}`);
+    assert(s.rows.length===s.evs.length&&s.rows.every((r,i)=>r.y===s.evs[i].y&&r.dead&&s.evs[i].t.includes(r.dead.v.toLocaleString("en-US"))),`${w}: one row per flood on the page, in order, each death toll matching the story: ${JSON.stringify(s.rows.map(r=>r.y+":"+(r.dead&&r.dead.v)))}`);
+    assert(s.rows.every(r=>r.miss&&r.inj),`${w}: every row states its missing and injured`);
+    assert(s.rows.every(r=>r.full===Math.floor(r.dead.v/100)&&r.pd===(r.dead.v%100?1:0)&&r.missFig===Math.floor(r.miss.v/100)&&r.pm===(r.miss.v%100?1:0)),`${w}: one filled figure per 100 dead, one outlined per 100 missing, a part-figure for each remainder: ${JSON.stringify(s.rows.map(r=>[r.dead.v,r.full,r.pd,r.miss.v,r.missFig,r.pm]))}`);
+    const fams=s.rows.filter(r=>r.fam),maxF=Math.max(...fams.map(r=>r.fam.v)),big=fams.find(r=>r.fam.v===maxF);
+    assert(fams.length>=9&&fams.every(r=>r.barW>0&&Math.abs(r.barW/big.barW-r.fam.v/maxF)<0.02&&/famil/.test(r.famText)),`${w}: families affected have a bar to scale and say so in words: ${JSON.stringify(fams.map(r=>[r.fam.v,Math.round(r.barW)]))}`);
+    assert(s.rows.filter(r=>!r.fam).every(r=>/no count/i.test(r.famText)&&r.barW===null),`${w}: where no count of families was found, the row says so and draws no bar`);
+    assert(s.rows.every(r=>[r.dead,r.miss,r.inj,r.fam].filter(Boolean).every(n=>n.src)&&r.hidden),`${w}: every number links its source; figures and bars are hidden from screen readers`);
+    const sum=k=>s.rows.reduce((a,r)=>a+r[k].v,0);
+    assert([sum("dead"),sum("miss"),sum("inj")].every(n=>s.tot.includes(n.toLocaleString("en-US"))),`${w}: the headline gives the total dead (${sum("dead")}), missing (${sum("miss")}) and injured (${sum("inj")}): ${s.tot}`);
+    assert(/100 people who died/.test(s.key)&&/100 people missing/.test(s.key)&&/families affected/.test(s.key),`${w}: the key explains filled and outlined figures and the families bar: ${s.key}`);
     assert(await pg.evaluate(()=>document.querySelectorAll('aside').length===1&&!document.querySelector('#history aside')),`${w}: the chart is not an <aside>, so the dashboard's side panel stays the only one`);
-    assert(/missing/.test(s.text)&&/not only drowning|all causes/.test(s.text),`${w}: the chart says what the tolls count and that the missing are not drawn`);
+    assert(/not only drowning/.test(s.text)&&/more than once/.test(s.text),`${w}: the chart says what the tolls count and that families can be counted in more than one flood`);
     // every source link names its source
     s=await pg.evaluate(()=>[...document.querySelectorAll('#history a.src')].filter(a=>!/^https:/.test(a.href)||!a.dataset.src||!/source:/.test(a.textContent)).length);
     assert(s===0,`${w}: every source link opens https and names its source`);
@@ -75,8 +85,8 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
    const s=await pg.evaluate(()=>{const rgb=c=>c.match(/[\d.]+/g).slice(0,3).map(Number),L=c=>{const v=rgb(c).map(x=>{x/=255;return x<=0.03928?x/12.92:((x+0.055)/1.055)**2.4;});return 0.2126*v[0]+0.7152*v[1]+0.0722*v[2];},
      cr=(a,b)=>{const x=L(a),y=L(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);},bg=getComputedStyle(document.body).backgroundColor,g=e=>getComputedStyle(document.querySelector(e)).color;
      return {cap:cr(g('#history .gl-cap'),bg),credit:cr(g('#history .gl-credit'),bg),creditLink:cr(g('#history .gl-credit a'),bg),src:cr(g('#history a.src'),bg),time:cr(g('#history .gl-time time'),bg),
-       viz:cr(g('#history .gl-p-row'),bg),fig:cr(getComputedStyle(document.querySelector('#history .gl-p-ppl')).fill,bg)};});
-   assert(Object.values(s).every(v=>v>=4.5),"dark theme: captions, credits, links, dates, chart text and figures ≥ 4.5:1: "+JSON.stringify(s));
+       viz:cr(g('#history .gl-p-row'),bg),fig:cr(getComputedStyle(document.querySelector('#history .gl-p-ppl')).fill,bg),bar:cr(getComputedStyle(document.querySelector('#history .gl-p-bar')).backgroundColor,bg)};});
+   assert(Object.values(s).every(v=>v>=4.5),"dark theme: captions, credits, links, dates, chart text, figures and bars ≥ 4.5:1: "+JSON.stringify(s));
    await ctx.close();}
   assert(errs.length===0,"no page errors: "+errs.join(" | "));
   await b.close();

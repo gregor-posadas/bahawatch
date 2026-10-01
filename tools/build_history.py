@@ -177,6 +177,12 @@ S = dict(
  romu3=("https://newsinfo.inquirer.net/2312873/romualdez-cites-recantations-as-defense-in-plunder-bail-petition", "Inquirer, 28 Sep 2026"),
  co=("https://globalnation.inquirer.net/320363/govt-fails-to-secure-co-now-says-hes-in-france", "Inquirer, “Gov’t fails to secure Co, now says he’s in France”, 2026"),
  verdict=("https://tribune.net.ph/2026/09/10/decisions-on-flood-control-cases-may-be-out-this-year-sandiganbayan", "Daily Tribune, 10 Sep 2026"),
+ # Lives lost: injured, missing and families affected (read 1 Oct 2026)
+ dha91=("https://reliefweb.int/disaster/fl-1991-000010-phl", "UN DHA report of 22 Nov 1991 on the storm, via ReliefWeb (that count: 3,840 dead, 2,000 missing)"),
+ sendpdna=("https://reliefweb.int/report/philippines/tropical%C2%A0storm%C2%A0sendong-post%C2%A0disaster-needs%C2%A0assessment%C2%A0", "Sendong post-disaster needs assessment, as of 10 Feb 2012, via ReliefWeb"),
+ sendfam=("https://www.gmanetwork.com/news/topstories/nation/245269/ndrrmc-storm-sendong-damage-up-to-p1-6b/story/", "GMA News, NDRRMC update, 21 Jan 2012"),
+ yolfam=("https://www.philstar.com/headlines/2014/04/17/1313702/ndrrmc-yolanda-deaths-rise-6300", "Philstar, NDRRMC Yolanda toll, 17 Apr 2014"),
+ tinofam=("https://dromic.dswd.gov.ph/wp-content/uploads/2025/11/DSWD-DROMIC-Report-27-on-the-Effects-of-Typhoon-Tino-as-of-16-November-2025-6PM.pdf", "DSWD DROMIC report 27 on Typhoon Tino, as of 16 Nov 2025, 6 p.m."),
 )
 def L(k, text): return src(S[k][0], S[k][1], text)
 
@@ -227,56 +233,87 @@ FLOODS = [
 ]
 
 # ---- Lives lost: rows of little people (Gregor, 2026-10-01: "something like those rows of little people to demonstrate
-# how many lives have been lost due to flooding"). One row per flood above, same order, same official tolls and sources.
-# One figure = 100 deaths; the remainder is a part-figure, filled from the left over a faint outline. The figures are
-# decoration for sighted readers (aria-hidden); the exact number beside each row is the data, and links its source.
+# how many lives have been lost due to flooding", then "include records of injured and missing on the count + families
+# affected"). One row per flood above, same order, official counts (the latest we found), each number linked to its source.
+# Filled figure = 100 dead, outlined figure = 100 missing; the remainder is a part-figure, filled from the left. Injured are
+# numbers only (Yolanda alone would need 287 figures). Families affected: a bar to scale, and the number in words. Figures
+# and bars are aria-hidden; the text carries every number.
+# Each row: year, name, [(kind, value, shown, word, source)], families (value, shown, source) or None.
 DEAD = [
- ("1991", "Ormoc (Uring)", 4922, "ormoc"),
- ("2009", "Ondoy (Ketsana)", 464, "ondoy"),
- ("2011", "Sendong (Washi)", 1268, "sendong"),
- ("2012", "Habagat (monsoon) floods", 109, "hab12"),
- ("2013", "Yolanda (Haiyan)", 6300, "yolanda"),
- ("2020", "Ulysses (Vamco)", 101, "ulysses"),
- ("2024", "Carina and the habagat (monsoon)", 46, "carina"),
- ("2024", "Kristine and Leon", 145, "kristine"),
- ("2025", "Tino (Kalmaegi)", 269, "tino"),
- ("2026", "Monsoon and three storms", 33, "y2026"),
+ ("1991", "Ormoc (Uring)", [("dead", 4922, "4,922", "dead", "ormoc"), ("missing", 3000, "3,000", "missing", "ormoc"), ("injured", 3050, "3,050", "injured", "dha91")], None),
+ ("2009", "Ondoy (Ketsana)", [("dead", 464, "464", "dead", "ondoy"), ("missing", 37, "37", "missing", "ondoy"), ("injured", 529, "529", "injured", "ondoy")], (993227, "993,227", "ondoy")),
+ ("2011", "Sendong (Washi)", [("dead", 1268, "1,268", "dead", "sendpdna"), ("missing", 181, "181", "missing", "sendpdna"), ("injured", 6071, "6,071", "injured", "sendpdna")], (120233, "120,233", "sendfam")),
+ ("2012", "Habagat (monsoon) floods", [("dead", 109, "109", "dead", "hab12"), ("missing", 4, "4", "missing", "hab12"), ("injured", 14, "14", "injured", "hab12")], (934285, "934,285", "hab12")),
+ ("2013", "Yolanda (Haiyan)", [("dead", 6300, "6,300", "dead", "yolanda"), ("missing", 1061, "1,061", "missing", "yolanda"), ("injured", 28689, "28,689", "injured", "yolanda")], (3000000, "over 3 million", "yolfam")),
+ ("2020", "Ulysses (Vamco)", [("dead", 101, "101", "dead", "ulysses"), ("missing", 10, "10", "missing", "ulysses"), ("injured", 85, "85", "injured", "ulysses")], (1200000, "about 1.2 million", "ulysses")),
+ ("2024", "Carina and the habagat (monsoon)", [("dead", 46, "46", "reported dead", "carina"), ("missing", 5, "5", "missing", "carina"), ("injured", 14, "14", "injured", "carina")], (1600000, "over 1.6 million", "carina")),
+ ("2024", "Kristine and Leon", [("dead", 145, "145", "dead", "kristine"), ("missing", 37, "37", "missing", "kristine"), ("injured", 115, "115", "injured", "kristine")], (1788630, "1,788,630", "kristine")),
+ ("2025", "Tino (Kalmaegi)", [("dead", 269, "269", "dead", "tino"), ("missing", 113, "113", "missing", "tino"), ("injured", 523, "523", "injured", "tino")], (1592306, "1,592,306", "tinofam")),
+ ("2026", "Monsoon and three storms", [("dead", 33, "33", "dead", "y2026"), ("missing", 3, "3", "missing", "y2026"), ("injured", 19, "19", "injured", "y2026")], (2500000, "about 2.5 million", "y2026")),
 ]
-PER, CW, CH, ROW = 100, 16, 20, 21     # deaths per figure; cell width and height (SVG units); figures per line
+PER, CW, CH, ROW = 100, 16, 20, 21     # people per figure; cell width and height (SVG units); figures per line
+BARW = 88                              # px for the largest families count
+FMAX = max(f[0] for *_, f in DEAD if f)
 PERSON = ('<symbol id="gl-person" viewBox="0 0 16 20"><circle cx="8" cy="4" r="3.2"/>'
           '<path d="M3.5 19V12Q3.5 8.4 8 8.4Q12.5 8.4 12.5 12V19H8.8V15H7.2V19Z"/></symbol>')
 
-def people(i, n):
-    full, rest = divmod(n, PER)
-    cells = full + (1 if rest else 0)
-    lines = max(1, -(-cells // ROW))
-    w, h = min(cells, ROW) * CW, lines * CH
-    out = []
-    for k in range(full):
-        out.append(f'<use class="gl-p-full" href="#gl-person" x="{k % ROW * CW}" y="{k // ROW * CH}" width="{CW}" height="{CH}"/>')
-    if rest:
-        x, y = full % ROW * CW, full // ROW * CH
-        out.append(f'<g class="gl-p-part"><clipPath id="gl-clip-{i}"><rect x="{x}" y="{y}" width="{round(CW * rest / PER, 2)}" height="{CH}"/></clipPath>'
-                   f'<use class="gl-p-ghost" href="#gl-person" x="{x}" y="{y}" width="{CW}" height="{CH}"/>'
-                   f'<use href="#gl-person" x="{x}" y="{y}" width="{CW}" height="{CH}" clip-path="url(#gl-clip-{i})"/></g>')
+def people(i, dead, missing):
+    """Dead (filled) then missing (outlined), 21 to a line; each remainder as a part-figure clipped from the left."""
+    out, c = [], 0
+    def cell(cls, x, y): return f'<use class="{cls}" href="#gl-person" x="{x}" y="{y}" width="{CW}" height="{CH}"/>'
+    for kind, n, cls in (("dead", dead, "gl-p-full"), ("missing", missing, "gl-p-miss")):
+        full, rest = divmod(n, PER)
+        for _ in range(full):
+            out.append(cell(cls, c % ROW * CW, c // ROW * CH)); c += 1
+        if rest:
+            x, y = c % ROW * CW, c // ROW * CH
+            # the clip sits on the group: a <use> with x/y would shift its own clip box as well
+            out.append(f'<clipPath id="gl-clip-{i}-{kind}"><rect x="{x}" y="{y}" width="{round(CW * rest / PER, 2)}" height="{CH}"/></clipPath>'
+                       f'<g class="gl-p-part" data-k="{kind}" clip-path="url(#gl-clip-{i}-{kind})">'
+                       f'<use class="{"gl-p-pm" if kind == "missing" else "gl-p-pd"}" href="#gl-person" x="{x}" y="{y}" width="{CW}" height="{CH}"/></g>')
+            c += 1
+    lines = max(1, -(-c // ROW))
+    w, h = min(max(c, 1), ROW) * CW, lines * CH
     return (f'<svg class="gl-p-ppl" aria-hidden="true" focusable="false" viewBox="0 0 {w} {h}" width="{w}" height="{h}" '
             f'style="max-width:{w}px">{"".join(out)}</svg>')
 
+def num(kind, v, shown): return f'<span class="gl-p-n" data-k="{kind}" data-v="{v}">{E(shown)}</span>'
+
+def stats(items):
+    """'4,922 dead · 3,000 missing · 3,050 injured', one link per run of numbers from the same source."""
+    runs = []
+    for kind, v, shown, word, k in items:
+        if runs and runs[-1][0] == k: runs[-1][1].append((kind, v, shown, word))
+        else: runs.append((k, [(kind, v, shown, word)]))
+    return " · ".join(L(k, " · ".join(f'{num(kind, v, shown)} {word}' for kind, v, shown, word in xs)) for k, xs in runs)
+
+def families(f):
+    if not f: return '<div class="gl-p-fam"><span class="gl-p-barw" aria-hidden="true"></span>No count of families affected found</div>'
+    v, shown, k = f
+    return (f'<div class="gl-p-fam"><span class="gl-p-barw" aria-hidden="true"><span class="gl-p-bar" style="width:{round(BARW * v / FMAX, 1)}px"></span></span>'
+            + L(k, f'{num("families", v, shown)} families affected') + '</div>')
+
 def lives():
-    total = sum(d for _, _, d, _ in DEAD)
+    tot = {k: sum(v for *_, items, _f in DEAD for kk, v, *_r in items if kk == k) for k in ("dead", "missing", "injured")}
     rows = "".join(
-        f'<li class="gl-p-row"><div class="gl-p-lab"><span><span class="gl-yr">{y}</span> {E(name)}</span> '
-        + L(k, f'<span class="gl-p-n">{d:,}</span><span class="sr-only"> dead</span>') + f'</div>{people(i, d)}</li>'
-        for i, (y, name, d, k) in enumerate(DEAD))
+        f'<li class="gl-p-row"><div class="gl-p-lab"><span class="gl-yr">{y}</span> {E(name)}</div>'
+        + people(i, next(v for k, v, *_ in items if k == "dead"), next(v for k, v, *_ in items if k == "missing"))
+        + f'<div class="gl-p-st">{stats(items)}</div>{families(f)}</li>'
+        for i, (y, name, items, f) in enumerate(DEAD))
+    fam_total = sum(f[0] for *_, f in DEAD if f)
+    key = ('<ul class="gl-p-key">'
+           '<li><svg aria-hidden="true" focusable="false" viewBox="0 0 16 20" width="16" height="20"><use class="gl-p-full" href="#gl-person"/></svg>= 100 people who died</li>'
+           '<li><svg aria-hidden="true" focusable="false" viewBox="0 0 16 20" width="16" height="20"><use class="gl-p-miss" href="#gl-person"/></svg>= 100 people missing</li>'
+           '<li><span class="gl-p-barw gl-p-barkey" aria-hidden="true"><span class="gl-p-bar"></span></span>families affected, to scale</li></ul>')
     return (f'<div class="gl-viz" role="complementary" aria-labelledby="hi-viz-h"><div class="gl-viz-in">'
             f'<svg width="0" height="0" class="gl-defs" aria-hidden="true" focusable="false">{PERSON}</svg>'
             f'<h2 id="hi-viz-h">Lives lost</h2>'
-            f'<p class="gl-p-tot">At least <b>{total:,}</b> people died in the ten floods on this page.</p>'
-            f'<p class="gl-p-key"><svg aria-hidden="true" focusable="false" viewBox="0 0 16 20" width="16" height="20"><use href="#gl-person"/></svg>'
-            f'<span>= 100 people who died</span></p>'
-            f'<ol class="gl-p-list">{rows}</ol>'
-            f'<p class="gl-p-note">A part-figure stands for fewer than 100. Official counts for each storm or monsoon as a whole, including every death, not only drowning. '
-            f'Thousands more were reported missing (3,000 after Ormoc, 1,061 after Yolanda) and are not drawn.</p>'
+            f'<p class="gl-p-tot">In the ten floods on this page, at least <b>{tot["dead"]:,}</b> people died, <b>{tot["missing"]:,}</b> went missing '
+            f'and <b>{tot["injured"]:,}</b> were injured.</p>'
+            f'{key}<ol class="gl-p-list">{rows}</ol>'
+            f'<p class="gl-p-note">A part-figure stands for fewer than 100. These are official counts for each storm or monsoon as a whole, the latest we found: '
+            f'they include every death, not only drowning, and Ormoc’s injured come from the UN’s count. Families are counted flood by flood, so a family hit more than once '
+            f'is counted more than once; together the counts pass {fam_total // 1_000_000} million. “Over” and “about” counts are drawn at the figure given.</p>'
             f'</div></div>')
 
 WATER = (
@@ -355,11 +392,11 @@ def build():
       <p class="ab-lead">Floods are part of life in the Philippines. Behind every number on this dashboard are families who wade to work, carry what they can, and wait on rooftops for rescue. This page remembers some of them.</p>
       <p class="gl-warn">Some photographs show homes destroyed by storms. None show people who died.</p>
     </section>
-    {lives()}
     <section id="hi-floods" aria-labelledby="hi-floods-h">
       <h2 id="hi-floods-h" tabindex="-1">The floods</h2>
       {floods}
     </section>
+    {lives()}
     <section id="hi-water" aria-labelledby="hi-water-h">
       <h2 id="hi-water-h" tabindex="-1">Living with water</h2>
       {WATER}

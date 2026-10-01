@@ -41,16 +41,15 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
     if(w===1920)assert(s.beside&&s.top&&s.maxImg<=1100&&s.minFig>=320,`${w}: Flood history photos sit beside their story, not stretched past their size: ${JSON.stringify(s)}`);
     if(w===375)assert(!s.beside,`${w}: on a phone the photos follow the text`);
     // the people chart: in the right-hand space on wide screens, staying in view while you read; after the introduction otherwise
-    s=await pg.evaluate(()=>{const v=document.querySelector('#history .gl-viz'),vr=v.getBoundingClientRect(),vi=document.querySelector('#history .gl-viz-in').getBoundingClientRect(),fl=document.getElementById('hi-floods').getBoundingClientRect(),intro=document.getElementById('hi-intro').getBoundingClientRect();
-      return {beside:vr.left>=fl.right,after:vr.top>=intro.bottom-1&&vr.bottom<=fl.top+1,inView:vi.top>=0&&vi.top<innerHeight/2&&vi.height<=innerHeight-32,h:Math.round(vi.height),top:Math.round(vi.top),w:Math.round(vr.width),right:Math.round(innerWidth-vr.right)};});
-    if(w===1920)assert(s.beside&&s.inView&&s.right>=16,`${w}: the Lives lost chart fills the space to the right of the stories, fully in view: ${JSON.stringify(s)}`);
-    else assert(!s.beside&&s.after,`${w}: the Lives lost chart follows the introduction: ${JSON.stringify(s)}`);
+    s=await pg.evaluate(()=>{const v=document.querySelector('#history .gl-viz'),vr=v.getBoundingClientRect(),vi=document.querySelector('#history .gl-viz-in').getBoundingClientRect(),fl=document.getElementById('hi-floods').getBoundingClientRect(),wa=document.getElementById('hi-water').getBoundingClientRect();
+      return {beside:vr.left>=fl.right,after:vr.top>=fl.bottom-1&&vr.bottom<=wa.top+1,inView:vi.top>=0&&vi.top<innerHeight/2&&vi.height<=innerHeight-32,h:Math.round(vi.height),top:Math.round(vi.top),w:Math.round(vr.width),right:Math.round(innerWidth-vr.right)};});
+    if(w===1920)assert(s.beside&&s.top>=0&&s.top<500&&s.right>=16,`${w}: the Lives lost chart fills the space to the right of the stories, starting at the top: ${JSON.stringify(s)}`);
+    else assert(!s.beside&&s.after,`${w}: the Lives lost chart follows the flood stories: ${JSON.stringify(s)}`);
     if(w===1920){
       await pg.evaluate(()=>document.getElementById('hi-politics').querySelector('.gl-time li:nth-child(6)').scrollIntoView({block:'center'}));await pg.waitForTimeout(300);
-      s=await pg.evaluate(()=>{const f=document.querySelector('#hi-politics .gl-figs').getBoundingClientRect(),t=document.querySelector('#hi-politics .gl-time').getBoundingClientRect(),v=document.querySelector('#history .gl-viz-in').getBoundingClientRect();
-        return {visible:f.top<innerHeight&&f.bottom>0,beside:f.left>=t.right,viz:v.top>=0&&v.bottom<=innerHeight};});
+      s=await pg.evaluate(()=>{const f=document.querySelector('#hi-politics .gl-figs').getBoundingClientRect(),t=document.querySelector('#hi-politics .gl-time').getBoundingClientRect();
+        return {visible:f.top<innerHeight&&f.bottom>0,beside:f.left>=t.right};});
       assert(s.visible&&s.beside,`${w}: the protest photos stay in view beside the political timeline: ${JSON.stringify(s)}`);
-      assert(s.viz,`${w}: the Lives lost chart stays in view as you scroll: ${JSON.stringify(s)}`);
     }
     await ctx.close();
   }
