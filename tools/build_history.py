@@ -235,7 +235,7 @@ FLOODS = [
 # ---- Lives lost: rows of little people (Gregor, 2026-10-01: "something like those rows of little people to demonstrate
 # how many lives have been lost due to flooding", then "include records of injured and missing on the count + families
 # affected"). One row per flood above, same order, official counts (the latest we found), each number linked to its source.
-# Filled figure = 10 dead, outlined figure = 10 missing; the remainder is a part-figure, filled from the left. Injured are
+# Ink figure = 10 dead; orange figure = 10 missing, starting on its own line (an outline was too thin to see at 8 px); the remainder is a part-figure, filled from the left. Injured are
 # numbers only (Yolanda alone would need 2,869 figures). Families affected: a bar to scale, and the number in words. Figures
 # and bars are aria-hidden; the text carries every number.
 # Each row: year, name, [(kind, value, shown, word, source)], families (value, shown, source) or None.
@@ -261,10 +261,12 @@ PATTERNS = (f'<pattern id="gl-pat-dead" width="{CW}" height="{CH}" patternUnits=
             f'<pattern id="gl-pat-missing" width="{CW}" height="{CH}" patternUnits="userSpaceOnUse"><use class="gl-p-miss" href="#gl-person" width="{CW}" height="{CH}"/></pattern>')
 
 def people(i, dead, missing):
-    """Dead (filled) then missing (outlined), 42 to a line. Whole figures are drawn as one patterned strip per line (light
+    """Dead (ink) then, from a new line, missing (orange), 42 to a line. Whole figures are drawn as one patterned strip per line (light
     on cheap phones: ~50 strips instead of ~1,800 figures); each remainder is a part-figure clipped from the left."""
     out, c = [], 0
     for kind, n in (("dead", dead), ("missing", missing)):
+        if kind == "missing" and c % ROW:
+            c += ROW - c % ROW            # the missing start on their own line, below the dead
         full, rest = divmod(n, PER)
         left = full
         while left:
@@ -309,8 +311,8 @@ def lives():
         for i, (y, name, items, f) in enumerate(DEAD))
     fam_total = sum(f[0] for *_, f in DEAD if f)
     key = ('<ul class="gl-p-key">'
-           f'<li><svg aria-hidden="true" focusable="false" viewBox="0 0 {CW} {CH}" width="{CW}" height="{CH}"><use class="gl-p-full" href="#gl-person" width="{CW}" height="{CH}"/></svg>= {PER} people who died</li>'
-           f'<li><svg aria-hidden="true" focusable="false" viewBox="0 0 {CW} {CH}" width="{CW}" height="{CH}"><use class="gl-p-miss" href="#gl-person" width="{CW}" height="{CH}"/></svg>= {PER} people missing</li>'
+           f'<li><svg aria-hidden="true" focusable="false" viewBox="0 0 16 20" width="16" height="20"><use class="gl-p-full" href="#gl-person"/></svg>= {PER} people who died</li>'
+           f'<li><svg aria-hidden="true" focusable="false" viewBox="0 0 16 20" width="16" height="20"><use class="gl-p-miss" href="#gl-person"/></svg>= {PER} people missing</li>'
            '<li><span class="gl-p-barw gl-p-barkey" aria-hidden="true"><span class="gl-p-bar"></span></span>families affected, to scale</li></ul>')
     return (f'<div class="gl-viz" role="complementary" aria-labelledby="hi-viz-h"><div class="gl-viz-in">'
             f'<svg width="0" height="0" class="gl-defs" aria-hidden="true" focusable="false">{PERSON}{PATTERNS}</svg>'

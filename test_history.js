@@ -64,6 +64,16 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
     assert(fams.length>=9&&fams.every(r=>r.barW>0&&Math.abs(r.barW/big.barW-r.fam.v/maxF)<0.02&&/famil/.test(r.famText)),`${w}: families affected have a bar to scale and say so in words: ${JSON.stringify(fams.map(r=>[r.fam.v,Math.round(r.barW)]))}`);
     assert(s.rows.filter(r=>!r.fam).every(r=>/no count/i.test(r.famText)&&r.barW===null),`${w}: where no count of families was found, the row says so and draws no bar`);
     assert(s.rows.every(r=>[r.dead,r.miss,r.inj,r.fam].filter(Boolean).every(n=>n.src)&&r.hidden),`${w}: every number links its source; figures and bars are hidden from screen readers`);
+    // dead and missing are told apart by place and tone, not by an outline too thin to see at 8 px (Gregor: "quite difficult
+    // to distinguish between the dead vs missing symbols"): the missing start on their own line below the dead, and are a
+    // different lightness (contrast between the two ≥ 3:1), each ≥ 3:1 against the page
+    const q=await pg.evaluate(()=>{const rgb=c=>c.match(/[\d.]+/g).slice(0,3).map(Number),L=c=>{const v=rgb(c).map(x=>{x/=255;return x<=0.03928?x/12.92:((x+0.055)/1.055)**2.4;});return 0.2126*v[0]+0.7152*v[1]+0.0722*v[2];},
+      cr=(a,b)=>{const x=L(a),y=L(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);},bg=getComputedStyle(document.body).backgroundColor;
+      const d=document.querySelector('#gl-pat-dead use'),m=document.querySelector('#gl-pat-missing use'),fd=getComputedStyle(d).fill,fm=getComputedStyle(m).fill;
+      const rows=[...document.querySelectorAll('#history .gl-p-ppl')].map(svg=>{const ys=k=>[...svg.querySelectorAll(`.gl-p-run[data-k="${k}"], .gl-p-part[data-k="${k}"] use`)].map(e=>+e.getAttribute('y'));
+        const dy=ys("dead"),my=ys("missing");return my.length?Math.min(...my)>Math.max(...dy):true;});
+      return {apart:rows.every(Boolean),dm:cr(fd,fm),d:cr(fd,bg),m:cr(fm,bg),mStroke:getComputedStyle(m).strokeWidth};});
+    assert(q.apart&&q.dm>=3&&q.d>=3&&q.m>=3,`${w}: the missing sit on their own line below the dead, in a tone ≥ 3:1 from the dead and the page: ${JSON.stringify(q)}`);
     const sum=k=>s.rows.reduce((a,r)=>a+r[k].v,0);
     assert([sum("dead"),sum("miss"),sum("inj")].every(n=>s.tot.includes(n.toLocaleString("en-US"))),`${w}: the headline gives the total dead (${sum("dead")}), missing (${sum("miss")}) and injured (${sum("inj")}): ${s.tot}`);
     assert(/= 10 people who died/.test(s.key)&&/= 10 people missing/.test(s.key)&&/families affected/.test(s.key),`${w}: the key explains filled and outlined figures and the families bar: ${s.key}`);
@@ -85,7 +95,7 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
    const s=await pg.evaluate(()=>{const rgb=c=>c.match(/[\d.]+/g).slice(0,3).map(Number),L=c=>{const v=rgb(c).map(x=>{x/=255;return x<=0.03928?x/12.92:((x+0.055)/1.055)**2.4;});return 0.2126*v[0]+0.7152*v[1]+0.0722*v[2];},
      cr=(a,b)=>{const x=L(a),y=L(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);},bg=getComputedStyle(document.body).backgroundColor,g=e=>getComputedStyle(document.querySelector(e)).color;
      return {cap:cr(g('#history .gl-cap'),bg),credit:cr(g('#history .gl-credit'),bg),creditLink:cr(g('#history .gl-credit a'),bg),src:cr(g('#history a.src'),bg),time:cr(g('#history .gl-time time'),bg),
-       viz:cr(g('#history .gl-p-row'),bg),fig:cr(getComputedStyle(document.querySelector('#history .gl-p-ppl')).fill,bg),bar:cr(getComputedStyle(document.querySelector('#history .gl-p-bar')).backgroundColor,bg)};});
+       viz:cr(g('#history .gl-p-row'),bg),miss:cr(getComputedStyle(document.querySelector('#gl-pat-missing use')).fill,bg)*1.5,fig:cr(getComputedStyle(document.querySelector('#history .gl-p-ppl')).fill,bg),bar:cr(getComputedStyle(document.querySelector('#history .gl-p-bar')).backgroundColor,bg)};});
    assert(Object.values(s).every(v=>v>=4.5),"dark theme: captions, credits, links, dates, chart text, figures and bars ≥ 4.5:1: "+JSON.stringify(s));
    await ctx.close();}
   assert(errs.length===0,"no page errors: "+errs.join(" | "));

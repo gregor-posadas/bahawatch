@@ -332,6 +332,10 @@ review and reports"). Commits `62a9601` → `efbb216`:
    figures; Ormoc and Yolanda over 700 each). Whole figures are drawn as one patterned strip per line (`<pattern>` of the
    person, `.gl-p-run` with `data-n`), so the page stays ~64 KB for this section instead of ~200 KB, and cheap phones draw
    ~50 strips instead of ~1,800 figures. Chart ~1,700 px tall.
+   Then (Gregor: dead and missing "quite difficult to distinguish"): an outline is invisible at 8 px, so the missing are now
+   filled orange (`--miss-fig` #CF5921, Baker palette's second colour) and start on their own line below the dead: place
+   plus lightness, readable in grayscale and under a Machado deuteranopia simulation; contrast ≥ 3:1 dead-vs-missing and
+   against the page in both themes (tested). Key glyphs are drawn at 16 × 20 so they can be read.
 
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
