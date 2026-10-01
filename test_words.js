@@ -33,7 +33,7 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
       if(i>=0&&!/^[Bb]arangays? \((neighbourhood|village)/.test(t.slice(i)))bad.push("barangay in #"+sec.id+": "+t.slice(i,i+60));
     }
     return [...new Set(bad)];},root);
-  for(const root of ['#home','#about','#access']){
+  for(const root of ['#home','#about','#access','#history']){
     const bad=await check(root);
     assert(bad.length===0,`${root}: every Filipino term is followed by its English meaning: ${bad.join(" || ")}`);
   }

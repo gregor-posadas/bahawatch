@@ -7,7 +7,7 @@ const BASE=process.env.BW_BASE||'http://127.0.0.1:8765/';
 const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else console.log("ok  ",m);};
 const U=BASE+'bahawatch_dashboard.html';
 const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{timeout:15000});
-const TABS="home,ph,tv,sjq,berkeley,try,about,access";
+const TABS="home,ph,tv,sjq,berkeley,try,history,about,access";
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
   const errs=[];
@@ -20,7 +20,7 @@ const TABS="home,ph,tv,sjq,berkeley,try,about,access";
       tabs:[...document.querySelectorAll('.site-tabs')].map(n=>[...n.querySelectorAll('[role=tab]')].map(t=>t.dataset.site+(t.getAttribute('aria-selected')==="true"?"*":"")).join()),
       title:document.title,sw:document.documentElement.scrollWidth,h1:document.getElementById('hm-h').textContent}));
     assert(s.route==="home"&&s.hash===""&&s.shown!=="none"&&s.nat==="none"&&s.h1==="BahaWatch"&&/BahaWatch/.test(s.title),`${w}: a plain link opens the homepage, alone`);
-    assert(s.tabs.length===6&&s.tabs.every(t=>t===TABS.replace("home","home*")),`${w}: every tab bar starts with Home and ends with Accessibility: ${s.tabs[0]}`);
+    assert(s.tabs.length===7&&s.tabs.every(t=>t===TABS.replace("home","home*")),`${w}: every tab bar starts with Home and ends with Accessibility: ${s.tabs[0]}`);
     assert(s.sw<=w&&files.length===0,`${w}: no sideways scroll; no site file fetched (${files})`);
     // why: no reference list; each figure's key words link straight to its source (Gregor, 2026-10-01), the source is
     // named on hover or focus and to screen readers

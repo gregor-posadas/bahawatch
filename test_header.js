@@ -13,7 +13,7 @@ const U=BASE+'bahawatch_dashboard.html';
     await ctx.addInitScript(()=>{try{for(const k of ["tv","sjq","berkeley"])localStorage.setItem("bw-asked:"+k,"1");}catch(e){}});
     const pg=await ctx.newPage();pg.on('pageerror',e=>errs.push(e.message));
     const seen=[];
-    for(const h of ['','#ph','#tv','#tv/details','#sjq','#berkeley','#try','#about','#access']){
+    for(const h of ['','#ph','#tv','#tv/details','#sjq','#berkeley','#try','#history','#about','#access']){
       await pg.goto(U+h);await pg.waitForFunction(()=>document.body.dataset.ready,null,{timeout:15000});await pg.waitForTimeout(h==='#tv/details'?800:300);
       const s=await pg.evaluate(()=>{
         const name=[...document.querySelectorAll('.p-name,.brand-name')].find(e=>e.offsetParent&&e.textContent.trim()==="BahaWatch");

@@ -287,6 +287,18 @@ review and reports"). Commits `62a9601` → `efbb216`:
    scroll while hovered or focused), screen readers hear "(source: …)". Term notes (bold, ink) and source links (blue)
    stay distinct.
 
+19. **Flood history tab** (2026-10-01, Gregor: a photojournalistic gallery of the human side of flooding, and the politics,
+   following all attribution and licensing rules). `#history` (READ route `history`, sections floods / water / politics /
+   credits), tab after Try reporting. Content lives in `tools/build_history.py` (run it, then `build_html.py`): 10 flood
+   events (1991 Ormoc to the 2026 monsoon), living with water (subsidence, tidal flooding), and an 11-entry politics
+   timeline (Jul 2025 – Sep 2026) that attributes every claim, gives denials and pleas, and says those charged are
+   presumed innocent. 17 photos from Wikimedia Commons, licences read from each Commons file page through the built-in
+   browser on Gregor's computer (the workspace cannot reach Commons); downloaded as one zip with Gregor's OK, resized,
+   metadata stripped, in `shared/gallery/` with `credits.json`. Two picks dropped: teenagers who may be minors, and a
+   close-up of identifiable people at a protest. An independent fact-check of all 53 source links led to fixes (Revilla's
+   plea entered by the court, Co and 15 others, denials by Romualdez, crowd figures stated, subsidence "up to"). Political
+   facts after June 2026 come from news reports read on 1 Oct 2026; re-check before reusing. `test_history.js`.
+
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
 outline, not the centroid; (b) **FABDEM scored 2026-09-29** against 17,936 ICESat-2 ground points in all 26 boxes (`analysis/dem_check/`: NMAD

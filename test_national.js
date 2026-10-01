@@ -36,7 +36,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
     if(mode==="vector")assert(s.creditShown&&s.credit==="© OpenStreetMap contributors · Open Buildings (Google, Microsoft, VIDA) · MapLibre",`${mode}: map credits shown`);
     else assert(!s.creditShown,`outline: no OpenStreetMap/OpenFreeMap/MapLibre credit under the outline`);
     assert(s.desc==="Map of the Philippines with 25 PhilDev partner campuses: 17 in Luzon, 5 in Visayas, 3 in Mindanao. The campus list has the same campuses.",`${mode}: screen-reader description`);
-    assert(s.tabs.join()==="home,ph*,tv,sjq,berkeley,try,about,access"&&/PhilDev partner campuses/.test(s.title),`${mode}: tabs and title`);
+    assert(s.tabs.join()==="home,ph*,tv,sjq,berkeley,try,history,about,access"&&/PhilDev partner campuses/.test(s.title),`${mode}: tabs and title`);
     s=await pg.evaluate(()=>[...document.querySelectorAll('#nat-list details.nat-grp')].map(d=>d.dataset.group+d.dataset.n+":"+d.querySelectorAll('.nat-item').length+(d.open?"open":"")));
     assert(s.join()==="Luzon17:17,Visayas5:5,Mindanao3:3",`${mode}: list grouped Luzon 17, Visayas 5, Mindanao 3, closed until opened: ${s}`);
     // drop-downs: island group › province › campuses (2026-09-29 feedback)
