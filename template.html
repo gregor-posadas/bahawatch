@@ -4933,6 +4933,24 @@ for(const id of ["ab-theme","ax-theme","hi-theme"])$(id).addEventListener("click
 document.querySelectorAll("img.hdr-logo").forEach(i=>{i.src=document.querySelector(".p-head img").src;});
 tipsInit(document);
 
+/* ---------- outside links open in a new tab (Gregor, 2026-10-01) ----------
+   BahaWatch stays open behind them. rel="noopener noreferrer" keeps the new page from reaching back into this one; screen
+   readers hear "opens in a new tab" from one shared description. Links inside the site (#…) and mail links are left alone.
+   Links added later (a campus page's sources, map credits) are caught by an observer. */
+const EXT_NOTE=document.createElement("span");EXT_NOTE.id="ext-note";EXT_NOTE.hidden=true;EXT_NOTE.textContent="opens in a new tab";document.body.append(EXT_NOTE);
+function extLink(a){
+  let u;try{u=new URL(a.getAttribute("href"),location.href);}catch(e){return;}
+  if(!/^https?:$/.test(u.protocol)||u.origin===location.origin)return;
+  a.target="_blank";a.relList.add("noopener","noreferrer");
+  const d=(a.getAttribute("aria-describedby")||"").split(/\s+/).filter(Boolean);
+  if(!d.includes("ext-note"))a.setAttribute("aria-describedby",[...d,"ext-note"].join(" "));}
+function extLinks(root){if(root.matches&&root.matches("a[href]"))extLink(root);root.querySelectorAll("a[href]").forEach(extLink);}
+extLinks(document.body);
+new MutationObserver(ms=>{for(const m of ms){
+  if(m.type==="attributes")extLink(m.target);
+  else m.addedNodes.forEach(n=>{if(n.nodeType===1)extLinks(n);});}
+}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["href"]});
+
 /* ---------- loading feedback ---------- */
 const BUSY=new Set();let busyT=0;
 function busyPaint(all){

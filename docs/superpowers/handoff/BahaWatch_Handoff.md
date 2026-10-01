@@ -340,6 +340,13 @@ review and reports"). Commits `62a9601` → `efbb216`:
    1px `--line` border, `--panel` background, 4px radius, 10–12px padding, 12px apart. The wide-screen column is 360px so
    the figures keep their 336px inside the padding (`test_wide.js` checks it).
 
+22. **Outside links open in a new tab** (2026-10-01, Gregor: the LinkedIn buttons and other links replaced the BahaWatch tab).
+   `extLink()` in `template.html` gives every http(s) link to another origin `target="_blank"`, `rel="noopener noreferrer"`
+   and `aria-describedby="ext-note"` (one hidden span: "opens in a new tab"); site links (#…) and mailto stay in place. A
+   MutationObserver catches links added later (campus sources, map credits). `test_newtab.js`.
+   Note: `test_a11y.js`'s "UPLB appears ≤ 3000 ms on Fast 3G" sits at 2.9–3.0 s and fails now and then; it times the campus
+   data fetch and draw after the page has loaded, so page-markup changes don't move it.
+
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
 outline, not the centroid; (b) **FABDEM scored 2026-09-29** against 17,936 ICESat-2 ground points in all 26 boxes (`analysis/dem_check/`: NMAD
