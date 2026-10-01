@@ -119,7 +119,9 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .hm-layers .sw{flex:none; width:22px; height:12px; transform:skewX(-30deg); border:1.5px solid var(--ink)}
 .sw-terrain{background:#d8c7a0} .sw-streets{background:#ffffff} .sw-bldg{background:#b9a88a} .sw-brgy{background:transparent; border-style:dashed !important}
 /* illustration strokes and fills (theme-aware) */
-.hm-ill .i-ink,.hm-xs .x-ink{fill:var(--ink)} .hm-ill .i-box,.hm-xs .x-box{fill:var(--panel); stroke:var(--ink); stroke-width:2}
+.hm-ill .i-ink,.hm-xs .x-ink,.hm-xs .x-strap{fill:var(--ink)}
+.hm-ill .i-pipe,.hm-ill .i-pcap,.hm-xs .x-pipe,.hm-xs .x-pcap,.hm-xs .x-botcap{fill:#fff; stroke:var(--ink); stroke-width:2; stroke-linejoin:round}
+.hm-ill .i-postcap,.hm-xs .x-postcap{fill:var(--brand)} .hm-ill .i-box,.hm-xs .x-box{fill:var(--panel); stroke:var(--ink); stroke-width:2}
 .hm-ill .i-line,.hm-ill .i-ground,.hm-ill .i-ping path,.hm-ill .i-waves path{fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round}
 .hm-ill .i-ping path,.hm-ill .i-waves path{stroke:var(--brand)}
 .hm-ill .i-water,.hm-xs .x-wfill{fill:var(--brand-lt)} .hm-ill .i-wave{fill:none; stroke:var(--brand); stroke-width:2}
@@ -1074,27 +1076,37 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 
   <section class="hm-sec hm-fade" id="hm-how" aria-labelledby="hm-how-h">
     <h2 id="hm-how-h" tabindex="-1">How it works</h2>
-    <p class="hm-lede">From a sensor on a gate post to a plain answer on a phone, in five stops.</p>
+    <p class="hm-lede">From a sensor on a post to a plain answer on a phone, in five stops.</p>
     <div class="hm-line">
       <div class="hm-track" aria-hidden="true"><span class="hm-pulse"></span></div>
       <ol class="hm-stops">
         <li class="hm-stop">
           <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
-            <rect x="20" y="8" width="8" height="70" class="i-ink"/>
-            <rect x="24" y="10" width="34" height="14" rx="3" class="i-box"/>
-            <g class="i-ping"><path d="M38 32 q8 4 16 0"/><path d="M35 41 q11 5 22 0"/><path d="M32 50 q14 6 28 0"/></g>
+            <!-- the unit as built: a white PVC pipe with end caps, strapped to a thin post with a blue cap;
+                 the ultrasonic sensor looks down out of the bottom cap -->
+            <rect x="30" y="6" width="4" height="84" class="i-ink"/>
+            <rect x="29" y="2" width="6" height="6" rx="1.5" class="i-postcap"/>
+            <rect x="37" y="10" width="14" height="30" class="i-pipe"/>
+            <rect x="35.5" y="6" width="17" height="6" rx="2.5" class="i-pcap"/>
+            <path d="M39 40 h10 l-1.5 6 h-7 Z" class="i-pcap"/>
+            <rect x="29" y="15" width="23" height="3" class="i-ink"/><rect x="29" y="32" width="23" height="3" class="i-ink"/>
+            <g class="i-ping"><path d="M39 49 q5 2.5 10 0"/><path d="M36 54 q8 3 16 0"/></g>
             <g class="i-rise"><rect class="i-water" x="4" y="62" width="112" height="28"/><path class="i-wave" d="M4 62 q7 -4 14 0 t14 0 t14 0 t14 0 t14 0 t14 0 t14 0 t14 0"/></g>
             <path d="M0 89 H120" class="i-line"/>
           </svg>
           <span class="hm-dot" aria-hidden="true">1</span>
           <h3>Measure</h3>
-          <p>A sensor on a gate post points down at the street and times an <span class="tt" data-term="ultrasonic echo"><span class="tt-t">ultrasonic echo</span>The sensor sends a short burst of sound too high to hear and times how long its echo takes to bounce back from the surface below. Half that time multiplied by the speed of sound is the distance.</span> off the water. Less distance means deeper water.</p>
+          <p>A sensor in a white pipe, strapped to a gate post or a stake by a creek, points down and times an <span class="tt" data-term="ultrasonic echo"><span class="tt-t">ultrasonic echo</span>The sensor sends a short burst of sound too high to hear and times how long its echo takes to bounce back from the surface below. Half that time multiplied by the speed of sound is the distance.</span> off the water. Less distance means deeper water.</p>
         </li>
         <li class="hm-stop">
           <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
-            <rect x="8" y="50" width="20" height="12" rx="2" class="i-box"/>
-            <path d="M18 50 v-12" class="i-line"/>
-            <g class="i-waves"><path d="M30 36 q6 6 0 12"/><path d="M40 30 q10 12 0 24"/><path d="M50 24 q14 18 0 36"/></g>
+            <rect x="14" y="22" width="3" height="66" class="i-ink"/>
+            <rect x="13" y="18" width="5" height="5" rx="1.2" class="i-postcap"/>
+            <rect x="20" y="30" width="10" height="22" class="i-pipe"/>
+            <rect x="19" y="27" width="12" height="5" rx="2" class="i-pcap"/>
+            <path d="M21.5 52 h7 l-1 4 h-5 Z" class="i-pcap"/>
+            <rect x="13" y="35" width="18" height="2.5" class="i-ink"/><rect x="13" y="46" width="18" height="2.5" class="i-ink"/>
+            <g class="i-waves"><path d="M36 33 q6 6 0 12"/><path d="M46 27 q10 12 0 24"/><path d="M56 21 q14 18 0 36"/></g>
             <path d="M92 76 L100 24 L108 76 M95 56 h10 M97 42 h6" class="i-line"/>
             <circle cx="100" cy="22" r="4" class="i-dotf"/>
           </svg>
@@ -1152,7 +1164,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <figure class="hm-fig" aria-labelledby="hm-fig-cap">
       <svg class="hm-xs" viewBox="0 0 720 640" role="img" aria-labelledby="hm-fig-t hm-fig-d" focusable="false">
         <title id="hm-fig-t">From one sensor reading to a flood map</title>
-        <desc id="hm-fig-d">Top: a side view along the street A–A′, showing the ground from the FABDEM terrain map and the buildings along the street. A sensor measures the water depth at one spot; the water level is carried left and right along the ground and stops at both edges where the ground rises above it. A dip beyond the right-hand rise is lower than the water but walled off, so it stays dry. Dashed black lines carry the two edges straight down to the map below. Bottom: the same place seen from above, as on the dashboard: the street flooded between the two edge marks on A–A′, the water going around the buildings, and the line A–A′ where the side view was cut.</desc>
+        <desc id="hm-fig-d">Top: a side view along the street A–A′, showing the ground from the FABDEM terrain map and the buildings along the street. A sensor, a white pipe strapped to a post above the street, measures the water depth at one spot; the water level is carried left and right along the ground and stops at both edges where the ground rises above it. A dip beyond the right-hand rise is lower than the water but walled off, so it stays dry. Dashed black lines carry the two edges straight down to the map below. Bottom: the same place seen from above, as on the dashboard: the street flooded between the two edge marks on A–A′, the water going around the buildings, and the line A–A′ where the side view was cut.</desc>
         <defs>
           <clipPath id="xs-above"><path d="M0 0 H720 V200 L680 196 L640 150 L606 118 L560 150 L520 190 L470 214 L420 222 L370 230 L330 228 L290 214 L250 188 L210 158 L176 132 L140 120 L100 124 L60 130 L0 132 Z"/></clipPath>
           <clipPath id="xs-reach"><rect x="200" y="150" width="380" height="130"/></clipPath>
@@ -1170,9 +1182,14 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <!-- the dry dip beyond the right-hand rise -->
         <path d="M640 150 L680 196 L720 200" class="x-dry"/>
         <!-- sensor on a post at the low street -->
-        <rect x="345" y="96" width="7" height="134" class="x-ink"/>
-        <rect x="348" y="96" width="40" height="15" rx="3" class="x-box"/>
-        <g class="x-ping"><path d="M362 126 q8 4 16 0"/><path d="M359 140 q11 5 22 0"/></g>
+        <!-- the unit as built: a white pipe with end caps, strapped to a thin post with a blue cap, hanging above the water -->
+        <rect x="343" y="80" width="6" height="152" class="x-ink"/>
+        <rect x="341.5" y="74" width="9" height="9" rx="2" class="x-postcap"/>
+        <rect x="353" y="88" width="14" height="48" class="x-pipe"/>
+        <rect x="351" y="83" width="18" height="8" rx="3.5" class="x-pcap"/>
+        <path d="M355 136 h10 l-1.5 8 h-7 Z" class="x-botcap"/>
+        <rect x="341" y="96" width="28" height="4" class="x-strap"/><rect x="341" y="126" width="28" height="4" class="x-strap"/>
+        <g class="x-ping"><path d="M353 147 q7 4 14 0"/><path d="M350 152 q10 4 20 0"/></g>
         <path d="M370 160 V229 M364 160 H376 M364 229 H376" class="x-dim x-t"/>
         <text x="384" y="190" class="x-t">measured</text><text x="384" y="212" class="x-t">depth</text>
         <!-- the water level, carried both ways from the sensor to the edges -->

@@ -43,6 +43,14 @@ const TABS="home,ph,tv,sjq,berkeley,try,about,access";
     assert(s.layers.length===4&&s.layers.every(l=>l.b==="0px"&&!l.role)&&/FABDEM/.test(s.layers[3].t),`${w}: the map layers are a plain list, not boxes that look like buttons: ${JSON.stringify(s.layers.map(l=>l.t))}`);
     assert(s.tr,`${w}: Babaha ba?, Oo, Baka and Hindi come with English translations`);
     assert(s.fig&&s.edges===2&&!s.pause,`${w}: the figure goes from the side view (two edges, a walled-off dip) to the map, is described for screen readers, and has no pause button`);
+    // the sensor is drawn as it is built (Gregor, 2026-10-01, from the photo on the poster): a tall white pipe with end
+    // caps, strapped to a thin post with a blue cap, looking down out of its bottom cap; in the side view it hangs above
+    // the water level
+    s=await pg.evaluate(()=>{const g=sel=>[...document.querySelectorAll(sel)].map(e=>{const b=e.getBBox();return {w:b.width,h:b.height,y:b.y,x:b.x,fill:getComputedStyle(e).fill};});
+      return {icon:g('#hm-how .hm-ill .i-pipe'),fig:g('.hm-xs .x-pipe'),straps:document.querySelectorAll('.hm-xs .x-strap').length,cap:g('.hm-xs .x-postcap'),bot:g('.hm-xs .x-botcap'),boxes:document.querySelectorAll('#hm-how .hm-stop:nth-child(-n+2) .i-box, .hm-xs .x-box').length};});
+    const tall=a=>a.length>0&&a.every(p=>p.h>=2*p.w&&p.fill==="rgb(255, 255, 255)");
+    assert(tall(s.icon)&&s.icon.length===2&&tall(s.fig)&&s.straps===2&&s.cap.length===1&&s.boxes===0,`${w}: the sensor is a tall white pipe strapped to a post with a blue cap, not a flat box: ${JSON.stringify(s)}`);
+    assert(s.bot.length===1&&s.bot[0].y+s.bot[0].h<160,`${w}: in the side view the sensor hangs above the water level: ${JSON.stringify(s.bot)}`);
     // the side view shows the buildings along A–A′ (the plan's row north of the street, same x), and black lines carry
     // both edges from the side view down to marks on A–A′ in the plan
     s=await pg.evaluate(()=>{const xr=r=>[+r.getAttribute('x'),+r.getAttribute('x')+ +r.getAttribute('width')].join('-');

@@ -275,6 +275,12 @@ review and reports"). Commits `62a9601` → `efbb216`:
    whole on the first press so the service worker keeps it offline. The device-voice fallback remains if `BAHA_AUDIO`
    is ever emptied. If BahaWatch turns commercial, this clip needs replacing (record Noam or Gregor).
 
+17. **The sensor drawn as built** (2026-10-01, Gregor, from the poster photo): a white PVC pipe with white end caps,
+   strapped by two black bands to a thin black post with a blue cap; the ultrasonic sensor looks down out of the
+   narrower bottom cap. Redrawn in the homepage's Measure and Send icons and in the figure's side view (where it hangs
+   above the water level); the plan view keeps the map's sensor circle. Measure now reads "A sensor in a white pipe,
+   strapped to a gate post or a stake by a creek…". `test_home.js` checks the pipe is tall, white and above the water.
+
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
 outline, not the centroid; (b) **FABDEM scored 2026-09-29** against 17,936 ICESat-2 ground points in all 26 boxes (`analysis/dem_check/`: NMAD
