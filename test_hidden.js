@@ -30,7 +30,7 @@ const HIDE=()=>{
   assert(s.st==="on"&&s.gl,"back on screen, the detailed map opens: "+JSON.stringify(s));
   // the PhilDev map loaded in the background
   const pg2=await ctx.newPage();pg2.on('pageerror',e=>errs.push(e.message));
-  await pg2.goto(U);
+  await pg2.goto(U+'#ph');
   await pg2.waitForTimeout(11000);
   s=await pg2.evaluate(()=>({st:NATGL.state,note:document.getElementById('nat-note').hidden}));
   assert(s.st!=="off"&&s.note,"hidden for 11 s, the PhilDev map has not given up (no 'can't be shown' note): "+JSON.stringify(s));

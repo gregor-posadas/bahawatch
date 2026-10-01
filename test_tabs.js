@@ -14,7 +14,7 @@ const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else co
   assert(s.site==="upd"&&s.view==="details"&&s.hash==="#upd/details","old #diliman/details opens the UP Diliman campus details: "+s.hash);
   await pg.goto(U+'#nowhere');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(400);
   s=await pg.evaluate(()=>({route:ROUTE,hash:location.hash,shown:getComputedStyle(document.getElementById('nat')).display}));
-  assert(s.route==="ph"&&s.hash===""&&s.shown!=="none","unknown hash opens the national map: "+s.hash);
+  assert(s.route==="ph"&&s.hash==="#ph"&&s.shown!=="none","unknown hash opens the national map (and says #ph): "+s.hash);
   await pg.goto(U+'#details');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(400);
   s=await pg.evaluate(()=>({site:SITE,view:VIEW,hash:location.hash}));
   assert(s.site==="tv"&&s.view==="details"&&s.hash==="#tv/details","legacy #details still opens Teachers Village details");

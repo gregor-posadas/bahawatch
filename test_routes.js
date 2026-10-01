@@ -10,9 +10,9 @@ const ready=(pg,v)=>pg.waitForFunction(x=>x?document.body.dataset.ready===x:!!do
   const ctx=await b.newContext({viewport:{width:1280,height:900}});
   const pg=await ctx.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
   const files=[];pg.on('request',r=>{const m=r.url().match(/\/data\/(\w+)\.json/);if(m)files.push(m[1]);});
-  await pg.goto(U);await ready(pg,"ph");
+  await pg.goto(U+'#ph');await ready(pg,"ph");
   let s=await pg.evaluate(()=>({route:ROUTE,hash:location.hash,nat:getComputedStyle(document.getElementById('nat')).display,pub:getComputedStyle(document.getElementById('public')).display,booted:siteBooted}));
-  assert(s.route==="ph"&&s.hash===""&&s.nat!=="none"&&s.pub==="none"&&!s.booted,"a plain link opens the national map and loads no site");
+  assert(s.route==="ph"&&s.hash==="#ph"&&s.nat!=="none"&&s.pub==="none"&&!s.booted,"#ph opens the national map and loads no site");
   assert(files.length===0,"no site file fetched for the national map: "+files);
   await pg.evaluate(()=>{location.hash="#tv";});await ready(pg,"tv");
   s=await pg.evaluate(()=>({route:ROUTE,site:SITE,loaded:Object.keys(DATA_ALL)}));
@@ -27,7 +27,7 @@ const ready=(pg,v)=>pg.waitForFunction(x=>x?document.body.dataset.ready===x:!!do
   const pg2=await ctx.newPage();pg2.on('pageerror',e=>errs.push(e.message));
   let release;const held=new Promise(r=>{release=r;});
   await pg2.route('**/data/upd.json',async r=>{await held;r.continue();});
-  await pg2.goto(U);await ready(pg2,"ph");
+  await pg2.goto(U+'#ph');await ready(pg2,"ph");
   await pg2.evaluate(()=>{location.hash="#upd";});await pg2.waitForTimeout(150);
   s=await pg2.evaluate(()=>({route:ROUTE,msg:document.getElementById('load-msg').textContent,shown:getComputedStyle(document.getElementById('route-loading')).display}));
   assert(s.route==="loading"&&/Loading UP Diliman/.test(s.msg)&&s.shown!=="none","a slow file shows 'Loading UP Diliman…': "+s.msg);
@@ -57,9 +57,12 @@ const ready=(pg,v)=>pg.waitForFunction(x=>x?document.body.dataset.ready===x:!!do
   await pg4.evaluate(()=>localStorage.setItem("bw-last-hash","#diliman"));
   await pg4.goto(U+'?source=pwa');await ready(pg4,"upd");
   assert(await pg4.evaluate(()=>SITE==="upd"&&ROUTE==="site"),"home-screen relaunch with a saved #diliman lands on the campus");
-  await pg4.evaluate(()=>localStorage.setItem("bw-last-hash",""));
+  await pg4.evaluate(()=>localStorage.setItem("bw-last-hash","#ph"));
   await pg4.goto(U+'?source=pwa');await ready(pg4,"ph");
   assert(await pg4.evaluate(()=>ROUTE==="ph"),"home-screen relaunch after the national map returns to the national map");
+  await pg4.evaluate(()=>localStorage.setItem("bw-last-hash",""));
+  await pg4.goto(U+'?source=pwa');await ready(pg4,"home");
+  assert(await pg4.evaluate(()=>ROUTE==="home"),"home-screen relaunch after the homepage returns to the homepage");
 
   // Try reporting from a campus page, before Teachers Village's file is loaded: no half-switched frame
   const pg6=await ctx.newPage();pg6.on('pageerror',e=>errs.push(e.message));

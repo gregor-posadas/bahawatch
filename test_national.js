@@ -14,7 +14,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
     const ctx=await b.newContext({viewport:{width:1280,height:900}});
     if(mode==="outline")await ctx.addInitScript(()=>{window.BW_NO_BASEMAP=true;});
     const pg=await ctx.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
-    await pg.goto(U);await ready(pg,"ph");
+    await pg.goto(U+'#ph');await ready(pg,"ph");
     const st=await glUp(pg);
     assert(st===(mode==="vector"?"on":"off"),`${mode}: basemap state ${st}`);
     if(mode==="outline")assert(await pg.evaluate(()=>!document.getElementById('nat-note').hidden&&document.getElementById('nat-note').textContent==="The detailed map can't be shown on this device."),"outline: the note says the detailed map can't be shown");
@@ -36,7 +36,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
     if(mode==="vector")assert(s.creditShown&&s.credit==="© OpenStreetMap contributors · Open Buildings (Google, Microsoft, VIDA) · MapLibre",`${mode}: map credits shown`);
     else assert(!s.creditShown,`outline: no OpenStreetMap/OpenFreeMap/MapLibre credit under the outline`);
     assert(s.desc==="Map of the Philippines with 25 PhilDev partner campuses: 17 in Luzon, 5 in Visayas, 3 in Mindanao. The campus list has the same campuses.",`${mode}: screen-reader description`);
-    assert(s.tabs.join()==="ph*,tv,sjq,berkeley,try,about"&&/PhilDev partner campuses/.test(s.title),`${mode}: tabs and title`);
+    assert(s.tabs.join()==="home,ph*,tv,sjq,berkeley,try,about"&&/PhilDev partner campuses/.test(s.title),`${mode}: tabs and title`);
     s=await pg.evaluate(()=>[...document.querySelectorAll('#nat-list details.nat-grp')].map(d=>d.dataset.group+d.dataset.n+":"+d.querySelectorAll('.nat-item').length+(d.open?"open":"")));
     assert(s.join()==="Luzon17:17,Visayas5:5,Mindanao3:3",`${mode}: list grouped Luzon 17, Visayas 5, Mindanao 3, closed until opened: ${s}`);
     // drop-downs: island group › province › campuses (2026-09-29 feedback)
@@ -122,34 +122,34 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
   }
   // the outline keeps the map box's shape once the note has taken its line under the map (nothing stretched, pins on land)
   {const ctx=await b.newContext({viewport:{width:1280,height:900}});await ctx.addInitScript(()=>{window.BW_NO_BASEMAP=true;});
-   const pg=await ctx.newPage();await pg.goto(U);await ready(pg,"ph");await glUp(pg);await pg.waitForTimeout(300);
+   const pg=await ctx.newPage();await pg.goto(U+'#ph');await ready(pg,"ph");await glUp(pg);await pg.waitForTimeout(300);
    const s=await pg.evaluate(()=>{const m=document.getElementById('nat-map');return {vb:NAT.vb[2]/NAT.vb[3],box:m.clientWidth/m.clientHeight};});
    assert(Math.abs(s.vb-s.box)<0.01,`outline: the view keeps the map box's shape after the note appears: ${s.vb.toFixed(3)} vs ${s.box.toFixed(3)}`);
    await ctx.close();}
   // a theme switch while the vector map is still loading: it arrives in the new theme
   {const ctx=await b.newContext({viewport:{width:1280,height:900},colorScheme:"light"});const pg=await ctx.newPage();const styles=[];
    pg.on('request',r=>{if(/basemap-style/.test(r.url()))styles.push(r.url());});
-   await pg.goto(U);await ready(pg,"ph");const st0=await pg.evaluate(()=>NATGL.state);await pg.click('#nat-theme');await glUp(pg);await pg.waitForTimeout(300);
+   await pg.goto(U+'#ph');await ready(pg,"ph");const st0=await pg.evaluate(()=>NATGL.state);await pg.click('#nat-theme');await glUp(pg);await pg.waitForTimeout(300);
    const s=await pg.evaluate(()=>({t:document.documentElement.dataset.theme,gl:NATGL.theme}));
    assert(st0!=="loading"||(s.t==="dark"&&s.gl==="dark"&&/basemap-style-dark/.test(styles[styles.length-1]||"")),`a theme switch during loading restyles the map once it opens: ${st0} ${JSON.stringify(s)} ${styles.join(" ")}`);
    await ctx.close();}
   // reduced motion: the vector map jumps instead of flying; a cluster still hands focus to the pins it opens
   {const ctx=await b.newContext({viewport:{width:1280,height:900},reducedMotion:"reduce"});const pg=await ctx.newPage();
-   await pg.goto(U);await ready(pg,"ph");await glUp(pg);
+   await pg.goto(U+'#ph');await ready(pg,"ph");await glUp(pg);
    await pg.click('#nat-pins .pin-cluster');await pg.waitForTimeout(300);
    assert(await pg.evaluate(()=>!!document.activeElement.closest('#nat-pins')),"reduced motion: a cluster zooms in and focus moves to the pins");
    await ctx.close();}
   // "Open …" never covers the map credits (the credit must stay readable), in both maps, wide and narrow
   for(const mode of ["vector","outline"])for(const [w,h] of [[920,800],[390,844]]){
     const ctx=await b.newContext({viewport:{width:w,height:h}});if(mode==="outline")await ctx.addInitScript(()=>{window.BW_NO_BASEMAP=true;});
-    const pg=await ctx.newPage();await pg.goto(U);await ready(pg,"ph");await glUp(pg);
+    const pg=await ctx.newPage();await pg.goto(U+'#ph');await ready(pg,"ph");await glUp(pg);
     await pg.evaluate(()=>natSelect("mapua"));await settle(pg);
     const s=await pg.evaluate(()=>{const a=document.getElementById('nat-open').getBoundingClientRect(),c=document.getElementById('nat-credit').getBoundingClientRect();
       return {hit:a.left<c.right&&c.left<a.right&&a.top<c.bottom&&c.top<a.bottom,open:!document.getElementById('nat-open').hidden};});
     assert(s.open&&!s.hit,`${mode} ${w} px: "Open Mapúa" and the map credits don't overlap`);
     await ctx.close();}
   // a list row's hover or focus marks its pin, or the cluster it is in; the chosen campus's cluster is marked too
-  {const ctx=await b.newContext({viewport:{width:1280,height:900}});const pg=await ctx.newPage();await pg.goto(U);await ready(pg,"ph");await glUp(pg);await settle(pg);
+  {const ctx=await b.newContext({viewport:{width:1280,height:900}});const pg=await ctx.newPage();await pg.goto(U+'#ph');await ready(pg,"ph");await glUp(pg);await settle(pg);
    const mark=cls=>pg.evaluate(c=>{const e=[...document.querySelectorAll('#nat-pins > *')].find(e=>(e.dataset.id||e.dataset.ids).split(",").includes("bsu"));
      return {kind:e&&e.className.split(" ")[0],on:!!e&&e.classList.contains(c),ring:!!e&&getComputedStyle(e,'::before').borderTopStyle==="solid",others:document.querySelectorAll('#nat-pins .'+c).length};},cls);
    await openRow(pg,"bsu");await pg.hover('#nat-list a[data-id="bsu"]');let s=await mark("pin-hl");
@@ -163,7 +163,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
   // leaving the tab while the vector map is still loading: back on the tab, the map shows the whole country, not zoomed out
   {const ctx=await b.newContext({viewport:{width:1280,height:844}});const pg=await ctx.newPage();
    await pg.route('**/maplibre-gl.mjs',r=>setTimeout(()=>r.continue(),1500));
-   await pg.goto(U);await ready(pg,"ph");const st0=await pg.evaluate(()=>NATGL.state);
+   await pg.goto(U+'#ph');await ready(pg,"ph");const st0=await pg.evaluate(()=>NATGL.state);
    await pg.evaluate(()=>{location.hash="#xu";});await ready(pg,"xu");
    await pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",null,{timeout:15000});
    await pg.goBack();await ready(pg,"ph");await pg.waitForTimeout(300);await settle(pg);
@@ -174,7 +174,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
   {const ctx=await b.newContext({viewport:{width:1280,height:900}});
    await ctx.addInitScript(()=>{window.BW_BASEMAP_STYLE="shared/basemap-style.json?real";});
    await ctx.route('**/*.pmtiles',r=>r.abort());
-   const pg=await ctx.newPage();const t0=Date.now();await pg.goto(U);await ready(pg,"ph");
+   const pg=await ctx.newPage();const t0=Date.now();await pg.goto(U+'#ph');await ready(pg,"ph");
    await pg.waitForFunction(()=>NATGL.state==="off"||NATGL.state==="on",null,{timeout:12000});
    const dt=Date.now()-t0;
    const s=await pg.evaluate(()=>({st:NATGL.state,note:!document.getElementById('nat-note').hidden,pins:document.querySelectorAll('#nat-pins > *').length,gl:document.body.dataset.natgl}));
@@ -186,7 +186,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
   {const ctx=await b.newContext({viewport:{width:1280,height:900}});
    await ctx.addInitScript(()=>{window.BW_BASEMAP_STYLE="shared/basemap-style.json?real";});
    const pg=await ctx.newPage();const outside=[];pg.on('request',r=>{if(!r.url().startsWith(BASE))outside.push(r.url());});
-   await pg.goto(U);await ready(pg,"ph");
+   await pg.goto(U+'#ph');await ready(pg,"ph");
    await pg.waitForFunction(()=>NATGL.state==="off"||NATGL.state==="on",null,{timeout:15000});
    assert(await pg.evaluate(()=>NATGL.state==="on"),"the detailed map opens from our own tile files");
    await pg.evaluate(()=>NATGL.map.jumpTo({center:[121.068,14.652],zoom:15}));
@@ -230,12 +230,12 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    await ctx.close();}
   // no WebGL: the outline stays
   {const b2=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox','--disable-webgl','--disable-3d-apis']});
-   const pg=await b2.newPage({viewport:{width:1280,height:900}});await pg.goto(U);await ready(pg,"ph");
+   const pg=await b2.newPage({viewport:{width:1280,height:900}});await pg.goto(U+'#ph');await ready(pg,"ph");
    const st=await glUp(pg);
    assert(st==="off"&&await pg.evaluate(()=>!document.getElementById('nat-note').hidden),"no WebGL: the outline stays, with the note");
    await b2.close();}
   // narrow screens: the map above the list; a list row opens the campus directly (plan ruling 5)
-  {const ctx=await b.newContext({viewport:{width:390,height:844}});const pg=await ctx.newPage();await pg.goto(U);await ready(pg,"ph");
+  {const ctx=await b.newContext({viewport:{width:390,height:844}});const pg=await ctx.newPage();await pg.goto(U+'#ph');await ready(pg,"ph");
    const s=await pg.evaluate(()=>({mapTop:document.querySelector('.nat-mapcol').getBoundingClientRect().top,listTop:document.querySelector('.nat-listcol').getBoundingClientRect().top,sw:document.documentElement.scrollWidth}));
    assert(s.mapTop<s.listTop&&s.sw<=390,"390 px: the map sits above the list, no sideways scroll");
    await openRow(pg,"xu");await pg.click('#nat-list a[data-id="xu"]');await ready(pg,"xu");
@@ -244,7 +244,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
   // finding 1 (whole-branch review): on a phone, a one-finger drag over the map scrolls the page; moving the map takes two
   // fingers (MapLibre's cooperative gestures), with its help line in our language
   {const ctx=await b.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});const pg=await ctx.newPage();
-   await pg.goto(U);await ready(pg,"ph");const st=await glUp(pg);await settle(pg);await pg.waitForTimeout(300);
+   await pg.goto(U+'#ph');await ready(pg,"ph");const st=await glUp(pg);await settle(pg);await pg.waitForTimeout(300);
    const c0=await pg.evaluate(()=>{const c=NATGL.map.getCenter();return [c.lng,c.lat];});
    const r=await pg.evaluate(()=>{const m=document.getElementById('nat-map').getBoundingClientRect();return {x:m.left+m.width*0.3,y:m.top+m.height*0.8};});
    const cdp=await ctx.newCDPSession(pg);

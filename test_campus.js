@@ -37,7 +37,7 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
   assert(errs.length===0,"no page errors: "+errs.join("; "));
   // one language choice carries across the national map and every campus (25 campuses: nobody should pick it 25 times)
   {const c2=await b.newContext({viewport:{width:1280,height:900}});await c2.addInitScript(()=>{try{for(const k of ["xu","upd","usc"])localStorage.setItem("bw-asked:"+k,"1");}catch(e){}});
-    const p3=await c2.newPage();await p3.goto(U);await ready(p3,"ph");
+    const p3=await c2.newPage();await p3.goto(U+'#ph');await ready(p3,"ph");
     await p3.selectOption('#nat-lang','fil');
     const d0=await p3.evaluate(()=>({lang:document.documentElement.lang,tr:document.documentElement.getAttribute("translate"),h:document.getElementById("nat-q-l").textContent}));
     assert(d0.lang==="fil"&&d0.tr==="no"&&d0.h==="Maghanap ng kampus","Filipino on the national map: <html lang=fil translate=no>, search label in Filipino: "+JSON.stringify(d0));
@@ -47,7 +47,7 @@ const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{tim
     await p3.selectOption('#p-lang','ceb');
     await p3.goto(U+'#upd');await ready(p3,"upd");
     const a2=await p3.evaluate(()=>LANG);
-    await p3.goto(U);await ready(p3,"ph");
+    await p3.goto(U+'#ph');await ready(p3,"ph");
     const a3=await p3.evaluate(()=>[LANG,document.getElementById('nat-lang').value]);
     await p3.selectOption('#nat-lang','en');
     const d1=await p3.evaluate(()=>({lang:document.documentElement.lang,tr:document.documentElement.getAttribute("translate")}));

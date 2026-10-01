@@ -46,9 +46,120 @@ body{
 button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0}
 button:focus-visible, summary:focus-visible, .house-card:focus-visible, #overlay:focus-visible, #scrub:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
 /* routes (body[data-route]): the national map, a site's file loading or failing, and the site itself */
-#nat,#route-loading,#route-fail,#about{display:none}
-body[data-route="about"] #about,body[data-route="ph"] #nat,body[data-route="loading"] #route-loading,body[data-route="fail"] #route-fail{display:block}
+#nat,#route-loading,#route-fail,#about,#home{display:none}
+body[data-route="home"] #home,body[data-route="about"] #about,body[data-route="ph"] #nat,body[data-route="loading"] #route-loading,body[data-route="fail"] #route-fail{display:block}
 body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-live-banner,main,#timeline){display:none !important}
+/* Home (#home, the landing page; no hash opens it): marketing route type "Home": site tabs → hero → why → how it works
+   (an animated five-stop line) → explore → team → collaborators → timeline → contact → footer. One column ≤ 1120 px. */
+.hm-inner{padding:14px 24px 48px; max-width:1168px; margin:0 auto}
+.hm-brand{display:flex; align-items:center; gap:10px}
+#hm-theme{border:1px solid var(--ink); border-radius:4px; background:var(--panel); color:var(--ink); font-size:16px; min-width:48px; min-height:48px}
+.hm-hero{display:grid; grid-template-columns:160px minmax(0,1fr); gap:32px; align-items:center; padding:40px 0 32px; border-bottom:1px solid var(--line)}
+.hm-logo{width:160px; height:160px}
+.hm-hero h1{font-size:39px; font-weight:700; line-height:1.1; margin:0 0 8px; color:var(--brand)}
+.hm-tag{font-size:25px; line-height:1.3; margin:0 0 8px; max-width:30ch}
+.hm-say{font-size:16px; color:var(--ink-2); margin:0 0 20px}
+.hm-cta{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px}
+.hm-btn{display:inline-flex; align-items:center; min-height:48px; padding:0 20px; border:2px solid var(--ink); border-radius:6px; color:var(--ink); background:var(--panel); font-size:16px; font-weight:700; text-decoration:none}
+.hm-btn-p{background:var(--brand); border-color:var(--brand); color:var(--on-brand)}
+.hm-btn:hover{text-decoration:underline}
+.hm-btn:focus-visible,.hm-cards a:focus-visible,#home a:focus-visible{outline:3px solid var(--brand); outline-offset:2px}
+.hm-demo{font-size:14px; color:var(--ink-2); margin:0}
+.hm-sec{padding:40px 0; border-bottom:1px solid var(--line)}
+.hm-sec h2{font-size:31px; font-weight:700; line-height:1.2; margin:0 0 16px; scroll-margin-top:16px}
+.hm-sec h2:focus{outline:none}
+.hm-sec h3{font-size:20px; font-weight:700; margin:0 0 8px}
+.hm-sec p{font-size:16px; line-height:1.5; margin:0 0 12px; max-width:72ch}
+.hm-lede{font-size:20px !important}
+.hm-note{color:var(--ink-2)}
+.hm-stats{list-style:none; padding:0; margin:0 0 32px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px}
+.hm-stats li{border-top:6px solid var(--brand); background:var(--panel); padding:16px; border-radius:0 0 6px 6px}
+.hm-stats b{display:block; font-size:31px; line-height:1.1; margin-bottom:6px}
+.hm-stats span{font-size:14px; color:var(--ink-2)}
+.hm-cols{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:32px}
+.hm-quote{margin:24px 0 0; padding:16px 20px; border-left:6px solid var(--brand); background:var(--panel); border-radius:0 6px 6px 0}
+.hm-quote p{margin:0}
+/* the line: five stops on one track, a pulse travels along it (horizontal ≥ 900 px, vertical below) */
+.hm-line{position:relative; margin:24px 0 16px}
+.hm-track{position:absolute; left:10%; right:10%; top:118px; height:6px; background:var(--brand); border-radius:3px; overflow:hidden}
+.hm-pulse{position:absolute; inset:0; display:block}
+.hm-pulse::before{content:""; position:absolute; left:-16px; top:-3px; width:16px; height:12px; border-radius:6px; background:var(--bg); border:3px solid var(--ink); box-sizing:border-box}
+.hm-stops{list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; position:relative}
+.hm-stop{display:flex; flex-direction:column; align-items:center; text-align:center}
+.hm-ill{width:120px; height:90px; margin-bottom:6px}
+.hm-dot{display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--bg); border:5px solid var(--ink); font-weight:700; font-size:16px; margin-bottom:12px; position:relative}
+.hm-stop h3{margin-bottom:6px}
+.hm-stop p{font-size:14px !important; text-align:left; margin:0 0 8px}
+.hm-chips{list-style:none; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:6px; justify-content:center}
+.hm-chips li{font-size:14px; border:1px solid var(--ink-2); border-radius:4px; padding:2px 8px; background:var(--panel)}
+/* illustration strokes and fills (theme-aware) */
+.hm-ill .i-ink{fill:var(--ink)} .hm-ill .i-box{fill:var(--panel); stroke:var(--ink); stroke-width:2}
+.hm-ill .i-line,.hm-ill .i-ground,.hm-ill .i-ping path,.hm-ill .i-waves path{fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round}
+.hm-ill .i-ping path,.hm-ill .i-waves path{stroke:var(--brand)}
+.hm-ill .i-water{fill:var(--brand-lt)} .hm-ill .i-wave{fill:none; stroke:var(--brand); stroke-width:2}
+.hm-ill .i-dotf{fill:var(--brand)} .hm-ill .i-house{fill:var(--ink-2)} .hm-ill .i-alert{fill:var(--alert); stroke:var(--ink); stroke-width:1.5}
+.hm-ill .i-l1{fill:#d9c2ea} .hm-ill .i-l2{fill:var(--panel-2); stroke:var(--ink-2)} .hm-ill .i-l3{fill:var(--brand-lt)} .hm-ill .i-l4{fill:var(--panel); stroke:var(--ink); stroke-width:1.5}
+.hm-ill path[class^="i-l"]{stroke-width:1.5}
+/* motion: an illustration loop (optical exception to the motion tokens), transform and opacity only, off under reduced
+   motion and while paused or off screen */
+@keyframes hm-pulse{from{transform:translateX(0)} to{transform:translateX(calc(100% + 16px))}}
+@keyframes hm-pulse-v{from{transform:translateY(0)} to{transform:translateY(calc(100% + 16px))}}
+@keyframes hm-ping{0%,100%{opacity:.15} 50%{opacity:1}}
+@keyframes hm-rise{0%,100%{transform:translateY(8px)} 50%{transform:translateY(0)}}
+@keyframes hm-drop{0%,20%{transform:translateY(-10px); opacity:0} 45%,100%{transform:none; opacity:1}}
+.hm-run .hm-pulse{animation:hm-pulse 6s linear infinite}
+.hm-run .i-ping path{animation:hm-ping 1.5s ease-out infinite}
+.hm-run .i-ping path:nth-child(2){animation-delay:.2s} .hm-run .i-ping path:nth-child(3){animation-delay:.4s}
+.hm-run .i-waves path{animation:hm-ping 1.5s ease-out infinite}
+.hm-run .i-waves path:nth-child(2){animation-delay:.3s} .hm-run .i-waves path:nth-child(3){animation-delay:.6s}
+.hm-run .i-rise,.hm-run .i-wave{animation:hm-rise 6s ease-in-out infinite}
+.hm-run .i-fill{animation:hm-rise 6s ease-in-out infinite}
+.hm-run .i-drop{animation:hm-drop 3s ease-out infinite}
+.hm-play{display:inline-flex; align-items:center; min-height:48px; padding:0 16px; border:1px solid var(--ink); border-radius:6px; background:var(--panel); font-weight:600}
+@media (prefers-reduced-motion:reduce){.hm-run .hm-pulse,.hm-run .hm-ill *{animation:none !important}}
+.hm-cards{list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px}
+.hm-cards a{display:flex; flex-direction:column; gap:6px; height:100%; min-height:48px; padding:16px; border:1px solid var(--ink); border-radius:6px; background:var(--panel); color:var(--ink); text-decoration:none}
+.hm-cards a:hover b{text-decoration:underline}
+.hm-cards a{font-weight:400}
+.hm-cards b{font-size:20px; font-weight:700}
+#home b{font-weight:700}
+.hm-cards span{font-size:14px; color:var(--ink-2)}
+.hm-team{list-style:none; padding:0; margin:0 0 12px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px}
+.hm-team li{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:20px}
+.hm-team img{width:160px; height:160px; border-radius:50%; object-fit:cover; display:block; margin:0 0 16px}
+.hm-team h3{margin-bottom:2px}
+.hm-role{font-size:14px !important; font-weight:600; color:var(--ink-2)}
+.hm-team p{font-size:16px}
+.hm-team a{display:inline-flex; align-items:center; min-height:48px; color:var(--brand); font-weight:700; word-break:break-all}
+.hm-logos{list-style:none; padding:0; margin:0 0 16px; display:flex; flex-wrap:wrap; gap:16px; align-items:stretch}
+.hm-logos li{background:#fff; border:1px solid var(--line); border-radius:6px; padding:16px; display:flex; align-items:center; justify-content:center; height:128px}
+.hm-logos img{max-height:96px; max-width:100%; width:auto; height:auto}
+.hm-logos .hm-wide{flex:1 1 280px} .hm-logos .hm-wide img{max-height:64px}
+.hm-time{list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; border-top:6px solid var(--ink); padding-top:16px}
+.hm-time b{display:block; font-size:16px} .hm-time span{font-size:14px; color:var(--ink-2)}
+.hm-sec a,.hm-foot a,.hm-note a{color:var(--brand); font-weight:600}
+.hm-foot{padding:24px 0 0} .hm-foot p{font-size:14px; color:var(--ink-2); margin:0 0 8px; max-width:90ch}
+@media (max-width:899px){
+  .hm-inner{padding:14px 16px 40px}
+  .hm-hero{grid-template-columns:minmax(0,1fr); gap:16px; padding:24px 0}
+  .hm-logo{width:96px; height:96px}
+  .hm-hero h1{font-size:31px} .hm-tag{font-size:20px}
+  .hm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hm-stats b{font-size:25px; overflow-wrap:anywhere}
+  .hm-cols,.hm-cards,.hm-team,.hm-time{grid-template-columns:minmax(0,1fr)}
+  .hm-time{border-top:none; border-left:6px solid var(--ink); padding:0 0 0 16px}
+  .hm-sec h2{font-size:25px}
+  .hm-track{left:17px; right:auto; width:6px; top:24px; bottom:24px; height:auto}
+  .hm-pulse::before{left:-3px; top:-16px; width:12px; height:16px}
+  .hm-run .hm-pulse{animation-name:hm-pulse-v}
+  .hm-stops{grid-template-columns:minmax(0,1fr); gap:24px}
+  .hm-stop{display:grid; grid-template-columns:40px minmax(0,1fr); column-gap:16px; align-items:start; text-align:left}
+  .hm-stop .hm-dot{grid-column:1; grid-row:1; margin:0}
+  .hm-stop .hm-ill{grid-column:2; grid-row:1; width:96px; height:72px}
+  .hm-stop h3,.hm-stop p,.hm-stop .hm-chips{grid-column:2}
+  .hm-chips{justify-content:flex-start}
+}
+@media (max-width:480px){.hm-stats li{padding:12px} .hm-stats b{font-size:20px}}
 /* About (#about, #about/<section>): a reading page (marketing route type "About"): the site tabs, a contents rail with
    the FAQ at its foot, and one article column of at most 72ch. Terms carry "?" toggletips (.tt, below). */
 .ab-inner{padding:14px 24px 48px}
@@ -675,6 +786,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     </div>
   </div>
 <nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="home" aria-selected="false">Home</button>
   <button role="tab" data-site="ph" aria-selected="true">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="false">Teachers Village</button>
   <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
@@ -725,6 +837,205 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <a href="#ph" class="route-link" id="fail-back"></a>
 </section>
 
+<section id="home" aria-labelledby="hm-h">
+ <div class="hm-inner">
+  <div class="nat-top">
+    <div class="hm-brand"><img loading="lazy" src="shared/home/logo-mark.png" alt="" width="40" height="40"><span class="p-name">BahaWatch</span></div>
+    <div class="p-tools">
+      <button id="hm-theme" aria-label="Switch theme">☾</button>
+    </div>
+  </div>
+<nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="home" aria-selected="true">Home</button>
+  <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
+  <button role="tab" data-site="tv" aria-selected="false">Teachers Village</button>
+  <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
+  <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
+  <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+  <button role="tab" data-site="about" aria-selected="false">About</button>
+</nav>
+
+  <div class="hm-hero">
+    <img loading="lazy" class="hm-logo" src="shared/home/logo-mark.png" alt="BahaWatch logo: an eye inside a sun, half under water" width="160" height="160">
+    <div class="hm-hero-t">
+      <h1 id="hm-h">BahaWatch</h1>
+      <p class="hm-tag">Low-cost, open-source, locally operated flood sensing for Philippine communities (and beyond).</p>
+      <p class="hm-say"><i>Baha</i> (ba-HA) means “flood” in Tagalog and Cebuano.</p>
+      <div class="hm-cta">
+        <a class="hm-btn hm-btn-p" href="#ph">Open the flood map</a>
+        <a class="hm-btn" href="#home/how">See how it works</a>
+      </div>
+      <p class="hm-demo">The dashboard is a working demo: real maps and terrain, simulated sensor readings.</p>
+    </div>
+  </div>
+
+  <section class="hm-sec" id="hm-why" aria-labelledby="hm-why-h">
+    <h2 id="hm-why-h">Why BahaWatch</h2>
+    <ul class="hm-stats">
+      <li><b>#1</b><span>The Philippines’ rank in disaster risk worldwide (WorldRiskReport 2025)</span></li>
+      <li><b>74%</b><span>of its 118 million people are vulnerable to disasters, above all floods</span></li>
+      <li><b>US$100M+</b><span>in flood damage every year, and hundreds of preventable deaths</span></li>
+      <li><b>US$20,000+</b><span>for a single government flood-sensor deployment</span></li>
+    </ul>
+    <div class="hm-cols">
+      <div>
+        <h3>The problem</h3>
+        <p>Our partner on the ground, the Bike Scouts Project, is a volunteer network that helps families evacuate during floods. For them, even 15 minutes of warning is the difference between moving a family to higher ground and a dangerous rescue later.</p>
+        <p>But flood sensors are expensive, so they are sparse in remote and underserved areas. Communities there often get “early” warnings late, or not at all.</p>
+      </div>
+      <div>
+        <h3>Our idea</h3>
+        <p>Put flood sensing in local hands. BahaWatch pairs a <b>low-cost water-level sensor</b> (about US$210, built from parts sold in local hardware stores) with a <b>free, open dashboard</b> that anyone can read.</p>
+        <p>Local governments and community groups can build, repair and run the sensors themselves, and their readings also fill gaps in national warning systems.</p>
+      </div>
+    </div>
+    <blockquote class="hm-quote"><p><b>Open source, open data.</b> Anyone can build, repair and adapt the sensor, and communities are warned whatever their means. Through openness, BahaWatch aims to help bring climate justice to a world that must adapt.</p></blockquote>
+  </section>
+
+  <section class="hm-sec" id="hm-how" aria-labelledby="hm-how-h">
+    <h2 id="hm-how-h" tabindex="-1">How it works</h2>
+    <p class="hm-lede">From a sensor on a gate post to a plain answer on a phone, in five stops.</p>
+    <div class="hm-line">
+      <div class="hm-track" aria-hidden="true"><span class="hm-pulse"></span></div>
+      <ol class="hm-stops">
+        <li class="hm-stop">
+          <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
+            <rect x="20" y="10" width="8" height="66" class="i-ink"/>
+            <rect x="24" y="12" width="34" height="14" rx="3" class="i-box"/>
+            <g class="i-ping"><path d="M38 34 q8 4 16 0" /><path d="M35 44 q11 5 22 0"/><path d="M32 54 q14 6 28 0"/></g>
+            <rect class="i-water i-rise" x="4" y="62" width="112" height="22"/>
+            <path class="i-wave" d="M4 62 q7 -4 14 0 t14 0 t14 0 t14 0 t14 0 t14 0 t14 0 t14 0"/>
+          </svg>
+          <span class="hm-dot" aria-hidden="true">1</span>
+          <h3>Measure</h3>
+          <p>A sensor on a gate post points down at the street and times an ultrasonic echo off the water. Less distance means deeper water.</p>
+        </li>
+        <li class="hm-stop">
+          <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
+            <rect x="8" y="50" width="20" height="12" rx="2" class="i-box"/>
+            <path d="M18 50 v-12" class="i-line"/>
+            <g class="i-waves"><path d="M30 36 q6 6 0 12"/><path d="M40 30 q10 12 0 24"/><path d="M50 24 q14 18 0 36"/></g>
+            <path d="M92 76 L100 24 L108 76 M95 56 h10 M97 42 h6" class="i-line"/>
+            <circle cx="100" cy="22" r="4" class="i-dotf"/>
+          </svg>
+          <span class="hm-dot" aria-hidden="true">2</span>
+          <h3>Send</h3>
+          <p>Every 10 minutes it radios the depth over LoRaWAN to a gateway kilometres away, which passes it to the BahaWatch server.</p>
+        </li>
+        <li class="hm-stop">
+          <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
+            <path d="M20 66 L60 78 L100 66 L60 54 Z" class="i-l1"/>
+            <path d="M20 52 L60 64 L100 52 L60 40 Z" class="i-l2"/>
+            <path d="M20 38 L60 50 L100 38 L60 26 Z" class="i-l3"/>
+            <path d="M20 24 L60 36 L100 24 L60 12 Z" class="i-l4 i-drop"/>
+          </svg>
+          <span class="hm-dot" aria-hidden="true">3</span>
+          <h3>Combine</h3>
+          <p>The server adds the depth to the ground height at the sensor to get the water’s surface level, and lines it up with open maps:</p>
+          <ul class="hm-chips"><li>FABDEM terrain</li><li>OpenStreetMap streets and creeks</li><li>Building footprints</li><li>Barangay boundaries</li></ul>
+        </li>
+        <li class="hm-stop">
+          <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
+            <clipPath id="hm-clip"><path d="M0 30 L18 40 L34 64 L52 72 L70 66 L84 50 L100 36 L120 30 V90 H0 Z"/></clipPath>
+            <rect class="i-water i-fill" x="0" y="52" width="120" height="40" clip-path="url(#hm-clip)"/>
+            <path d="M0 30 L18 40 L34 64 L52 72 L70 66 L84 50 L100 36 L120 30" class="i-ground"/>
+            <rect x="8" y="24" width="10" height="12" class="i-house"/><rect x="104" y="22" width="10" height="12" class="i-house"/>
+            <rect x="57" y="64" width="9" height="9" class="i-house"/>
+          </svg>
+          <span class="hm-dot" aria-hidden="true">4</span>
+          <h3>Spread</h3>
+          <p>It spreads that level to nearby lower ground, along streets and around buildings, until the ground rises above it.</p>
+        </li>
+        <li class="hm-stop">
+          <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
+            <rect x="38" y="4" width="44" height="82" rx="8" class="i-box"/>
+            <rect x="44" y="16" width="32" height="20" class="i-water"/>
+            <rect x="52" y="44" width="16" height="16" rx="2" class="i-alert"/>
+            <path d="M46 68 h28 M46 75 h20" class="i-line"/>
+          </svg>
+          <span class="hm-dot" aria-hidden="true">5</span>
+          <h3>Answer</h3>
+          <p>Residents see which streets are flooded and how deep, and get a plain answer to <i>Babaha ba?</i>: <i>Oo</i>, <i>Baka</i> or <i>Hindi</i>. Neighbour reports and rain on mapped hazard zones help confirm it.</p>
+        </li>
+      </ol>
+    </div>
+    <button class="hm-play" id="hm-play" aria-pressed="false">Pause the animation</button>
+    <p class="hm-note">In this demo, a storm generator stands in for the sensors; everything after step 2 is the same code a live deployment would run. <a href="#about/how">Read the details</a></p>
+  </section>
+
+  <section class="hm-sec" id="hm-explore" aria-labelledby="hm-explore-h">
+    <h2 id="hm-explore-h">Explore the demo</h2>
+    <ul class="hm-cards">
+      <li><a href="#ph"><b>PhilDev campuses</b><span>25 partner universities across the Philippines, each with eight proposed sensor spots.</span></a></li>
+      <li><a href="#tv"><b>Teachers Village</b><span>A neighbourhood pilot in Quezon City, with a simulated typhoon.</span></a></li>
+      <li><a href="#sjq"><b>San Joaquin</b><span>A barangay pilot in Mabalacat City, Pampanga.</span></a></li>
+      <li><a href="#try"><b>Try reporting</b><span>Report flooding the way a resident would, on a pretend phone.</span></a></li>
+      <li><a href="#berkeley"><b>UC Berkeley</b><span>An experiment: the same method on very accurate lidar terrain.</span></a></li>
+      <li><a href="#about"><b>About</b><span>The data, the model’s limits, sensor assumptions and an FAQ.</span></a></li>
+    </ul>
+  </section>
+
+  <section class="hm-sec" id="hm-team" aria-labelledby="hm-team-h">
+    <h2 id="hm-team-h">Team</h2>
+    <ul class="hm-team">
+      <li>
+        <img src="shared/home/team-noam.jpg" alt="Noam Anglo" width="160" height="160" loading="lazy">
+        <h3>Noam Anglo</h3>
+        <p class="hm-role">Team lead · Master of Development Engineering ’26</p>
+        <p>A Filipino-Canadian mechatronics engineer with years of taking startups from prototype to market, and years of wading through floods as a child in the Philippines.</p>
+        <a href="mailto:nanglo@berkeley.edu">nanglo@berkeley.edu</a>
+      </li>
+      <li>
+        <img src="shared/home/team-tim.jpg" alt="Tim Groeschel" width="160" height="160" loading="lazy">
+        <h3>Tim Groeschel</h3>
+        <p class="hm-role">Business development lead · MS Energy and Resources ’27</p>
+        <p>Brings experience in business development, strategy and project management from sustainability consulting, cleantech and climate adaptation policy.</p>
+        <a href="mailto:tim_groeschel@berkeley.edu">tim_groeschel@berkeley.edu</a>
+      </li>
+      <li>
+        <img src="shared/home/team-gregor.jpg" alt="Gregor Posadas" width="160" height="160" loading="lazy">
+        <h3>Gregor Posadas</h3>
+        <p class="hm-role">Dashboard and flood model lead · PhD, Environmental Engineering</p>
+        <p>An environmental engineer with an MS in Civil Engineering who builds the BahaWatch dashboard and its flood model. His research looks at Philippine water governance and infrastructure.</p>
+        <a href="mailto:gregorposadas@berkeley.edu">gregorposadas@berkeley.edu</a>
+      </li>
+    </ul>
+    <p class="hm-note">All three are at the University of California, Berkeley.</p>
+  </section>
+
+  <section class="hm-sec" id="hm-collab" aria-labelledby="hm-collab-h">
+    <h2 id="hm-collab-h">Collaborators</h2>
+    <ul class="hm-logos">
+      <li><img loading="lazy" src="shared/home/logo-bike-scouts.jpg" alt="Bike Scouts"></li>
+      <li><img loading="lazy" src="shared/home/logo-up.jpg" alt="University of the Philippines"></li>
+      <li class="hm-wide"><img loading="lazy" src="shared/home/logo-blum-center.jpg" alt="Blum Center for Developing Economies"></li>
+      <li class="hm-wide"><img loading="lazy" src="shared/home/logo-disaster-lab.jpg" alt="UC Berkeley Disaster Lab"></li>
+    </ul>
+    <p class="hm-note">Your logo here? Write to <a href="mailto:nanglo@berkeley.edu">nanglo@berkeley.edu</a> about collaborations.</p>
+  </section>
+
+  <section class="hm-sec" id="hm-time" aria-labelledby="hm-time-h">
+    <h2 id="hm-time-h">Timeline</h2>
+    <ol class="hm-time">
+      <li><b>Sensor prototype</b><span>by October 2026</span></li>
+      <li><b>Software platform</b><span>by January 2027</span></li>
+      <li><b>Pilot project</b><span>by January 2027</span></li>
+      <li><b>Manufacturing</b><span>by January 2027</span></li>
+      <li><b>Sensor rollout and maintenance</b><span>from February 2027</span></li>
+    </ol>
+  </section>
+
+  <section class="hm-sec" id="hm-contact" aria-labelledby="hm-contact-h">
+    <h2 id="hm-contact-h">Contact</h2>
+    <p>For partnerships, pilots and funding, write to the team lead, <a href="mailto:nanglo@berkeley.edu">Noam Anglo</a>. For the dashboard and its data, write to <a href="mailto:gregorposadas@berkeley.edu">Gregor Posadas</a>. For business development, write to <a href="mailto:tim_groeschel@berkeley.edu">Tim Groeschel</a>.</p>
+  </section>
+
+  <footer class="hm-foot">
+    <p>The dashboard’s code is open source (MIT) on <a href="https://github.com/gregor-posadas/bahawatch">GitHub</a>. Map data © OpenStreetMap contributors; terrain FABDEM © University of Bristol; hazard maps UP Project NOAH / UP Resilience Institute. Full list on the <a href="#about/data">About</a> page.</p>
+    <p>Not a forecast. Not for emergency use: follow PAGASA and local government advisories.</p>
+  </footer>
+ </div>
+</section>
 <section id="about" aria-labelledby="ab-h">
  <div class="ab-inner">
   <div class="nat-top">
@@ -734,6 +1045,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     </div>
   </div>
 <nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="home" aria-selected="false">Home</button>
   <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="false">Teachers Village</button>
   <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
@@ -896,6 +1208,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     </div>
   </div>
 <nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="home" aria-selected="false">Home</button>
   <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
   <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
@@ -1033,6 +1346,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   </div>
 </header>
 <nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="home" aria-selected="false">Home</button>
   <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
   <button role="tab" data-site="tv" aria-selected="true">Teachers Village</button>
   <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
@@ -2050,6 +2364,7 @@ function statusOf(s){
 }
 function refreshCards(){
   for(const hh of HOUSEHOLD){
+    if(!hh.el)continue;                  // units whose cards are not built yet (initSite() before buildCards(), as test_init does)
     hh.el.className="house-card "+hh.status+(hh===selected?" selected":"");
     hh.el.querySelector(".shape").className="shape "+hh.status;
     hh.el.querySelector(".h-stat").textContent=STATUS_LABEL[hh.status];
@@ -2308,7 +2623,7 @@ function setTheme(t,render){
   themeBtn.textContent=t==="dark"?"☀":"☾";
   themeBtn.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");
   themeBtn.setAttribute("aria-pressed",t==="dark"?"true":"false");
-  for(const pt of [document.getElementById("p-theme"),document.getElementById("nat-theme"),document.getElementById("ab-theme")])if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
+  for(const pt of [document.getElementById("p-theme"),document.getElementById("nat-theme"),document.getElementById("ab-theme"),document.getElementById("hm-theme")])if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
   if(render&&siteBooted){renderBase();renderNoah();renderFlood();drawMap();}   // on the national map no site is drawn yet
 }
 let savedTheme=null;try{savedTheme=localStorage.getItem("bw-theme");}catch(e){}
@@ -2611,6 +2926,7 @@ function exitTry(nextSite,fromHash){
   syncLiveUI();syncTabs();
 }
 function selectTab(key){
+  if(key==="home"){if(ROUTE!=="home")location.hash="#home";else homeEnter("");return;}
   if(key==="ph"||key==="about"){if(location.hash!=="#"+key)location.hash="#"+key;else if(key==="about")aboutEnter("");return;}
   if(ROUTE!=="site"||!DATA_ALL[key==="try"?"tv":key]){location.hash="#"+key;return;}   // needs a fetch or leaves the national map: the router does it
   if(key==="try"){if(!TRY)enterTry();return;}
@@ -3496,6 +3812,7 @@ function parseHash(){
   const raw=(location.hash||"").replace(/^#/,"");
   TRY=raw==="try";if(TRY){LIVE=false;return {route:"site",site:"tv",view:"public"};}
   if(/^about(\/|$)/.test(raw)){LIVE=false;return {route:"about",sec:raw.split("/")[1]||""};}
+  if(raw===""||/^home(\/|$)/.test(raw)){LIVE=false;return {route:"home",sec:raw.split("/")[1]||""};}   // a plain link opens the homepage
   const tok=raw.match(/^p\.([a-z]+)\.(s|b)\.([A-Za-z0-9-]+)$/);
   if(tok){const site=LEGACY_SITES[tok[1]]||tok[1];
     if(SITE_IDS.has(site)){SHARE_TOKEN_SEEN=true;SHARED_PLACE=site+":"+tok[2]+":"+tok[3];return {route:"site",site,view:"public"};}}
@@ -3507,11 +3824,11 @@ function parseHash(){
   return {route:"site",site:m[0],view:m[1]==="details"?"details":"public"};
 }
 function writeHash(){
-  const h=ROUTE==="ph"?"":ROUTE==="about"?"#about"+(ABOUT_SEC?"/"+ABOUT_SEC:""):TRY?"#try":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
+  const h=ROUTE==="ph"?"#ph":ROUTE==="home"?(HOME_SEC?"#home/"+HOME_SEC:""):ROUTE==="about"?"#about"+(ABOUT_SEC?"/"+ABOUT_SEC:""):TRY?"#try":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
   history.replaceState(null,"",h||location.pathname+location.search);
   try{localStorage.setItem("bw-last-hash",h);}catch(e){}   // Add to Home Screen: relaunch (?source=pwa, no hash) restores this
 }
-function syncTabs(){const cur=ROUTE==="about"?"about":TRY?"try":(ROUTE==="ph"||isCampus(SITE))?"ph":SITE;
+function syncTabs(){const cur=ROUTE==="home"?"home":ROUTE==="about"?"about":TRY?"try":(ROUTE==="ph"||isCampus(SITE))?"ph":SITE;
   document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=b.dataset.site===cur;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
 document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
   b.addEventListener("click",()=>selectTab(b.dataset.site));
@@ -4196,10 +4513,29 @@ document.addEventListener("click",e=>{if(TT&&!TT.el.contains(e.target))tipHide(f
 window.addEventListener("scroll",tipPlace,{passive:true,capture:true});
 window.addEventListener("resize",tipPlace);
 
+/* ---------- Home (no hash, #home, #home/how) ---------- */
+let HOME_SEC="";
+function homeEnter(sec,from){
+  document.title="BahaWatch — Low-cost flood sensing for Philippine communities";
+  HOME_SEC=sec==="how"?"how":"";
+  if(HOME_SEC){const h=$("hm-how-h");h.scrollIntoView({behavior:reducedMotion||from!=="home"?"auto":"smooth",block:"start"});h.focus({preventScroll:true});}
+  else window.scrollTo(0,0);
+  homeAnim();
+}
+// the how-it-works line moves only while it is on screen, not paused, and motion is welcome
+let hmSeen=false,hmPaused=false;
+function homeAnim(){const run=ROUTE==="home"&&hmSeen&&!hmPaused&&!reducedMotion;$("hm-how").classList.toggle("hm-run",run);
+  const b=$("hm-play");b.hidden=reducedMotion;b.setAttribute("aria-pressed",hmPaused?"true":"false");b.textContent=hmPaused?"Play the animation":"Pause the animation";}
+if(window.IntersectionObserver)new IntersectionObserver(es=>{hmSeen=es.some(e=>e.isIntersecting);homeAnim();}).observe($("hm-how"));else hmSeen=true;
+$("hm-play").addEventListener("click",()=>{hmPaused=!hmPaused;homeAnim();});
+$("hm-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
+document.querySelectorAll('#home a[href="#home/how"]').forEach(a=>a.addEventListener("click",e=>{if(location.hash==="#home/how"){e.preventDefault();homeEnter("how","home");}}));
+
 /* ---------- About (#about, #about/<section>) ---------- */
 const ABOUT_SECS=["what","how","data","sensors","limits","next","faq"];
 let ABOUT_SEC="";
 function aboutEnter(sec,from){
+  document.title="BahaWatch — About";
   ABOUT_SEC=ABOUT_SECS.includes(sec)?sec:"";
   if(ABOUT_SEC){const h=document.getElementById("ab-"+ABOUT_SEC+"-h");
     h.scrollIntoView({behavior:reducedMotion||from!=="about"?"auto":"smooth",block:"start"});h.focus({preventScroll:true});}
@@ -4231,6 +4567,11 @@ function go(h,ctx){
     countryBack(true);
     if(siteBooted){if(ctx.wasTry)exitTry(SITE,true);setPlay(false);}
     showRoute("ph");natEnter();syncTabs();writeHash();markReady("ph");
+    return Promise.resolve();
+  }
+  if(h.route==="home"){
+    if(siteBooted){if(ctx.wasTry)exitTry(SITE,true);setPlay(false);}
+    const from=ROUTE;showRoute("home");homeEnter(h.sec,from);syncTabs();writeHash();markReady("home");
     return Promise.resolve();
   }
   if(h.route==="about"){

@@ -20,7 +20,7 @@ const openTips=pg=>pg.evaluate(()=>[...document.querySelectorAll('.tt-p')].filte
       rail:[...document.querySelectorAll('.ab-rail a')].map(a=>a.textContent),h1:document.getElementById('ab-h').textContent,sw:document.documentElement.scrollWidth,
       small:[...document.querySelectorAll('#about a,#about button,#about summary')].filter(e=>e.offsetParent&&!e.closest('.site-tabs')&&!e.classList.contains('tt-b')&&e.getBoundingClientRect().height<48).length}));
     assert(s.route==="about"&&s.shown&&s.nat==="none"&&s.h1==="About BahaWatch",`${w}: #about opens the About page alone`);
-    assert(s.tabs.length===4&&s.tabs.every(t=>t==="ph,tv,sjq,berkeley,try,about*"),`${w}: every tab bar has San Joaquin and About, About selected: ${s.tabs[0]}`);
+    assert(s.tabs.length===5&&s.tabs.every(t=>t==="home,ph,tv,sjq,berkeley,try,about*"),`${w}: every tab bar has San Joaquin and About, About selected: ${s.tabs[0]}`);
     assert(s.rail.join("|")==="What it is|How it works|Data|Sensor units|Accuracy and limits|Future work|FAQ",`${w}: the contents rail lists the sections and the FAQ`);
     assert(s.sw<=w&&s.small===0,`${w}: no sideways scroll; rail links, buttons and FAQ questions are at least 48 px tall`);
     // the sensor placement and mounting assumptions are written down, and marked as assumptions

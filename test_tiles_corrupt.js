@@ -31,7 +31,7 @@ async function zeros(route){
   // 2. UP Diliman's archive stays bad: every other map is unaffected
   pg=await ctx.newPage();pg.on('pageerror',e=>errs.push(e.message));
   await pg.route(/site-upd\.pmtiles/,zeros);
-  await pg.goto(U);
+  await pg.goto(U+'#ph');
   await pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",null,{timeout:20000}).catch(()=>{});
   s=await pg.evaluate(()=>({st:NATGL.state,note:document.getElementById('nat-note').hidden}));
   assert(s.st==="on"&&s.note,"one archive that stays bad: the PhilDev map still opens, no 'can't be shown' note: "+JSON.stringify(s));

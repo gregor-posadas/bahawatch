@@ -9,7 +9,11 @@ tabs: **Teachers Village**, Quezon City (the original neighbourhood build),
 **San Joaquin**, Mabalacat City, Pampanga (added 2026-09-29, cut like a campus,
 all eight units inside the barangay; unit 01 fixed at 71 Imelda Marcos St by
 `pin_units` in `sites.py`, the rest placed around it) and **UC Berkeley** around Strawberry Creek
-(where the real demo unit lives). An **About** tab (`#about`, `#about/<section>`)
+(where the real demo unit lives). A plain link now opens the **homepage** (`#home`,
+`#home/how`; 2026-09-30): what BahaWatch is and why, an animated five-stop line from sensor to answer (pausable,
+still under reduced motion), the team (Noam Anglo, Tim Groeschel, Gregor Posadas) with emails, the collaborators'
+logos (Bike Scouts, University of the Philippines, Blum Center, UC Berkeley Disaster Lab), the timeline and contact;
+its images are in `shared/home/`. The national map moved to `#ph`. An **About** tab (`#about`, `#about/<section>`)
 explains the dashboard in plain language for talks such as GHTC: how it works,
 the data, the sensor units and their assumed mounting, accuracy and biases,
 future work and an FAQ; underlined terms open a short note. The
@@ -26,7 +30,7 @@ Live artifact: <https://claude.ai/artifact/Mjsm9genvWF9sFdXxuKis9>
 
 On GitHub Pages the repository root serves the dashboard: `index.html`
 redirects to `bahawatch_dashboard.html` and keeps the hash (`#upd`,
-`#xu/details`, `#berkeley`). No hash opens the national map. The page embeds
+`#xu/details`, `#berkeley`). No hash opens the homepage; `#ph` the national map. The page embeds
 only the campus list and the country outline (≈ 265 KB, ≈ 85 KB gzipped); a
 site's data file (`data/<id>.json`, ≤ 250 KB gzipped) is fetched when that
 site is opened. Code is MIT-licensed; the data files carry their
@@ -664,7 +668,7 @@ and shows the credit line `© OpenStreetMap contributors · Open Buildings (Goog
 whenever tiles are showing.
 
 **Routing.** The hash is `#<site>[/details]`: `#upd`, `#xu/details`,
-`#berkeley`. No hash or an unknown site opens the national map; the old
+`#berkeley`. No hash opens the homepage; `#ph` or an unknown site opens the national map; the old
 `#details` link opens Teachers Village details; `#diliman` (and old
 `#p.diliman.…` share links, and a saved `bw-last-hash`) open `#upd`. Opening a
 site fetches its data file and shows a loading screen, or a retry screen if

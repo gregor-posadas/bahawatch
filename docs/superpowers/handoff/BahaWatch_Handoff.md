@@ -57,7 +57,7 @@ model and answers residents' question **"Babaha ba?"** ("Will it flood?") for th
 | Public site (GitHub Pages, serves `main`) | https://gregor-posadas.github.io/bahawatch/ (`index.html` redirects to `bahawatch_dashboard.html`) |
 | Repo (public) | `gregor-posadas/bahawatch`. Gregor pushes; Claude has no GitHub credentials |
 | Gregor's clone on Windows | `C:\Users\grego\bahawatch` (SSH key set up) |
-| Private demo artifact | https://claude.ai/artifact/Mjsm9genvWF9sFdXxuKis9 (version 41; update in place; list its files before republishing) |
+| Private demo artifact | https://claude.ai/artifact/Mjsm9genvWF9sFdXxuKis9 (version 42; update in place; list its files before republishing) |
 | Flowchart artifact (the answer rule) | https://claude.ai/artifact/6EmnCVpoKj743RrE9PSFfL |
 | Data folder on Gregor's PC | `C:\Users\grego\OneDrive\Desktop\Research\BahaWatch\Nationwide Update` (device_bash: `$HOME/mnt/Nationwide Update`) |
 
@@ -210,6 +210,20 @@ review and reports"). Commits `62a9601` → `efbb216`:
    - Tests: new `test_about.js` (51 checks); `test_national`/`test_a11y`/`test_try` updated for the tabs and the tree;
      pipeline tests know the sjq box; a placement test for `all_inside`. All suites green (`test_init` and the UPLB
      Fast-3G timing are flaky only when another heavy job runs at the same time).
+
+13. **Homepage** (2026-09-30, Gregor; commit after `e71177d`, which Gregor pushed). A plain link opens `#home`
+   (marketing route type "Home"); the national map moved to `#ph` (unknown hashes still go there; it now writes `#ph`).
+   Sections: hero (logo mark `shared/home/logo-mark.png`, tagline, "Open the flood map" / "See how it works"), why
+   (stats and story from the Big Ideas proposal and poster), how it works (five stops: Measure, Send, Combine, Spread,
+   Answer on one track; a pulse travels along it only while on screen, with "Pause the animation", and nothing moves
+   under reduced motion; `#home/how` deep link), explore cards, team (Noam Anglo team lead, Tim Groeschel business
+   development lead, Gregor Posadas "dashboard and flood model lead" — role wording is Claude's, to confirm; photos
+   cropped to 480 px in `shared/home/`; emails nanglo@, tim_groeschel@, gregorposadas@berkeley.edu, from Gmail and the
+   poster), collaborators (the poster's four logos, extracted from the poster PDF: Bike Scouts, University of the
+   Philippines, Blum Center, UC Berkeley Disaster Lab), timeline (poster), contact, footer. Home tab first in all five tab
+   bars. Tests: `test_home.js` (35); `goto(U)` → `goto(U+'#ph')` in six suites; `test_a11y` closes its two idle pages
+   before the Fast-3G timing (they ran storms and took CPU; UPLB now 2.8–2.9 s, still tight); `refreshCards` skips units
+   without cards (fixed `test_init`'s flaky page error).
 
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their

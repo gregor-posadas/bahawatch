@@ -20,7 +20,7 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
   const pg=await b.newPage({viewport:{width:1280,height:900}});const errs=[];pg.on('pageerror',e=>errs.push(e.message));
-  await pg.goto(U);await ready(pg,"ph");
+  await pg.goto(U+'#ph');await ready(pg,"ph");
   await pg.click('#nat-theme');await pg.click('#nat-theme');
   assert(errs.length===0&&await pg.evaluate(()=>document.documentElement.dataset.theme==="light"),"the theme button works on the national map before any site is opened");
   // wide screens: the national tab is one screen; only the campus list scrolls (spec §4.1)
@@ -71,7 +71,7 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   }
   // phone width: no sideways scroll; every control in the national view and the campus bar is ≥ 48 px tall
   const ph=await b.newPage({viewport:{width:390,height:844}});ph.on('pageerror',e=>errs.push(e.message));
-  await ph.goto(U);await ready(ph,"ph");
+  await ph.goto(U+'#ph');await ready(ph,"ph");
   s=await ph.evaluate(()=>({sw:document.documentElement.scrollWidth,small:[...document.querySelectorAll('#nat a, #nat button, #nat input, #nat select')].filter(e=>e.offsetParent&&!e.closest('.site-tabs')&&e.getBoundingClientRect().height<48).map(e=>e.className||e.id)}));
   assert(s.sw<=390&&s.small.length===0,"390 px national view: no sideways scroll ("+s.sw+"), controls ≥ 48 px: "+s.small.slice(0,5));
   await ph.goto(U+'#xu');await ready(ph,"xu");
@@ -98,8 +98,11 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   const big=fs.readdirSync(path.join(__dirname,'data')).filter(f=>f.endsWith('.json')).map(f=>{const b=fs.readFileSync(path.join(__dirname,'data',f));return [f,b.length,zlib.gzipSync(b).length];}).filter(([,n,g])=>n>950000||g>250*1024);
   assert(big.length===0,"every data file ≤ 250 KB gzipped and ≤ 950,000 bytes raw: "+big.map(x=>x.join(" ")).join(", "));
   // speed: a campus appears within 3 s on the browser's "Fast 3G" profile
+  // (the two pages opened above are closed first: their storms kept running and took CPU from this one, which made
+  //  the timing depend on what else the test had open; 2026-09-30)
+  await pg.close();await ph.close();
   const slow=await b.newPage({viewport:{width:1280,height:900}});
-  await slow.goto(U);await ready(slow,"ph");
+  await slow.goto(U+'#ph');await ready(slow,"ph");
   const cdp=await slow.context().newCDPSession(slow);
   await cdp.send('Network.enable');
   await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:562.5,downloadThroughput:1.6*1024*1024/8*0.9,uploadThroughput:750*1024/8*0.9});
@@ -162,7 +165,7 @@ const TEXT=`(sel)=>{const bg=e=>{for(let x=e;x;x=x.parentElement){const c=getCom
   assert(s.mw>=s.col-2,`at 768 px (single column) the map fills its column (map ${Math.round(s.mw)} px of ${Math.round(s.col)} px)`);
   await narrow.close();
   // the national map's theme button is visible: a boundary ≥ 3:1, the glyph ≥ 4.5:1, 48 px
-  const tb=await b.newPage({viewport:{width:1280,height:900}});await tb.goto(U);await ready(tb,"ph");
+  const tb=await b.newPage({viewport:{width:1280,height:900}});await tb.goto(U+'#ph');await ready(tb,"ph");
   for(const theme of ["light","dark"]){await tb.evaluate(t=>setTheme(t,true),theme);
     s=await tb.evaluate(()=>{const e=document.getElementById('nat-theme'),cs=getComputedStyle(e),r=e.getBoundingClientRect();
       return {fg:cs.color,bd:cs.borderTopColor,bw:parseFloat(cs.borderTopWidth),page:getComputedStyle(document.body).backgroundColor,fs:parseFloat(cs.fontSize),w:r.width,h:r.height};});
