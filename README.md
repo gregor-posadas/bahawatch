@@ -10,10 +10,16 @@ tabs: **Teachers Village**, Quezon City (the original neighbourhood build),
 all eight units inside the barangay; unit 01 fixed at 71 Imelda Marcos St by
 `pin_units` in `sites.py`, the rest placed around it) and **UC Berkeley** around Strawberry Creek
 (where the real demo unit lives). A plain link now opens the **homepage** (`#home`,
-`#home/how`; 2026-09-30): what BahaWatch is and why, an animated five-stop line from sensor to answer (pausable,
-still under reduced motion), the team (Noam Anglo, Tim Groeschel, Gregor Posadas) with emails, the collaborators'
-logos (Bike Scouts, University of the Philippines, Blum Center, UC Berkeley Disaster Lab), the timeline and contact;
-its images are in `shared/home/`. The national map moved to `#ph`. An **About** tab (`#about`, `#about/<section>`)
+`#home/how`, `#home/contact`; 2026-09-30, reworked the same day after Gregor's 18 notes): what BahaWatch is and why
+(sourced figures with a numbered reference list), an animated five-stop line from sensor to answer that repeats while on
+screen (no pause button, by Gregor's choice; still under reduced motion), a side-view-to-map figure showing how one reading
+becomes a flood map (FABDEM ground, the edges where ground rises above the water level, a walled-off dip that stays dry),
+raised explore cards that sink when pressed, the team with LinkedIn links, the collaborators' logos (Bike Scouts,
+University of the Philippines, Blum Center, UC Berkeley Disaster Lab; Project NOAH's logo still to add), a call to partner,
+the timeline and contact (Noam's address as text with a Copy button, no mailto link). Sections fade in on scroll
+(off under reduced motion). Images are in `shared/home/`. The national map moved to `#ph`. An **Accessibility** tab
+(`#access`, `#access/<section>`) lists the design-for-accessibility choices and what still falls short. While a site
+file or a map loads, a thin progress bar runs along the top, the page shows a skeleton, and the map shows "Loading map…". An **About** tab (`#about`, `#about/<section>`)
 explains the dashboard in plain language for talks such as GHTC: how it works,
 the data, the sensor units and their assumed mounting, accuracy and biases,
 future work and an FAQ; underlined terms open a short note. The
@@ -1025,6 +1031,9 @@ Designed to WCAG 2.2 AA:
 
 Not yet covered: the canvas map itself is not navigable marker-by-marker with
 a screen reader — use the unit cards and "Zoom to unit" instead.
+
+The dashboard's own **Accessibility** tab (`#access`) is the current, plain-language
+version of this section for users (WCAG 2.1 AA with 48 px targets, per `.ux-profile.md`).
 
 ---
 

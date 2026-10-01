@@ -13,7 +13,7 @@ const ans=pg=>pg.evaluate(()=>({a:document.getElementById('p-answer').dataset.an
   await pg.goto(U+'#tv');await pg.waitForFunction(()=>document.body.dataset.ready);await pg.waitForTimeout(400);
   net.length=0;                                   // the page and data/tv.json are loaded; from here on nothing may be fetched
   let s=await pg.evaluate(()=>[...document.querySelectorAll('#public .site-tabs [role=tab]')].map(t=>t.dataset.site));
-  assert(s.join()==="home,ph,tv,sjq,berkeley,try,about","'Try reporting' after UC Berkeley, then About: "+s);
+  assert(s.join()==="home,ph,tv,sjq,berkeley,try,about,access","'Try reporting' after UC Berkeley, then About: "+s);
   await pg.focus('#public .site-tabs [data-site="berkeley"]');await pg.keyboard.press('ArrowRight');await pg.waitForTimeout(300);
   s=await pg.evaluate(()=>({t:TRY,hash:location.hash,sel:document.querySelector('#public .site-tabs [aria-selected="true"]').dataset.site,place:document.getElementById('p-ans-place').textContent,playing,panel:!document.getElementById('try-panel').hidden,sim:document.getElementById('try-sim').textContent,where:document.getElementById('p-where').hidden}));
   assert(s.t&&s.hash==="#try"&&s.sel==="try","keyboard: ArrowRight from UC Berkeley opens the Try reporting tab (#try)");

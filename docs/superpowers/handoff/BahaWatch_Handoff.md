@@ -225,6 +225,24 @@ review and reports"). Commits `62a9601` → `efbb216`:
    before the Fast-3G timing (they ran storms and took CPU; UPLB now 2.8–2.9 s, still tight); `refreshCards` skips units
    without cards (fixed `test_init`'s flaky page error).
 
+14. **Homepage rework, Accessibility tab, loading feedback, About flowchart** (2026-09-30, Gregor's 18 notes after
+   seeing the first homepage; the GHTC poster was the content source). Homepage in the outline style of
+   `microbe-busters-hub` (square corners, 2 px ink borders, 4 px rule under headings). Why BahaWatch: sourced stats with
+   a reference list (WorldRiskReport 2025 #1; 74 % exposed and >1,000 deaths/yr, Give2Asia; ~20 cyclones and 8–9
+   crossings, PAGASA; 269 dead in Tino, GMA; US$500–625M/yr flood losses, CCKP via globalclimaterisks.org; streamgage
+   US$25–40k install and US$16.5–32k/yr, CRS R45695 — US figures). How it works: five stops repeat while on screen (pause
+   button removed at Gregor's request; WCAG 2.2.2 gap listed on the Accessibility page; still under reduced motion);
+   Combine lists its layers plainly (not chips); Answer gives English glosses; a figure goes from a side view (sensor,
+   FABDEM ground, edges where ground rises above the water level, a walled-off dip that stays dry) to the plan view, cut
+   at A–A′. Explore cards raised and sink on press. Team cards have LinkedIn buttons and no emails; Gregor's photo
+   recropped. Collaborators + "Partner with us or support BahaWatch if you…" call to action. Contact: Noam only, the
+   address as text with a Copy button. Sections fade in on scroll. **Project NOAH logo not added** — no reachable source;
+   `<!--NOAH_LOGO-->` placeholder in the collaborators list awaits Gregor's file. New **Accessibility** tab (`#access`,
+   generic reading-page code `READ` shared with About). **Loading feedback**: top progress bar (`#busy`), skeleton
+   while a site file loads, "Loading map…" chips (`BUSY` set, 150 ms delay). **About › Data**: six-stage processing
+   flowchart; **Accuracy and limits**: model settings table (13 rows), why a uniform terrain bias cancels out, the
+   simulated readings, and what has not been checked. Tests: `test_home.js` 57 checks; all 23 page suites pass.
+
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
 outline, not the centroid; (b) **FABDEM scored 2026-09-29** against 17,936 ICESat-2 ground points in all 26 boxes (`analysis/dem_check/`: NMAD
@@ -236,7 +254,8 @@ N10E123, N13E121, N14E120, N14E121, N15E120 (Zenodo 14511570; check how the reco
 `pipeline/cut.py` `fabdem_tiles_for` takes FABDEM file names only.
 
 **Still to do for round 2:**
-- **Push `bahawatch-about.bundle`** (below), then **check the live site**: tiles and fonts load (`.pmtiles` range requests, `.mjs` served as
+- **Push** (Claude can now push via the GitHub connection, but only after Gregor has tested the artifact and said
+  yes), then **check the live site**: tiles and fonts load (`.pmtiles` range requests, `.mjs` served as
   JavaScript), dark vector style, campus zoom-out, the new timeline. Claude has not seen the real dark style or the demo in
   a signed-in browser.
 - When Gregor asks: the detailed review and reports (PDF) for the follow-up changes, and a refreshed build report.

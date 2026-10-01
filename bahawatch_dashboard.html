@@ -46,108 +46,188 @@ body{
 button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0}
 button:focus-visible, summary:focus-visible, .house-card:focus-visible, #overlay:focus-visible, #scrub:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:6px}
 /* routes (body[data-route]): the national map, a site's file loading or failing, and the site itself */
-#nat,#route-loading,#route-fail,#about,#home{display:none}
-body[data-route="home"] #home,body[data-route="about"] #about,body[data-route="ph"] #nat,body[data-route="loading"] #route-loading,body[data-route="fail"] #route-fail{display:block}
+#nat,#route-loading,#route-fail,#about,#home,#access{display:none}
+body[data-route="access"] #access,body[data-route="home"] #home,body[data-route="about"] #about,body[data-route="ph"] #nat,body[data-route="loading"] #route-loading,body[data-route="fail"] #route-fail{display:block}
 body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-live-banner,main,#timeline){display:none !important}
+/* loading feedback (2026-09-30): a thin bar along the top while a site file or map tiles load (after 150 ms, so quick
+   loads never flicker), a "Loading map…" chip on the map that is loading, and a skeleton of the site while its file loads */
+.busy{position:fixed; top:0; left:0; right:0; height:5px; z-index:200; background:var(--panel-2); overflow:hidden}
+.busy[hidden]{display:none}
+.busy span{position:absolute; top:0; bottom:0; left:0; width:30%; background:var(--brand); animation:busy 1.1s linear infinite}
+@keyframes busy{from{transform:translateX(-100%)} to{transform:translateX(340%)}}
+.map-busy{position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:9; margin:0; display:flex; align-items:center; gap:8px; padding:6px 12px;
+  background:var(--panel); color:var(--ink); border:2px solid var(--ink); font-size:14px; font-weight:600; pointer-events:none}
+.map-busy[hidden]{display:none}
+.map-busy::before{content:""; width:14px; height:14px; border:2px solid var(--ink); border-right-color:transparent; border-radius:50%; animation:busy-spin .8s linear infinite}
+@keyframes busy-spin{to{transform:rotate(360deg)}}
+.skel{display:grid; gap:12px; margin-top:20px}
+.skel i{display:block; background:var(--panel-2); border-radius:4px; animation:skel 1.2s ease-in-out infinite}
+.skel .sk-a{height:28px; width:60%} .skel .sk-b{height:16px; width:85%} .skel .sk-c{height:16px; width:70%} .skel .sk-map{height:320px}
+@keyframes skel{0%,100%{opacity:1} 50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.busy span{animation:none; width:100%; opacity:.6} .map-busy::before,.skel i{animation:none}}
 /* Home (#home, the landing page; no hash opens it): marketing route type "Home": site tabs → hero → why → how it works
-   (an animated five-stop line) → explore → team → collaborators → timeline → contact → footer. One column ≤ 1120 px. */
+   (a five-stop line and a side-view-to-map figure) → explore → team → collaborators → timeline → contact → footer.
+   Outline style from the Microbe Busters hub: square corners, 2 px ink outlines, a 4 px rule under each heading. */
 .hm-inner{padding:14px 24px 48px; max-width:1168px; margin:0 auto}
 .hm-brand{display:flex; align-items:center; gap:10px}
-#hm-theme{border:1px solid var(--ink); border-radius:4px; background:var(--panel); color:var(--ink); font-size:16px; min-width:48px; min-height:48px}
-.hm-hero{display:grid; grid-template-columns:160px minmax(0,1fr); gap:32px; align-items:center; padding:40px 0 32px; border-bottom:1px solid var(--line)}
+#hm-theme{border:2px solid var(--ink); border-radius:0; background:var(--panel); color:var(--ink); font-size:16px; min-width:48px; min-height:48px}
+.hm-hero{display:grid; grid-template-columns:160px minmax(0,1fr); gap:32px; align-items:center; padding:40px 0 32px}
 .hm-logo{width:160px; height:160px}
 .hm-hero h1{font-size:39px; font-weight:700; line-height:1.1; margin:0 0 8px; color:var(--brand)}
 .hm-tag{font-size:25px; line-height:1.3; margin:0 0 8px; max-width:30ch}
 .hm-say{font-size:16px; color:var(--ink-2); margin:0 0 20px}
 .hm-cta{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px}
-.hm-btn{display:inline-flex; align-items:center; min-height:48px; padding:0 20px; border:2px solid var(--ink); border-radius:6px; color:var(--ink); background:var(--panel); font-size:16px; font-weight:700; text-decoration:none}
-.hm-btn-p{background:var(--brand); border-color:var(--brand); color:var(--on-brand)}
+.hm-btn{display:inline-flex; align-items:center; min-height:48px; padding:0 20px; border:2px solid var(--ink); border-radius:0; color:var(--ink); background:var(--panel); font-size:16px; font-weight:700; text-decoration:none}
+.hm-btn-p{background:var(--ink); border-color:var(--ink); color:var(--bg)}
 .hm-btn:hover{text-decoration:underline}
-.hm-btn:focus-visible,.hm-cards a:focus-visible,#home a:focus-visible{outline:3px solid var(--brand); outline-offset:2px}
+#home a:focus-visible,#home button:focus-visible{outline:3px solid var(--brand); outline-offset:3px}
 .hm-demo{font-size:14px; color:var(--ink-2); margin:0}
-.hm-sec{padding:40px 0; border-bottom:1px solid var(--line)}
-.hm-sec h2{font-size:31px; font-weight:700; line-height:1.2; margin:0 0 16px; scroll-margin-top:16px}
+.hm-sec{padding:40px 0 8px}
+.hm-sec h2{font-size:31px; font-weight:700; line-height:1.2; margin:0 0 20px; padding-bottom:10px; border-bottom:4px solid var(--ink); scroll-margin-top:16px}
 .hm-sec h2:focus{outline:none}
 .hm-sec h3{font-size:20px; font-weight:700; margin:0 0 8px}
+.hm-h3{margin-top:32px !important}
 .hm-sec p{font-size:16px; line-height:1.5; margin:0 0 12px; max-width:72ch}
 .hm-lede{font-size:20px !important}
 .hm-note{color:var(--ink-2)}
-.hm-stats{list-style:none; padding:0; margin:0 0 32px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px}
-.hm-stats li{border-top:6px solid var(--brand); background:var(--panel); padding:16px; border-radius:0 0 6px 6px}
+.hm-ref{font-size:14px; color:var(--ink-2); white-space:nowrap}
+.hm-stats{list-style:none; padding:0; margin:0 0 32px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border:2px solid var(--ink); background:var(--panel)}
+.hm-stats li{padding:16px 20px; border-left:1px solid var(--line)}
+.hm-stats li:first-child{border-left:0}
 .hm-stats b{display:block; font-size:31px; line-height:1.1; margin-bottom:6px}
 .hm-stats span{font-size:14px; color:var(--ink-2)}
 .hm-cols{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:32px}
-.hm-quote{margin:24px 0 0; padding:16px 20px; border-left:6px solid var(--brand); background:var(--panel); border-radius:0 6px 6px 0}
-.hm-quote p{margin:0}
+.hm-themes{margin:0 0 16px; padding-left:24px; max-width:72ch}
+.hm-themes li{font-size:16px; line-height:1.5; margin-bottom:10px}
+.hm-quote{margin:8px 0 8px; padding:16px 20px; border:2px solid var(--ink); background:var(--panel); max-width:72ch}
+.hm-quote p{font-size:20px !important; margin:0 0 4px !important}
+.hm-quote footer{font-size:14px; color:var(--ink-2)}
+.hm-refs{margin:24px 0 0; padding:12px 0 0 24px; border-top:1px solid var(--line); font-size:14px; color:var(--ink-2); max-width:90ch}
+.hm-refs li{margin-bottom:4px}
 /* the line: five stops on one track, a pulse travels along it (horizontal ≥ 900 px, vertical below) */
-.hm-line{position:relative; margin:24px 0 16px}
-.hm-track{position:absolute; left:10%; right:10%; top:118px; height:6px; background:var(--brand); border-radius:3px; overflow:hidden}
+.hm-line{position:relative; margin:24px 0 32px}
+.hm-track{position:absolute; left:10%; right:10%; top:118px; height:6px; background:var(--ink); overflow:hidden}
 .hm-pulse{position:absolute; inset:0; display:block}
-.hm-pulse::before{content:""; position:absolute; left:-16px; top:-3px; width:16px; height:12px; border-radius:6px; background:var(--bg); border:3px solid var(--ink); box-sizing:border-box}
+.hm-pulse::before{content:""; position:absolute; left:-16px; top:-3px; width:16px; height:12px; border-radius:6px; background:var(--bg); border:3px solid var(--brand); box-sizing:border-box}
 .hm-stops{list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; position:relative}
 .hm-stop{display:flex; flex-direction:column; align-items:center; text-align:center}
 .hm-ill{width:120px; height:90px; margin-bottom:6px}
 .hm-dot{display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--bg); border:5px solid var(--ink); font-weight:700; font-size:16px; margin-bottom:12px; position:relative}
 .hm-stop h3{margin-bottom:6px}
 .hm-stop p{font-size:14px !important; text-align:left; margin:0 0 8px}
-.hm-chips{list-style:none; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:6px; justify-content:center}
-.hm-chips li{font-size:14px; border:1px solid var(--ink-2); border-radius:4px; padding:2px 8px; background:var(--panel)}
+.hm-layers{list-style:none; padding:0; margin:0; width:100%; text-align:left}
+.hm-layers li{display:flex; align-items:center; gap:8px; font-size:14px; padding:3px 0}
+.hm-layers .sw{flex:none; width:22px; height:12px; transform:skewX(-30deg); border:1.5px solid var(--ink)}
+.sw-terrain{background:#d8c7a0} .sw-streets{background:#ffffff} .sw-bldg{background:#b9a88a} .sw-brgy{background:transparent; border-style:dashed !important}
 /* illustration strokes and fills (theme-aware) */
-.hm-ill .i-ink{fill:var(--ink)} .hm-ill .i-box{fill:var(--panel); stroke:var(--ink); stroke-width:2}
+.hm-ill .i-ink,.hm-xs .x-ink{fill:var(--ink)} .hm-ill .i-box,.hm-xs .x-box{fill:var(--panel); stroke:var(--ink); stroke-width:2}
 .hm-ill .i-line,.hm-ill .i-ground,.hm-ill .i-ping path,.hm-ill .i-waves path{fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round}
 .hm-ill .i-ping path,.hm-ill .i-waves path{stroke:var(--brand)}
-.hm-ill .i-water{fill:var(--brand-lt)} .hm-ill .i-wave{fill:none; stroke:var(--brand); stroke-width:2}
-.hm-ill .i-dotf{fill:var(--brand)} .hm-ill .i-house{fill:var(--ink-2)} .hm-ill .i-alert{fill:var(--alert); stroke:var(--ink); stroke-width:1.5}
-.hm-ill .i-l1{fill:#d9c2ea} .hm-ill .i-l2{fill:var(--panel-2); stroke:var(--ink-2)} .hm-ill .i-l3{fill:var(--brand-lt)} .hm-ill .i-l4{fill:var(--panel); stroke:var(--ink); stroke-width:1.5}
-.hm-ill path[class^="i-l"]{stroke-width:1.5}
-/* motion: an illustration loop (optical exception to the motion tokens), transform and opacity only, off under reduced
-   motion and while paused or off screen */
+.hm-ill .i-water,.hm-xs .x-wfill{fill:var(--brand-lt)} .hm-ill .i-wave{fill:none; stroke:var(--brand); stroke-width:2}
+.hm-ill .i-dotf{fill:var(--brand)} .hm-ill .i-alert{fill:var(--alert); stroke:var(--ink); stroke-width:1.5}
+.hm-ill .i-earth,.hm-xs .x-earth{fill:#d8c7a0} .hm-ill .i-level{fill:none; stroke:var(--brand); stroke-width:2; stroke-dasharray:4 3}
+.hm-ill .i-l-terrain{fill:#d8c7a0} .hm-ill .i-l-streets{fill:#ffffff} .hm-ill .i-l-bldg{fill:#b9a88a} .hm-ill .i-l-brgy{fill:none; stroke-dasharray:4 3}
+.hm-ill .i-stack path{stroke:var(--ink); stroke-width:1.5}
+/* the side-view-to-map figure */
+/* the figure is drawn as light paper in both themes, so its labels can sit on the sand and the water */
+.hm-fig{--ink:#232120; --ink-2:#6b6660; --panel:#fffdf8; --bg:#f8f4ec; --line:#e3dccd; --brand:#0030a0; --brand-lt:#70c0e0; --ok:#008f68;
+  margin:8px 0 16px; border:2px solid var(--ink); background:#f8f4ec; color:#232120; padding:16px}
+.hm-xs{display:block; width:100%; max-width:760px; height:auto; margin:0 auto}
+.hm-xs text{fill:var(--ink); font-family:var(--font)}
+.hm-xs .x-h{font-size:26px; font-weight:700}
+.hm-xs .x-t{font-size:22px}
+.hm-xs .x-b{font-weight:700}
+.hm-xs .x-c{text-anchor:middle} .hm-xs .x-e{text-anchor:end}
+.hm-xs .x-ground{fill:none; stroke:var(--ink); stroke-width:3; stroke-linejoin:round}
+.hm-xs .x-dry{fill:none; stroke:var(--ink); stroke-width:3}
+.hm-xs .x-level{fill:none; stroke:var(--brand); stroke-width:3; stroke-dasharray:10 6}
+.hm-xs .x-edge{fill:none; stroke:var(--ink); stroke-width:3}
+.hm-xs .x-dim,.hm-xs .x-lead{fill:none; stroke:var(--ink); stroke-width:2}
+.hm-xs .x-ping path{fill:none; stroke:var(--brand); stroke-width:3; stroke-linecap:round}
+.hm-xs .x-guide{fill:none; stroke:var(--ink-2); stroke-width:2; stroke-dasharray:3 6}
+.hm-xs .x-paper{fill:var(--panel); stroke:var(--ink); stroke-width:2}
+.hm-xs .x-streets path{fill:none; stroke:var(--line); stroke-width:26}
+.hm-xs .x-creek{fill:none; stroke:var(--brand-lt); stroke-width:8}
+.hm-xs .x-ffill{fill:var(--brand-lt); fill-opacity:.85; stroke:var(--brand); stroke-width:3}
+.hm-xs .x-bldg rect{fill:#b9a88a; stroke:var(--ink); stroke-width:1.5}
+.hm-xs .x-cut{fill:none; stroke:var(--ink); stroke-width:3; stroke-dasharray:14 8}
+.hm-xs .x-sensor{fill:var(--panel); stroke:var(--ok); stroke-width:6}
+.hm-fig figcaption p{font-size:16px; margin:12px auto 0; max-width:72ch}
+@media (max-width:600px){.hm-xs .x-t{display:none} .hm-xs .x-keep{display:inline; font-size:34px} .hm-xs .x-h{font-size:32px}}
+/* motion: illustration loops (an optical exception to the motion tokens; Gregor wants them always playing), transform
+   and opacity only; still under reduced motion */
 @keyframes hm-pulse{from{transform:translateX(0)} to{transform:translateX(calc(100% + 16px))}}
 @keyframes hm-pulse-v{from{transform:translateY(0)} to{transform:translateY(calc(100% + 16px))}}
 @keyframes hm-ping{0%,100%{opacity:.15} 50%{opacity:1}}
-@keyframes hm-rise{0%,100%{transform:translateY(8px)} 50%{transform:translateY(0)}}
-@keyframes hm-drop{0%,20%{transform:translateY(-10px); opacity:0} 45%,100%{transform:none; opacity:1}}
+@keyframes hm-rise{0%,100%{transform:translateY(10px)} 50%{transform:translateY(0)}}
+@keyframes hm-drop{0%{transform:translateY(-6px); opacity:0} 40%{opacity:1} 70%,100%{transform:translateY(10px); opacity:0}}
+@keyframes x-ping{0%,18%{opacity:1} 9%{opacity:.2} 20%,100%{opacity:.35}}
+@keyframes x-grow{0%,14%{transform:scaleX(0)} 30%,90%{transform:scaleX(1)} 100%{transform:scaleX(1); opacity:0}}
+@keyframes x-rise{0%,26%{transform:translateY(70px)} 44%,90%{transform:translateY(0)} 100%{transform:translateY(0); opacity:0}}
+@keyframes x-show1{0%,38%{opacity:0} 46%,90%{opacity:1} 100%{opacity:0}}
+@keyframes x-show2{0%,48%{opacity:0} 58%,90%{opacity:1} 100%{opacity:0}}
 .hm-run .hm-pulse{animation:hm-pulse 6s linear infinite}
-.hm-run .i-ping path{animation:hm-ping 1.5s ease-out infinite}
-.hm-run .i-ping path:nth-child(2){animation-delay:.2s} .hm-run .i-ping path:nth-child(3){animation-delay:.4s}
-.hm-run .i-waves path{animation:hm-ping 1.5s ease-out infinite}
-.hm-run .i-waves path:nth-child(2){animation-delay:.3s} .hm-run .i-waves path:nth-child(3){animation-delay:.6s}
-.hm-run .i-rise,.hm-run .i-wave{animation:hm-rise 6s ease-in-out infinite}
-.hm-run .i-fill{animation:hm-rise 6s ease-in-out infinite}
-.hm-run .i-drop{animation:hm-drop 3s ease-out infinite}
-.hm-play{display:inline-flex; align-items:center; min-height:48px; padding:0 16px; border:1px solid var(--ink); border-radius:6px; background:var(--panel); font-weight:600}
-@media (prefers-reduced-motion:reduce){.hm-run .hm-pulse,.hm-run .hm-ill *{animation:none !important}}
-.hm-cards{list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px}
-.hm-cards a{display:flex; flex-direction:column; gap:6px; height:100%; min-height:48px; padding:16px; border:1px solid var(--ink); border-radius:6px; background:var(--panel); color:var(--ink); text-decoration:none}
+.hm-run .i-ping path,.hm-run .i-waves path{animation:hm-ping 1.5s ease-out infinite}
+.hm-run .i-ping path:nth-child(2),.hm-run .i-waves path:nth-child(2){animation-delay:.25s}
+.hm-run .i-ping path:nth-child(3),.hm-run .i-waves path:nth-child(3){animation-delay:.5s}
+.hm-run .i-rise,.hm-run .i-fill{animation:hm-rise 6s ease-in-out infinite}
+.hm-run .i-drop{animation:hm-drop 2s ease-in infinite}
+.hm-run .x-ping path{animation:x-ping 9s linear infinite}
+.hm-run .x-grow{transform-box:view-box; transform-origin:348px 160px; animation:x-grow 9s ease-out infinite}
+.hm-run .x-wfill{animation:x-rise 9s ease-out infinite}
+.hm-run .x-edges,.hm-run .x-guide{animation:x-show1 9s ease-out infinite}
+.hm-run .x-flood{animation:x-show2 9s ease-out infinite}
+@media (prefers-reduced-motion:reduce){#home .hm-run *{animation:none !important}}
+/* explore: raised cards that sink when pressed */
+.hm-cards{list-style:none; padding:0; margin:0 0 8px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px}
+.hm-cards a{display:flex; flex-direction:column; gap:6px; height:100%; min-height:48px; padding:16px 18px; border:2px solid var(--ink); border-radius:0; background:var(--panel); color:var(--ink); text-decoration:none;
+  box-shadow:5px 5px 0 var(--ink); transition:transform .1s ease-out, box-shadow .1s ease-out}
+.hm-cards a:hover{transform:translate(-1px,-1px); box-shadow:6px 6px 0 var(--ink)}
 .hm-cards a:hover b{text-decoration:underline}
-.hm-cards a{font-weight:400}
+.hm-cards a:active,.hm-cards a.hm-press{transform:translate(5px,5px); box-shadow:0 0 0 var(--ink)}
+@media (prefers-reduced-motion:reduce){.hm-cards a{transition:none} .hm-cards a:active{transform:none; box-shadow:2px 2px 0 var(--ink)}}
 .hm-cards b{font-size:20px; font-weight:700}
-#home b{font-weight:700}
 .hm-cards span{font-size:14px; color:var(--ink-2)}
 .hm-team{list-style:none; padding:0; margin:0 0 12px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px}
-.hm-team li{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:20px}
-.hm-team img{width:160px; height:160px; border-radius:50%; object-fit:cover; display:block; margin:0 0 16px}
+.hm-team li{background:var(--panel); border:2px solid var(--ink); padding:20px; display:flex; flex-direction:column}
+.hm-team img{width:160px; height:160px; border-radius:50%; border:2px solid var(--ink); object-fit:cover; display:block; margin:0 0 16px}
 .hm-team h3{margin-bottom:2px}
 .hm-role{font-size:14px !important; font-weight:600; color:var(--ink-2)}
 .hm-team p{font-size:16px}
-.hm-team a{display:inline-flex; align-items:center; min-height:48px; color:var(--brand); font-weight:700; word-break:break-all}
-.hm-logos{list-style:none; padding:0; margin:0 0 16px; display:flex; flex-wrap:wrap; gap:16px; align-items:stretch}
-.hm-logos li{background:#fff; border:1px solid var(--line); border-radius:6px; padding:16px; display:flex; align-items:center; justify-content:center; height:128px}
-.hm-logos img{max-height:96px; max-width:100%; width:auto; height:auto}
+.hm-in{display:inline-flex; align-items:center; align-self:flex-start; min-height:48px; margin-top:auto; padding:0 16px; border:2px solid var(--ink); color:var(--ink) !important; font-weight:700; text-decoration:none}
+.hm-in:hover{text-decoration:underline}
+.hm-logos{list-style:none; padding:0; margin:0 0 24px; display:flex; flex-wrap:wrap; gap:16px; align-items:stretch}
+.hm-logos li{background:#fff; border:2px solid var(--ink); padding:16px; display:flex; align-items:center; justify-content:center; height:128px}
+.hm-logos img{max-height:92px; max-width:100%; width:auto; height:auto}
 .hm-logos .hm-wide{flex:1 1 280px} .hm-logos .hm-wide img{max-height:64px}
-.hm-time{list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; border-top:6px solid var(--ink); padding-top:16px}
+.hm-ask{border:2px solid var(--ink); padding:20px 24px; background:var(--panel); max-width:80ch}
+.hm-ask ul{margin:0 0 16px; padding-left:22px}
+.hm-ask li{font-size:16px; line-height:1.5; margin-bottom:6px}
+.hm-time{list-style:none; padding:16px 0 0; margin:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px}
+.hm-time li{border-top:6px solid var(--ink); padding-top:10px}
 .hm-time b{display:block; font-size:16px} .hm-time span{font-size:14px; color:var(--ink-2)}
-.hm-sec a,.hm-foot a,.hm-note a{color:var(--brand); font-weight:600}
-.hm-foot{padding:24px 0 0} .hm-foot p{font-size:14px; color:var(--ink-2); margin:0 0 8px; max-width:90ch}
+.hm-mail{display:flex; flex-wrap:wrap; align-items:center; gap:12px 16px; border:2px solid var(--ink); padding:12px 16px; background:var(--panel); max-width:max-content}
+.hm-mail-n{font-weight:700; font-size:16px}
+.hm-mail-a{font-size:20px; font-weight:600; user-select:all}
+.hm-copy{display:inline-flex; align-items:center; gap:8px; min-height:48px; min-width:48px; padding:0 14px; border:2px solid var(--ink); background:var(--bg); color:var(--ink); font-weight:700}
+.hm-copy svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2}
+.hm-copy:hover{background:var(--panel-2)}
+.hm-copied{font-size:14px; font-weight:600; color:var(--ok); min-width:6ch}
+.hm-sec a:not(.hm-btn):not(.hm-in):not([href^="#"]),.hm-foot a,.hm-note a,.hm-refs a{color:var(--brand); font-weight:600}
+.hm-foot{padding:32px 0 0; margin-top:32px; border-top:4px solid var(--ink)} .hm-foot p{font-size:14px; color:var(--ink-2); margin:0 0 8px; max-width:90ch}
+/* sections fade in as they scroll into view (not under reduced motion, and only once the script runs) */
+.fx-on .hm-fade{opacity:0; transform:translateY(16px); transition:opacity .3s ease-out, transform .3s ease-out}
+.fx-on .hm-fade.hm-shown{opacity:1; transform:none}
+@media (prefers-reduced-motion:reduce){.fx-on .hm-fade{opacity:1; transform:none}}
 @media (max-width:899px){
   .hm-inner{padding:14px 16px 40px}
   .hm-hero{grid-template-columns:minmax(0,1fr); gap:16px; padding:24px 0}
   .hm-logo{width:96px; height:96px}
   .hm-hero h1{font-size:31px} .hm-tag{font-size:20px}
   .hm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hm-stats li:nth-child(3){border-left:0} .hm-stats li:nth-child(n+3){border-top:1px solid var(--line)}
   .hm-stats b{font-size:25px; overflow-wrap:anywhere}
   .hm-cols,.hm-cards,.hm-team,.hm-time{grid-template-columns:minmax(0,1fr)}
-  .hm-time{border-top:none; border-left:6px solid var(--ink); padding:0 0 0 16px}
   .hm-sec h2{font-size:25px}
   .hm-track{left:17px; right:auto; width:6px; top:24px; bottom:24px; height:auto}
   .hm-pulse::before{left:-3px; top:-16px; width:12px; height:16px}
@@ -156,14 +236,15 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
   .hm-stop{display:grid; grid-template-columns:40px minmax(0,1fr); column-gap:16px; align-items:start; text-align:left}
   .hm-stop .hm-dot{grid-column:1; grid-row:1; margin:0}
   .hm-stop .hm-ill{grid-column:2; grid-row:1; width:96px; height:72px}
-  .hm-stop h3,.hm-stop p,.hm-stop .hm-chips{grid-column:2}
-  .hm-chips{justify-content:flex-start}
+  .hm-stop h3,.hm-stop p,.hm-stop .hm-layers{grid-column:2}
+  .hm-fig{padding:8px}
+  .hm-mail{max-width:none}
 }
 @media (max-width:480px){.hm-stats li{padding:12px} .hm-stats b{font-size:20px}}
 /* About (#about, #about/<section>): a reading page (marketing route type "About"): the site tabs, a contents rail with
    the FAQ at its foot, and one article column of at most 72ch. Terms carry "?" toggletips (.tt, below). */
 .ab-inner{padding:14px 24px 48px}
-#ab-theme{border:1px solid var(--ink); border-radius:4px; background:var(--panel); color:var(--ink); font-size:16px; min-width:48px; min-height:48px}
+#ab-theme,#ax-theme{border:1px solid var(--ink); border-radius:4px; background:var(--panel); color:var(--ink); font-size:16px; min-width:48px; min-height:48px}
 .ab-body{display:grid; grid-template-columns:200px minmax(0,72ch); gap:48px; margin-top:24px}
 .ab-rail{position:sticky; top:16px; align-self:start}
 .ab-rail-h{font-size:14px; font-weight:700; margin:0 0 8px}
@@ -195,6 +276,37 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .ab-use{display:block; font-size:14px; color:var(--ink-2); margin-top:4px}
 .ab-tag{display:inline-block; font-size:14px; font-weight:600; color:var(--ink-2); border:1px solid var(--ink-2); border-radius:4px; padding:0 6px; margin-left:6px; vertical-align:1px}
 .ab-small{font-size:14px; color:var(--ink-2)}
+.ab-main a:not(.tt-b){color:var(--brand); font-weight:600}
+.flow{list-style:none; padding:0; margin:16px 0 24px; counter-reset:none}
+.flow-st{position:relative; border:2px solid var(--ink); background:var(--panel); padding:14px 16px; margin:0 0 34px}
+.flow-st:not(:last-child)::after{content:""; position:absolute; left:50%; bottom:-30px; width:3px; height:24px; margin-left:-1.5px; background:var(--ink)}
+.flow-st:not(:last-child)::before{content:""; position:absolute; left:50%; bottom:-32px; margin-left:-7px; border:7px solid transparent; border-top:9px solid var(--ink); border-bottom:0}
+.flow-off{border-style:dashed}
+.flow h4{font-size:16px; font-weight:700; margin:0 0 8px; display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+.flow-n{display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; border:3px solid var(--ink); background:var(--bg); font-size:14px}
+.flow code,.ab-main code{font-family:var(--mono); font-size:14px; font-weight:400; background:var(--panel-2); padding:0 4px; overflow-wrap:anywhere}
+.flow-grid{list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px}
+.flow-grid li{border:1px solid var(--line); background:var(--bg); padding:8px 10px; font-size:14px}
+.flow-list{margin:0; padding-left:20px}
+.flow-list li{font-size:14px; line-height:1.5; margin-bottom:6px}
+.ab-tbl{overflow-x:auto; margin:8px 0 16px; border:2px solid var(--ink)}
+.ab-tbl:focus-visible{outline:3px solid var(--brand); outline-offset:2px}
+.ab-table{width:100%; border-collapse:collapse; font-size:14px}
+.ab-table th,.ab-table td{text-align:left; vertical-align:top; padding:8px 10px; border-bottom:1px solid var(--line)}
+.ab-table thead th{border-bottom:3px solid var(--ink); background:var(--panel)}
+.ab-table tbody th{font-weight:700; white-space:nowrap}
+@media (max-width:640px){
+  .ab-tbl{overflow:visible; border:0}
+  .ab-table thead{display:none}
+  .ab-table tr{display:block; border:2px solid var(--ink); margin-bottom:10px; background:var(--panel)}
+  .ab-table th,.ab-table td{display:block; border:0; padding:4px 10px}
+  .ab-table tbody th{white-space:normal; border-bottom:1px solid var(--line); padding-top:8px}
+}
+.ax-shapes{display:flex; flex-wrap:wrap; gap:8px 20px; margin:8px 0}
+.ax-shapes > span{display:inline-flex; align-items:center; gap:8px; font-size:14px}
+.ax-shapes .shape{display:inline-block}
+.ax-nodata{display:inline-block; width:14px; height:14px; border:2px dashed var(--ink-2); border-radius:2px}
+
 .ab-faq details{border-top:1px solid var(--line)}
 .ab-faq details:last-child{border-bottom:1px solid var(--line)}
 .ab-faq summary{display:flex; align-items:center; gap:12px; min-height:48px; padding:8px 0; font-weight:700; cursor:pointer; list-style:none}
@@ -774,6 +886,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 </style>
 </head>
 <body data-view="public">
+<div class="busy" id="busy" role="progressbar" aria-label="Loading" hidden><span></span></div>
 <section id="nat" aria-labelledby="nat-h">
  <div class="nat-inner">
   <div class="nat-top">
@@ -793,6 +906,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
   <button role="tab" data-site="about" aria-selected="false">About</button>
+  <button role="tab" data-site="access" aria-selected="false">Accessibility</button>
 </nav>
   <div class="nat-body">
     <div class="nat-listcol">
@@ -805,6 +919,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     </div>
     <div class="nat-mapcol">
       <div class="nat-map" id="nat-map" role="group" aria-labelledby="nat-map-l" aria-describedby="nat-desc">
+        <p class="map-busy" id="nat-busy" aria-hidden="true" hidden>Loading map…</p>
         <svg id="nat-svg" aria-hidden="true" focusable="false" preserveAspectRatio="none"><path id="nat-land"/></svg>
         <div id="nat-gl"></div>
         <div class="nat-box" id="nat-box" hidden></div>
@@ -830,7 +945,8 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   </div>
  </div>
 </section>
-<section id="route-loading" class="route-msg"><p id="load-msg" role="status" aria-live="polite"></p></section>
+<section id="route-loading" class="route-msg"><p id="load-msg" role="status" aria-live="polite"></p>
+  <div class="skel" aria-hidden="true"><i class="sk-a"></i><i class="sk-b"></i><i class="sk-c"></i><i class="sk-map"></i></div></section>
 <section id="route-fail" class="route-msg">
   <p id="fail-msg" role="alert"></p>
   <button id="load-retry" class="route-btn"></button>
@@ -853,6 +969,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
   <button role="tab" data-site="about" aria-selected="false">About</button>
+  <button role="tab" data-site="access" aria-selected="false">Accessibility</button>
 </nav>
 
   <div class="hm-hero">
@@ -869,30 +986,47 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     </div>
   </div>
 
-  <section class="hm-sec" id="hm-why" aria-labelledby="hm-why-h">
+  <section class="hm-sec hm-fade" id="hm-why" aria-labelledby="hm-why-h">
     <h2 id="hm-why-h">Why BahaWatch</h2>
     <ul class="hm-stats">
-      <li><b>#1</b><span>The Philippines’ rank in disaster risk worldwide (WorldRiskReport 2025)</span></li>
-      <li><b>74%</b><span>of its 118 million people are vulnerable to disasters, above all floods</span></li>
-      <li><b>US$100M+</b><span>in flood damage every year, and hundreds of preventable deaths</span></li>
-      <li><b>US$20,000+</b><span>for a single government flood-sensor deployment</span></li>
+      <li><b>#1</b><span>The Philippines’ rank in disaster risk worldwide <span class="hm-ref">[1]</span></span></li>
+      <li><b>74%</b><span>of Filipinos are vulnerable to disasters <span class="hm-ref">[2]</span></span></li>
+      <li><b>~20</b><span>tropical cyclones enter Philippine waters every year; 8 or 9 cross the country <span class="hm-ref">[3]</span></span></li>
+      <li><b>269</b><span>people killed by one typhoon, Tino (Kalmaegi), in November 2025 <span class="hm-ref">[4]</span></span></li>
     </ul>
     <div class="hm-cols">
       <div>
-        <h3>The problem</h3>
-        <p>Our partner on the ground, the Bike Scouts Project, is a volunteer network that helps families evacuate during floods. For them, even 15 minutes of warning is the difference between moving a family to higher ground and a dangerous rescue later.</p>
-        <p>But flood sensors are expensive, so they are sparse in remote and underserved areas. Communities there often get “early” warnings late, or not at all.</p>
+        <h3>In a flood, minutes matter</h3>
+        <p>Our partner on the ground, the Bike Scouts Project, is a volunteer network that helps families evacuate. They told us that even 15 minutes of warning is enough to move a family to higher ground instead of waiting on a rooftop for rescue.</p>
+        <p>Floods cost the Philippines an estimated US$500–625 million a year <span class="hm-ref">[5]</span>, and disasters kill more than 1,000 people in an average year <span class="hm-ref">[2]</span>.</p>
       </div>
       <div>
-        <h3>Our idea</h3>
-        <p>Put flood sensing in local hands. BahaWatch pairs a <b>low-cost water-level sensor</b> (about US$210, built from parts sold in local hardware stores) with a <b>free, open dashboard</b> that anyone can read.</p>
-        <p>Local governments and community groups can build, repair and run the sensors themselves, and their readings also fill gaps in national warning systems.</p>
+        <h3>Sensors are too costly to reach everyone</h3>
+        <p>A standard government stream gauge in the United States costs US$25,000–40,000 to install and US$16,500–32,000 a year to run <span class="hm-ref">[6]</span>. At that price, remote and low-income places go without, and when funding changes, sensors fall into disrepair. Warnings come late, or not at all.</p>
+        <p>BahaWatch’s sensor is estimated at <b>about US$210</b>, built from parts sold in local hardware stores.</p>
       </div>
     </div>
-    <blockquote class="hm-quote"><p><b>Open source, open data.</b> Anyone can build, repair and adapt the sensor, and communities are warned whatever their means. Through openness, BahaWatch aims to help bring climate justice to a world that must adapt.</p></blockquote>
+    <h3 class="hm-h3">What we heard</h3>
+    <p>Since September 2025 we have held about 20 interviews with Philippine research and funding institutions, flood-sensing projects in the US and Vietnam, a nationwide volunteer disaster-response network, and flood-affected businesses and residents. Three themes came up again and again:</p>
+    <ol class="hm-themes">
+      <li><b>Only affluent communities receive reliable flood warnings.</b> Well-funded city governments can afford flood sensors; small islands and underprivileged communities, often closest to the water, cannot.</li>
+      <li><b>Maintenance, not hardware, decides whether a network survives.</b> Networks went dark when funding ended: prepaid SIM cards lapsed, batteries went flat and broken sensors were never repaired.</li>
+      <li><b>Official warnings are neither local nor instructive.</b> Agencies broadcast a storm’s position and strength; a household needs to know what will happen to its house, when, and what to do.</li>
+    </ol>
+    <blockquote class="hm-quote"><p>“The Philippines does not have a technological problem, it’s a governance problem.”</p><footer>— a Filipino disaster researcher we interviewed</footer></blockquote>
+    <h3 class="hm-h3">Our answer</h3>
+    <p>Put flood sensing in local hands. BahaWatch pairs a <b>low-cost water-level sensor</b> that local governments and community groups can build, repair and run with a <b>free, open dashboard</b> that anyone can read. The hardware and software are open source, and the data is open, so the readings also serve national hazard maps and warning systems. Through openness, BahaWatch aims to help bring climate justice to a world that must adapt.</p>
+    <ol class="hm-refs" aria-label="References">
+      <li>Bündnis Entwicklung Hilft and IFHV, <a href="https://www.preventionweb.net/publication/documents-and-publications/world-risk-report-2025-focus-floods">WorldRiskReport 2025: Focus on floods</a>, Sept 2025; see also <a href="https://mb.com.ph/2025/09/26/philippines-tops-worldriskindex-2025-as-worlds-most-disaster-prone-country">Manila Bulletin, 26 Sept 2025</a>.</li>
+      <li>Give2Asia, <a href="https://give2asia.org/philippines-disaster-country-profile/">DisasterLink country profile: the Philippines</a>.</li>
+      <li>PAGASA, <a href="https://www.pagasa.dost.gov.ph/climate/tropical-cyclone-information">Tropical cyclone information</a>.</li>
+      <li>GMA News, <a href="https://www.gmanetwork.com/news/topstories/nation/966407/269-dead-523-injured-due-to-typhoon-tino-ocd/story/">“269 dead, 523 injured due to Typhoon Tino — OCD”</a>, 17 Nov 2025.</li>
+      <li>Global Climate Risks, <a href="https://globalclimaterisks.org/economic/philippines-floods/">Philippines (floods)</a>, citing the World Bank Climate Change Knowledge Portal.</li>
+      <li>Congressional Research Service, <a href="https://www.congress.gov/crs-product/R45695">U.S. Geological Survey streamgaging network: overview and issues for Congress</a> (R45695), 2021.</li>
+    </ol>
   </section>
 
-  <section class="hm-sec" id="hm-how" aria-labelledby="hm-how-h">
+  <section class="hm-sec hm-fade" id="hm-how" aria-labelledby="hm-how-h">
     <h2 id="hm-how-h" tabindex="-1">How it works</h2>
     <p class="hm-lede">From a sensor on a gate post to a plain answer on a phone, in five stops.</p>
     <div class="hm-line">
@@ -900,11 +1034,11 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <ol class="hm-stops">
         <li class="hm-stop">
           <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
-            <rect x="20" y="10" width="8" height="66" class="i-ink"/>
-            <rect x="24" y="12" width="34" height="14" rx="3" class="i-box"/>
-            <g class="i-ping"><path d="M38 34 q8 4 16 0" /><path d="M35 44 q11 5 22 0"/><path d="M32 54 q14 6 28 0"/></g>
-            <rect class="i-water i-rise" x="4" y="62" width="112" height="22"/>
-            <path class="i-wave" d="M4 62 q7 -4 14 0 t14 0 t14 0 t14 0 t14 0 t14 0 t14 0 t14 0"/>
+            <rect x="20" y="8" width="8" height="70" class="i-ink"/>
+            <rect x="24" y="10" width="34" height="14" rx="3" class="i-box"/>
+            <g class="i-ping"><path d="M38 32 q8 4 16 0"/><path d="M35 41 q11 5 22 0"/><path d="M32 50 q14 6 28 0"/></g>
+            <g class="i-rise"><rect class="i-water" x="4" y="62" width="112" height="28"/><path class="i-wave" d="M4 62 q7 -4 14 0 t14 0 t14 0 t14 0 t14 0 t14 0 t14 0 t14 0"/></g>
+            <path d="M0 89 H120" class="i-line"/>
           </svg>
           <span class="hm-dot" aria-hidden="true">1</span>
           <h3>Measure</h3>
@@ -920,31 +1054,40 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
           </svg>
           <span class="hm-dot" aria-hidden="true">2</span>
           <h3>Send</h3>
-          <p>Every 10 minutes it radios the depth over LoRaWAN to a gateway kilometres away, which passes it to the BahaWatch server.</p>
+          <p>Every 10 to 15 minutes it radios the depth over LoRaWAN to a gateway kilometres away, which passes it to the BahaWatch server.</p>
         </li>
         <li class="hm-stop">
           <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
-            <path d="M20 66 L60 78 L100 66 L60 54 Z" class="i-l1"/>
-            <path d="M20 52 L60 64 L100 52 L60 40 Z" class="i-l2"/>
-            <path d="M20 38 L60 50 L100 38 L60 26 Z" class="i-l3"/>
-            <path d="M20 24 L60 36 L100 24 L60 12 Z" class="i-l4 i-drop"/>
+            <g class="i-stack">
+              <path d="M24 70 L60 82 L96 70 L60 58 Z" class="i-l-terrain"/>
+              <path d="M24 56 L60 68 L96 56 L60 44 Z" class="i-l-streets"/>
+              <path d="M24 42 L60 54 L96 42 L60 30 Z" class="i-l-bldg"/>
+              <path d="M24 28 L60 40 L96 28 L60 16 Z" class="i-l-brgy"/>
+            </g>
+            <path d="M60 2 v12" class="i-line i-drop"/><circle cx="60" cy="4" r="3" class="i-dotf i-drop"/>
           </svg>
           <span class="hm-dot" aria-hidden="true">3</span>
           <h3>Combine</h3>
-          <p>The server adds the depth to the ground height at the sensor to get the water’s surface level, and lines it up with open maps:</p>
-          <ul class="hm-chips"><li>FABDEM terrain</li><li>OpenStreetMap streets and creeks</li><li>Building footprints</li><li>Barangay boundaries</li></ul>
+          <p>The server adds the depth to the ground height at the sensor to get the water’s surface level, then stacks it on open map layers:</p>
+          <ul class="hm-layers" aria-label="Map layers, top to bottom">
+            <li><i class="sw sw-brgy" aria-hidden="true"></i>Barangay boundaries</li>
+            <li><i class="sw sw-bldg" aria-hidden="true"></i>Building footprints</li>
+            <li><i class="sw sw-streets" aria-hidden="true"></i>Streets and creeks (OpenStreetMap)</li>
+            <li><i class="sw sw-terrain" aria-hidden="true"></i>Ground height (FABDEM)</li>
+          </ul>
         </li>
         <li class="hm-stop">
           <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
-            <clipPath id="hm-clip"><path d="M0 30 L18 40 L34 64 L52 72 L70 66 L84 50 L100 36 L120 30 V90 H0 Z"/></clipPath>
-            <rect class="i-water i-fill" x="0" y="52" width="120" height="40" clip-path="url(#hm-clip)"/>
+            <clipPath id="hm-clip-s"><path d="M0 0 H120 V30 L100 36 L84 50 L70 66 L52 72 L34 64 L18 40 L0 30 Z"/></clipPath>
+            <g clip-path="url(#hm-clip-s)"><rect class="i-water i-fill" x="0" y="50" width="120" height="40"/></g>
+            <path d="M0 30 L18 40 L34 64 L52 72 L70 66 L84 50 L100 36 L120 30 V90 H0 Z" class="i-earth"/>
             <path d="M0 30 L18 40 L34 64 L52 72 L70 66 L84 50 L100 36 L120 30" class="i-ground"/>
-            <rect x="8" y="24" width="10" height="12" class="i-house"/><rect x="104" y="22" width="10" height="12" class="i-house"/>
-            <rect x="57" y="64" width="9" height="9" class="i-house"/>
+            <path d="M22 50 H96" class="i-level"/>
+            <rect x="49" y="58" width="5" height="14" class="i-ink"/>
           </svg>
           <span class="hm-dot" aria-hidden="true">4</span>
           <h3>Spread</h3>
-          <p>It spreads that level to nearby lower ground, along streets and around buildings, until the ground rises above it.</p>
+          <p>It carries that water level across the ground to nearby lower land, along streets and around buildings, and stops where the ground rises above it (see the figure below).</p>
         </li>
         <li class="hm-stop">
           <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
@@ -955,15 +1098,69 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
           </svg>
           <span class="hm-dot" aria-hidden="true">5</span>
           <h3>Answer</h3>
-          <p>Residents see which streets are flooded and how deep, and get a plain answer to <i>Babaha ba?</i>: <i>Oo</i>, <i>Baka</i> or <i>Hindi</i>. Neighbour reports and rain on mapped hazard zones help confirm it.</p>
+          <p>Residents see which streets are flooded and how deep, and get a plain answer to <i>Babaha ba?</i> (“Will it flood?”): <i>Oo</i> (yes), <i>Baka</i> (maybe) or <i>Hindi</i> (no). Neighbour reports and rain on mapped hazard zones help confirm it.</p>
         </li>
       </ol>
     </div>
-    <button class="hm-play" id="hm-play" aria-pressed="false">Pause the animation</button>
+
+    <figure class="hm-fig" aria-labelledby="hm-fig-cap">
+      <svg class="hm-xs" viewBox="0 0 720 640" role="img" aria-labelledby="hm-fig-t hm-fig-d" focusable="false">
+        <title id="hm-fig-t">From one sensor reading to a flood map</title>
+        <desc id="hm-fig-d">Top: a side view of the ground from the FABDEM terrain map. A sensor measures the water depth at one spot; the water level is carried left and right along the ground and stops at both edges where the ground rises above it. A dip beyond the right-hand rise is lower than the water but walled off, so it stays dry. Bottom: the same place seen from above, as on the dashboard: the flooded streets between the two edges, buildings left dry inside the water, and the line where the side view was cut.</desc>
+        <defs>
+          <clipPath id="xs-above"><path d="M0 0 H720 V200 L680 196 L640 150 L606 118 L560 150 L520 190 L470 214 L420 222 L370 230 L330 228 L290 214 L250 188 L210 158 L176 132 L140 120 L100 124 L60 130 L0 132 Z"/></clipPath>
+          <clipPath id="xs-reach"><rect x="200" y="150" width="380" height="130"/></clipPath>
+        </defs>
+        <text x="16" y="28" class="x-h">Side view: the ground (FABDEM)</text>
+        <!-- water: between the two edges, above the ground, below the level -->
+        <g clip-path="url(#xs-above)"><g clip-path="url(#xs-reach)"><rect x="0" y="160" width="720" height="110" class="x-wfill"/></g></g>
+        <path d="M0 132 L60 130 L100 124 L140 120 L176 132 L210 158 L250 188 L290 214 L330 228 L370 230 L420 222 L470 214 L520 190 L560 150 L606 118 L640 150 L680 196 L720 200 V270 H0 Z" class="x-earth"/>
+        <path d="M0 132 L60 130 L100 124 L140 120 L176 132 L210 158 L250 188 L290 214 L330 228 L370 230 L420 222 L470 214 L520 190 L560 150 L606 118 L640 150 L680 196 L720 200" class="x-ground"/>
+        <!-- the dry dip beyond the right-hand rise -->
+        <path d="M640 150 L680 196 L720 200" class="x-dry"/>
+        <!-- sensor on a post at the low street -->
+        <rect x="345" y="96" width="7" height="134" class="x-ink"/>
+        <rect x="348" y="96" width="40" height="15" rx="3" class="x-box"/>
+        <g class="x-ping"><path d="M362 126 q8 4 16 0"/><path d="M359 140 q11 5 22 0"/></g>
+        <path d="M370 160 V229 M364 160 H376 M364 229 H376" class="x-dim x-t"/>
+        <text x="384" y="190" class="x-t">measured</text><text x="384" y="212" class="x-t">depth</text>
+        <!-- the water level, carried both ways from the sensor to the edges -->
+        <path d="M213 160 H550" class="x-level x-grow"/>
+        <g class="x-edges">
+          <path d="M213 144 V176" class="x-edge"/><path d="M550 144 V176" class="x-edge"/>
+          <text x="213" y="136" class="x-t x-keep x-c">edge</text><text x="550" y="136" class="x-t x-keep x-c">edge</text>
+        </g>
+        <text x="16" y="62" class="x-t">water level = ground at the sensor + measured depth</text>
+        <path d="M250 74 C262 110 272 138 282 156" class="x-lead x-t"/>
+        <text x="666" y="222" class="x-t x-c">lower, but</text><text x="666" y="244" class="x-t x-c">walled off:</text><text x="666" y="266" class="x-t x-c">dry</text>
+        <!-- projection guides down to the plan -->
+        <path d="M213 178 V296 M550 178 V296 M213 344 V470 M550 344 V470" class="x-guide"/>
+        <!-- plan view -->
+        <text x="16" y="330" class="x-h">Seen from above, as on the dashboard</text>
+        <rect x="0" y="344" width="720" height="290" class="x-paper"/>
+        <g class="x-streets">
+          <path d="M0 470 H720"/><path d="M120 344 V634"/><path d="M360 344 V634"/><path d="M600 344 V634"/><path d="M0 560 H720"/><path d="M240 344 V470"/><path d="M480 470 V634"/>
+        </g>
+        <path d="M660 344 C640 420 690 520 650 634" class="x-creek"/>
+        <g class="x-flood"><path d="M213 470 C213 420 260 392 300 392 C340 386 380 388 420 396 C480 404 540 425 550 470 C556 515 510 556 470 566 C420 586 330 586 280 556 C236 536 213 512 213 470 Z" class="x-ffill"/></g>
+        <g class="x-bldg">
+          <rect x="140" y="370" width="70" height="70"/><rect x="260" y="360" width="76" height="80"/><rect x="384" y="360" width="80" height="78"/><rect x="500" y="364" width="76" height="76"/>
+          <rect x="140" y="490" width="80" height="54"/><rect x="250" y="490" width="86" height="52"/><rect x="384" y="490" width="76" height="52"/><rect x="500" y="492" width="80" height="50"/>
+          <rect x="20" y="370" width="80" height="80"/><rect x="20" y="490" width="80" height="54"/><rect x="620" y="490" width="16" height="50"/>
+          <rect x="140" y="580" width="80" height="44"/><rect x="250" y="580" width="86" height="44"/><rect x="384" y="580" width="76" height="44"/><rect x="500" y="580" width="80" height="44"/>
+        </g>
+        <path d="M0 470 H720" class="x-cut"/>
+        <text x="8" y="462" class="x-t x-keep x-b">A</text><text x="714" y="462" class="x-t x-keep x-b x-e">A′</text>
+        <circle cx="348" cy="470" r="10" class="x-sensor"/>
+      </svg>
+      <figcaption id="hm-fig-cap">
+        <p><b>From one reading to a flood map.</b> A sensor knows the water depth at one spot. Added to the ground height there, it gives the water level. The dashboard carries that level along the ground from FABDEM, and the water reaches as far as the ground stays below it: the <b>edges</b> are where the ground rises higher. A dip beyond a rise stays dry even if it is lower, because the water cannot reach it. Seen from above, that becomes the flooded streets on the dashboard, with the water going around buildings. The level also drops 1 cm for every 15 m from the sensor, so estimates stay cautious far away. A–A′ marks where the side view was cut.</p>
+      </figcaption>
+    </figure>
     <p class="hm-note">In this demo, a storm generator stands in for the sensors; everything after step 2 is the same code a live deployment would run. <a href="#about/how">Read the details</a></p>
   </section>
 
-  <section class="hm-sec" id="hm-explore" aria-labelledby="hm-explore-h">
+  <section class="hm-sec hm-fade" id="hm-explore" aria-labelledby="hm-explore-h">
     <h2 id="hm-explore-h">Explore the demo</h2>
     <ul class="hm-cards">
       <li><a href="#ph"><b>PhilDev campuses</b><span>25 partner universities across the Philippines, each with eight proposed sensor spots.</span></a></li>
@@ -975,7 +1172,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     </ul>
   </section>
 
-  <section class="hm-sec" id="hm-team" aria-labelledby="hm-team-h">
+  <section class="hm-sec hm-fade" id="hm-team" aria-labelledby="hm-team-h">
     <h2 id="hm-team-h">Team</h2>
     <ul class="hm-team">
       <li>
@@ -983,38 +1180,48 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <h3>Noam Anglo</h3>
         <p class="hm-role">Team lead · Master of Development Engineering ’26</p>
         <p>A Filipino-Canadian mechatronics engineer with years of taking startups from prototype to market, and years of wading through floods as a child in the Philippines.</p>
-        <a href="mailto:nanglo@berkeley.edu">nanglo@berkeley.edu</a>
+        <a class="hm-in" href="https://www.linkedin.com/in/n-anglo/">Noam on LinkedIn</a>
       </li>
       <li>
         <img src="shared/home/team-tim.jpg" alt="Tim Groeschel" width="160" height="160" loading="lazy">
         <h3>Tim Groeschel</h3>
         <p class="hm-role">Business development lead · MS Energy and Resources ’27</p>
         <p>Brings experience in business development, strategy and project management from sustainability consulting, cleantech and climate adaptation policy.</p>
-        <a href="mailto:tim_groeschel@berkeley.edu">tim_groeschel@berkeley.edu</a>
+        <a class="hm-in" href="https://www.linkedin.com/in/tim-groeschel/">Tim on LinkedIn</a>
       </li>
       <li>
         <img src="shared/home/team-gregor.jpg" alt="Gregor Posadas" width="160" height="160" loading="lazy">
         <h3>Gregor Posadas</h3>
-        <p class="hm-role">Dashboard and flood model lead · PhD, Environmental Engineering</p>
+        <p class="hm-role">Dashboard and flood model lead · PhD student, Civil and Environmental Engineering</p>
         <p>An environmental engineer with an MS in Civil Engineering who builds the BahaWatch dashboard and its flood model. His research looks at Philippine water governance and infrastructure.</p>
-        <a href="mailto:gregorposadas@berkeley.edu">gregorposadas@berkeley.edu</a>
+        <a class="hm-in" href="https://www.linkedin.com/in/gregorposadas/">Gregor on LinkedIn</a>
       </li>
     </ul>
     <p class="hm-note">All three are at the University of California, Berkeley.</p>
   </section>
 
-  <section class="hm-sec" id="hm-collab" aria-labelledby="hm-collab-h">
+  <section class="hm-sec hm-fade" id="hm-collab" aria-labelledby="hm-collab-h">
     <h2 id="hm-collab-h">Collaborators</h2>
     <ul class="hm-logos">
-      <li><img loading="lazy" src="shared/home/logo-bike-scouts.jpg" alt="Bike Scouts"></li>
-      <li><img loading="lazy" src="shared/home/logo-up.jpg" alt="University of the Philippines"></li>
-      <li class="hm-wide"><img loading="lazy" src="shared/home/logo-blum-center.jpg" alt="Blum Center for Developing Economies"></li>
-      <li class="hm-wide"><img loading="lazy" src="shared/home/logo-disaster-lab.jpg" alt="UC Berkeley Disaster Lab"></li>
+      <li><img src="shared/home/logo-bike-scouts.jpg" alt="Bike Scouts" loading="lazy"></li>
+      <li><img src="shared/home/logo-up.jpg" alt="University of the Philippines" loading="lazy"></li>
+      <li class="hm-wide"><img src="shared/home/logo-blum-center.jpg" alt="Blum Center for Developing Economies" loading="lazy"></li>
+      <li class="hm-wide"><img src="shared/home/logo-disaster-lab.jpg" alt="UC Berkeley Disaster Lab" loading="lazy"></li>
+      <!--NOAH_LOGO-->
     </ul>
-    <p class="hm-note">Your logo here? Write to <a href="mailto:nanglo@berkeley.edu">nanglo@berkeley.edu</a> about collaborations.</p>
+    <div class="hm-ask">
+      <h3>Partner with us or support BahaWatch if you…</h3>
+      <ul>
+        <li>have put sensors through a typhoon or a monsoon: we want to know <b>what broke first</b>;</li>
+        <li>work with communities that would own and look after sensors: tell us <b>what worked and what did not</b>;</li>
+        <li>are a local government, university or disaster group that wants a <b>pilot</b>;</li>
+        <li>fund disaster resilience, open hardware or open data.</li>
+      </ul>
+      <a class="hm-btn hm-btn-p" href="#home/contact">Get in touch</a>
+    </div>
   </section>
 
-  <section class="hm-sec" id="hm-time" aria-labelledby="hm-time-h">
+  <section class="hm-sec hm-fade" id="hm-time" aria-labelledby="hm-time-h">
     <h2 id="hm-time-h">Timeline</h2>
     <ol class="hm-time">
       <li><b>Sensor prototype</b><span>by October 2026</span></li>
@@ -1025,9 +1232,18 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     </ol>
   </section>
 
-  <section class="hm-sec" id="hm-contact" aria-labelledby="hm-contact-h">
-    <h2 id="hm-contact-h">Contact</h2>
-    <p>For partnerships, pilots and funding, write to the team lead, <a href="mailto:nanglo@berkeley.edu">Noam Anglo</a>. For the dashboard and its data, write to <a href="mailto:gregorposadas@berkeley.edu">Gregor Posadas</a>. For business development, write to <a href="mailto:tim_groeschel@berkeley.edu">Tim Groeschel</a>.</p>
+  <section class="hm-sec hm-fade" id="hm-contact" aria-labelledby="hm-contact-h">
+    <h2 id="hm-contact-h" tabindex="-1">Contact</h2>
+    <p>For partnerships, pilots, funding or questions, write to our team lead.</p>
+    <div class="hm-mail">
+      <span class="hm-mail-n">Noam Anglo</span>
+      <span class="hm-mail-a" id="hm-mail">nanglo@berkeley.edu</span>
+      <button class="hm-copy" id="hm-copy" aria-label="Copy Noam’s email address" aria-describedby="hm-copied">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="1.5"/><path d="M16 8 V5.5 A1.5 1.5 0 0 0 14.5 4 H5.5 A1.5 1.5 0 0 0 4 5.5 V14.5 A1.5 1.5 0 0 0 5.5 16 H8"/></svg>
+        <span>Copy</span>
+      </button>
+      <span class="hm-copied" id="hm-copied" role="status" aria-live="polite"></span>
+    </div>
   </section>
 
   <footer class="hm-foot">
@@ -1052,6 +1268,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
   <button role="tab" data-site="about" aria-selected="true">About</button>
+  <button role="tab" data-site="access" aria-selected="false">Accessibility</button>
 </nav>
   <div class="ab-body">
    <nav class="ab-rail" aria-label="On this page">
@@ -1110,6 +1327,67 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <div><dt>Terrain check</dt><dd>NASA <span class="tt" data-term="ICESat-2"><span class="tt-t">ICESat-2</span>A NASA satellite laser that measures ground height along narrow tracks, to within tens of centimetres on open ground. We used 17,936 of its ground points at 26 sites as the reference to test FABDEM.</span> ground heights, 2019–2026.<span class="ab-use">Measuring how wrong the terrain is (see Accuracy).</span></dd></div>
         <div><dt>Simulated</dt><dd>Sensor readings, storms, neighbour reports.<span class="ab-use">Everything that moves.</span></dd></div>
       </dl>
+      <h3 id="ab-flow-h">How the data are processed</h3>
+      <p>For researchers who want the details: every step from the raw downloads to the answer on a phone. Scripts are named as they are in the <a href="https://github.com/gregor-posadas/bahawatch">repository</a>.</p>
+      <ol class="flow" aria-label="Data processing, in order">
+        <li class="flow-st">
+          <h4><span class="flow-n">1</span>Open data, downloaded once</h4>
+          <ul class="flow-grid">
+            <li><b>FABDEM V1-2</b> ground height, 30 m tiles, EGM2008 heights</li>
+            <li><b>OpenStreetMap</b> Philippines extract (Geofabrik): streets, creeks, names, campus outlines</li>
+            <li><b>Building footprints</b> (Google, Microsoft, OpenStreetMap, combined by VIDA)</li>
+            <li><b>NOAH hazard maps</b>, 5-, 25- and 100-year, per province</li>
+            <li><b>Barangay boundaries</b> (PSA, NAMRIA via OCHA HDX)</li>
+            <li><b>PhilDev campus list</b> (pipeline/campuses.csv)</li>
+          </ul>
+        </li>
+        <li class="flow-st">
+          <h4><span class="flow-n">2</span>Cut to each site <code>pipeline/run_pc.py</code></h4>
+          <ul class="flow-list">
+            <li><b>find</b>: match each campus name to its OpenStreetMap outline.</li>
+            <li><b>cut</b>: a box of about 3 × 3 km around each campus or pilot: terrain tiles merged and clipped, buildings, streets and creeks, NOAH polygons, barangays and the outline.</li>
+          </ul>
+        </li>
+        <li class="flow-st">
+          <h4><span class="flow-n">3</span>Build each site file <code>build_data.py</code></h4>
+          <ol class="flow-list">
+            <li><b>Grid.</b> 400 × 400 squares of 7.5 m; terrain kept on a 15 m grid inside the file.</li>
+            <li><b>Terrain.</b> FABDEM sampled onto the 15 m grid and smoothed (Gaussian, 1 cell), then rebuilt at 7.5 m by bilinear interpolation.</li>
+            <li><b>Streets.</b> Mapped streets become a 7.5 m street mask, cut 0.5 m below the lowest ground within 5 × 5 squares (about 40 m), so streets carry water.</li>
+            <li><b>Buildings.</b> Footprints become the share of each square that is built; a square at least 75% built blocks water (streets and creeks never block).</li>
+            <li><b>Sea.</b> Squares at or below 0 m that connect to the edge of the box.</li>
+            <li><b>Hazard and places.</b> NOAH classes per square for each return period; barangay and street places with their sensors (<code>tools/build_places.py</code>).</li>
+            <li><b>Sensor spots.</b> Placement score (lowness, hazard, nearness to water), spaced 300 m apart; each unit snapped to its street square and given that square’s ground height.</li>
+            <li><b>Checks.</b> File size (≤ 250 KB compressed), spacing, units inside the box (<code>tools/check_site_data.py</code>), then written to <code>data/&lt;site&gt;.json</code>.</li>
+          </ol>
+        </li>
+        <li class="flow-st">
+          <h4><span class="flow-n">4</span>Map tiles and labels</h4>
+          <ul class="flow-list">
+            <li>Streets, buildings and waterways as vector tiles (tippecanoe → PMTiles, <code>tools/build_basemap.py</code>), served from our own site.</li>
+            <li>Map-label glyphs in Atkinson Hyperlegible Next (<code>tools/build_glyphs.py</code>).</li>
+          </ul>
+        </li>
+        <li class="flow-st">
+          <h4><span class="flow-n">5</span>In the browser, at every reading</h4>
+          <ol class="flow-list">
+            <li><b>Reading in.</b> Each unit’s depth (here from the storm generator; live, from the server).</li>
+            <li><b>Water level.</b> Ground height at the unit’s street square + depth.</li>
+            <li><b>Spread.</b> From the street square to neighbouring squares (up, down, left, right). A square floods if 2 cm &lt; level − 1 cm per 15 m travelled − ground ≤ depth + 45 cm; otherwise the water stops there. Blocked and sea squares are skipped; the spread ends 1.2 km out.</li>
+            <li><b>Overlaps.</b> Where two units reach the same square, the deeper estimate wins, and the square remembers which unit it came from.</li>
+            <li><b>Drawing.</b> Depth sampled four times finer (about 1.9 m) so the shoreline follows the terrain; building outlines cut out of the water; colours from the depth spectrum.</li>
+            <li><b>Counts.</b> Buildings in flooded squares, streets cut, and a rough residents estimate (4.2 people per building).</li>
+            <li><b>Answer.</b> The <i>Babaha ba?</i> rule (<code>shared/verdict.js</code>) from sensors, neighbour reports and rain.</li>
+          </ol>
+        </li>
+        <li class="flow-st flow-off">
+          <h4><span class="flow-n">6</span>Live mode <span class="ab-tag">Designed, not switched on</span></h4>
+          <ul class="flow-list">
+            <li>Units’ readings arrive over LoRaWAN at a small server (Cloudflare Workers and a D1 database, on free plans), with hourly rain from Open-Meteo and neighbours’ reports.</li>
+            <li>Every 5 minutes it works out each place’s answer with the same rule file the demo uses, so demo and live answers can never drift apart.</li>
+          </ul>
+        </li>
+      </ol>
       <p class="ab-small">Code: MIT licence. FABDEM’s licence is non-commercial (CC BY-NC-SA 4.0), so the Philippine site files are too. Full list in the repository’s DATA-LICENSE.md.</p>
     </section>
 
@@ -1122,10 +1400,11 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <dl class="ab-ds">
         <div><dt>Where</dt><dd>On a household gate post or front wall at the street’s edge, with the household’s consent.</dd></div>
         <div><dt>Looking at</dt><dd>Street pavement straight below: not the yard, a canal or a drain opening. A clear patch about half a metre wide, where cars don’t usually park.</dd></div>
-        <div><dt>Height</dt><dd><span class="tt" data-term="the 2 m height"><span class="tt-t">About 2 m above the road</span>Low-cost ultrasonic sensors can’t see closer than about 25–30 cm. At 2 m a unit still reads water up to about 1.5 m deep, past the waist-deep level the dashboard shows, and it sits above most heads and splashes. A person or vehicle passing under gives a short false reading, so a unit should report the median of several pings.</span>.</dd></div>
+        <div><dt>Height</dt><dd><span class="tt" data-term="the 2 m height"><span class="tt-t">About 2 m above the road</span>The prototype’s ultrasonic sensor reads distances from 0.5 to 10 m. At 2 m a unit still reads water up to about 1.5 m deep, past the waist-deep level the dashboard shows, and it sits above most heads and splashes. A person or vehicle passing under gives a short false reading, so a unit should report the median of several pings.</span>.</dd></div>
         <div><dt>Zero point</dt><dd>At install, on a dry day, the unit records the distance to dry pavement. Water depth = that distance − the distance now.</dd></div>
         <div><dt>Ground height</dt><dd>Taken from the terrain map at the unit’s street square, not surveyed. Terrain error shifts the unit’s water level by the same amount.</dd></div>
-        <div><dt>Radio</dt><dd>Within range of a LoRaWAN gateway; one reading every 10 minutes.</dd></div>
+        <div><dt>Radio</dt><dd>Within range of a LoRaWAN gateway; one reading every 10 to 15 minutes (the demo simulates every 10).</dd></div>
+        <div><dt>Warning</dt><dd>The unit’s microcontroller tracks how fast the water rises and sends a warning before it reaches a set level.</dd></div>
       </dl>
       <h3>Where the spots come from</h3>
       <p>Teachers Village’s eight units were placed by hand along its low streets. Everywhere else <span class="tt" data-term="the placement rule"><span class="tt-t">a rule picks them</span>Candidates are houses within 25 m of a street and at least 300 m inside the map’s edge. Each gets a score: 0.5 × how low it sits (the share of ground within 300 m that is higher) + 0.3 × NOAH hazard + 0.2 × closeness to a creek or river (zero at 300 m). The best eight are picked at least 300 m apart (250 m, then 200 m, if eight don’t fit).</span>: low ground, mapped hazard, near water, spread apart. On a campus, unit 01 is on campus and the rest are in the barangays around it; in San Joaquin all eight are inside the barangay.</p>
@@ -1144,6 +1423,38 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <li><b>Old Manila core</b> (UST, FEU Tech, Mapúa, UDM): the map is about 2 m too high; only 2–12% of points within 1 m.</li>
       </ul>
       <p>Error grows with how built-up a place is. In tight streets the satellite can mistake roofs for ground, so the real error there may be larger.</p>
+      <h3>Why a terrain error is not the whole story</h3>
+      <p>The water level is set from the map’s own ground height at the sensor, and then compared with the map’s ground height elsewhere. An error that is the same everywhere (the whole map sitting 1 m too high) cancels out. What moves the edges is error that changes from street to street, which is what NMAD measures. A sensor sitting on a spot the map gets badly wrong, though, shifts its whole patch of water.</p>
+      <h3>Every setting the model uses</h3>
+      <div class="ab-tbl" role="region" aria-label="Model settings" tabindex="0">
+      <table class="ab-table">
+        <thead><tr><th scope="col">Setting</th><th scope="col">Value</th><th scope="col">Why, and what it costs</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Grid</th><td>7.5 m squares; terrain detail 15 m (FABDEM is 30 m)</td><td>Streets in barangays are often 4–8 m wide. A finer grid separates streets from houses but adds no height detail.</td></tr>
+          <tr><th scope="row">Smoothing</th><td>Gaussian, 1 cell (15 m)</td><td>Removes satellite noise; also softens real kerbs and small walls.</td></tr>
+          <tr><th scope="row">Street cut</th><td>0.5 m below the lowest ground within about 40 m</td><td>Makes streets connected channels, as they are; a guess, not a survey.</td></tr>
+          <tr><th scope="row">Buildings</th><td>A square ≥ 75% built blocks water</td><td>Water goes around blocks; real houses let some water in, and merged footprints can close real alleys.</td></tr>
+          <tr><th scope="row">Wet threshold</th><td>Over 2 cm</td><td>Below this, a square is treated as dry.</td></tr>
+          <tr><th scope="row">Depth band</th><td>Up to the reading + 45 cm</td><td>Stops a shallow reading on a slope from flooding a deep valley below it.</td></tr>
+          <tr><th scope="row">Fading</th><td>1 cm per 15 m from the sensor</td><td>Keeps far estimates cautious; real water surfaces are nearly flat over short distances.</td></tr>
+          <tr><th scope="row">Reach</th><td>1.2 km from each sensor</td><td>Beyond this, the map says nothing rather than guess.</td></tr>
+          <tr><th scope="row">Residents</th><td>4.2 people per building</td><td>Close to the average Philippine household; buildings with several households are undercounted.</td></tr>
+          <tr><th scope="row">Fresh data</th><td>20 minutes</td><td>Two missed readings; after that the answer becomes “No fresh data”.</td></tr>
+          <tr><th scope="row"><i>Oo</i> (yes)</th><td>Sensor ≥ 5 cm, or rising to it within 60 minutes</td><td>Only a sensor can say yes.</td></tr>
+          <tr><th scope="row"><i>Baka</i> (maybe)</th><td>3 or more reports within 1 km in an hour; rain ≥ 7.5 mm/h on a NOAH 5- or 25-year zone, or ≥ 15 mm/h on any mapped zone; 1–2 reports; or a 1 cm trace</td><td>The rain levels follow PAGASA’s yellow and orange rainfall warnings. A dry sensor within 500 m is shown against reports.</td></tr>
+          <tr><th scope="row">Passability</th><td>Cars: slow from 25 cm, not light vehicles from 33 cm, none from 66 cm. Motorcycles: slow from 15 cm, not passable from 30 cm.</td><td>Car levels from the MMDA Flood Gauge and Mamuyac et al. (2025); motorcycle levels are our own rule.</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <h3>The simulated readings</h3>
+      <p>Each storm is a rain pulse over 36 hours (two pulses for a typhoon). A unit’s depth = (rain × how susceptible its spot is − 2 cm) × a small random factor, capped at 90 cm. Susceptibility grows with how low the spot is and its NOAH hazard class. Replays are identical (a fixed random seed). This makes the demo look plausible; it is not a forecast and is not evidence that the model is right.</p>
+      <h3>What has not been checked yet</h3>
+      <ul class="ab-list">
+        <li><b>No comparison with real floods.</b> No mapped extent has been compared with an observed flood (satellite flood maps, geotagged photos, MMDA reports). That is the next step.</li>
+        <li><b>No real readings.</b> The thresholds (5 cm, 20 minutes, 45 cm, 1 cm per 15 m) are reasoned, not tuned on data.</li>
+        <li><b>Sensor accuracy</b> in rain, heat and debris, and how often a passer-by gives a false reading, still have to be measured on the bench and in the field.</li>
+        <li><b>Edges are no sharper than the terrain.</b> The shoreline is drawn about 1.9 m fine, but it is interpolated from 15 m terrain.</li>
+      </ul>
       <h3>Other limits and biases</h3>
       <ul class="ab-list">
         <li><b>No moving water.</b> The model does not simulate rain, runoff, drains, flow speed or volume. It shows where the measured water level can reach; places far from any sensor stay blank.</li>
@@ -1195,6 +1506,128 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
  </div>
 </section>
 
+<section id="access" aria-labelledby="ax-h">
+ <div class="ab-inner">
+  <div class="nat-top">
+    <div><div class="p-name">BahaWatch</div><h1 class="nat-h" id="ax-h">Accessibility</h1></div>
+    <div class="p-tools">
+      <button id="ax-theme" aria-label="Switch theme">☾</button>
+    </div>
+  </div>
+<nav class="site-tabs" role="tablist" aria-label="Site">
+  <button role="tab" data-site="home" aria-selected="false">Home</button>
+  <button role="tab" data-site="ph" aria-selected="false">PhilDev campuses</button>
+  <button role="tab" data-site="tv" aria-selected="false">Teachers Village</button>
+  <button role="tab" data-site="sjq" aria-selected="false">San Joaquin</button>
+  <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
+  <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
+  <button role="tab" data-site="about" aria-selected="false">About</button>
+  <button role="tab" data-site="access" aria-selected="true">Accessibility</button>
+</nav>
+  <div class="ab-body">
+   <nav class="ab-rail ax-rail" aria-label="On this page">
+    <p class="ab-rail-h">On this page</p>
+    <ul>
+      <li><a href="#access/type" data-sec="type">Typeface</a></li>
+      <li><a href="#access/colour" data-sec="colour">Colour and shape</a></li>
+      <li><a href="#access/input" data-sec="input">Touch and keyboard</a></li>
+      <li><a href="#access/sr" data-sec="sr">Screen readers</a></li>
+      <li><a href="#access/motion" data-sec="motion">Motion</a></li>
+      <li><a href="#access/words" data-sec="words">Words and languages</a></li>
+      <li><a href="#access/net" data-sec="net">Slow phones and connections</a></li>
+      <li class="ab-rail-faq"><a href="#access/gaps" data-sec="gaps">What still falls short</a></li>
+    </ul>
+   </nav>
+   <article class="ab-main">
+    <section id="ax-intro" aria-label="Introduction">
+      <p class="ab-lead">Floods hit everyone: older residents, people with low vision or colour blindness, people on cheap phones with weak signal. These are the choices we made so the dashboard works for as many of them as we can, and where it still falls short.</p>
+      <p>Our target is the Web Content Accessibility Guidelines (WCAG) 2.1 at level AA, with larger touch targets. Most of what follows is checked by automated tests that run on every change.</p>
+    </section>
+
+    <section id="ax-type" aria-labelledby="ax-type-h">
+      <h2 id="ax-type-h" tabindex="-1">Typeface</h2>
+      <p>All text, including the map labels and the depth figure, is set in <b>Atkinson Hyperlegible Next</b>, a typeface the Braille Institute designed for readers with low vision. Letters that are easy to confuse are drawn to differ: capital I has serifs, lower-case l has a tail, and zero has a slash.</p>
+      <ul class="ab-list">
+        <li>Nothing is smaller than 12 px, and 12 px is used only for credits, times and helper lines. Reading text is 16 px.</li>
+        <li>Three weights only (regular, semibold, bold), so emphasis stays clear.</li>
+        <li>Lines of reading text stop at about 72 characters.</li>
+      </ul>
+    </section>
+
+    <section id="ax-colour" aria-labelledby="ax-colour-h">
+      <h2 id="ax-colour-h" tabindex="-1">Colour and shape</h2>
+      <ul class="ab-list">
+        <li><b>Contrast.</b> Text has at least 4.5:1 contrast with its background, and large text, borders and map markers at least 3:1, in both the light and the dark theme. The theme follows your device and can be switched with the ☾ / ☀ button.</li>
+        <li><b>Shape as well as colour.</b> Status never depends on colour alone:
+          <span class="ax-shapes"><span><i class="shape ok" aria-hidden="true"></i>ring: normal</span><span><i class="shape warn" aria-hidden="true"></i>triangle: water on the street</span><span><i class="shape alert" aria-hidden="true"></i>square: flooded</span><span><i class="ax-nodata" aria-hidden="true"></i>dashed box: no fresh data</span></span>
+          Campus pins use the same idea: circle for state universities, square for local, triangle for private.</li>
+        <li><b>Colour-blind-safe colours.</b> Status colours come from the Okabe–Ito palette, darkened until they pass the contrast rules; figure colours follow Jack Baker’s guidance. Our tests check the pins and markers under simulated red, green and blue colour blindness (Machado, Oliveira and Fernandes, 2009).</li>
+        <li><b>Water reads in greyscale.</b> Depth runs from a pale to a dark blue in one even spectrum, so deeper water is darker even in a black-and-white printout. The NOAH hazard layer uses purples, and the sea a grey-blue, kept clearly apart from both.</li>
+      </ul>
+    </section>
+
+    <section id="ax-input" aria-labelledby="ax-input-h">
+      <h2 id="ax-input-h" tabindex="-1">Touch and keyboard</h2>
+      <ul class="ab-list">
+        <li>Buttons and links are at least 48 × 48 px, larger than the WCAG minimum, for older hands and moving vehicles. The site tabs and a few Details controls are the exceptions (see below).</li>
+        <li>Everything works with a keyboard. Focus shows as a thick blue outline. Arrow keys move between tabs; Escape closes notes and pop-ups; on the detailed map, + and − zoom, the arrow keys pan and 0 resets.</li>
+        <li>No page scrolls sideways, from a 375 px phone to a desktop screen; the tabs wrap onto a second row instead.</li>
+        <li>Underlined terms open a short note when tapped, clicked or hovered, and the note stays inside the screen.</li>
+      </ul>
+    </section>
+
+    <section id="ax-sr" aria-labelledby="ax-sr-h">
+      <h2 id="ax-sr-h" tabindex="-1">Screen readers</h2>
+      <ul class="ab-list">
+        <li>Every map has a written description, and every pin and sensor has a spoken label (for example, its name, place and status).</li>
+        <li>The answer (<i>Babaha ba?</i>) is announced when it changes, not every time the screen redraws, and the announcement starts by saying the storm is simulated.</li>
+        <li>The street list carries everything the map shows, as text, so the map is never the only way to get an answer.</li>
+        <li>Figures and decorative drawings are either described or hidden from screen readers.</li>
+      </ul>
+    </section>
+
+    <section id="ax-motion" aria-labelledby="ax-motion-h">
+      <h2 id="ax-motion-h" tabindex="-1">Motion</h2>
+      <ul class="ab-list">
+        <li>If your device is set to reduce motion, nothing animates: the storm does not play by itself, maps jump instead of flying, and the homepage drawings stand still.</li>
+        <li>Otherwise animation is short and only moves or fades things; nothing flashes.</li>
+        <li>While a site’s file or the map is loading, a thin bar at the top of the screen and a note on the map say so, so a slow connection never looks like a broken page.</li>
+      </ul>
+    </section>
+
+    <section id="ax-words" aria-labelledby="ax-words-h">
+      <h2 id="ax-words-h" tabindex="-1">Words and languages</h2>
+      <ul class="ab-list">
+        <li>Six languages on the Philippine sites: English, Filipino, Cebuano, Ilokano, Hiligaynon and Kapampangan.</li>
+        <li>Plain words in the style of MMDA and PAGASA advisories. Depth is given in body terms (gutter-, knee-, waist-deep) and in centimetres and inches, with a drawing of a person, a motorcycle and a car.</li>
+        <li>The page always says what is simulated, never blames the reader, and never says “no” (<i>Hindi</i>) on old data: it says “No fresh data” instead.</li>
+        <li>No accounts and no sign-up, which keep out many older users.</li>
+      </ul>
+    </section>
+
+    <section id="ax-net" aria-labelledby="ax-net-h">
+      <h2 id="ax-net-h" tabindex="-1">Slow phones and connections</h2>
+      <ul class="ab-list">
+        <li>Each site’s data is at most 250 KB compressed; a campus page loads in about 3 seconds on a simulated fast 3G connection in our tests.</li>
+        <li>Once opened, the page opens again without signal and shows the last answer with its time.</li>
+        <li>The maps are served from our own site, with no paid map service that could be switched off.</li>
+      </ul>
+    </section>
+
+    <section id="ax-gaps" aria-labelledby="ax-gaps-h">
+      <h2 id="ax-gaps-h" tabindex="-1">What still falls short</h2>
+      <ul class="ab-list">
+        <li>The detailed map is a drawing: a screen reader cannot move from marker to marker on it. The street list is the way through.</li>
+        <li>Cebuano, Ilokano, Hiligaynon and Kapampangan were drafted without a native speaker and are marked for review. The homepage, About and this page are in English only.</li>
+        <li>The site tabs are 40 px tall, and a few controls in the Details view are smaller than 48 px.</li>
+        <li>The homepage drawings repeat while they are on screen; they stop only when the device is set to reduce motion.</li>
+        <li>We have not yet tested with people who use screen readers or magnifiers every day. We would like to: please get in touch.</li>
+      </ul>
+    </section>
+   </article>
+  </div>
+ </div>
+</section>
 <section id="public" aria-label="Flood status">
  <div class="p-inner">
   <div class="p-head">
@@ -1215,6 +1648,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
   <button role="tab" data-site="about" aria-selected="false">About</button>
+  <button role="tab" data-site="access" aria-selected="false">Accessibility</button>
 </nav>
 <div class="c-bar" data-cbar hidden>
   <a href="#ph" class="c-back"></a><span aria-hidden="true">·</span><button class="c-pick"></button>
@@ -1353,6 +1787,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <button role="tab" data-site="berkeley" aria-selected="false">UC Berkeley</button>
   <button role="tab" data-site="try" aria-selected="false">Try reporting</button>
   <button role="tab" data-site="about" aria-selected="false">About</button>
+  <button role="tab" data-site="access" aria-selected="false">Accessibility</button>
 </nav>
 <div class="c-bar" data-cbar hidden>
   <a href="#ph" class="c-back"></a><span aria-hidden="true">·</span><button class="c-pick"></button>
@@ -1362,6 +1797,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 
 <main>
   <div id="map-wrap">
+    <p class="map-busy" id="site-busy" aria-hidden="true" hidden>Loading map…</p>
     <div id="site-gl" aria-hidden="true"></div>
     <canvas id="map"></canvas>
     <canvas id="overlay" tabindex="0" role="application" aria-label="Flood map. Use plus and minus to zoom, arrow keys to pan, 0 to reset." aria-describedby="map-desc"></canvas>
@@ -1495,8 +1931,8 @@ const DATA_ALL={};                   // site id → its parsed data file (loadSi
 const dataInflight={};
 function loadSiteData(id){
   if(DATA_ALL[id])return Promise.resolve(DATA_ALL[id]);
-  if(!dataInflight[id])dataInflight[id]=fetch(DATA_BASE+id+".json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
-    .then(d=>{DATA_ALL[id]=d;PLACES.sites[id]=d.places||[];delete dataInflight[id];return d;},e=>{delete dataInflight[id];throw e;});
+  if(!dataInflight[id]){busy("data:"+id,true);dataInflight[id]=fetch(DATA_BASE+id+".json").then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+    .then(d=>{DATA_ALL[id]=d;PLACES.sites[id]=d.places||[];delete dataInflight[id];busy("data:"+id,false);return d;},e=>{delete dataInflight[id];busy("data:"+id,false);throw e;});}
   return dataInflight[id];
 }
 const API_BASE="";          // reserved for the report-submission worker (Task 6); unused here
@@ -1985,11 +2421,11 @@ function siteGLSync(){
 function siteGLStart(){
   if(SITEGL.state!=="none")return;
   if(window.BW_SITE_NO_GL){SITEGL.state="off";return;}   // test hook: the flood map alone, as without WebGL
-  SITEGL.state="loading";const th=curTheme(),set=countrySet();
+  SITEGL.state="loading";const th=curTheme(),set=countrySet();if(ROUTE==="site")busy("map:site",true);
   bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("site-gl"),{bounds:siteLL(),theme:th,reduced:true,padding:0,minZoom:1,maxZoom:21,styleSet:set,interactive:false}))
-    .then(map=>{SITEGL.map=map;SITEGL.state="on";SITEGL.theme=th;SITEGL.set=set;siteGLStyle();map.on("idle",footLoad);
+    .then(map=>{SITEGL.map=map;SITEGL.state="on";SITEGL.theme=th;SITEGL.set=set;siteGLStyle();map.on("idle",footLoad);busy("map:site",false);busyMap(map,"map:site");
       $("map-wrap").classList.add("gl");syncCountryUI();applyView();drawMap();drawOverlayCanvas();},
-      ()=>{SITEGL.state="off";});
+      ()=>{SITEGL.state="off";busy("map:site",false);});
 }
 function siteGLStyle(){
   $("map-wrap").classList.toggle("gl",glOn());
@@ -2623,7 +3059,7 @@ function setTheme(t,render){
   themeBtn.textContent=t==="dark"?"☀":"☾";
   themeBtn.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");
   themeBtn.setAttribute("aria-pressed",t==="dark"?"true":"false");
-  for(const pt of [document.getElementById("p-theme"),document.getElementById("nat-theme"),document.getElementById("ab-theme"),document.getElementById("hm-theme")])if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
+  for(const pt of [document.getElementById("p-theme"),document.getElementById("nat-theme"),document.getElementById("ab-theme"),document.getElementById("hm-theme"),document.getElementById("ax-theme")])if(pt){pt.textContent=t==="dark"?"☀":"☾";pt.setAttribute("aria-label",t==="dark"?"Switch to light theme":"Switch to dark theme");}
   if(render&&siteBooted){renderBase();renderNoah();renderFlood();drawMap();}   // on the national map no site is drawn yet
 }
 let savedTheme=null;try{savedTheme=localStorage.getItem("bw-theme");}catch(e){}
@@ -2927,7 +3363,7 @@ function exitTry(nextSite,fromHash){
 }
 function selectTab(key){
   if(key==="home"){if(ROUTE!=="home")location.hash="#home";else homeEnter("");return;}
-  if(key==="ph"||key==="about"){if(location.hash!=="#"+key)location.hash="#"+key;else if(key==="about")aboutEnter("");return;}
+  if(key==="ph"||READ[key]){if(location.hash!=="#"+key)location.hash="#"+key;else if(READ[key])readEnter(key,"",key);return;}
   if(ROUTE!=="site"||!DATA_ALL[key==="try"?"tv":key]){location.hash="#"+key;return;}   // needs a fetch or leaves the national map: the router does it
   if(key==="try"){if(!TRY)enterTry();return;}
   if(TRY){exitTry(key);writeHash();return;}
@@ -3811,7 +4247,7 @@ $("p-theme").addEventListener("click",()=>setTheme(document.documentElement.data
 function parseHash(){
   const raw=(location.hash||"").replace(/^#/,"");
   TRY=raw==="try";if(TRY){LIVE=false;return {route:"site",site:"tv",view:"public"};}
-  if(/^about(\/|$)/.test(raw)){LIVE=false;return {route:"about",sec:raw.split("/")[1]||""};}
+  if(/^(about|access)(\/|$)/.test(raw)){LIVE=false;return {route:raw.split("/")[0],sec:raw.split("/")[1]||""};}
   if(raw===""||/^home(\/|$)/.test(raw)){LIVE=false;return {route:"home",sec:raw.split("/")[1]||""};}   // a plain link opens the homepage
   const tok=raw.match(/^p\.([a-z]+)\.(s|b)\.([A-Za-z0-9-]+)$/);
   if(tok){const site=LEGACY_SITES[tok[1]]||tok[1];
@@ -3824,11 +4260,11 @@ function parseHash(){
   return {route:"site",site:m[0],view:m[1]==="details"?"details":"public"};
 }
 function writeHash(){
-  const h=ROUTE==="ph"?"#ph":ROUTE==="home"?(HOME_SEC?"#home/"+HOME_SEC:""):ROUTE==="about"?"#about"+(ABOUT_SEC?"/"+ABOUT_SEC:""):TRY?"#try":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
+  const h=ROUTE==="ph"?"#ph":ROUTE==="home"?(HOME_SEC?"#home/"+HOME_SEC:""):READ[ROUTE]?"#"+ROUTE+(READ[ROUTE].sec?"/"+READ[ROUTE].sec:""):TRY?"#try":"#"+SITE+(VIEW==="details"?"/details":"")+(LIVE?"/live":"");
   history.replaceState(null,"",h||location.pathname+location.search);
   try{localStorage.setItem("bw-last-hash",h);}catch(e){}   // Add to Home Screen: relaunch (?source=pwa, no hash) restores this
 }
-function syncTabs(){const cur=ROUTE==="home"?"home":ROUTE==="about"?"about":TRY?"try":(ROUTE==="ph"||isCampus(SITE))?"ph":SITE;
+function syncTabs(){const cur=ROUTE==="home"||READ[ROUTE]?ROUTE:TRY?"try":(ROUTE==="ph"||isCampus(SITE))?"ph":SITE;
   document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{const on=b.dataset.site===cur;b.setAttribute("aria-selected",on?"true":"false");b.tabIndex=on?0:-1;});}
 document.querySelectorAll('.site-tabs [role="tab"]').forEach(b=>{
   b.addEventListener("click",()=>selectTab(b.dataset.site));
@@ -4258,11 +4694,11 @@ function natLimits(){
 // The vector basemap: tried once per visit; on any failure the outline stays, with the note (spec §4.3).
 function natGLStart(){
   if(NATGL.state!=="none")return;NATGL.state="loading";
-  const th=curTheme();
+  const th=curTheme();if(ROUTE==="ph")busy("map:nat",true);
   // on a touch screen one finger scrolls the page past the map (it sits above the list on a phone); two fingers move it
   bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("nat-gl"),{bounds:PH_BOUNDS,theme:th,reduced:reducedMotion,padding:24,minZoom:3,
     cooperativeGestures:matchMedia("(pointer: coarse)").matches,locale:bwCoopLocale(NL().coop)}))
-    .then(map=>{NATGL.map=map;NATGL.state="on";NATGL.theme=th;document.body.dataset.natgl="1";$("nat-credit").hidden=false;nsimSync();
+    .then(map=>{NATGL.map=map;NATGL.state="on";NATGL.theme=th;busy("map:nat",false);busyMap(map,"map:nat");document.body.dataset.natgl="1";$("nat-credit").hidden=false;nsimSync();
       NATGL.refit=ROUTE!=="ph"||!natBox().clientWidth;              // opened out of sight: its zoom is for a 0-size box
       if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme()));NATGL.theme=curTheme();}   // switched while it loaded
       bwSetLocale(map,bwCoopLocale(NL().coop));                     // the language may have changed while it loaded
@@ -4270,7 +4706,7 @@ function natGLStart(){
       map.on("click",e=>{if(!e.originalEvent.target.closest(".pin,.pin-cluster"))natDeselect();});
       if(NAT.sel){const c=CAMPUS_BY_ID[NAT.sel];map.fitBounds(bwCampusBox(c.lat,c.lon),{padding:60,maxZoom:15,duration:0});}
       natPins();},
-      ()=>{NATGL.state="off";$("nat-credit").hidden=true;const n=$("nat-note");n.textContent=NL().mapNote;n.hidden=false;});
+      ()=>{NATGL.state="off";busy("map:nat",false);$("nat-credit").hidden=true;const n=$("nat-note");n.textContent=NL().mapNote;n.hidden=false;});
 }
 // A theme switch restyles the vector maps; our overlays are untouched.
 function bwThemeChanged(t){
@@ -4366,7 +4802,7 @@ function countryOut(){
   else if(COUNTRY.state==="none"){COUNTRY.state="loading";
     const th=curTheme();
     bwLoadMapLibre().then(lib=>bwOpenMap(lib,$("country-gl"),{bounds:siteLL(),theme:th,reduced:reducedMotion,padding:0,minZoom:2,styleSet:countrySet()}))
-      .then(map=>{COUNTRY.map=map;COUNTRY.state="on";COUNTRY.theme=th;
+      .then(map=>{COUNTRY.map=map;COUNTRY.state="on";COUNTRY.theme=th;busyMap(map,"map:country");
         if(curTheme()!==th){map.setStyle(bwStyleUrl(curTheme(),countrySet()));COUNTRY.theme=curTheme();}   // switched while it loaded
         map.on("move",countryDrawSoon);map.on("resize",countryDrawSoon);map.on("zoom",countryZoomCheck);
         if(COUNTRY.on)countryEnterGL();},
@@ -4513,50 +4949,84 @@ document.addEventListener("click",e=>{if(TT&&!TT.el.contains(e.target))tipHide(f
 window.addEventListener("scroll",tipPlace,{passive:true,capture:true});
 window.addEventListener("resize",tipPlace);
 
-/* ---------- Home (no hash, #home, #home/how) ---------- */
+/* ---------- Home (no hash, #home, #home/how, #home/contact) ---------- */
+const HOME_SECS={how:"hm-how-h",contact:"hm-contact-h"};
 let HOME_SEC="";
 function homeEnter(sec,from){
   document.title="BahaWatch — Low-cost flood sensing for Philippine communities";
-  HOME_SEC=sec==="how"?"how":"";
-  if(HOME_SEC){const h=$("hm-how-h");h.scrollIntoView({behavior:reducedMotion||from!=="home"?"auto":"smooth",block:"start"});h.focus({preventScroll:true});}
+  HOME_SEC=HOME_SECS[sec]?sec:"";
+  if(HOME_SEC){const h=$(HOME_SECS[HOME_SEC]),s=h.closest(".hm-fade");if(s)s.classList.add("hm-shown");
+    h.scrollIntoView({behavior:reducedMotion||from!=="home"?"auto":"smooth",block:"start"});h.focus({preventScroll:true});}
   else window.scrollTo(0,0);
   homeAnim();
 }
-// the how-it-works line moves only while it is on screen, not paused, and motion is welcome
-let hmSeen=false,hmPaused=false;
-function homeAnim(){const run=ROUTE==="home"&&hmSeen&&!hmPaused&&!reducedMotion;$("hm-how").classList.toggle("hm-run",run);
-  const b=$("hm-play");b.hidden=reducedMotion;b.setAttribute("aria-pressed",hmPaused?"true":"false");b.textContent=hmPaused?"Play the animation":"Pause the animation";}
+// the illustrations move while they are on screen (always on repeat, at Gregor's request), never under reduced motion
+let hmSeen=false;
+function homeAnim(){$("hm-how").classList.toggle("hm-run",ROUTE==="home"&&hmSeen&&!reducedMotion);}
 if(window.IntersectionObserver)new IntersectionObserver(es=>{hmSeen=es.some(e=>e.isIntersecting);homeAnim();}).observe($("hm-how"));else hmSeen=true;
-$("hm-play").addEventListener("click",()=>{hmPaused=!hmPaused;homeAnim();});
 $("hm-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
-document.querySelectorAll('#home a[href="#home/how"]').forEach(a=>a.addEventListener("click",e=>{if(location.hash==="#home/how"){e.preventDefault();homeEnter("how","home");}}));
-
-/* ---------- About (#about, #about/<section>) ---------- */
-const ABOUT_SECS=["what","how","data","sensors","limits","next","faq"];
-let ABOUT_SEC="";
-function aboutEnter(sec,from){
-  document.title="BahaWatch — About";
-  ABOUT_SEC=ABOUT_SECS.includes(sec)?sec:"";
-  if(ABOUT_SEC){const h=document.getElementById("ab-"+ABOUT_SEC+"-h");
-    h.scrollIntoView({behavior:reducedMotion||from!=="about"?"auto":"smooth",block:"start"});h.focus({preventScroll:true});}
-  else window.scrollTo(0,0);
-  aboutSpy(ABOUT_SEC||"what");
+document.querySelectorAll('#home a[href^="#home/"]').forEach(a=>a.addEventListener("click",e=>{if(location.hash===a.getAttribute("href")){e.preventDefault();homeEnter(a.getAttribute("href").split("/")[1],"home");}}));
+// explore cards are raised; a click sinks the card and lets it come back up before the page changes
+document.querySelectorAll(".hm-cards a").forEach(a=>a.addEventListener("click",e=>{
+  if(e.metaKey||e.ctrlKey||e.shiftKey||e.button)return;e.preventDefault();const h=a.getAttribute("href");
+  if(reducedMotion){location.hash=h;return;}
+  a.classList.add("hm-press");setTimeout(()=>{a.classList.remove("hm-press");setTimeout(()=>{location.hash=h;},100);},150);}));
+// copy Noam's email address (no mailto: link, so nothing pops up on hover)
+$("hm-copy").addEventListener("click",()=>{
+  const addr=$("hm-mail").textContent.trim(),done=ok=>{$("hm-copied").textContent=ok?"Copied":"Select the address to copy it";clearTimeout(done.t);done.t=setTimeout(()=>{$("hm-copied").textContent="";},2500);};
+  const legacy=()=>{try{const r=document.createRange();r.selectNodeContents($("hm-mail"));const s=getSelection();s.removeAllRanges();s.addRange(r);done(document.execCommand("copy"));}catch(x){done(false);}};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(addr).then(()=>done(true),legacy);else legacy();
+});
+// sections fade in as they scroll into view: homepage, About and Accessibility
+if(window.IntersectionObserver&&!reducedMotion){
+  document.querySelectorAll(".ab-main > section").forEach(s=>s.classList.add("hm-fade"));
+  document.body.classList.add("fx-on");
+  const fio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("hm-shown");fio.unobserve(e.target);}}),{rootMargin:"0px 0px -8% 0px"});
+  document.querySelectorAll(".hm-fade").forEach(s=>fio.observe(s));
 }
+
+/* ---------- reading pages: About (#about/<section>) and Accessibility (#access/<section>) ---------- */
+const READ={about:{pre:"ab",title:"About",secs:["what","how","data","sensors","limits","next","faq"],sec:""},
+  access:{pre:"ax",title:"Accessibility",secs:["type","colour","input","sr","motion","words","net","gaps"],sec:""}};
+function readEnter(route,sec,from){
+  const P=READ[route];document.title="BahaWatch — "+P.title;
+  P.sec=P.secs.includes(sec)?sec:"";
+  if(P.sec){const h=document.getElementById(P.pre+"-"+P.sec+"-h");h.closest("section").classList.add("hm-shown");
+    h.scrollIntoView({behavior:reducedMotion||from!==route?"auto":"smooth",block:"start"});h.focus({preventScroll:true});}
+  else window.scrollTo(0,0);
+  readSpy(route,P.sec||P.secs[0]);
+}
+const aboutEnter=(sec,from)=>readEnter("about",sec,from);
 // the rail marks the section being read: the last one whose heading has passed the top third of the window
-function aboutSpy(force){
-  let cur=force;
-  if(!cur){cur="what";for(const s of ABOUT_SECS){const h=document.getElementById("ab-"+s+"-h");if(h.getBoundingClientRect().top<=window.innerHeight/3)cur=s;}
-    if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-2)cur=ABOUT_SECS[ABOUT_SECS.length-1];}
-  document.querySelectorAll(".ab-rail a").forEach(a=>{if(a.dataset.sec===cur)a.setAttribute("aria-current","true");else a.removeAttribute("aria-current");});
+function readSpy(route,force){
+  const P=READ[route];let cur=force;
+  if(!cur){cur=P.secs[0];for(const s of P.secs){const h=document.getElementById(P.pre+"-"+s+"-h");if(h.getBoundingClientRect().top<=window.innerHeight/3)cur=s;}
+    if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-2)cur=P.secs[P.secs.length-1];}
+  document.querySelectorAll("#"+route+" .ab-rail a").forEach(a=>{if(a.dataset.sec===cur)a.setAttribute("aria-current","true");else a.removeAttribute("aria-current");});
 }
 let abSpyQ=0;
-window.addEventListener("scroll",()=>{if(ROUTE!=="about"||abSpyQ)return;abSpyQ=requestAnimationFrame(()=>{abSpyQ=0;aboutSpy();});},{passive:true});
-document.querySelectorAll(".ab-rail a").forEach(a=>a.addEventListener("click",e=>{if(location.hash===a.getAttribute("href")){e.preventDefault();aboutEnter(a.dataset.sec,"about");}}));
-$("ab-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
+window.addEventListener("scroll",()=>{if(!READ[ROUTE]||abSpyQ)return;abSpyQ=requestAnimationFrame(()=>{abSpyQ=0;if(READ[ROUTE])readSpy(ROUTE);});},{passive:true});
+for(const route of Object.keys(READ))document.querySelectorAll("#"+route+" .ab-rail a").forEach(a=>a.addEventListener("click",e=>{if(location.hash===a.getAttribute("href")){e.preventDefault();readEnter(route,a.dataset.sec,route);}}));
+for(const id of ["ab-theme","ax-theme"])$(id).addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
 tipsInit(document);
 
+/* ---------- loading feedback ---------- */
+const BUSY=new Set();let busyT=0;
+function busyPaint(all){
+  const on=k=>BUSY.has(k);
+  if(all||!BUSY.size)$("busy").hidden=!BUSY.size;
+  for(const [id,ks] of [["nat-busy",["map:nat"]],["site-busy",["map:site","map:country"]]]){const b=ks.some(on);if(!b||all)$(id).hidden=!b;}
+}
+function busy(key,on){
+  if(on)BUSY.add(key);else BUSY.delete(key);
+  busyPaint(false);clearTimeout(busyT);if(BUSY.size)busyT=setTimeout(()=>busyPaint(true),150);
+}
+function busyMap(map,key){map.on("dataloading",()=>{if(ROUTE===(key==="map:nat"?"ph":"site"))busy(key,true);});map.on("idle",()=>busy(key,false));}
+// a map off screen is not something the person is waiting for
+function busyRoute(r){if(r!=="ph")busy("map:nat",false);if(r!=="site"){busy("map:site",false);busy("map:country",false);}}
+
 let ROUTE=null, siteBooted=false, navSeq=0, lastNav=null;
-function showRoute(r){ROUTE=r;document.body.dataset.route=r;}
+function showRoute(r){ROUTE=r;document.body.dataset.route=r;busyRoute(r);}
 function markReady(id){document.body.dataset.ready=id;}        // tests and timings wait for this
 // The router: every navigation (boot, hash change, Try again) comes through here. A newer navigation wins over one
 // whose data file is still loading.
@@ -4574,9 +5044,9 @@ function go(h,ctx){
     const from=ROUTE;showRoute("home");homeEnter(h.sec,from);syncTabs();writeHash();markReady("home");
     return Promise.resolve();
   }
-  if(h.route==="about"){
+  if(READ[h.route]){
     if(siteBooted){if(ctx.wasTry)exitTry(SITE,true);setPlay(false);}
-    const from=ROUTE;showRoute("about");aboutEnter(h.sec,from);syncTabs();writeHash();markReady("about");
+    const from=ROUTE;showRoute(h.route);readEnter(h.route,h.sec,from);syncTabs();writeHash();markReady(h.route);
     return Promise.resolve();
   }
   if(!DATA_ALL[h.site]&&siteBooted){TRY=ctx.wasTry;LIVE=ctx.wasLive;}   // until the new file arrives, the page still shows the old site

@@ -17,10 +17,10 @@ const openTips=pg=>pg.evaluate(()=>[...document.querySelectorAll('.tt-p')].filte
     await pg.goto(U+'#about');await ready(pg,"about");
     let s=await pg.evaluate(()=>({route:ROUTE,shown:getComputedStyle(document.getElementById('about')).display!=="none",nat:getComputedStyle(document.getElementById('nat')).display,
       tabs:[...document.querySelectorAll('.site-tabs')].map(n=>[...n.querySelectorAll('[role=tab]')].map(t=>t.dataset.site+(t.getAttribute('aria-selected')==="true"?"*":"")).join()),
-      rail:[...document.querySelectorAll('.ab-rail a')].map(a=>a.textContent),h1:document.getElementById('ab-h').textContent,sw:document.documentElement.scrollWidth,
-      small:[...document.querySelectorAll('#about a,#about button,#about summary')].filter(e=>e.offsetParent&&!e.closest('.site-tabs')&&!e.classList.contains('tt-b')&&e.getBoundingClientRect().height<48).length}));
+      rail:[...document.querySelectorAll('#about .ab-rail a')].map(a=>a.textContent),h1:document.getElementById('ab-h').textContent,sw:document.documentElement.scrollWidth,
+      small:[...document.querySelectorAll('#about a,#about button,#about summary')].filter(e=>e.offsetParent&&!e.closest('.site-tabs')&&!e.classList.contains('tt-b')&&!(e.tagName==='A'&&e.closest('.ab-main p,.ab-main .flow li'))&&e.getBoundingClientRect().height<48).length}));
     assert(s.route==="about"&&s.shown&&s.nat==="none"&&s.h1==="About BahaWatch",`${w}: #about opens the About page alone`);
-    assert(s.tabs.length===5&&s.tabs.every(t=>t==="home,ph,tv,sjq,berkeley,try,about*"),`${w}: every tab bar has San Joaquin and About, About selected: ${s.tabs[0]}`);
+    assert(s.tabs.length===6&&s.tabs.every(t=>t==="home,ph,tv,sjq,berkeley,try,about*,access"),`${w}: every tab bar has San Joaquin and About, About selected: ${s.tabs[0]}`);
     assert(s.rail.join("|")==="What it is|How it works|Data|Sensor units|Accuracy and limits|Future work|FAQ",`${w}: the contents rail lists the sections and the FAQ`);
     assert(s.sw<=w&&s.small===0,`${w}: no sideways scroll; rail links, buttons and FAQ questions are at least 48 px tall`);
     // the sensor placement and mounting assumptions are written down, and marked as assumptions
@@ -30,6 +30,11 @@ const openTips=pg=>pg.evaluate(()=>[...document.querySelectorAll('.tt-p')].filte
     assert(Object.values(s).every(Boolean),`${w}: About says the demo is synthetic, how real sensors would feed the server, that Berkeley was an experiment, and names no test unit: ${JSON.stringify(s)}`);
     s=await pg.evaluate(()=>{const t=document.getElementById('ab-limits').textContent;return /17,936/.test(t)&&/1\.4 m/.test(t)&&/2 m too high/.test(t)&&/by design/.test(t);});
     assert(s,`${w}: Accuracy and limits gives the ICESat-2 check and the demo's built-in agreement with NOAH`);
+    // for researchers: the processing flowchart under Data, and every model setting under Accuracy and limits
+    s=await pg.evaluate(()=>({st:[...document.querySelectorAll('#ab-data .flow-st h4')].map(h=>h.textContent.replace(/^\d/,'').split(/\s{2,}|build|pipeline|Designed/)[0].trim()),
+      code:/build_data\.py/.test(document.getElementById('ab-data').textContent)&&/2 cm &lt;|2 cm </.test(document.getElementById('ab-data').innerHTML),
+      rows:document.querySelectorAll('#ab-limits .ab-table tbody tr').length,bias:/cancels out/.test(document.getElementById('ab-limits').textContent),sw:document.documentElement.scrollWidth}));
+    assert(s.st.length===6&&s.code&&s.rows>=13&&s.bias&&s.sw<=w,`${w}: About has a six-stage processing flowchart, a settings table and the note on how terrain bias cancels: ${JSON.stringify(s)}`);
     // deep links: #about/<section> scrolls there, focuses its heading and marks the rail
     await pg.goto(U+'#about/sensors');await ready(pg,"about");
     await pg.waitForFunction(()=>{const t=document.getElementById('ab-sensors-h').getBoundingClientRect().top;return t>=0&&t<60;},null,{timeout:4000}).catch(()=>{});await pg.waitForTimeout(150);   // a smooth scroll from the top
