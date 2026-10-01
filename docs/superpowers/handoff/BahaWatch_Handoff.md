@@ -286,8 +286,9 @@ N10E123, N13E121, N14E120, N14E121, N15E120 (Zenodo 14511570; check how the reco
 `pipeline/cut.py` `fabdem_tiles_for` takes FABDEM file names only.
 
 **Still to do for round 2:**
-- **Push** (Claude can now push via the GitHub connection, but only after Gregor has tested the artifact and said
-  yes), then **check the live site**: tiles and fonts load (`.pmtiles` range requests, `.mjs` served as
+- **Push** (only after Gregor has tested the artifact and said yes). 2026-10-01: a push from the Claude session was
+  refused, because `gregor-posadas/bahawatch` is not among the session's authorized repositories; Gregor can add it to
+  the session's sources, or push `bahawatch-homepage.bundle` (all commits after e71177d on `phildev-ui-round2`) from his PC. Then **check the live site**: tiles and fonts load (`.pmtiles` range requests, `.mjs` served as
   JavaScript), dark vector style, campus zoom-out, the new timeline. Claude has not seen the real dark style or the demo in
   a signed-in browser.
 - When Gregor asks: the detailed review and reports (PDF) for the follow-up changes, and a refreshed build report.
@@ -301,7 +302,7 @@ N10E123, N13E121, N14E120, N14E121, N15E120 (Zenodo 14511570; check how the reco
 cd C:\Users\grego\bahawatch
 git checkout main
 git pull
-git fetch $HOME\Downloads\bahawatch-about.bundle phildev-ui-round2:phildev-ui-round2
+git fetch $HOME\Downloads\bahawatch-homepage.bundle phildev-ui-round2:phildev-ui-round2
 git merge --ff-only phildev-ui-round2
 git push origin main phildev-ui-round2
 ```
