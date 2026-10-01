@@ -144,7 +144,12 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .hm-xs .x-edge{fill:none; stroke:var(--ink); stroke-width:3}
 .hm-xs .x-dim,.hm-xs .x-lead{fill:none; stroke:var(--ink); stroke-width:2}
 .hm-xs .x-ping path{fill:none; stroke:var(--brand); stroke-width:3; stroke-linecap:round}
-.hm-xs .x-guide{fill:none; stroke:var(--ink-2); stroke-width:2; stroke-dasharray:3 6}
+.hm-xs .x-guide{fill:none; stroke:var(--ink); stroke-width:2.5; stroke-dasharray:10 6}
+.hm-xs .x-pedge{fill:none; stroke:var(--ink); stroke-width:5}
+.hm-xs .x-bldg-s rect{fill:#b9a88a; stroke:var(--ink); stroke-width:1.5}
+.hm-xs .x-wfront{opacity:.8}
+.hm-xs .x-t,.hm-xs .x-halo{paint-order:stroke; stroke:var(--panel); stroke-width:6px; stroke-linejoin:round}
+.hm-xs .x-dim.x-t,.hm-xs .x-lead.x-t{paint-order:normal; stroke:var(--ink); stroke-width:2}
 .hm-xs .x-paper{fill:var(--panel); stroke:var(--ink); stroke-width:2}
 .hm-xs .x-streets path{fill:none; stroke:var(--line); stroke-width:26}
 .hm-xs .x-creek{fill:none; stroke:var(--brand-lt); stroke-width:8}
@@ -175,7 +180,7 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .hm-run .x-ping path{animation:x-ping 9s linear infinite}
 .hm-run .x-grow{transform-box:view-box; transform-origin:348px 160px; animation:x-grow 9s ease-out infinite}
 .hm-run .x-wfill{animation:x-rise 9s ease-out infinite}
-.hm-run .x-edges,.hm-run .x-guide{animation:x-show1 9s ease-out infinite}
+.hm-run .x-edges,.hm-run .x-guide,.hm-run .x-pedge,.hm-run .x-plab{animation:x-show1 9s ease-out infinite}
 .hm-run .x-flood{animation:x-show2 9s ease-out infinite}
 @media (prefers-reduced-motion:reduce){#home .hm-run *{animation:none !important}}
 /* explore: raised cards that sink when pressed */
@@ -197,7 +202,8 @@ body[data-route]:not([data-route="site"]) > :is(#public,header,nav.site-tabs,#d-
 .hm-in{display:inline-flex; align-items:center; align-self:flex-start; min-height:48px; margin-top:auto; padding:0 16px; border:2px solid var(--ink); color:var(--ink) !important; font-weight:700; text-decoration:none}
 .hm-in:hover{text-decoration:underline}
 .hm-logos{list-style:none; padding:0; margin:0 0 24px; display:flex; flex-wrap:wrap; gap:16px; align-items:stretch}
-.hm-logos li{background:#fff; border:2px solid var(--ink); padding:16px; display:flex; align-items:center; justify-content:center; height:128px}
+.hm-logos li{display:flex}
+.hm-logos a{flex:1; background:#fff; border:2px solid var(--ink); padding:16px; display:flex; align-items:center; justify-content:center; height:128px}
 .hm-logos img{max-height:92px; max-width:100%; width:auto; height:auto}
 .hm-logos .hm-wide{flex:1 1 280px} .hm-logos .hm-wide img{max-height:64px}
 .hm-ask{border:2px solid var(--ink); padding:20px 24px; background:var(--panel); max-width:80ch}
@@ -883,6 +889,30 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   body[data-try="1"] .p-left{justify-self:center}
   .try-ctrls{order:1} .try-why{order:2} .try-map{order:3} .try-log{order:4}
 }
+/* Raised controls (Gregor, 2026-09-30, after the homepage's explore cards). Action buttons and link-buttons sit on a
+   hard ink shadow; pressing one sinks it into the shadow (held ~150 ms by the script so a quick tap still shows);
+   the chosen option in a group stays sunk. Tabs, list rows, pins, unit cards and the Details view's pill groups keep
+   their own look. Keep this list in step with RZ in the script. Ids are written [id=…] to keep specificity low. */
+:is([id=hm-theme],.hm-btn,.hm-in,.hm-copy,.hm-logos a,[id=ab-theme],[id=ax-theme],[id=p-theme],.p-link,.p-scen button,
+    .p-rep-btns button,.p-where button,.p-pick button,.try-row button,.nat-btn,.route-btn,[id=nat-theme],.nat-zoom button,
+    [id=theme-toggle],.zoom-unit,[id=play],.tl-play,[id=p-lang],[id=nat-lang]){
+  --lift:4px; box-shadow:var(--lift) var(--lift) 0 var(--ink); transition:transform .1s ease-out, box-shadow .1s ease-out}
+:is(.nat-zoom button,[id=theme-toggle],.zoom-unit,[id=play],.tl-play){--lift:3px}
+:is([id=theme-toggle],.zoom-unit){border-color:var(--ink)}
+.p-where .p-where-skip{box-shadow:none}
+:is([id=hm-theme],.hm-btn,.hm-in,.hm-copy,.hm-logos a,[id=ab-theme],[id=ax-theme],[id=p-theme],.p-link,.p-scen button,
+    .p-rep-btns button,.p-where button,.p-pick button,.try-row button,.nat-btn,.route-btn,[id=nat-theme],.nat-zoom button,
+    [id=theme-toggle],.zoom-unit,[id=play],.tl-play):is(:active,.rz-press),
+.p-scen button.active,.try-row button[aria-pressed="true"],.nat-btn[aria-pressed="true"]{transform:translate(var(--lift),var(--lift)); box-shadow:0 0 0 var(--ink)}
+:is(.p-rep-btns button,.try-row button,.p-link,.nat-btn):disabled{box-shadow:none; transform:none}
+@media (prefers-reduced-motion:reduce){
+  :is([id=hm-theme],.hm-btn,.hm-in,.hm-copy,.hm-logos a,[id=ab-theme],[id=ax-theme],[id=p-theme],.p-link,.p-scen button,
+      .p-rep-btns button,.p-where button,.p-pick button,.try-row button,.nat-btn,.route-btn,[id=nat-theme],.nat-zoom button,
+      [id=theme-toggle],.zoom-unit,[id=play],.tl-play,[id=p-lang],[id=nat-lang]){transition:none}
+  :is([id=hm-theme],.hm-btn,.hm-in,.hm-copy,.hm-logos a,[id=ab-theme],[id=ax-theme],[id=p-theme],.p-link,.p-scen button,
+      .p-rep-btns button,.p-where button,.p-pick button,.try-row button,.nat-btn,.route-btn,[id=nat-theme],.nat-zoom button,
+      [id=theme-toggle],.zoom-unit,[id=play],.tl-play):is(:active,.rz-press),
+  .p-scen button.active,.try-row button[aria-pressed="true"],.nat-btn[aria-pressed="true"]{transform:none; box-shadow:1px 1px 0 var(--ink)}}
 </style>
 </head>
 <body data-view="public">
@@ -989,20 +1019,20 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <section class="hm-sec hm-fade" id="hm-why" aria-labelledby="hm-why-h">
     <h2 id="hm-why-h">Why BahaWatch</h2>
     <ul class="hm-stats">
-      <li><b>#1</b><span>The Philippines’ rank in disaster risk worldwide <span class="hm-ref">[1]</span></span></li>
+      <li><b>#1</b><span>The Philippines’ rank in <span class="tt" data-term="disaster risk"><span class="tt-t">disaster risk</span>The WorldRiskIndex scores 193 countries on how exposed their people are to hazards such as storms, floods and earthquakes, and how vulnerable they are when one strikes. The Philippines had the highest score in 2025.</span> worldwide <span class="hm-ref">[1]</span></span></li>
       <li><b>74%</b><span>of Filipinos are vulnerable to disasters <span class="hm-ref">[2]</span></span></li>
-      <li><b>~20</b><span>tropical cyclones enter Philippine waters every year; 8 or 9 cross the country <span class="hm-ref">[3]</span></span></li>
-      <li><b>269</b><span>people killed by one typhoon, Tino (Kalmaegi), in November 2025 <span class="hm-ref">[4]</span></span></li>
+      <li><b>~20</b><span><span class="tt" data-term="tropical cyclones"><span class="tt-t">tropical cyclones</span>Rotating storms that form over warm tropical seas: tropical depressions, tropical storms and, the strongest, typhoons. PAGASA, the national weather service, names each one that enters the Philippine area of responsibility.</span> enter Philippine waters every year; 8 or 9 cross the country <span class="hm-ref">[3]</span></span></li>
+      <li><b>269</b><span>people killed by one typhoon, <span class="tt" data-term="Tino (Kalmaegi)"><span class="tt-t">Tino (Kalmaegi)</span>Philippine storms have two names: a local one from PAGASA, the national weather service (Tino), and an international one from the regional Typhoon Committee’s list (Kalmaegi).</span>, in November 2025 <span class="hm-ref">[4]</span></span></li>
     </ul>
     <div class="hm-cols">
       <div>
         <h3>In a flood, minutes matter</h3>
-        <p>Our partner on the ground, the Bike Scouts Project, is a volunteer network that helps families evacuate. They told us that even 15 minutes of warning is enough to move a family to higher ground instead of waiting on a rooftop for rescue.</p>
+        <p>Our partner on the ground, the <span class="tt" data-term="Bike Scouts Project"><span class="tt-t">Bike Scouts Project</span>A Philippine network of volunteer cyclists who carry messages, supplies and help when roads are blocked and phone lines are down after a disaster.</span>, is a volunteer network that helps families evacuate. They told us that even 15 minutes of warning is enough to move a family to higher ground instead of waiting on a rooftop for rescue.</p>
         <p>Floods cost the Philippines an estimated US$500–625 million a year <span class="hm-ref">[5]</span>, and disasters kill more than 1,000 people in an average year <span class="hm-ref">[2]</span>.</p>
       </div>
       <div>
         <h3>Sensors are too costly to reach everyone</h3>
-        <p>A standard government stream gauge in the United States costs US$25,000–40,000 to install and US$16,500–32,000 a year to run <span class="hm-ref">[6]</span>. At that price, remote and low-income places go without, and when funding changes, sensors fall into disrepair. Warnings come late, or not at all.</p>
+        <p>A standard government <span class="tt" data-term="stream gauge"><span class="tt-t">stream gauge</span>A permanent station on a river that records the water level every few minutes and sends it in for flood warnings. The costs here come from the US Geological Survey’s national network.</span> in the United States costs US$25,000–40,000 to install and US$16,500–32,000 a year to run <span class="hm-ref">[6]</span>. At that price, remote and low-income places go without, and when funding changes, sensors fall into disrepair. Warnings come late, or not at all.</p>
         <p>BahaWatch’s sensor is estimated at <b>about US$210</b>, built from parts sold in local hardware stores.</p>
       </div>
     </div>
@@ -1013,9 +1043,9 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <li><b>Maintenance, not hardware, decides whether a network survives.</b> Networks went dark when funding ended: prepaid SIM cards lapsed, batteries went flat and broken sensors were never repaired.</li>
       <li><b>Official warnings are neither local nor instructive.</b> Agencies broadcast a storm’s position and strength; a household needs to know what will happen to its house, when, and what to do.</li>
     </ol>
-    <blockquote class="hm-quote"><p>“The Philippines does not have a technological problem, it’s a governance problem.”</p><footer>— a Filipino disaster researcher we interviewed</footer></blockquote>
+    <blockquote class="hm-quote"><p>“The Philippines does not have a technological problem, it’s a <b>governance</b> problem.”</p><footer>— a Filipino disaster researcher we interviewed</footer></blockquote>
     <h3 class="hm-h3">Our answer</h3>
-    <p>Put flood sensing in local hands. BahaWatch pairs a <b>low-cost water-level sensor</b> that local governments and community groups can build, repair and run with a <b>free, open dashboard</b> that anyone can read. The hardware and software are open source, and the data is open, so the readings also serve national hazard maps and warning systems. Through openness, BahaWatch aims to help bring climate justice to a world that must adapt.</p>
+    <p>Put flood sensing in local hands. BahaWatch pairs a <b>low-cost water-level sensor</b> that local governments and community groups can build, repair and run with a <b>free, open dashboard</b> that anyone can read. The hardware and software are <span class="tt" data-term="open source"><span class="tt-t">open source</span>The designs and code are published for anyone to use, repair, copy and change, so a network never depends on one company staying in business.</span>, and the data is open, so the readings also serve national hazard maps and warning systems. Through openness, BahaWatch aims to help bring climate justice to a world that must adapt.</p>
     <ol class="hm-refs" aria-label="References">
       <li>Bündnis Entwicklung Hilft and IFHV, <a href="https://www.preventionweb.net/publication/documents-and-publications/world-risk-report-2025-focus-floods">WorldRiskReport 2025: Focus on floods</a>, Sept 2025; see also <a href="https://mb.com.ph/2025/09/26/philippines-tops-worldriskindex-2025-as-worlds-most-disaster-prone-country">Manila Bulletin, 26 Sept 2025</a>.</li>
       <li>Give2Asia, <a href="https://give2asia.org/philippines-disaster-country-profile/">DisasterLink country profile: the Philippines</a>.</li>
@@ -1042,7 +1072,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
           </svg>
           <span class="hm-dot" aria-hidden="true">1</span>
           <h3>Measure</h3>
-          <p>A sensor on a gate post points down at the street and times an ultrasonic echo off the water. Less distance means deeper water.</p>
+          <p>A sensor on a gate post points down at the street and times an <span class="tt" data-term="ultrasonic echo"><span class="tt-t">ultrasonic echo</span>The sensor sends a short burst of sound too high to hear and times how long its echo takes to bounce back from the surface below. Half that time multiplied by the speed of sound is the distance.</span> off the water. Less distance means deeper water.</p>
         </li>
         <li class="hm-stop">
           <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
@@ -1054,7 +1084,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
           </svg>
           <span class="hm-dot" aria-hidden="true">2</span>
           <h3>Send</h3>
-          <p>Every 10 to 15 minutes it radios the depth over LoRaWAN to a gateway kilometres away, which passes it to the BahaWatch server.</p>
+          <p>Every 10 to 15 minutes it radios the depth over <span class="tt" data-term="LoRaWAN"><span class="tt-t">LoRaWAN</span>Long Range Wide Area Network: a low-power radio standard for small sensors. It carries tiny messages several kilometres on little battery, with no SIM card or mobile data plan to lapse.</span> to a <span class="tt" data-term="gateway"><span class="tt-t">gateway</span>A receiver on a rooftop or tower that picks up the sensors’ radio messages and passes them to the server over the internet. One gateway can serve many sensors.</span> kilometres away, which passes it to the BahaWatch server.</p>
         </li>
         <li class="hm-stop">
           <svg class="hm-ill" viewBox="0 0 120 90" aria-hidden="true" focusable="false">
@@ -1068,12 +1098,12 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
           </svg>
           <span class="hm-dot" aria-hidden="true">3</span>
           <h3>Combine</h3>
-          <p>The server adds the depth to the ground height at the sensor to get the water’s surface level, then stacks it on open map layers:</p>
+          <p>The server adds the depth to the ground height at the sensor to get the water’s <span class="tt" data-term="surface level"><span class="tt-t">surface level</span>The height of the water’s surface above sea level, in metres: the same scale as the ground heights, so the two can be compared anywhere on the map.</span>, then stacks it on open map layers:</p>
           <ul class="hm-layers" aria-label="Map layers, top to bottom">
-            <li><i class="sw sw-brgy" aria-hidden="true"></i>Barangay boundaries</li>
-            <li><i class="sw sw-bldg" aria-hidden="true"></i>Building footprints</li>
-            <li><i class="sw sw-streets" aria-hidden="true"></i>Streets and creeks (OpenStreetMap)</li>
-            <li><i class="sw sw-terrain" aria-hidden="true"></i>Ground height (FABDEM)</li>
+            <li><i class="sw sw-brgy" aria-hidden="true"></i><span><span class="tt" data-term="Barangay"><span class="tt-t">Barangay</span>The smallest unit of local government in the Philippines: a village, or a neighbourhood in a city. Barangay officials often lead the first response in a flood.</span> (neighbourhood) boundaries</span></li>
+            <li><i class="sw sw-bldg" aria-hidden="true"></i><span><span class="tt" data-term="Building footprints"><span class="tt-t">Building footprints</span>Outlines of buildings traced from satellite images by Google, Microsoft and OpenStreetMap volunteers. The model sends water around buildings, not through them.</span></span></li>
+            <li><i class="sw sw-streets" aria-hidden="true"></i><span>Streets and creeks <span class="tt-w">(<span class="tt" data-term="OpenStreetMap"><span class="tt-t">OpenStreetMap</span>A free map of the world made by volunteers, like Wikipedia for maps. BahaWatch takes streets, creeks and place names from it.</span>)</span></span></li>
+            <li><i class="sw sw-terrain" aria-hidden="true"></i><span>Ground height <span class="tt-w">(<span class="tt" data-term="FABDEM"><span class="tt-t">FABDEM</span>Forest And Buildings removed Copernicus DEM: a map of ground height in 30 m squares from the University of Bristol, made from satellite radar with trees and buildings taken out, so it shows the bare ground that water flows over.</span>)</span></span></li>
           </ul>
         </li>
         <li class="hm-stop">
@@ -1098,7 +1128,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
           </svg>
           <span class="hm-dot" aria-hidden="true">5</span>
           <h3>Answer</h3>
-          <p>Residents see which streets are flooded and how deep, and get a plain answer to <i>Babaha ba?</i> (“Will it flood?”): <i>Oo</i> (yes), <i>Baka</i> (maybe) or <i>Hindi</i> (no). Neighbour reports and rain on mapped hazard zones help confirm it.</p>
+          <p>Residents see which streets are flooded and how deep, and get a plain answer to <i>Babaha ba?</i> (“Will it flood?”): <i>Oo</i> (yes), <i>Baka</i> (maybe) or <i>Hindi</i> (no). <span class="tt" data-term="Neighbour reports"><span class="tt-t">Neighbour reports</span>Residents can answer “Is there flooding here?” with Yes, No or Not sure. Reports can raise the answer to Baka (maybe); only a sensor can say Oo (yes).</span> and rain on <span class="tt" data-term="mapped hazard zones"><span class="tt-t">mapped hazard zones</span>Areas that UP Project NOAH’s flood maps show can flood in a 5-, 25- or 100-year rain. Heavy rain on those areas is a warning sign before any sensor sees water.</span> help confirm it.</p>
         </li>
       </ol>
     </div>
@@ -1106,14 +1136,19 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <figure class="hm-fig" aria-labelledby="hm-fig-cap">
       <svg class="hm-xs" viewBox="0 0 720 640" role="img" aria-labelledby="hm-fig-t hm-fig-d" focusable="false">
         <title id="hm-fig-t">From one sensor reading to a flood map</title>
-        <desc id="hm-fig-d">Top: a side view of the ground from the FABDEM terrain map. A sensor measures the water depth at one spot; the water level is carried left and right along the ground and stops at both edges where the ground rises above it. A dip beyond the right-hand rise is lower than the water but walled off, so it stays dry. Bottom: the same place seen from above, as on the dashboard: the flooded streets between the two edges, buildings left dry inside the water, and the line where the side view was cut.</desc>
+        <desc id="hm-fig-d">Top: a side view along the street A–A′, showing the ground from the FABDEM terrain map and the buildings along the street. A sensor measures the water depth at one spot; the water level is carried left and right along the ground and stops at both edges where the ground rises above it. A dip beyond the right-hand rise is lower than the water but walled off, so it stays dry. Dashed black lines carry the two edges straight down to the map below. Bottom: the same place seen from above, as on the dashboard: the street flooded between the two edge marks on A–A′, the water going around the buildings, and the line A–A′ where the side view was cut.</desc>
         <defs>
           <clipPath id="xs-above"><path d="M0 0 H720 V200 L680 196 L640 150 L606 118 L560 150 L520 190 L470 214 L420 222 L370 230 L330 228 L290 214 L250 188 L210 158 L176 132 L140 120 L100 124 L60 130 L0 132 Z"/></clipPath>
           <clipPath id="xs-reach"><rect x="200" y="150" width="380" height="130"/></clipPath>
         </defs>
-        <text x="16" y="28" class="x-h">Side view: the ground (FABDEM)</text>
-        <!-- water: between the two edges, above the ground, below the level -->
-        <g clip-path="url(#xs-above)"><g clip-path="url(#xs-reach)"><rect x="0" y="160" width="720" height="110" class="x-wfill"/></g></g>
+        <text x="16" y="28" class="x-h">Side view along A–A′ (ground: FABDEM)</text>
+        <!-- the buildings along the far side of the street, behind the section: the plan's row north of A–A′, same x -->
+        <g class="x-bldg-s">
+          <rect x="20" y="78" width="80" height="192"/><rect x="140" y="72" width="70" height="198"/><rect x="260" y="122" width="76" height="148"/>
+          <rect x="384" y="118" width="80" height="152"/><rect x="500" y="96" width="76" height="174"/>
+        </g>
+        <!-- water: between the two edges, above the ground, below the level; in front of the buildings -->
+        <g clip-path="url(#xs-above)" class="x-wfront"><g clip-path="url(#xs-reach)"><rect x="0" y="160" width="720" height="110" class="x-wfill"/></g></g>
         <path d="M0 132 L60 130 L100 124 L140 120 L176 132 L210 158 L250 188 L290 214 L330 228 L370 230 L420 222 L470 214 L520 190 L560 150 L606 118 L640 150 L680 196 L720 200 V270 H0 Z" class="x-earth"/>
         <path d="M0 132 L60 130 L100 124 L140 120 L176 132 L210 158 L250 188 L290 214 L330 228 L370 230 L420 222 L470 214 L520 190 L560 150 L606 118 L640 150 L680 196 L720 200" class="x-ground"/>
         <!-- the dry dip beyond the right-hand rise -->
@@ -1133,10 +1168,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <text x="16" y="62" class="x-t">water level = ground at the sensor + measured depth</text>
         <path d="M250 74 C262 110 272 138 282 156" class="x-lead x-t"/>
         <text x="666" y="222" class="x-t x-c">lower, but</text><text x="666" y="244" class="x-t x-c">walled off:</text><text x="666" y="266" class="x-t x-c">dry</text>
-        <!-- projection guides down to the plan -->
-        <path d="M213 178 V296 M550 178 V296 M213 344 V470 M550 344 V470" class="x-guide"/>
         <!-- plan view -->
-        <text x="16" y="330" class="x-h">Seen from above, as on the dashboard</text>
         <rect x="0" y="344" width="720" height="290" class="x-paper"/>
         <g class="x-streets">
           <path d="M0 470 H720"/><path d="M120 344 V634"/><path d="M360 344 V634"/><path d="M600 344 V634"/><path d="M0 560 H720"/><path d="M240 344 V470"/><path d="M480 470 V634"/>
@@ -1150,14 +1182,20 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
           <rect x="140" y="580" width="80" height="44"/><rect x="250" y="580" width="86" height="44"/><rect x="384" y="580" width="76" height="44"/><rect x="500" y="580" width="80" height="44"/>
         </g>
         <path d="M0 470 H720" class="x-cut"/>
+        <!-- the edges carried down from the side view: black lines from each edge to A–A′, a mark and a label on the plan -->
+        <path d="M213 178 V470 M550 178 V470" class="x-guide"/>
+        <path d="M213 450 V490" class="x-pedge"/><path d="M550 450 V490" class="x-pedge"/>
+        <text x="221" y="452" class="x-t x-plab">edge</text><text x="542" y="452" class="x-t x-e x-plab">edge</text>
         <text x="8" y="462" class="x-t x-keep x-b">A</text><text x="714" y="462" class="x-t x-keep x-b x-e">A′</text>
         <circle cx="348" cy="470" r="10" class="x-sensor"/>
+        <!-- drawn last, so the edge lines pass behind it -->
+        <text x="16" y="330" class="x-h x-halo">Seen from above, as on the dashboard</text>
       </svg>
       <figcaption id="hm-fig-cap">
-        <p><b>From one reading to a flood map.</b> A sensor knows the water depth at one spot. Added to the ground height there, it gives the water level. The dashboard carries that level along the ground from FABDEM, and the water reaches as far as the ground stays below it: the <b>edges</b> are where the ground rises higher. A dip beyond a rise stays dry even if it is lower, because the water cannot reach it. Seen from above, that becomes the flooded streets on the dashboard, with the water going around buildings. The level also drops 1 cm for every 15 m from the sensor, so estimates stay cautious far away. A–A′ marks where the side view was cut.</p>
+        <p><b>From one reading to a flood map.</b> A sensor knows the water depth at one spot. Added to the ground height there, it gives the water level. The dashboard carries that level along the ground from FABDEM, and the water reaches as far as the ground stays below it: the <b>edges</b> are where the ground rises higher. A dip beyond a rise stays dry even if it is lower, because the water cannot reach it. Seen from above, that becomes the flooded streets on the dashboard, with the water going around buildings. The level also drops 1 cm for every 15 m from the sensor, so estimates stay cautious far away. A–A′ marks where the side view was cut, along a street; the dashed black lines carry its two edges down to the map.</p>
       </figcaption>
     </figure>
-    <p class="hm-note">In this demo, a storm generator stands in for the sensors; everything after step 2 is the same code a live deployment would run. <a href="#about/how">Read the details</a></p>
+    <p class="hm-note">In this demo, a <span class="tt" data-term="storm generator"><span class="tt-t">storm generator</span>A program that makes up realistic sensor readings for a passing storm, so the dashboard can be shown before real sensors are installed.</span> stands in for the sensors; everything after step 2 is the same code a live deployment would run. <a href="#about/how">Read the details</a></p>
   </section>
 
   <section class="hm-sec hm-fade" id="hm-explore" aria-labelledby="hm-explore-h">
@@ -1165,7 +1203,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <ul class="hm-cards">
       <li><a href="#ph"><b>PhilDev campuses</b><span>25 partner universities across the Philippines, each with eight proposed sensor spots.</span></a></li>
       <li><a href="#tv"><b>Teachers Village</b><span>A neighbourhood pilot in Quezon City, with a simulated typhoon.</span></a></li>
-      <li><a href="#sjq"><b>San Joaquin</b><span>A barangay pilot in Mabalacat City, Pampanga.</span></a></li>
+      <li><a href="#sjq"><b>San Joaquin</b><span>A barangay (neighbourhood) pilot in Mabalacat City, Pampanga.</span></a></li>
       <li><a href="#try"><b>Try reporting</b><span>Report flooding the way a resident would, on a pretend phone.</span></a></li>
       <li><a href="#berkeley"><b>UC Berkeley</b><span>An experiment: the same method on very accurate lidar terrain.</span></a></li>
       <li><a href="#about"><b>About</b><span>The data, the model’s limits, sensor assumptions and an FAQ.</span></a></li>
@@ -1203,10 +1241,10 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <section class="hm-sec hm-fade" id="hm-collab" aria-labelledby="hm-collab-h">
     <h2 id="hm-collab-h">Collaborators</h2>
     <ul class="hm-logos">
-      <li><img src="shared/home/logo-bike-scouts.jpg" alt="Bike Scouts" loading="lazy"></li>
-      <li><img src="shared/home/logo-up.jpg" alt="University of the Philippines" loading="lazy"></li>
-      <li class="hm-wide"><img src="shared/home/logo-blum-center.jpg" alt="Blum Center for Developing Economies" loading="lazy"></li>
-      <li class="hm-wide"><img src="shared/home/logo-disaster-lab.jpg" alt="UC Berkeley Disaster Lab" loading="lazy"></li>
+      <li><a href="https://bikescoutsproject.org/"><img src="shared/home/logo-bike-scouts.jpg" alt="Bike Scouts" loading="lazy"></a></li>
+      <li><a href="https://up.edu.ph/"><img src="shared/home/logo-up.jpg" alt="University of the Philippines" loading="lazy"></a></li>
+      <li class="hm-wide"><a href="https://blumcenter.berkeley.edu/"><img src="shared/home/logo-blum-center.jpg" alt="Blum Center for Developing Economies" loading="lazy"></a></li>
+      <li class="hm-wide"><a href="https://disasterlab.berkeley.edu/"><img src="shared/home/logo-disaster-lab.jpg" alt="UC Berkeley Disaster Lab" loading="lazy"></a></li>
       <!--NOAH_LOGO-->
     </ul>
     <div class="hm-ask">
@@ -1248,7 +1286,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 
   <footer class="hm-foot">
     <p>The dashboard’s code is open source (MIT) on <a href="https://github.com/gregor-posadas/bahawatch">GitHub</a>. Map data © OpenStreetMap contributors; terrain FABDEM © University of Bristol; hazard maps UP Project NOAH / UP Resilience Institute. Full list on the <a href="#about/data">About</a> page.</p>
-    <p>Not a forecast. Not for emergency use: follow PAGASA and local government advisories.</p>
+    <p>Not a forecast. Not for emergency use: follow PAGASA (the national weather service) and local government advisories.</p>
   </footer>
  </div>
 </section>
@@ -1288,7 +1326,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
 
     <section id="ab-what" aria-labelledby="ab-what-h">
       <h2 id="ab-what-h" tabindex="-1">What it is</h2>
-      <p class="ab-lead">BahaWatch answers one question for a street or barangay: <i>Babaha ba?</i> — “Is it flooding here?” — and says how deep the water is for someone walking, riding a motorcycle or driving.</p>
+      <p class="ab-lead">BahaWatch answers one question for a street or barangay (neighbourhood): <i>Babaha ba?</i> — “Will it flood?” — and says how deep the water is for someone walking, riding a motorcycle or driving.</p>
       <div class="ab-note" role="note">
         <p><b>This demo runs on synthetic data.</b> Streets, buildings, terrain and flood hazard maps are real open data. The sensor readings, storms and neighbour reports are made up by a storm generator.</p>
         <p><b>In a real deployment</b>, the dashboard is connected to real sensors. Each unit sends its water level to the dashboard’s server every 10 minutes, and the server combines those readings with the flood model and the datasets below to estimate what is happening on the ground, street by street. Only the source of the readings changes; the model, the rule and the maps are the same code.</p>
@@ -1307,7 +1345,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <ol class="ab-steps">
         <li><b>Sensors measure water on the street</b> (simulated in this demo). Each <span class="tt" data-term="household units"><span class="tt-t">household unit</span>A small ultrasonic sensor on a gate post at the street’s edge, hosted by a household. It points down at the road and measures the distance to the surface: less distance, more water. See Sensor units below.</span> sends the water depth in front of it every 10 minutes over <span class="tt" data-term="LoRaWAN"><span class="tt-t">LoRaWAN</span>A long-range, low-power radio network for small sensors. One gateway can hear units a few kilometres away in a city, each reading is only a few bytes, and it does not depend on mobile data, which often jams during storms.</span>.</li>
         <li><b>The model spreads that water over the map.</b> At each wet sensor it sets a water level (ground height + measured depth) and lets it spread to nearby lower ground, until the ground rises above it. It <span class="tt" data-term="how the spread is limited"><span class="tt-t">fades with distance</span>The water level drops 1 cm for every 15 m it travels, and spreading stops after about 1.2 km. Water also never spreads into ground more than 45 cm deeper than the sensor saw, so a 20 cm reading on a slope can’t flood a whole valley below it. Both rules keep the map on the cautious side.</span> and <span class="tt" data-term="buildings on the map"><span class="tt-t">goes around buildings</span>The map is a grid of 7.5 m squares. A square at least 75% covered by building footprints blocks water; streets and creeks never block. Streets are cut 0.5 m into the terrain so they carry water, as real streets do.</span>. No reading, no flood on the map.</li>
-        <li><b>A rule gives the answer.</b> The <span class="tt" data-term="the Babaha ba? rule"><span class="tt-t"><i>Babaha ba?</i> rule</span>Checked in order; the first match wins. Nothing newer than 20 minutes: “No fresh data”. The sensor here reads 5 cm or more, or is rising to it within an hour: <i>Oo</i> (yes). Three or more neighbours report flooding within 1 km in the last hour, or heavy rain falls on a mapped hazard zone: <i>Baka</i> (maybe). One or two reports, or a trace at the sensor: <i>Baka</i>. Otherwise <i>Hindi</i> (no). Reports alone never give <i>Oo</i>; only a sensor can.</span> combines sensors, neighbour reports and rain into <i>Oo</i>, <i>Baka</i>, <i>Hindi</i> or “No fresh data”.</li>
+        <li><b>A rule gives the answer.</b> The <span class="tt" data-term="the Babaha ba? rule"><span class="tt-t"><i>Babaha ba?</i> (“Will it flood?”) rule</span>Checked in order; the first match wins. Nothing newer than 20 minutes: “No fresh data”. The sensor here reads 5 cm or more, or is rising to it within an hour: <i>Oo</i> (yes). Three or more neighbours report flooding within 1 km in the last hour, or heavy rain falls on a mapped hazard zone: <i>Baka</i> (maybe). One or two reports, or a trace at the sensor: <i>Baka</i> (maybe). Otherwise <i>Hindi</i> (no). Reports alone never give <i>Oo</i>; only a sensor can.</span> combines sensors, neighbour reports and rain into <i>Oo</i> (yes), <i>Baka</i> (maybe), <i>Hindi</i> (no) or “No fresh data”.</li>
         <li><b>Depth becomes something you can act on.</b> Water is described as gutter-, half-knee-, knee- or waist-deep, and as passable or not for <span class="tt" data-term="the car levels"><span class="tt-t">cars</span>From the MMDA Flood Gauge: half-tire (33 cm) is not passable to light vehicles, tire level (66 cm) is not passable to any vehicle. From 25 cm we say “drive slowly”, where Mamuyac et al. (2025) saw lane closures begin in MMDA CCTV footage.</span> and <span class="tt" data-term="the motorcycle levels"><span class="tt-t">motorcycles</span>Our own rule, because the MMDA gauge has none for motorcycles: slow from 15 cm, where the engine sits; not passable from 30 cm, the height of the exhaust and footpegs, where bikes stall.</span>.</li>
       </ol>
       <p>Two views: the <b>simple view</b> for residents (one answer, the street list, a map) and <b>Details</b> for operators and researchers (storm scenarios, a 36-hour timeline, each sensor’s readings, the NOAH layer).</p>
@@ -1321,7 +1359,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <div><dt>Buildings</dt><dd><span class="tt" data-term="the building footprints"><span class="tt-t">Footprints</span>Building outlines traced from satellite images by Google and Microsoft, merged with OpenStreetMap. They can miss small, new or informal buildings, and can’t tell a house from a warehouse or count floors.</span> from Google Open Buildings, Microsoft and OpenStreetMap, combined by VIDA.<span class="ab-use">What blocks water; buildings counted in flooded areas; the map.</span></dd></div>
         <div><dt>Streets, creeks, names</dt><dd><span class="tt" data-term="OpenStreetMap"><span class="tt-t">OpenStreetMap</span>A free world map drawn by volunteers, like a Wikipedia for maps. Coverage in Philippine cities is good; small alleys and creeks can be missing.</span>.<span class="ab-use">Streets cut into the terrain as water paths; street names in answers; the map.</span></dd></div>
         <div><dt>Flood hazard</dt><dd><span class="tt" data-term="the NOAH hazard maps"><span class="tt-t">UP Project NOAH</span>Flood hazard maps from the University of the Philippines (Project NOAH, now the UP Resilience Institute), modelled for rain heavy enough to come once in 5, 25 or 100 years on average. They show mostly river and overland flooding; ponding from blocked drains often doesn’t appear.</span> 5-, 25- and 100-year maps.<span class="ab-use">A reference layer to compare with; the rain rule; choosing sensor spots; shaping the simulated storms. Never used to draw the flood.</span></dd></div>
-        <div><dt>Barangays</dt><dd>PSA and NAMRIA boundaries, via OCHA HDX.<span class="ab-use">“My barangay” answers.</span></dd></div>
+        <div><dt>Barangays (neighbourhoods)</dt><dd>PSA and NAMRIA boundaries, via OCHA HDX.<span class="ab-use">“My barangay” answers.</span></dd></div>
         <div><dt>Depth levels</dt><dd>MMDA Flood Gauge; Mamuyac et al. 2025, <i>Natural Hazards</i>.<span class="ab-use">Depth words and passability.</span></dd></div>
         <div><dt>Rain</dt><dd>Open-Meteo hourly rain, in live mode only (not switched on yet).<span class="ab-use">The rain step of the rule.</span></dd></div>
         <div><dt>Terrain check</dt><dd>NASA <span class="tt" data-term="ICESat-2"><span class="tt-t">ICESat-2</span>A NASA satellite laser that measures ground height along narrow tracks, to within tens of centimetres on open ground. We used 17,936 of its ground points at 26 sites as the reference to test FABDEM.</span> ground heights, 2019–2026.<span class="ab-use">Measuring how wrong the terrain is (see Accuracy).</span></dd></div>
@@ -1377,7 +1415,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
             <li><b>Overlaps.</b> Where two units reach the same square, the deeper estimate wins, and the square remembers which unit it came from.</li>
             <li><b>Drawing.</b> Depth sampled four times finer (about 1.9 m) so the shoreline follows the terrain; building outlines cut out of the water; colours from the depth spectrum.</li>
             <li><b>Counts.</b> Buildings in flooded squares, streets cut, and a rough residents estimate (4.2 people per building).</li>
-            <li><b>Answer.</b> The <i>Babaha ba?</i> rule (<code>shared/verdict.js</code>) from sensors, neighbour reports and rain.</li>
+            <li><b>Answer.</b> The <i>Babaha ba?</i> (“Will it flood?”) rule (<code>shared/verdict.js</code>) from sensors, neighbour reports and rain.</li>
           </ol>
         </li>
         <li class="flow-st flow-off">
@@ -1407,7 +1445,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
         <div><dt>Warning</dt><dd>The unit’s microcontroller tracks how fast the water rises and sends a warning before it reaches a set level.</dd></div>
       </dl>
       <h3>Where the spots come from</h3>
-      <p>Teachers Village’s eight units were placed by hand along its low streets. Everywhere else <span class="tt" data-term="the placement rule"><span class="tt-t">a rule picks them</span>Candidates are houses within 25 m of a street and at least 300 m inside the map’s edge. Each gets a score: 0.5 × how low it sits (the share of ground within 300 m that is higher) + 0.3 × NOAH hazard + 0.2 × closeness to a creek or river (zero at 300 m). The best eight are picked at least 300 m apart (250 m, then 200 m, if eight don’t fit).</span>: low ground, mapped hazard, near water, spread apart. On a campus, unit 01 is on campus and the rest are in the barangays around it; in San Joaquin all eight are inside the barangay.</p>
+      <p>Teachers Village’s eight units were placed by hand along its low streets. Everywhere else <span class="tt" data-term="the placement rule"><span class="tt-t">a rule picks them</span>Candidates are houses within 25 m of a street and at least 300 m inside the map’s edge. Each gets a score: 0.5 × how low it sits (the share of ground within 300 m that is higher) + 0.3 × NOAH hazard + 0.2 × closeness to a creek or river (zero at 300 m). The best eight are picked at least 300 m apart (250 m, then 200 m, if eight don’t fit).</span>: low ground, mapped hazard, near water, spread apart. On a campus, unit 01 is on campus and the rest are in the barangays (neighbourhoods) around it; in San Joaquin all eight are inside the barangay.</p>
       <p><b>The spots are proposals</b>, not surveyed or agreed with residents.</p>
     </section>
 
@@ -1430,7 +1468,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <table class="ab-table">
         <thead><tr><th scope="col">Setting</th><th scope="col">Value</th><th scope="col">Why, and what it costs</th></tr></thead>
         <tbody>
-          <tr><th scope="row">Grid</th><td>7.5 m squares; terrain detail 15 m (FABDEM is 30 m)</td><td>Streets in barangays are often 4–8 m wide. A finer grid separates streets from houses but adds no height detail.</td></tr>
+          <tr><th scope="row">Grid</th><td>7.5 m squares; terrain detail 15 m (FABDEM is 30 m)</td><td>Streets in barangays (neighbourhoods) are often 4–8 m wide. A finer grid separates streets from houses but adds no height detail.</td></tr>
           <tr><th scope="row">Smoothing</th><td>Gaussian, 1 cell (15 m)</td><td>Removes satellite noise; also softens real kerbs and small walls.</td></tr>
           <tr><th scope="row">Street cut</th><td>0.5 m below the lowest ground within about 40 m</td><td>Makes streets connected channels, as they are; a guess, not a survey.</td></tr>
           <tr><th scope="row">Buildings</th><td>A square ≥ 75% built blocks water</td><td>Water goes around blocks; real houses let some water in, and merged footprints can close real alleys.</td></tr>
@@ -1472,7 +1510,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <h2 id="ab-next-h" tabindex="-1">Future work</h2>
       <ul class="ab-list">
         <li><b>Real sensors.</b> Bench-test the unit, then a pilot street in Teachers Village or San Joaquin; replay a recorded storm on the dashboard.</li>
-        <li><b>Check against real floods.</b> Compare mapped extents with observed flooding from a past typhoon: MMDA flood reports, geotagged photos, barangay records.</li>
+        <li><b>Check against real floods.</b> Compare mapped extents with observed flooding from a past typhoon: MMDA flood reports, geotagged photos, barangay (village) records.</li>
         <li><b>Better terrain.</b> Test <span class="tt" data-term="FathomDEM"><span class="tt-t">FathomDEM</span>A newer bare-earth elevation map (Fathom, 2025) built for flood modelling. Its authors report smaller errors than FABDEM, including in cities; we have asked for access and will run the same ICESat-2 check on it.</span> (access requested) and 1 m Phil-LiDAR maps where available; survey each unit’s ground height at install.</li>
         <li><b>Water that moves.</b> Try a simple two-dimensional flow model for direction and timing, and add drainage where it is mapped.</li>
         <li><b>Count flooded buildings by outline</b>, not by grid square.</li>
@@ -1485,13 +1523,13 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
     <section id="ab-faq" aria-labelledby="ab-faq-h">
       <h2 id="ab-faq-h" tabindex="-1">FAQ</h2>
       <div class="ab-faq">
-        <details><summary>Is any of this real?</summary><p>The map is: streets, buildings, terrain, barangays and NOAH hazard layers all come from open data. The sensor readings, storms and neighbour reports are synthetic, and every page says so. In a real deployment, sensors send their readings to the dashboard’s server, and everything after that (the model, the answer rule, the maps) runs exactly as in the demo.</p></details>
+        <details><summary>Is any of this real?</summary><p>The map is: streets, buildings, terrain, barangays (neighbourhoods) and NOAH hazard layers all come from open data. The sensor readings, storms and neighbour reports are synthetic, and every page says so. In a real deployment, sensors send their readings to the dashboard’s server, and everything after that (the model, the answer rule, the maps) runs exactly as in the demo.</p></details>
         <details><summary>Why not just use the NOAH hazard maps?</summary><p>NOAH shows where floods <i>can</i> happen in a storm of a given size, not what is happening now. It is modelled mainly for rivers and overland flow, so it often misses street ponding from blocked drains; in Teachers Village it is blank across the Maginhawa interior, which is known to flood. BahaWatch keeps NOAH as a layer to compare against.</p></details>
         <details><summary>How accurate is the flood map?</summary><p>At a sensor, as accurate as the sensor. Away from it, the spread depends on terrain, which is typically about 1.4 m off and about 2 m too high in old Manila. Read the extents as a guide to where water is likely, not a street-by-street survey. Details under Accuracy and limits.</p></details>
-        <details><summary>Is it a forecast?</summary><p>No. It maps water measured now. Its only look-ahead is one hour: a sensor rising fast enough to reach 5 cm within the hour already counts as <i>Oo</i>. For warnings, follow PAGASA and your local government.</p></details>
+        <details><summary>Is it a forecast?</summary><p>No. It maps water measured now. Its only look-ahead is one hour: a sensor rising fast enough to reach 5 cm within the hour already counts as <i>Oo</i> (yes). For warnings, follow PAGASA and your local government.</p></details>
         <details><summary>Why ultrasonic sensors, not pressure sensors or cameras?</summary><p>An ultrasonic unit never touches the floodwater, is cheap, and sends one number. A pressure sensor must sit in dirty water on the road; a camera sends images, which needs more bandwidth and raises privacy concerns. The trade-offs: a short blind zone, false echoes from people or debris, and a reading that needs correcting for air temperature.</p></details>
-        <details><summary>What if power or signal is lost?</summary><p>Every answer shows its age. If nothing is newer than 20 minutes, the answer becomes “No fresh data”; it never says <i>Hindi</i> on old data. The page itself opens without signal and shows the last answer with its time.</p></details>
-        <details><summary>How do you stop fake or mistaken reports?</summary><p>Reports alone can only raise <i>Baka</i> (maybe); only a sensor can say <i>Oo</i>. It takes three different phones within 1 km in the last hour, one report per phone per place every 10 minutes, and a report from more than 2 km away is refused. Reports expire after an hour, and a dry sensor nearby is shown against them.</p></details>
+        <details><summary>What if power or signal is lost?</summary><p>Every answer shows its age. If nothing is newer than 20 minutes, the answer becomes “No fresh data”; it never says <i>Hindi</i> (no) on old data. The page itself opens without signal and shows the last answer with its time.</p></details>
+        <details><summary>How do you stop fake or mistaken reports?</summary><p>Reports alone can only raise <i>Baka</i> (maybe); only a sensor can say <i>Oo</i> (yes). It takes three different phones within 1 km in the last hour, one report per phone per place every 10 minutes, and a report from more than 2 km away is refused. Reports expire after an hour, and a dry sensor nearby is shown against them.</p></details>
         <details><summary>What do you store about people?</summary><p>No accounts, names or phone numbers. A report’s position is rounded to about 100 m and used only when the phone is within 1 km of the place. Report IDs are erased after an hour and raw reports deleted after 30 days. This applies in live mode; the demo sends nothing.</p></details>
         <details><summary>What does it cost to run?</summary><p>The site is plain files on GitHub Pages, with its own map tiles: no running cost. The live server is designed for Cloudflare’s free plan (not switched on yet). Hardware: about US$210 per unit (our estimate), plus a LoRaWAN gateway per area.</p></details>
         <details><summary>Does it work on cheap phones and slow connections?</summary><p>A campus page loaded in about 3 seconds on a simulated fast 3G connection in our tests; each site’s data is at most 250 KB compressed. Once opened, the page opens again without signal. It comes in six languages, uses shapes as well as colours, and has screen-reader text for every map.</p></details>
@@ -1580,7 +1618,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
       <h2 id="ax-sr-h" tabindex="-1">Screen readers</h2>
       <ul class="ab-list">
         <li>Every map has a written description, and every pin and sensor has a spoken label (for example, its name, place and status).</li>
-        <li>The answer (<i>Babaha ba?</i>) is announced when it changes, not every time the screen redraws, and the announcement starts by saying the storm is simulated.</li>
+        <li>The answer to <i>Babaha ba?</i> (“Will it flood?”) is announced when it changes, not every time the screen redraws, and the announcement starts by saying the storm is simulated.</li>
         <li>The street list carries everything the map shows, as text, so the map is never the only way to get an answer.</li>
         <li>Figures and decorative drawings are either described or hidden from screen readers.</li>
       </ul>
@@ -1772,7 +1810,7 @@ body[data-try="1"] #map-wrap{margin:0; height:min(60vh,480px); min-height:320px;
   <div class="hdr-right">
     <div class="scenarios scen-group" role="group" aria-label="Weather scenario">
       <button data-sc="clear" aria-pressed="false">Dry day</button>
-      <button data-sc="monsoon" class="active" aria-pressed="true">Habagat rain</button>
+      <button data-sc="monsoon" class="active" aria-pressed="true">Habagat (monsoon)</button>
       <button data-sc="typhoon" aria-pressed="false">Typhoon</button>
     </div>
     <button id="theme-toggle" aria-label="Switch to dark theme" aria-pressed="false">☾</button>
@@ -3092,7 +3130,7 @@ const LANGS={
     figAlt:(t,cm,st,cp)=>`Figure of an adult (1.60 m) and a child (1.20 m) standing in water: ${t.toLowerCase()}, ${cm} centimeters, on ${st}. On the child the water reaches the ${cp}.`,
     details:"Details",simple:"Simple view",mapHint:"Tap a street on the map or in the list to see where its water reaches.",
     review:"This translation is pending professional review.",
-    demo:"Demo: sensor readings are simulated.",notEmergency:"Not for emergency use. In an emergency call 911 or your barangay.",
+    demo:"Demo: sensor readings are simulated.",notEmergency:"Not for emergency use. In an emergency call 911 or your barangay (village) office.",
     near:"near"},
   fil:{bike:"Motorsiklo",bikeAt:["sa ilalim ng makina","hanggang makina","lampas sa tambutso","lampas sa upuan"],bikePass:["madadaanan","madadaanan","dahan-dahan lang","hindi madadaanan"],car:"Sedan",carAt:["sa ilalim ng kotse", "hanggang kalahating gulong", "hanggang gulong", "lampas sa hood"],name:"Filipino",
     none:"Walang naiulat na baha.",allPass:"Madadaanan ang lahat ng binabantayang kalye.",
@@ -3207,13 +3245,13 @@ const PATH_EN={
 };
 /* ---------- "Babaha ba?" answer strings (spec §3, §5, §6). ceb/ilo/hil/pam pending professional review. ---------- */
 const ANS_LANGS={
- en:{q:"Will it flood here?",notCovered:"BahaWatch doesn't cover your location yet.",demoChip:"Demo · simulated typhoon",demoScen:{clear:"Demo · dry day",monsoon:"Demo · simulated habagat rain",typhoon:"Demo · simulated typhoon"},word:{oo:"Yes",baka:"Maybe",hindi:"No",nodata:"No fresh data"},
+ en:{q:"Will it flood here?",notCovered:"BahaWatch doesn't cover your location yet.",demoChip:"Demo · simulated typhoon",demoScen:{clear:"Demo · dry day",monsoon:"Demo · simulated habagat (monsoon) rain",typhoon:"Demo · simulated typhoon"},word:{oo:"Yes",baka:"Maybe",hindi:"No",nodata:"No fresh data"},
   gloss:{oo:"Flooding here now, or expected within the hour.",baka:"Conditions for flooding, but no water measured yet.",hindi:"No sign of flooding in the next hour.",nodata:"Check again soon."},
   glossRecede:"Still flooded here, but the water is going down.",recede:"Receding",
   reason:{stale:"The newest data is over 20 minutes old.",sensor_receding:"Water on {name}: {cm} cm, and going down.",sensor_now:"Water on {name}: {cm} cm.",sensor_soon:"Water rising on {name}, about {min} min away.",upstream:"Water rising near {name}, about {min} min away.",reports:"{n} neighbours report flooding nearby.",reports_vs_dry_sensor:"Neighbours report flooding; sensor here is dry.",rain_flood_zone:"Heavy rain ({mm} mm/h), and this area floods in a 5- or 25-year rain.",rain_heavy:"Very heavy rain ({mm} mm/h) in a mapped flood area.",reports_few:"Neighbours report flooding nearby ({n}).",sensor_trace:"A little water on {name} ({cm} cm).",clear:"No flood signs from sensors, reports or rain.",clear_no_sensor:"No heavy rain or flood reports nearby. No sensor here yet."},
   age:"updated {m} min ago",justNow:"updated just now",pick:"Pick your place to get an answer.",pickBtn:"Pick your place",
-  whereQ:"Where are you?",useLoc:"Use my location",pickBrgy:"Pick my barangay",pickSensor:"Pick a street with a sensor",skip:"Skip",
-  locFail:"Couldn't get your location. Pick your barangay instead.",
+  whereQ:"Where are you?",useLoc:"Use my location",pickBrgy:"Pick my barangay (neighbourhood)",pickSensor:"Pick a street with a sensor",skip:"Skip",
+  locFail:"Couldn't get your location. Pick your barangay (neighbourhood) instead.",
   share:"Share my place",copied:"Link copied"},
  fil:{q:"Babaha ba?",notCovered:"Hindi pa sakop ng BahaWatch ang lugar mo.",demoChip:"Demo · kunwaring bagyo",demoScen:{clear:"Demo · tuyong araw",monsoon:"Demo · kunwaring ulan ng habagat",typhoon:"Demo · kunwaring bagyo"},word:{oo:"Oo",baka:"Baka",hindi:"Hindi",nodata:"Walang bagong datos"},
   gloss:{oo:"May baha rito ngayon, o inaasahan sa loob ng isang oras.",baka:"May palatandaan ng baha, pero wala pang nasusukat na tubig.",hindi:"Walang palatandaan ng baha sa susunod na isang oras.",nodata:"Tingnan ulit mamaya."},
@@ -4966,6 +5004,17 @@ function homeAnim(){$("hm-how").classList.toggle("hm-run",ROUTE==="home"&&hmSeen
 if(window.IntersectionObserver)new IntersectionObserver(es=>{hmSeen=es.some(e=>e.isIntersecting);homeAnim();}).observe($("hm-how"));else hmSeen=true;
 $("hm-theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
 document.querySelectorAll('#home a[href^="#home/"]').forEach(a=>a.addEventListener("click",e=>{if(location.hash===a.getAttribute("href")){e.preventDefault();homeEnter(a.getAttribute("href").split("/")[1],"home");}}));
+// raised controls: hold the sunk look for at least 150 ms, so a quick tap or a key press is seen (CSS :active alone
+// lasts only as long as the finger or key is down). Keep RZ in step with the list in the style sheet.
+const RZ='#hm-theme,.hm-btn,.hm-in,.hm-copy,.hm-logos a,#ab-theme,#ax-theme,#p-theme,.p-link,.p-scen button,.p-rep-btns button,.p-where button,.p-pick button,.try-row button,.nat-btn,.route-btn,#nat-theme,.nat-zoom button,#theme-toggle,.zoom-unit,#play,.tl-play';
+{const down=new Map();
+ const press=el=>{if(!el||el.disabled)return;clearTimeout(el._rz);el.classList.add("rz-press");down.set(el,performance.now());};
+ const lift=el=>{if(!el||!down.has(el))return;const t=Math.max(0,150-(performance.now()-down.get(el)));down.delete(el);el._rz=setTimeout(()=>el.classList.remove("rz-press"),t);};
+ document.addEventListener("pointerdown",e=>{if(e.button)return;press(e.target.closest(RZ));});
+ document.addEventListener("pointerup",()=>{for(const el of [...down.keys()])lift(el);});
+ document.addEventListener("pointercancel",()=>{for(const el of [...down.keys()])lift(el);});
+ document.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){const el=document.activeElement&&document.activeElement.closest&&document.activeElement.closest(RZ);if(el)press(el);}});
+ document.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter")for(const el of [...down.keys()])lift(el);});}
 // explore cards are raised; a click sinks the card and lets it come back up before the page changes
 document.querySelectorAll(".hm-cards a").forEach(a=>a.addEventListener("click",e=>{
   if(e.metaKey||e.ctrlKey||e.shiftKey||e.button)return;e.preventDefault();const h=a.getAttribute("href");

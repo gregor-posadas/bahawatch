@@ -47,7 +47,7 @@ ROAD_CAMPUS = dict(ROAD_STREET, trunk="major", trunk_link="major", tertiary_link
 ROAD_PATH = dict(ROAD_STREET, **{"footway":"minor","path":"minor","pedestrian":"minor","cycleway":"minor","living_street":"minor"})
 
 NOAH = {"5":"inputs/noah/MetroManila_Flood_5year","25":"inputs/noah/MetroManila_Flood_25year","100":"inputs/noah/MetroManila_Flood_100year"}
-PH_SCEN = {"clear":("Dry day",0,0,0),"monsoon":("Habagat rain",0.16,300,180),"typhoon":("Typhoon",0.50,340,150)}
+PH_SCEN = {"clear":("Dry day",0,0,0),"monsoon":("Habagat (monsoon)",0.16,300,180),"typhoon":("Typhoon",0.50,340,150)}
 FAB_ATTR = ("Map data © OpenStreetMap contributors · Buildings: Google Open Buildings, Microsoft, OSM (combined by VIDA) · "
             "Terrain: FABDEM V1-2 © University of Bristol (CC BY-NC-SA 4.0) · Hazard reference: UP Project NOAH")
 FAB_TERRAIN = "FABDEM V1-2 (30 m, buildings and trees removed)"

@@ -243,6 +243,21 @@ review and reports"). Commits `62a9601` → `efbb216`:
    flowchart; **Accuracy and limits**: model settings table (13 rows), why a uniform terrain bias cancels out, the
    simulated readings, and what has not been checked. Tests: `test_home.js` 57 checks; all 23 page suites pass.
 
+15. **Raised buttons, figure, translations, notes** (2026-09-30 night, Gregor: "Love the raised and sinked buttons").
+   One rule set (`:is(...)` list in the style sheet, `RZ` in the script; keep them in step): action buttons and
+   link-buttons on Home, About, Accessibility, the national map, the simple and Details views and Try reporting sit on a
+   4 px ink shadow (3 px for round and map controls) and sink when pressed; the script holds the sunk look ≥150 ms so a
+   tap or a key press shows; the chosen weather and the chosen simulated reading stay sunk. Not raised: tabs, list rows,
+   pins, unit cards, the Details view's pill groups. Reduced motion: nothing moves, the shadow thins to 1 px. Figure:
+   the side view now shows the buildings along A–A′ (the plan's row north of the street, same x) behind semi-transparent
+   water, and dashed black lines carry both edges unbroken down to marks and "edge" labels on A–A′ in the plan.
+   "governance" bold in the quote. Filipino terms glossed on every English page (`test_words.js` enforces it, including
+   the English UI strings); the scenario is now "Habagat (monsoon)" (`sites.py` and the 27 data files, label only).
+   Collaborator logos link to bikescoutsproject.org, up.edu.ph, blumcenter.berkeley.edu and disasterlab.berkeley.edu
+   (NOAH, when added: `<li class="hm-wide"><a href="https://noah.up.edu.ph/"><img src="shared/home/logo-noah.png"
+   alt="Project NOAH" loading="lazy"></a></li>` in place of `<!--NOAH_LOGO-->`). Homepage terms (17) open notes on
+   hover, focus or tap. New suites `test_raise.js` (32), `test_words.js` (13); 25 page suites pass.
+
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
 outline, not the centroid; (b) **FABDEM scored 2026-09-29** against 17,936 ICESat-2 ground points in all 26 boxes (`analysis/dem_check/`: NMAD

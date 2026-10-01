@@ -39,7 +39,7 @@ const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else co
   });
   assert(sw.a.sel===null&&sw.a.hl===0,"switching clears selection and highlight");
   assert(/University of the Philippines Diliman/.test(sw.a.place)&&sw.a.rows===8&&sw.a.cards===8,"UP Diliman campus: place line, 8 rows, 8 cards: "+sw.a.place);
-  assert(sw.a.scen==="Dry day|Habagat rain|Typhoon"&&sw.a.t===0&&sw.a.z,"clock reset, scenarios relabelled, map fitted");
+  assert(sw.a.scen==="Dry day|Habagat (monsoon)|Typhoon"&&sw.a.t===0&&sw.a.z,"clock reset, scenarios relabelled, map fitted");
   assert(sw.b2.rows===9&&sw.b2.scen==="Dry day|Winter storm|Atmospheric river","Berkeley: 9 rows, storm names");
   assert(/Oxford Hall|Creekside|Chavez|Anthony|Faculty|Chou|Stebbins/.test(sw.b2.cap),"Berkeley caption names a campus building: "+sw.b2.cap);
   assert(sw.back===8,"back to Teachers Village");

@@ -40,6 +40,16 @@ const TABS="home,ph,tv,sjq,berkeley,try,about,access";
     assert(s.layers.length===4&&s.layers.every(l=>l.b==="0px"&&!l.role)&&/FABDEM/.test(s.layers[3].t),`${w}: the map layers are a plain list, not boxes that look like buttons: ${JSON.stringify(s.layers.map(l=>l.t))}`);
     assert(s.tr,`${w}: Babaha ba?, Oo, Baka and Hindi come with English translations`);
     assert(s.fig&&s.edges===2&&!s.pause,`${w}: the figure goes from the side view (two edges, a walled-off dip) to the map, is described for screen readers, and has no pause button`);
+    // the side view shows the buildings along A–A′ (the plan's row north of the street, same x), and black lines carry
+    // both edges from the side view down to marks on A–A′ in the plan
+    s=await pg.evaluate(()=>{const xr=r=>[+r.getAttribute('x'),+r.getAttribute('x')+ +r.getAttribute('width')].join('-');
+      const side=[...document.querySelectorAll('.hm-xs .x-bldg-s rect')].map(xr),plan=[...document.querySelectorAll('.hm-xs .x-bldg rect')].filter(r=>+r.getAttribute('y')<400).map(xr);
+      const g=document.querySelector('.hm-xs .x-guide'),cs=getComputedStyle(g);
+      const ticks=[...document.querySelectorAll('.hm-xs .x-pedge')].map(t=>t.getAttribute('d'));
+      return {side,plan,d:g.getAttribute('d'),stroke:cs.stroke,wd:parseFloat(cs.strokeWidth),ticks,lab:[...document.querySelectorAll('.hm-xs .x-plab')].map(t=>t.textContent).join()};});
+    assert(s.side.length>=5&&s.side.every(x=>s.plan.includes(x)),`${w}: the side view shows the buildings along A–A′, lined up with the plan: ${s.side.join(" ")} vs ${s.plan.join(" ")}`);
+    assert(/M213 178 V470/.test(s.d)&&/M550 178 V470/.test(s.d)&&s.stroke==="rgb(35, 33, 32)"&&s.wd>=2,`${w}: black lines run unbroken from each side-view edge down to A–A′: ${s.d} ${s.stroke}`);
+    assert(s.ticks.length===2&&/M213 /.test(s.ticks[0])&&/M550 /.test(s.ticks[1])&&s.lab==="edge,edge",`${w}: the plan marks and labels both edges on A–A′: ${JSON.stringify(s.ticks)} ${s.lab}`);
     await pg.evaluate(()=>document.getElementById('hm-how').scrollIntoView());await pg.waitForTimeout(400);
     s=await pg.evaluate(()=>({on:document.getElementById('hm-how').classList.contains('hm-run'),pulse:getComputedStyle(document.querySelector('.hm-pulse')).animationName,level:getComputedStyle(document.querySelector('.x-grow')).animationName,flood:getComputedStyle(document.querySelector('.x-flood')).animationIterationCount}));
     assert(s.on&&/hm-pulse/.test(s.pulse)&&s.level==="x-grow"&&s.flood==="infinite",`${w}: on screen, the line and the figure play on repeat: ${JSON.stringify(s)}`);
@@ -54,6 +64,8 @@ const TABS="home,ph,tv,sjq,berkeley,try,about,access";
     await pg.evaluate(()=>document.getElementById('hm-collab').scrollIntoView());await pg.waitForTimeout(600);
     s=await pg.evaluate(()=>({logos:[...document.querySelectorAll('.hm-logos img')].map(i=>({alt:i.alt,ok:i.complete&&i.naturalWidth>0})),ask:document.querySelector('.hm-ask h3').textContent,cta:document.querySelector('.hm-ask a').getAttribute('href')}));
     assert(s.logos.length>=4&&s.logos.every(x=>x.ok&&x.alt),`${w}: the collaborators' logos load, each named: ${s.logos.map(x=>x.alt).join(" | ")}`);
+    const links=await pg.evaluate(()=>[...document.querySelectorAll('.hm-logos a')].map(a=>a.querySelector('img').alt+"="+a.getAttribute('href')));
+    assert(links.join()==="Bike Scouts=https://bikescoutsproject.org/,University of the Philippines=https://up.edu.ph/,Blum Center for Developing Economies=https://blumcenter.berkeley.edu/,UC Berkeley Disaster Lab=https://disasterlab.berkeley.edu/",`${w}: each logo links to that collaborator's site, named by the logo's text: ${links.join(" ")}`);
     assert(/Partner with us/.test(s.ask)&&s.cta==="#home/contact",`${w}: a call to partner leads to the contact`);
     await pg.click('.hm-ask a');await pg.waitForTimeout(900);
     s=await pg.evaluate(()=>({hash:location.hash,f:document.activeElement.id,top:Math.round(document.getElementById('hm-contact-h').getBoundingClientRect().top),bot:Math.round(document.querySelector('.hm-mail').getBoundingClientRect().bottom),ih:innerHeight}));

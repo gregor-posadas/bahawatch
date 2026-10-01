@@ -34,8 +34,8 @@ const aligned=pg=>pg.evaluate(()=>{const b=DATA.bbox,m=SITEGL.map,nw=m.project([
   s=await pg.evaluate(()=>({sc:scenario,chip:document.getElementById('p-ans-demo').textContent,lbl:document.getElementById('p-scen-l').textContent,
     btns:[...document.querySelectorAll('.p-scen button')].map(b=>b.textContent),det:document.querySelector('.scenarios .active').dataset.sc,
     tall:[...document.querySelectorAll('.p-scen button')].every(b=>b.getBoundingClientRect().height>=48)}));
-  assert(s.sc==="typhoon"&&s.chip==="Demo · simulated typhoon"&&s.det==="typhoon"&&s.lbl==="Simulated weather"&&s.btns.join("|")==="Dry day|Habagat rain|Typhoon"&&s.tall,
-    "the campus page picks the weather itself (Dry day, Habagat rain, Typhoon); the chip and Details follow: "+JSON.stringify(s));
+  assert(s.sc==="typhoon"&&s.chip==="Demo · simulated typhoon"&&s.det==="typhoon"&&s.lbl==="Simulated weather"&&s.btns.join("|")==="Dry day|Habagat (monsoon)|Typhoon"&&s.tall,
+    "the campus page picks the weather itself (Dry day, Habagat (monsoon), Typhoon); the chip and Details follow: "+JSON.stringify(s));
   // the simulation clock on the campus page, beside the weather row: play/pause, the PHT clock, a scrub bar; one clock with Details
   s=await pg.evaluate(()=>{const tl=document.getElementById('p-tl'),sc=document.querySelector('.p-scen').getBoundingClientRect(),r=tl.getBoundingClientRect(),
     m=document.getElementById('public-map').getBoundingClientRect(),c=document.getElementById('p-scrub').getBoundingClientRect(),p=document.getElementById('p-play').getBoundingClientRect();

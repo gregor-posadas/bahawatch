@@ -15,11 +15,15 @@ all eight units inside the barangay; unit 01 fixed at 71 Imelda Marcos St by
 screen (no pause button, by Gregor's choice; still under reduced motion), a side-view-to-map figure showing how one reading
 becomes a flood map (FABDEM ground, the edges where ground rises above the water level, a walled-off dip that stays dry),
 raised explore cards that sink when pressed, the team with LinkedIn links, the collaborators' logos (Bike Scouts,
-University of the Philippines, Blum Center, UC Berkeley Disaster Lab; Project NOAH's logo still to add), a call to partner,
+University of the Philippines, Blum Center, UC Berkeley Disaster Lab, each linking to its site; Project NOAH's logo still to add), a call to partner,
 the timeline and contact (Noam's address as text with a Copy button, no mailto link). Sections fade in on scroll
 (off under reduced motion). Images are in `shared/home/`. The national map moved to `#ph`. An **Accessibility** tab
 (`#access`, `#access/<section>`) lists the design-for-accessibility choices and what still falls short. While a site
-file or a map loads, a thin progress bar runs along the top, the page shows a skeleton, and the map shows "Loading map…". An **About** tab (`#about`, `#about/<section>`)
+file or a map loads, a thin progress bar runs along the top, the page shows a skeleton, and the map shows "Loading map…". Action buttons across the dashboard
+are **raised** on a hard ink shadow and sink into it when pressed (the chosen weather or sensor reading stays sunk; tabs,
+list rows, pins and the Details view's pill groups keep their own look; under reduced motion only the shadow thins).
+Filipino words on the English pages carry their meaning (*Babaha ba?* “Will it flood?”, *Oo* yes, *Baka* maybe,
+*Hindi* no, barangay (neighbourhood), habagat (monsoon)), and the homepage's harder terms open notes like About's. An **About** tab (`#about`, `#about/<section>`)
 explains the dashboard in plain language for talks such as GHTC: how it works,
 the data, the sensor units and their assumed mounting, accuracy and biases,
 future work and an FAQ; underlined terms open a short note. The
