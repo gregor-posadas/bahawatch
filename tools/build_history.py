@@ -181,8 +181,11 @@ S = dict(
 def L(k, text): return src(S[k][0], S[k][1], text)
 
 def event(year, name, body, figs, wide=None):
-    return (f'<article class="gl-ev"><h3><span class="gl-yr">{year}</span> {name}</h3><p>{body}</p>'
-            + "".join(fig(k, k == wide) for k in figs) + '</article>')
+    """One flood: the story (left on wide screens) and its photos (beside it, side by side when there are several)."""
+    txt = f'<div class="gl-txt"><h3><span class="gl-yr">{year}</span> {name}</h3><p>{body}</p></div>'
+    ph = ('<div class="gl-figs">' + "".join(fig(k, k == wide) for k in figs) + '</div>') if figs else ''
+    return f'<article class="gl-ev{" gl-solo" if not figs else ""}">{txt}{ph}</article>'
+
 
 FLOODS = [
  event("1991", "Ormoc flash flood (Uring)",
@@ -224,14 +227,14 @@ FLOODS = [
 ]
 
 WATER = (
- '<p>For many families, flooding is not an event but a season, or a tide. Much of Metro Manila and the land around northern Manila Bay is sinking, '
+ '<div class="gl-split"><div class="gl-txt"><p>For many families, flooding is not an event but a season, or a tide. Much of Metro Manila and the land around northern Manila Bay is sinking, '
  'largely because groundwater is pumped out faster than it returns. Between 2003 and 2011 parts of '
  + L("eco", "Caloocan, Malabon, Navotas and Valenzuela sank by up to 4.2 cm a year") + ', and around northern Manila Bay '
  + L("rod", "several centimetres to more than a decimetre a year") + '. Metro Manila’s drains handle '
  + L("drain", "about 30 mm of rain an hour") + '.</p>'
  '<p>In Macabebe, Pampanga, researchers in 2025 found ' + L("upri", "neighbourhoods permanently under water") + '. '
  '“Since July… the villages haven’t dried,” ' + L("pamp", "a local official told the Inquirer") + ' that October.</p>'
- + fig("macabebe") + fig("hagonoy") + fig("masantol")
+ + '</div><div class="gl-figs">' + fig("macabebe") + fig("hagonoy") + fig("masantol") + '</div></div>'
 )
 
 TL = [
@@ -310,9 +313,7 @@ def build():
     <section id="hi-politics" aria-labelledby="hi-politics-h">
       <h2 id="hi-politics-h" tabindex="-1">The politics of flood control</h2>
       <p>In 2025 flood control became the country’s biggest political story. What follows is what happened and who said what, as reported by news outlets; people charged are presumed innocent until a court decides.</p>
-      {fig("luneta", True)}
-      <ol class="gl-time">{tl}</ol>
-      {fig("tpm")}
+      <div class="gl-split gl-pol"><ol class="gl-time">{tl}</ol><div class="gl-figs gl-sticky">{fig("luneta")}{fig("tpm")}</div></div>
       <p class="gl-asof">As of 1 October 2026 we found no report of a verdict in any of the flood-control cases.</p>
     </section>
     <section id="hi-credits" aria-labelledby="hi-credits-h">

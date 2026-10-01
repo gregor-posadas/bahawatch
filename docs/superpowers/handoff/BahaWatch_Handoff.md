@@ -299,6 +299,13 @@ review and reports"). Commits `62a9601` → `efbb216`:
    plea entered by the court, Co and 15 others, denials by Romualdez, crowd figures stated, subsidence "up to"). Political
    facts after June 2026 come from news reports read on 1 Oct 2026; re-check before reusing. `test_history.js`.
 
+20. **Reading pages use the width** (2026-10-01, Gregor: "why is there so much blank space here?"). `.ab-body` is now
+   `200px minmax(0,1fr)` (was capped at 72ch). Prose is capped at 41rem (≈75 characters; `ch` is ~0.65 em in Atkinson
+   Hyperlegible, so 72ch was really ~93 characters). From 1200 px: lists and steps flow into 2–3 columns, data blocks
+   and the FAQ into a grid, flow sub-steps into 2 columns; Flood history puts each story's text left (26rem) and its
+   photos beside it (side by side when there are several, single photos ≤ 820 px), and the protest photos stay sticky
+   beside the political timeline. Below 1200 px nothing changes. `test_wide.js` (1920, 1280, 375).
+
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
 outline, not the centroid; (b) **FABDEM scored 2026-09-29** against 17,936 ICESat-2 ground points in all 26 boxes (`analysis/dem_check/`: NMAD
