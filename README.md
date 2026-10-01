@@ -15,7 +15,7 @@ all eight units inside the barangay; unit 01 fixed at 71 Imelda Marcos St by
 screen (no pause button, by Gregor's choice; still under reduced motion), a side-view-to-map figure showing how one reading
 becomes a flood map (FABDEM ground, the edges where ground rises above the water level, a walled-off dip that stays dry),
 raised explore cards that sink when pressed, the team with LinkedIn links, the collaborators' logos (Bike Scouts,
-University of the Philippines, UP Resilience Institute, Project NOAH, Blum Center, Development Engineering at UC Berkeley (name only until the logo file arrives), UC Berkeley Disaster Lab, each linking to its site), a call to partner,
+University of the Philippines, UP Resilience Institute, Project NOAH, Blum Center, Development Engineering at UC Berkeley, UC Berkeley Disaster Lab, each linking to its site), a call to partner,
 the timeline and contact (Noam's address as text with a Copy button, no mailto link). Sections fade in on scroll
 (off under reduced motion). Images are in `shared/home/`. A Listen button beside "Baha" says the word with the device's Filipino voice (hidden where there is none; a recording can replace it). The national map moved to `#ph`; it opens with a note that the PhilDev collaboration is still being discussed. Every page has the same header: the logo, "BahaWatch" in 20 px bold, the page or place in small grey, and a thick black rule. An **Accessibility** tab
 (`#access`, `#access/<section>`) lists the design-for-accessibility choices and what still falls short. While a site
