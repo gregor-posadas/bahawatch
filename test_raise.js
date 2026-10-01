@@ -71,7 +71,7 @@ const sunk=x=>(x.sh==="none"||/ 0px 0px 0px/.test(x.sh))&&/matrix\(1, 0, 0, 1, [
     await pg.goto(U+'#about');await ready(pg,"about");
     s=await look(pg,'#ab-theme');assert(s.length===1&&raised(s[0]),`${w}: About's theme button is raised`);
     // dark theme: the shadow is the light ink, so the lift still shows
-    await pg.evaluate(()=>setTheme("dark",false));await pg.waitForTimeout(100);
+    await pg.evaluate(()=>setTheme("dark",false));await pg.waitForTimeout(400);
     s=await pg.evaluate(()=>{const cs=getComputedStyle(document.getElementById('ab-theme'));return {sh:cs.boxShadow,bg:getComputedStyle(document.body).backgroundColor};});
     const lum=c=>{const m=c.match(/\d+/g).slice(0,3).map(Number);return m.reduce((a,b)=>a+b,0)/3;};
     assert(lum(s.sh)-lum(s.bg)>120,`${w}: in the dark theme the shadow is light against the page: ${s.sh} on ${s.bg}`);

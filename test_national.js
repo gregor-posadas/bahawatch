@@ -196,7 +196,7 @@ const glUp=pg=>pg.waitForFunction(()=>NATGL.state==="on"||NATGL.state==="off",nu
    assert(outside.length===0,"no request leaves the site: "+outside.slice(0,3).join(", "));
    // a wheel over a pin zooms the map (HTML pins sit on top of the vector map and used to swallow it)
    await pg.evaluate(()=>NATGL.map.jumpTo({center:[121.0,14.6],zoom:12}));await pg.waitForTimeout(800);
-   const pr=await pg.evaluate(()=>{const e=document.querySelector('#nat-pins a.pin');const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};});
+   const pr=await pg.evaluate(()=>{for(const e of document.querySelectorAll('#nat-pins a.pin')){const r=e.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2,t=document.elementFromPoint(x,y);if(t&&e.contains(t))return {x,y};}return null;});   // a pin that is on top where the pointer is
    await pg.mouse.move(pr.x,pr.y);const z0=await pg.evaluate(()=>NATGL.map.getZoom());
    for(let i=0;i<4;i++){await pg.mouse.wheel(0,-150);await pg.waitForTimeout(120);}await pg.waitForTimeout(500);
    assert(await pg.evaluate(z0=>NATGL.map.getZoom()>z0+0.3,z0),"a mouse wheel over a campus pin zooms the map");

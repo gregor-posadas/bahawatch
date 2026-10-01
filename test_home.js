@@ -9,6 +9,7 @@ const U=BASE+'bahawatch_dashboard.html';
 const ready=(pg,v)=>pg.waitForFunction(x=>document.body.dataset.ready===x,v,{timeout:15000});
 const TABS="home,ph,tv,sjq,berkeley,try,about,access";
 (async()=>{
+  let s2;
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
   const errs=[];
   for(const w of [1280,375]){
@@ -25,6 +26,8 @@ const TABS="home,ph,tv,sjq,berkeley,try,about,access";
     // why: four figures, each with a reference, and the references link out
     s=await pg.evaluate(()=>({stats:[...document.querySelectorAll('.hm-stats li')].map(l=>/\[\d\]/.test(l.textContent)),refs:[...document.querySelectorAll('.hm-refs a')].map(a=>a.href).filter(h=>/^https:/.test(h)).length,
       cited:[...document.querySelectorAll('#hm-why .hm-ref')].map(r=>+r.textContent.replace(/\D/g,'')),n:document.querySelectorAll('.hm-refs > li').length}));
+    s2=await pg.evaluate(()=>({r1:document.querySelector('.hm-refs > li').textContent,h:document.querySelector('.hm-refs > li a').href,st:document.querySelector('.hm-stats li').textContent}));
+    assert(/WorldRiskReport 2026/.test(s2.r1)&&/reliefweb\.int/.test(s2.h)&&/storm/.test(s2.st),`${w}: the #1 figure cites the WorldRiskReport 2026, which also ranks storm risk: ${s2.r1.slice(0,80)}`);
     assert(s.stats.length===4&&s.stats.every(Boolean)&&s.refs>=6&&s.cited.every(k=>k>=1&&k<=s.n),`${w}: every figure in "Why BahaWatch" cites one of ${s.n} linked references: ${JSON.stringify(s)}`);
     // the team: LinkedIn, no email addresses on the cards
     s=await pg.evaluate(()=>[...document.querySelectorAll('.hm-team li')].map(li=>({n:li.querySelector('h3').textContent,img:li.querySelector('img').getAttribute('alt'),li:li.querySelector('a').getAttribute('href'),mail:!!li.querySelector('a[href^="mailto:"]')})));
@@ -63,9 +66,9 @@ const TABS="home,ph,tv,sjq,berkeley,try,about,access";
     // collaborators and the call to partner
     await pg.evaluate(()=>document.getElementById('hm-collab').scrollIntoView());await pg.waitForTimeout(600);
     s=await pg.evaluate(()=>({logos:[...document.querySelectorAll('.hm-logos img')].map(i=>({alt:i.alt,ok:i.complete&&i.naturalWidth>0})),ask:document.querySelector('.hm-ask h3').textContent,cta:document.querySelector('.hm-ask a').getAttribute('href')}));
-    assert(s.logos.length>=4&&s.logos.every(x=>x.ok&&x.alt),`${w}: the collaborators' logos load, each named: ${s.logos.map(x=>x.alt).join(" | ")}`);
-    const links=await pg.evaluate(()=>[...document.querySelectorAll('.hm-logos a')].map(a=>a.querySelector('img').alt+"="+a.getAttribute('href')));
-    assert(links.join()==="Bike Scouts=https://bikescoutsproject.org/,University of the Philippines=https://up.edu.ph/,Blum Center for Developing Economies=https://blumcenter.berkeley.edu/,UC Berkeley Disaster Lab=https://disasterlab.berkeley.edu/",`${w}: each logo links to that collaborator's site, named by the logo's text: ${links.join(" ")}`);
+    assert(s.logos.length>=6&&s.logos.every(x=>x.ok&&x.alt),`${w}: the collaborators' logos load, each named: ${s.logos.map(x=>x.alt).join(" | ")}`);
+    const links=await pg.evaluate(()=>[...document.querySelectorAll('.hm-logos a')].map(a=>{const i=a.querySelector('img');return (i?i.alt:a.textContent.trim())+"="+a.getAttribute('href');}));
+    assert(links.join()==="Bike Scouts=https://bikescoutsproject.org/,University of the Philippines=https://up.edu.ph/,UP Resilience Institute=https://resilience.up.edu.ph/,Project NOAH=https://noah.up.edu.ph/,Blum Center for Developing Economies=https://blumcenter.berkeley.edu/,Development Engineering at UC Berkeley=https://developmentengineering.berkeley.edu/,UC Berkeley Disaster Lab=https://disasterlab.berkeley.edu/",`${w}: each logo links to that collaborator's site, named by the logo's text: ${links.join(" ")}`);
     assert(/Partner with us/.test(s.ask)&&s.cta==="#home/contact",`${w}: a call to partner leads to the contact`);
     await pg.click('.hm-ask a');await pg.waitForTimeout(900);
     s=await pg.evaluate(()=>({hash:location.hash,f:document.activeElement.id,top:Math.round(document.getElementById('hm-contact-h').getBoundingClientRect().top),bot:Math.round(document.querySelector('.hm-mail').getBoundingClientRect().bottom),ih:innerHeight}));
@@ -115,6 +118,25 @@ const TABS="home,ph,tv,sjq,berkeley,try,about,access";
    const after=await pg.evaluate(()=>({bar:!document.getElementById('busy').hidden,chip:!document.getElementById('site-busy').hidden}));
    assert(chipSeen&&!after.bar&&!after.chip,"while the detailed map loads its chip shows; once loaded, the bar and the chip go away: "+JSON.stringify({s,after}));
    await ctx.close();}
+  // "Listen" next to Baha: shown only when the device has a Filipino voice (or a recording is set), and it says "Baha"
+  {const ctx=await b.newContext({viewport:{width:375,height:800}});
+   const pg=await ctx.newPage();pg.on('pageerror',e=>errs.push(e.message));
+   await pg.goto(U);await ready(pg,"home");await pg.waitForTimeout(300);
+   const none=await pg.evaluate(()=>document.getElementById('hm-hear').hidden);
+   await ctx.close();
+   const ctx2=await b.newContext({viewport:{width:375,height:800}});
+   await ctx2.addInitScript(()=>{const v=[{name:"English",lang:"en-US"},{name:"Filipino",lang:"fil-PH"}];window.__said=[];
+     const ss={getVoices:()=>v,speak:u=>__said.push({t:u.text,v:u.voice&&u.voice.lang,l:u.lang}),cancel:()=>{},addEventListener:()=>{},onvoiceschanged:null};
+     Object.defineProperty(window,'speechSynthesis',{value:ss,configurable:true});
+     window.SpeechSynthesisUtterance=function(t){this.text=t;};});
+   const pg2=await ctx2.newPage();pg2.on('pageerror',e=>errs.push(e.message));
+   await pg2.goto(U);await ready(pg2,"home");await pg2.waitForTimeout(300);
+   const s=await pg2.evaluate(()=>{const bt=document.getElementById('hm-hear');const r=bt.getBoundingClientRect();return {shown:!bt.hidden,h:r.height,name:bt.getAttribute('aria-label'),near:/Baha/.test(bt.closest('p').textContent),sh:getComputedStyle(bt).boxShadow};});
+   await pg2.click('#hm-hear');
+   const said=await pg2.evaluate(()=>__said);
+   assert(none&&s.shown&&s.h>=48&&/baha/i.test(s.name)&&s.near&&/4px 4px 0px/.test(s.sh),`"Listen" sits next to Baha, raised, 48 px, named, and hidden on a device with no Filipino voice: ${JSON.stringify({none,...s})}`);
+   assert(said.length===1&&said[0].t==="Baha"&&said[0].v==="fil-PH",`pressing it says "Baha" in the Filipino voice: ${JSON.stringify(said)}`);
+   await ctx2.close();}
   // reduced motion: nothing moves, nothing fades
   {const ctx=await b.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'});const pg=await ctx.newPage();pg.on('pageerror',e=>errs.push(e.message));
    await pg.goto(U+'#home/how');await ready(pg,"home");await pg.waitForTimeout(300);

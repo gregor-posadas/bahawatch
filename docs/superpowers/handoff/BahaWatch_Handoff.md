@@ -254,9 +254,26 @@ review and reports"). Commits `62a9601` → `efbb216`:
    "governance" bold in the quote. Filipino terms glossed on every English page (`test_words.js` enforces it, including
    the English UI strings); the scenario is now "Habagat (monsoon)" (`sites.py` and the 27 data files, label only).
    Collaborator logos link to bikescoutsproject.org, up.edu.ph, blumcenter.berkeley.edu and disasterlab.berkeley.edu
-   (NOAH, when added: `<li class="hm-wide"><a href="https://noah.up.edu.ph/"><img src="shared/home/logo-noah.png"
-   alt="Project NOAH" loading="lazy"></a></li>` in place of `<!--NOAH_LOGO-->`). Homepage terms (17) open notes on
+   (NOAH added in item 16). Homepage terms (17) open notes on
    hover, focus or tap. New suites `test_raise.js` (32), `test_words.js` (13); 25 page suites pass.
+
+16. **Header, collaborators, PhilDev note** (2026-10-01, Gregor's 7 notes). One header on every page (`test_header.js`):
+   logo, "BahaWatch" 20 px bold (`.p-name` everywhere), the page or place in 14 px grey (the About, Accessibility and
+   PhilDev h1s are now styled small, like the site pages' place line), a 3 px ink rule (`.nat-top`, `.p-head` and the
+   Details `header`). Phones: the place line shows; a lone theme button stays on the logo row. "Choose my street" has
+   4 px right/bottom margins so it and its shadow sit centred inside the row. PhilDev page: a boxed note above the map
+   and list, "We are in talks with PhilDev about a possible collaboration…" (`talks` in `i18n/nat.json`, six languages,
+   non-English drafted and under the existing `_review` flag); the intro and "Barangays covered" now gloss barangays.
+   Because the note shortens the desktop map, the national map's east-west pan limit grew from 6° to 12° (with 6°,
+   at 1280 × 844 the map could not zoom out far enough to show the whole country). Collaborators: + UP Resilience
+   Institute (resilience.up.edu.ph, logo with its name under it), Project NOAH (noah.up.edu.ph), Development Engineering
+   at UC Berkeley (a name tile: the logo could not be downloaded here, swap in `shared/home/logo-deveng.png` when Gregor
+   sends it); a two-column grid on phones. The #1 figure now cites the WorldRiskReport 2026 (ReliefWeb, 23 Sept 2026:
+   the Philippines has the highest overall risk and tops the first storm-risk ranking), with 2025 as also-first.
+   **Listen** button beside "Baha" in the hero: plays `BAHA_AUDIO` when set (a native speaker's recording; none yet),
+   otherwise the device's own Filipino voice (`fil`/`tl`) via speechSynthesis; hidden when the device has neither, so an
+   English voice never mispronounces it. To add a recording: put e.g. `shared/home/baha.mp3` in the repo and set
+   `BAHA_AUDIO` in `template.html`.
 
 **Agreed next (2026-09-29):** (a) ~~finer grid~~ done (item 11); still to do: count flooded buildings by outline
 (pipeline builds the obstacle grid from `inputs/campuses/<id>/buildings.geojson`), and count flooded buildings by their
