@@ -25,6 +25,12 @@ const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else co
   // manifest and service worker registration guard
   s=await pg.evaluate(()=>({m:document.querySelector('link[rel=manifest]')?.getAttribute('href'),ic:document.querySelector('link[rel=apple-touch-icon]')?.getAttribute('href')}));
   assert(s.m==="manifest.webmanifest"&&s.ic==="icon-192.png","manifest and touch icon linked");
+  // the browser tab shows the BahaWatch logo (Gregor, 2026-10-04: "the bahawatch logo is used for its tab icon too")
+  s=await pg.evaluate(async()=>{const ls=[...document.querySelectorAll('link[rel~=icon]')].map(l=>({h:l.getAttribute('href'),s:l.getAttribute('sizes'),t:l.type}));
+    const im=new Image();im.src=ls.find(l=>l.s==="32x32")?.h||"";await im.decode().catch(()=>{});return {ls,w:im.naturalWidth,ht:im.naturalHeight};});
+  assert(s.ls.some(l=>l.h==="favicon-32.png"&&l.s==="32x32"&&l.t==="image/png")&&s.ls.some(l=>l.h==="icon-192.png"&&l.s==="192x192")&&s.w===32&&s.ht===32,"tab icon: the logo at 32 px, with the 192 px logo for sharper screens: "+JSON.stringify(s));
+  {const idx=fs.readFileSync('/home/claude/work/index.html','utf8');
+   assert(/<link rel="icon" href="favicon-32\.png" sizes="32x32" type="image\/png">/.test(idx),"the redirect page (index.html) shows the logo in its tab too");}
   const man=JSON.parse(fs.readFileSync('/home/claude/work/manifest.webmanifest','utf8'));
   // Controller ruling 2: start_url carries ?source=pwa so a PWA relaunch can restore the person's last view
   // (the brief's literal "./" would lose that signal — see task-8-report.md).
