@@ -1,7 +1,7 @@
 // Offline shell: the page opens without signal and shows the last answer with its age (spec §5). Site files
 // (data/<site>.json) are cached as they are fetched, so a campus visited once opens offline too.
 const CACHE = 'bahawatch-v4';
-const SHELL = ['./', 'index.html', 'bahawatch_dashboard.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'favicon-32.png'];
+const SHELL = ['./', 'index.html', 'bahawatch_dashboard.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'favicon-32.png', 'favicon-64.png'];
 self.addEventListener('install', (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener('activate', (e) => e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', (e) => {

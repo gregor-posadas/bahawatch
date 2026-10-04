@@ -26,11 +26,17 @@ const assert=(c,m)=>{if(!c){console.error("FAIL:",m);process.exitCode=1;}else co
   s=await pg.evaluate(()=>({m:document.querySelector('link[rel=manifest]')?.getAttribute('href'),ic:document.querySelector('link[rel=apple-touch-icon]')?.getAttribute('href')}));
   assert(s.m==="manifest.webmanifest"&&s.ic==="icon-192.png","manifest and touch icon linked");
   // the browser tab shows the BahaWatch logo (Gregor, 2026-10-04: "the bahawatch logo is used for its tab icon too")
+  // ... on a transparent background (Gregor: "transparent background instead of the icon being on a white background"):
+  // the corners are clear and the eye stays solid. The home-screen icon (icon-192) keeps its white, since phones fill
+  // transparency with black.
   s=await pg.evaluate(async()=>{const ls=[...document.querySelectorAll('link[rel~=icon]')].map(l=>({h:l.getAttribute('href'),s:l.getAttribute('sizes'),t:l.type}));
-    const im=new Image();im.src=ls.find(l=>l.s==="32x32")?.h||"";await im.decode().catch(()=>{});return {ls,w:im.naturalWidth,ht:im.naturalHeight};});
-  assert(s.ls.some(l=>l.h==="favicon-32.png"&&l.s==="32x32"&&l.t==="image/png")&&s.ls.some(l=>l.h==="icon-192.png"&&l.s==="192x192")&&s.w===32&&s.ht===32,"tab icon: the logo at 32 px, with the 192 px logo for sharper screens: "+JSON.stringify(s));
+    const look=async(h,n)=>{const im=new Image();im.src=h;await im.decode().catch(()=>{});const c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d');x.drawImage(im,0,0);
+      const px=(a,b)=>x.getImageData(a,b,1,1).data[3];return {w:im.naturalWidth,corner:Math.max(px(0,0),px(n-1,0),px(0,n-1),px(n-1,n-1)),mid:px(n>>1,n>>1)};};
+    return {ls,i32:await look("favicon-32.png",32),i64:await look("favicon-64.png",64)};});
+  assert(s.ls.length===2&&s.ls.some(l=>l.h==="favicon-32.png"&&l.s==="32x32"&&l.t==="image/png")&&s.ls.some(l=>l.h==="favicon-64.png"&&l.s==="64x64"&&l.t==="image/png"),"tab icon: the logo at 32 px, and 64 px for sharper screens: "+JSON.stringify(s.ls));
+  assert(s.i32.w===32&&s.i64.w===64&&s.i32.corner===0&&s.i64.corner===0&&s.i32.mid===255&&s.i64.mid===255,"tab icons have clear corners and a solid logo: "+JSON.stringify([s.i32,s.i64]));
   {const idx=fs.readFileSync('/home/claude/work/index.html','utf8');
-   assert(/<link rel="icon" href="favicon-32\.png" sizes="32x32" type="image\/png">/.test(idx),"the redirect page (index.html) shows the logo in its tab too");}
+   assert(/<link rel="icon" href="favicon-32\.png" sizes="32x32" type="image\/png">/.test(idx)&&/favicon-64\.png/.test(idx)&&!/rel="icon" href="icon-192/.test(idx),"the redirect page (index.html) shows the logo in its tab too");}
   const man=JSON.parse(fs.readFileSync('/home/claude/work/manifest.webmanifest','utf8'));
   // Controller ruling 2: start_url carries ?source=pwa so a PWA relaunch can restore the person's last view
   // (the brief's literal "./" would lose that signal — see task-8-report.md).
